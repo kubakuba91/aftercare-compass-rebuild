@@ -1,11 +1,7 @@
 import { KeyRound } from "lucide-react";
 import { Card } from "@/components/ui/card";
-
-const requiredVercelEnv = [
-  "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
-  "CLERK_SECRET_KEY",
-  "NEXT_PUBLIC_APP_URL"
-];
+import { Badge } from "@/components/ui/badge";
+import { clerkEnvRequirements } from "@/lib/clerk-config";
 
 export default function SetupPage() {
   return (
@@ -18,11 +14,17 @@ export default function SetupPage() {
           require Clerk environment variables in Vercel.
         </p>
         <div className="mt-6 rounded-md border border-border bg-muted/60 p-4">
-          <h2 className="font-semibold">Add these in Vercel Project Settings</h2>
-          <ul className="mt-3 grid gap-2 text-sm text-muted-foreground">
-            {requiredVercelEnv.map((name) => (
-              <li key={name}>
-                <code>{name}</code>
+          <h2 className="font-semibold">Check these in Vercel Project Settings</h2>
+          <ul className="mt-3 grid gap-3 text-sm text-muted-foreground">
+            {clerkEnvRequirements.map((item) => (
+              <li key={item.key} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  <code>{item.key}</code>
+                  <span className="ml-2">{item.valueHint}</span>
+                </span>
+                <Badge tone={item.valid ? "success" : "warning"}>
+                  {item.valid ? "Detected" : "Missing or invalid"}
+                </Badge>
               </li>
             ))}
           </ul>
@@ -31,4 +33,3 @@ export default function SetupPage() {
     </main>
   );
 }
-

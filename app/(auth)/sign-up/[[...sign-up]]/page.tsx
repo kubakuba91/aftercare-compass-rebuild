@@ -1,9 +1,10 @@
 import { SignUp } from "@clerk/nextjs";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import { hasValidClerkPublishableKey } from "@/lib/clerk-config";
 
 export default function SignUpPage() {
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+  if (!hasValidClerkPublishableKey()) {
     return (
       <main className="shell flex min-h-screen items-center justify-center py-10">
         <Card className="max-w-md">
@@ -30,4 +31,3 @@ export default function SignUpPage() {
     </main>
   );
 }
-

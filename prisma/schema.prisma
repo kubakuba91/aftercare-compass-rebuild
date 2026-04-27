@@ -90,7 +90,12 @@ model User {
 
   sentMessages Message[]
   referrals    Referral[] @relation("ReferentUserReferrals")
+  flagsReported Flag[]    @relation("FlagReporter")
+  flagsResolved Flag[]    @relation("FlagResolver")
+  notifications Notification[]
   handledLeads Lead[]     @relation("LeadHandler")
+
+  @@index([orgId])
 }
 
 model Organization {
@@ -115,6 +120,9 @@ model Organization {
   leads              Lead[]
   referentReferrals  Referral[] @relation("ReferentOrgReferrals")
   aftercareReferrals Referral[] @relation("AftercareOrgReferrals")
+
+  @@index([type])
+  @@index([subscriptionStatus])
 }
 
 model ReferentOrganization {
@@ -127,8 +135,8 @@ model ReferentOrganization {
   npiNumber                String?
   stateLicenseNumber       String?
   ehrSystem                String?
-  statesOperatedIn         String[]
-  levelsOfCare             String[]
+  statesOperatedIn         String[] @default([])
+  levelsOfCare             String[] @default([])
   avgMonthlyReferrals      String?
 }
 
@@ -153,7 +161,7 @@ model AftercareProfile {
   admissionsContactEmail          String?
   preferredContactMethod          String?
   populationServed                String?
-  specialtyPopulations            String[]
+  specialtyPopulations            String[]      @default([])
   totalBeds                       Int?
   bedsMen                         Int?
   bedsWomen                       Int?
@@ -167,12 +175,12 @@ model AftercareProfile {
   pricePerWeek                    Int?
   fundingAvailable                Boolean?
   fundingNotes                    String?
-  insuranceAccepted               String[]
-  supportServices                 String[]
-  amenities                       String[]
+  insuranceAccepted               String[]      @default([])
+  supportServices                 String[]      @default([])
+  amenities                       String[]      @default([])
   description                     String?
   houseRulesUrl                   String?
-  videoUrls                       String[]
+  videoUrls                       String[]      @default([])
   publishedAt                     DateTime?
   createdAt                       DateTime      @default(now())
   updatedAt                       DateTime      @updatedAt
@@ -180,19 +188,29 @@ model AftercareProfile {
   certifications VerificationDocument[]
   referrals      Referral[]
   leads          Lead[]
+  flags          Flag[]
+
+  @@index([orgId])
+  @@index([type, status])
+  @@index([publicCity, publicState])
+  @@index([verificationTier])
 }
 
 model VerificationDocument {
-  id          String           @id @default(cuid())
-  profileId   String
-  profile     AftercareProfile @relation(fields: [profileId], references: [id])
+  id           String           @id @default(cuid())
+  profileId    String
+  profile      AftercareProfile @relation(fields: [profileId], references: [id])
   documentType String
-  url         String
-  expiresAt   DateTime?
-  status      DocumentStatus   @default(pending)
-  submittedAt DateTime         @default(now())
-  reviewedAt  DateTime?
-  notes       String?
+  url          String
+  expiresAt    DateTime?
+  status       DocumentStatus   @default(pending)
+  submittedAt  DateTime         @default(now())
+  reviewedAt   DateTime?
+  notes        String?
+
+  @@index([profileId])
+  @@index([status])
+  @@index([expiresAt])
 }
 
 model Referral {
@@ -213,7 +231,7 @@ model Referral {
   supportCategory        String
   insuranceCategory      String
   preferredStartWindow   String
-  specialNeeds           String[]
+  specialNeeds           String[]         @default([])
   reasonForReferral      String
   status                 ReferralStatus   @default(pending)
   statusUpdatedAt        DateTime         @default(now())
@@ -224,6 +242,11 @@ model Referral {
   updatedAt              DateTime         @updatedAt
 
   messages Message[]
+
+  @@index([referentOrgId, status])
+  @@index([aftercareOrgId, status])
+  @@index([aftercareProfileId, status])
+  @@index([createdAt])
 }
 
 model Message {
@@ -236,6 +259,9 @@ model Message {
   body         String
   readAt       DateTime?
   createdAt    DateTime @default(now())
+
+  @@index([referralId, createdAt])
+  @@index([senderUserId])
 }
 
 model Lead {
@@ -255,27 +281,40 @@ model Lead {
   handledAt       DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+
+  @@index([profileId])
+  @@index([aftercareOrgId, status])
+  @@index([createdAt])
 }
 
 model Flag {
-  id                 String     @id @default(cuid())
-  profileId           String
-  reportedByUserId    String?
-  flagType            String
-  description         String
-  status              FlagStatus @default(open)
-  resolvedByUserId    String?
-  resolvedAt          DateTime?
-  createdAt           DateTime   @default(now())
+  id               String           @id @default(cuid())
+  profileId        String
+  profile          AftercareProfile @relation(fields: [profileId], references: [id])
+  reportedByUserId String?
+  reportedByUser   User?            @relation("FlagReporter", fields: [reportedByUserId], references: [id])
+  flagType         String
+  description      String
+  status           FlagStatus       @default(open)
+  resolvedByUserId String?
+  resolvedByUser   User?            @relation("FlagResolver", fields: [resolvedByUserId], references: [id])
+  resolvedAt       DateTime?
+  createdAt        DateTime         @default(now())
+
+  @@index([profileId])
+  @@index([status])
 }
 
 model Notification {
   id        String   @id @default(cuid())
   userId    String
+  user      User     @relation(fields: [userId], references: [id])
   type      String
   title     String
   body      String
   readAt    DateTime?
   createdAt DateTime @default(now())
-}
 
+  @@index([userId, readAt])
+  @@index([createdAt])
+}

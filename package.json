@@ -9,7 +9,10 @@
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
-    "prisma:validate": "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/aftercare DIRECT_URL=postgresql://postgres:postgres@localhost:5432/aftercare prisma validate"
+    "prisma:validate": "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/aftercare DIRECT_URL=postgresql://postgres:postgres@localhost:5432/aftercare prisma validate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "latest",
@@ -39,6 +42,7 @@
     "eslint-config-next": "15",
     "prisma": "6",
     "tailwindcss": "latest",
+    "tsx": "latest",
     "typescript": "latest"
   }
 }

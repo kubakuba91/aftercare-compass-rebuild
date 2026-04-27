@@ -12,12 +12,21 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const hasClerkPublishableKey = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+
+  const body = (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+
+  if (!hasClerkPublishableKey) {
+    return body;
+  }
+
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body>{children}</body>
-      </html>
+      {body}
     </ClerkProvider>
   );
 }
-

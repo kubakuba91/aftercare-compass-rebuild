@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  system_admin
+  referent_admin
+  referent_manager
+  aftercare_admin
+  aftercare_manager
+}
+
+enum OrganizationType {
+  referent
+  aftercare_sober_living
+  aftercare_continued_care
+}
+
+enum ProfileType {
+  sober_living
+  continued_care
+}
+
+enum ProfileStatus {
+  draft
+  published
+  suspended
+  under_review
+}
+
+enum ReferralStatus {
+  pending
+  viewed
+  accepted
+  declined
+  waitlisted
+  placed
+  closed
+}
+
+enum LeadStatus {
+  new
+  contacted
+  closed
+  spam
+}
+
+enum SubscriptionStatus {
+  incomplete
+  trialing
+  active
+  past_due
+  canceled
+  unpaid
+}
+
+enum DocumentStatus {
+  pending
+  approved
+  rejected
+}
+
+enum FlagStatus {
+  open
+  under_review
+  resolved_action_taken
+  resolved_no_action
+}
+
+model User {
+  id              String        @id @default(cuid())
+  clerkUserId     String        @unique
+  email           String        @unique
+  firstName       String?
+  lastName        String?
+  role            Role
+  orgId           String?
+  organization    Organization? @relation(fields: [orgId], references: [id])
+  emailVerified   Boolean       @default(false)
+  emailVerifiedAt DateTime?
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  sentMessages Message[]
+  referrals    Referral[] @relation("ReferentUserReferrals")
+  handledLeads Lead[]     @relation("LeadHandler")
+}
+
+model Organization {
+  id                        String             @id @default(cuid())
+  type                      OrganizationType
+  name                      String
+  phone                     String?
+  email                     String?
+  website                   String?
+  subscriptionPlan          String?
+  subscriptionStatus        SubscriptionStatus?
+  subscriptionBillingCycle  String?
+  stripeCustomerId          String?
+  stripeSubscriptionId      String?
+  subscriptionRenewsAt      DateTime?
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
+
+  users              User[]
+  referentDetails    ReferentOrganization?
+  profiles           AftercareProfile[]
+  leads              Lead[]
+  referentReferrals  Referral[] @relation("ReferentOrgReferrals")
+  aftercareReferrals Referral[] @relation("AftercareOrgReferrals")
+}
+
+model ReferentOrganization {
+  id                       String       @id @default(cuid())
+  orgId                    String       @unique
+  organization             Organization @relation(fields: [orgId], references: [id])
+  orgTypeDetail            String
+  healthSystemAffiliation  String?
+  medicalRecordsFax        String?
+  npiNumber                String?
+  stateLicenseNumber       String?
+  ehrSystem                String?
+  statesOperatedIn         String[]
+  levelsOfCare             String[]
+  avgMonthlyReferrals      String?
+}
+
+model AftercareProfile {
+  id                              String        @id @default(cuid())
+  orgId                           String
+  organization                    Organization  @relation(fields: [orgId], references: [id])
+  type                            ProfileType
+  programName                     String
+  slug                            String        @unique
+  status                          ProfileStatus @default(draft)
+  verificationTier                Int           @default(1)
+  streetAddress                   String?
+  city                            String
+  state                           String
+  zip                             String?
+  publicCity                      String
+  publicState                     String
+  latitude                        Decimal?
+  longitude                       Decimal?
+  admissionsContactPhone          String?
+  admissionsContactEmail          String?
+  preferredContactMethod          String?
+  populationServed                String?
+  specialtyPopulations            String[]
+  totalBeds                       Int?
+  bedsMen                         Int?
+  bedsWomen                       Int?
+  bedsLgbtq                       Int?
+  bedsAvailable                   Int?
+  bedsAvailableUpdatedAt          DateTime?
+  acceptingNewPatients            Boolean?
+  acceptingNewPatientsUpdatedAt   DateTime?
+  nextAvailableDate               DateTime?
+  availabilityNotes               String?
+  pricePerWeek                    Int?
+  fundingAvailable                Boolean?
+  fundingNotes                    String?
+  insuranceAccepted               String[]
+  supportServices                 String[]
+  amenities                       String[]
+  description                     String?
+  houseRulesUrl                   String?
+  videoUrls                       String[]
+  publishedAt                     DateTime?
+  createdAt                       DateTime      @default(now())
+  updatedAt                       DateTime      @updatedAt
+
+  certifications VerificationDocument[]
+  referrals      Referral[]
+  leads          Lead[]
+}
+
+model VerificationDocument {
+  id          String           @id @default(cuid())
+  profileId   String
+  profile     AftercareProfile @relation(fields: [profileId], references: [id])
+  documentType String
+  url         String
+  expiresAt   DateTime?
+  status      DocumentStatus   @default(pending)
+  submittedAt DateTime         @default(now())
+  reviewedAt  DateTime?
+  notes       String?
+}
+
+model Referral {
+  id                    String           @id @default(cuid())
+  referentUserId         String
+  referentUser           User             @relation("ReferentUserReferrals", fields: [referentUserId], references: [id])
+  referentOrgId          String
+  referentOrg            Organization     @relation("ReferentOrgReferrals", fields: [referentOrgId], references: [id])
+  aftercareOrgId         String
+  aftercareOrg           Organization     @relation("AftercareOrgReferrals", fields: [aftercareOrgId], references: [id])
+  aftercareProfileId     String
+  aftercareProfile       AftercareProfile @relation(fields: [aftercareProfileId], references: [id])
+  caseManagerName        String
+  caseManagerEmail       String
+  caseManagerPhone       String
+  caseManagerOrganization String
+  clientAgeRange         String
+  supportCategory        String
+  insuranceCategory      String
+  preferredStartWindow   String
+  specialNeeds           String[]
+  reasonForReferral      String
+  status                 ReferralStatus   @default(pending)
+  statusUpdatedAt        DateTime         @default(now())
+  waitlistPosition       Int?
+  expectedAvailabilityDate DateTime?
+  declineReason          String?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  messages Message[]
+}
+
+model Message {
+  id           String   @id @default(cuid())
+  referralId   String
+  referral     Referral @relation(fields: [referralId], references: [id])
+  senderUserId String
+  senderUser   User     @relation(fields: [senderUserId], references: [id])
+  senderRole   Role
+  body         String
+  readAt       DateTime?
+  createdAt    DateTime @default(now())
+}
+
+model Lead {
+  id              String           @id @default(cuid())
+  profileId       String
+  profile         AftercareProfile @relation(fields: [profileId], references: [id])
+  aftercareOrgId  String
+  aftercareOrg    Organization     @relation(fields: [aftercareOrgId], references: [id])
+  name            String
+  email           String
+  phone           String?
+  message         String
+  source          String           @default("public_profile_contact")
+  status          LeadStatus       @default(new)
+  handledByUserId String?
+  handledByUser   User?            @relation("LeadHandler", fields: [handledByUserId], references: [id])
+  handledAt       DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Flag {
+  id                 String     @id @default(cuid())
+  profileId           String
+  reportedByUserId    String?
+  flagType            String
+  description         String
+  status              FlagStatus @default(open)
+  resolvedByUserId    String?
+  resolvedAt          DateTime?
+  createdAt           DateTime   @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+}
+

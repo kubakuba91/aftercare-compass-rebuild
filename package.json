@@ -1,0 +1,44 @@
+{
+  "name": "aftercare-compass-rebuild",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "prisma:generate": "prisma generate",
+    "prisma:validate": "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/aftercare DIRECT_URL=postgresql://postgres:postgres@localhost:5432/aftercare prisma validate"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "latest",
+    "@hookform/resolvers": "latest",
+    "@prisma/client": "6",
+    "@supabase/supabase-js": "latest",
+    "class-variance-authority": "latest",
+    "clsx": "latest",
+    "lucide-react": "latest",
+    "next": "15",
+    "react": "19",
+    "react-dom": "19",
+    "react-email": "latest",
+    "react-hook-form": "latest",
+    "resend": "latest",
+    "stripe": "latest",
+    "tailwind-merge": "latest",
+    "zod": "latest",
+    "zustand": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "eslint": "8",
+    "eslint-config-next": "15",
+    "prisma": "6",
+    "tailwindcss": "latest",
+    "typescript": "latest"
+  }
+}

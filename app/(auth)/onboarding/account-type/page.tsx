@@ -1,6 +1,6 @@
 import { Building2, Hospital, Home } from "lucide-react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { selectAccountType } from "../actions";
 
 const accountTypes = [
   {
@@ -41,12 +41,12 @@ export default function AccountTypePage() {
               <Icon className="text-primary" size={24} />
               <h2 className="mt-4 text-lg font-semibold">{accountType.title}</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{accountType.description}</p>
-              <form action={selectAccountType} className="mt-5">
-                <input type="hidden" name="accountType" value={accountType.value} />
-                <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
-                  Continue
-                </button>
-              </form>
+              <Link
+                className="focus-ring mt-5 inline-flex min-h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                href={`/onboarding/start/${accountType.value}`}
+              >
+                Continue
+              </Link>
             </Card>
           );
         })}

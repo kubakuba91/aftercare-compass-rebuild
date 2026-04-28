@@ -13,16 +13,6 @@ export async function createAftercareProfileDraft(formData: FormData) {
     redirect("/setup?missing=database");
   }
 
-  const identity = await getRequiredClerkIdentity();
-  const user = await prisma.user.findUnique({
-    where: { clerkUserId: identity.clerkUserId },
-    select: { orgId: true, role: true }
-  });
-
-  if (!user?.orgId || user.role !== Role.aftercare_admin) {
-    redirect("/onboarding/account-type");
-  }
-
   const parsed = aftercareProfileDraftSchema.parse({
     profileType: formData.get("profileType"),
     programName: formData.get("programName"),
@@ -44,34 +34,52 @@ export async function createAftercareProfileDraft(formData: FormData) {
   const baseSlug = slugify(parsed.programName);
   const slug = `${baseSlug}-${Date.now().toString(36)}`;
 
-  const profile = await prisma.aftercareProfile.create({
-    data: {
-      orgId: user.orgId,
-      type: profileType,
-      programName: parsed.programName,
-      slug,
-      status: ProfileStatus.draft,
-      streetAddress: parsed.streetAddress,
-      city: parsed.city,
-      state: parsed.state,
-      zip: parsed.zip,
-      publicCity: parsed.city,
-      publicState: parsed.state,
-      admissionsContactPhone: parsed.admissionsContactPhone,
-      admissionsContactEmail: parsed.admissionsContactEmail,
-      description: parsed.description,
-      populationServed: parsed.populationServed,
-      totalBeds: profileType === ProfileType.sober_living ? parsed.totalBeds : null,
-      bedsAvailable: profileType === ProfileType.sober_living ? parsed.bedsAvailable : null,
-      bedsAvailableUpdatedAt: profileType === ProfileType.sober_living ? new Date() : null,
-      acceptingNewPatients:
-        profileType === ProfileType.continued_care ? parsed.acceptingNewPatients === "yes" : null,
-      acceptingNewPatientsUpdatedAt:
-        profileType === ProfileType.continued_care ? new Date() : null
-    },
-    select: { id: true }
-  });
+  let profileId: string;
 
-  redirect(`/dashboard/aftercare?profile=${profile.id}`);
+  try {
+    const identity = await getRequiredClerkIdentity();
+    const user = await prisma.user.findUnique({
+      where: { clerkUserId: identity.clerkUserId },
+      select: { orgId: true, role: true }
+    });
+
+    if (!user?.orgId || user.role !== Role.aftercare_admin) {
+      redirect("/onboarding/account-type");
+    }
+
+    const profile = await prisma.aftercareProfile.create({
+      data: {
+        orgId: user.orgId,
+        type: profileType,
+        programName: parsed.programName,
+        slug,
+        status: ProfileStatus.draft,
+        streetAddress: parsed.streetAddress,
+        city: parsed.city,
+        state: parsed.state,
+        zip: parsed.zip,
+        publicCity: parsed.city,
+        publicState: parsed.state,
+        admissionsContactPhone: parsed.admissionsContactPhone,
+        admissionsContactEmail: parsed.admissionsContactEmail,
+        description: parsed.description,
+        populationServed: parsed.populationServed,
+        totalBeds: profileType === ProfileType.sober_living ? parsed.totalBeds : null,
+        bedsAvailable: profileType === ProfileType.sober_living ? parsed.bedsAvailable : null,
+        bedsAvailableUpdatedAt: profileType === ProfileType.sober_living ? new Date() : null,
+        acceptingNewPatients:
+          profileType === ProfileType.continued_care ? parsed.acceptingNewPatients === "yes" : null,
+        acceptingNewPatientsUpdatedAt:
+          profileType === ProfileType.continued_care ? new Date() : null
+      },
+      select: { id: true }
+    });
+
+    profileId = profile.id;
+  } catch (error) {
+    console.error("Aftercare profile draft creation failed", error);
+    redirect("/setup?missing=database&from=aftercare-profile");
+  }
+
+  redirect(`/dashboard/aftercare?profile=${profileId}`);
 }
-

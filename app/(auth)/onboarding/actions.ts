@@ -23,11 +23,10 @@ export async function selectAccountType(formData: FormData) {
     throw new Error("Invalid account type");
   }
 
-  const identity = await getRequiredClerkIdentity();
-
   let destination = "/dashboard";
 
   try {
+    const identity = await getRequiredClerkIdentity();
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [{ email: identity.email }, { clerkUserId: identity.clerkUserId }]
@@ -90,7 +89,7 @@ export async function selectAccountType(formData: FormData) {
     }
   } catch (error) {
     console.error("Account type onboarding failed", error);
-    redirect("/setup?missing=database&from=account-type");
+    redirect("/sign-in?redirect_url=/onboarding/account-type");
   }
 
   redirect(destination);

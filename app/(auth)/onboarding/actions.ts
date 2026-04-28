@@ -24,58 +24,74 @@ export async function selectAccountType(formData: FormData) {
   }
 
   const identity = await getRequiredClerkIdentity();
-  const existingUser = await prisma.user.findUnique({
-    where: { email: identity.email },
-    select: { orgId: true }
-  });
 
-  if (existingUser?.orgId) {
-    redirect("/dashboard");
-  }
+  let destination = "/dashboard";
 
-  const orgType = accountTypeToOrgType[accountType as keyof typeof accountTypeToOrgType];
-  const role = defaultRoleForAccountType(accountType);
-  const organizationName =
-    accountType === "referent"
-      ? `${identity.email} Referent Organization`
-      : `${identity.email} Aftercare Organization`;
+  try {
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: identity.email }, { clerkUserId: identity.clerkUserId }]
+      },
+      select: { id: true, orgId: true }
+    });
 
-  const organization = await prisma.organization.create({
-    data: {
-      type: orgType,
-      name: organizationName,
-      email: identity.email
-    },
-    select: { id: true }
-  });
+    if (existingUser?.orgId) {
+      destination = "/dashboard";
+    } else {
+      const orgType = accountTypeToOrgType[accountType as keyof typeof accountTypeToOrgType];
+      const role = defaultRoleForAccountType(accountType);
+      const organizationName =
+        accountType === "referent"
+          ? `${identity.email} Referent Organization`
+          : `${identity.email} Aftercare Organization`;
 
-  await prisma.user.upsert({
-    where: { clerkUserId: identity.clerkUserId },
-    update: {
-      email: identity.email,
-      firstName: identity.firstName,
-      lastName: identity.lastName,
-      role,
-      orgId: organization.id,
-      emailVerified: identity.emailVerified,
-      emailVerifiedAt: identity.emailVerified ? new Date() : null
-    },
-    create: {
-      clerkUserId: identity.clerkUserId,
-      email: identity.email,
-      firstName: identity.firstName,
-      lastName: identity.lastName,
-      role,
-      orgId: organization.id,
-      emailVerified: identity.emailVerified,
-      emailVerifiedAt: identity.emailVerified ? new Date() : null
+      const organization = await prisma.organization.create({
+        data: {
+          type: orgType,
+          name: organizationName,
+          email: identity.email
+        },
+        select: { id: true }
+      });
+
+      if (existingUser) {
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            clerkUserId: identity.clerkUserId,
+            email: identity.email,
+            firstName: identity.firstName,
+            lastName: identity.lastName,
+            role,
+            orgId: organization.id,
+            emailVerified: identity.emailVerified,
+            emailVerifiedAt: identity.emailVerified ? new Date() : null
+          }
+        });
+      } else {
+        await prisma.user.create({
+          data: {
+            clerkUserId: identity.clerkUserId,
+            email: identity.email,
+            firstName: identity.firstName,
+            lastName: identity.lastName,
+            role,
+            orgId: organization.id,
+            emailVerified: identity.emailVerified,
+            emailVerifiedAt: identity.emailVerified ? new Date() : null
+          }
+        });
+      }
+
+      destination =
+        accountType === "referent"
+          ? "/dashboard/referent"
+          : `/onboarding/aftercare/profile?type=${accountType}`;
     }
-  });
-
-  if (accountType === "referent") {
-    redirect("/dashboard/referent");
+  } catch (error) {
+    console.error("Account type onboarding failed", error);
+    redirect("/setup?missing=database&from=account-type");
   }
 
-  redirect(`/onboarding/aftercare/profile?type=${accountType}`);
+  redirect(destination);
 }
-

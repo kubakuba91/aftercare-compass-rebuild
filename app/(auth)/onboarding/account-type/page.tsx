@@ -1,18 +1,22 @@
 import { Building2, Hospital, Home } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { selectAccountType } from "../actions";
 
 const accountTypes = [
   {
+    value: "referent",
     title: "I refer patients",
     description: "Hospitals, inpatient centers, crisis centers, RTCs, and community organizations.",
     icon: Hospital
   },
   {
+    value: "sober_living",
     title: "I manage a Sober Living Home",
     description: "Create provider profiles, manage bed availability, and receive referrals.",
     icon: Home
   },
   {
+    value: "continued_care",
     title: "I manage a Continued Care Program",
     description: "Publish IOP, PHP, OP, MAT, and dual diagnosis program availability.",
     icon: Building2
@@ -37,6 +41,12 @@ export default function AccountTypePage() {
               <Icon className="text-primary" size={24} />
               <h2 className="mt-4 text-lg font-semibold">{accountType.title}</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{accountType.description}</p>
+              <form action={selectAccountType} className="mt-5">
+                <input type="hidden" name="accountType" value={accountType.value} />
+                <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                  Continue
+                </button>
+              </form>
             </Card>
           );
         })}
@@ -44,4 +54,3 @@ export default function AccountTypePage() {
     </main>
   );
 }
-

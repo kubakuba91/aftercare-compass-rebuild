@@ -1,5 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 export async function getRequiredClerkIdentity() {
   const clerkUser = await currentUser();
@@ -35,5 +36,24 @@ export function defaultRoleForAccountType(accountType: string): Role {
   }
 
   return Role.aftercare_admin;
+}
+
+export async function getCurrentAppUser() {
+  const identity = await getRequiredClerkIdentity();
+
+  return prisma.user.findUnique({
+    where: { clerkUserId: identity.clerkUserId },
+    include: { organization: true }
+  });
+}
+
+export async function requireCurrentAppUser() {
+  const appUser = await getCurrentAppUser();
+
+  if (!appUser) {
+    throw new Error("App user not found");
+  }
+
+  return appUser;
 }
 

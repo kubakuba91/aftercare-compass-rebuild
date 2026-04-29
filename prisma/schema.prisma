@@ -169,6 +169,9 @@ model AftercareProfile {
   bedsMen                         Int?
   bedsWomen                       Int?
   bedsLgbtq                       Int?
+  bedsMenAvailable                Int?
+  bedsWomenAvailable              Int?
+  bedsLgbtqAvailable              Int?
   roomTypes                       String[]      @default([])
   bedsReservedNotes               String?
   wheelchairAccessibleBeds        Int?

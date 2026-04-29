@@ -142,24 +142,29 @@ export const stepOneSchema = z.object({
 export const stepTwoSchema = z
   .object({
     profileId: requiredText,
-    totalBeds: z.coerce.number().int().nonnegative(),
-    bedsAvailable: z.coerce.number().int().nonnegative(),
     bedsMen: z.coerce.number().int().nonnegative(),
+    bedsMenAvailable: z.coerce.number().int().nonnegative(),
     bedsWomen: z.coerce.number().int().nonnegative(),
+    bedsWomenAvailable: z.coerce.number().int().nonnegative(),
     bedsLgbtq: z.coerce.number().int().nonnegative(),
+    bedsLgbtqAvailable: z.coerce.number().int().nonnegative(),
     roomTypes: z.array(z.string()).min(1),
     bedsReservedNotes: optionalText,
     wheelchairAccessible: z.enum(["yes", "no"]),
     wheelchairAccessibleBeds: z.coerce.number().int().nonnegative().optional(),
     pricePerWeek: z.coerce.number().int().nonnegative()
   })
-  .refine((data) => data.bedsMen + data.bedsWomen + data.bedsLgbtq === data.totalBeds, {
-    message: "Bed breakdown must equal total beds.",
-    path: ["totalBeds"]
+  .refine((data) => data.bedsMenAvailable <= data.bedsMen, {
+    message: "Available men beds cannot exceed total men beds.",
+    path: ["bedsMenAvailable"]
   })
-  .refine((data) => data.bedsAvailable <= data.totalBeds, {
-    message: "Available beds cannot exceed total beds.",
-    path: ["bedsAvailable"]
+  .refine((data) => data.bedsWomenAvailable <= data.bedsWomen, {
+    message: "Available women beds cannot exceed total women beds.",
+    path: ["bedsWomenAvailable"]
+  })
+  .refine((data) => data.bedsLgbtqAvailable <= data.bedsLgbtq, {
+    message: "Available LGBTQ+ beds cannot exceed total LGBTQ+ beds.",
+    path: ["bedsLgbtqAvailable"]
   });
 
 export const stepThreeSchema = z.object({

@@ -109,6 +109,44 @@ function selectedPopulation(values?: string[] | null, legacyValue?: string | nul
   return [];
 }
 
+function bedFieldsForPopulation(
+  label: string,
+  totalName: string,
+  availableName: string,
+  totalValue?: number | null,
+  availableValue?: number | null
+) {
+  return (
+    <div className="rounded-md border border-border bg-white p-4">
+      <h3 className="text-sm font-semibold">{label} beds</h3>
+      <div className="mt-3 grid gap-4 md:grid-cols-2">
+        <label className="grid gap-2 text-sm font-medium">
+          Total beds
+          <input
+            name={totalName}
+            type="number"
+            min="0"
+            required
+            defaultValue={totalValue ?? ""}
+            className={fieldClassName()}
+          />
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          Available beds
+          <input
+            name={availableName}
+            type="number"
+            min="0"
+            required
+            defaultValue={availableValue ?? ""}
+            className={fieldClassName()}
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
 function OnboardingRecoveryCard() {
   return (
     <main className="shell flex min-h-screen items-center justify-center py-10">
@@ -209,6 +247,7 @@ export default async function SoberLivingStepPage({
   const step = soberLivingSteps[currentStep - 1];
   const action = saveSoberLivingOnboardingStep.bind(null, currentStep);
   const selected = (values?: string[] | null) => values ?? [];
+  const servedPopulations = selectedPopulation(profile?.populationServedOptions, profile?.populationServed);
 
   return (
     <main className="grid min-h-screen lg:grid-cols-[320px_1fr]">
@@ -290,29 +329,34 @@ export default async function SoberLivingStepPage({
 
               {currentStep === 2 ? (
                 <>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <label className="grid gap-2 text-sm font-medium">
-                      Total beds
-                      <input name="totalBeds" type="number" min="0" required defaultValue={profile?.totalBeds ?? ""} className={fieldClassName()} />
-                    </label>
-                    <label className="grid gap-2 text-sm font-medium">
-                      Beds available
-                      <input name="bedsAvailable" type="number" min="0" required defaultValue={profile?.bedsAvailable ?? ""} className={fieldClassName()} />
-                    </label>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <label className="grid gap-2 text-sm font-medium">
-                      Men beds
-                      <input name="bedsMen" type="number" min="0" required defaultValue={profile?.bedsMen ?? ""} className={fieldClassName()} />
-                    </label>
-                    <label className="grid gap-2 text-sm font-medium">
-                      Women beds
-                      <input name="bedsWomen" type="number" min="0" required defaultValue={profile?.bedsWomen ?? ""} className={fieldClassName()} />
-                    </label>
-                    <label className="grid gap-2 text-sm font-medium">
-                      LGBTQ+ beds
-                      <input name="bedsLgbtq" type="number" min="0" required defaultValue={profile?.bedsLgbtq ?? ""} className={fieldClassName()} />
-                    </label>
+                  <div className="grid gap-3">
+                    {servedPopulations.includes("Men")
+                      ? bedFieldsForPopulation(
+                          "Men",
+                          "bedsMen",
+                          "bedsMenAvailable",
+                          profile?.bedsMen,
+                          profile?.bedsMenAvailable
+                        )
+                      : null}
+                    {servedPopulations.includes("Women")
+                      ? bedFieldsForPopulation(
+                          "Women",
+                          "bedsWomen",
+                          "bedsWomenAvailable",
+                          profile?.bedsWomen,
+                          profile?.bedsWomenAvailable
+                        )
+                      : null}
+                    {servedPopulations.includes("LGBTQ+")
+                      ? bedFieldsForPopulation(
+                          "LGBTQ+",
+                          "bedsLgbtq",
+                          "bedsLgbtqAvailable",
+                          profile?.bedsLgbtq,
+                          profile?.bedsLgbtqAvailable
+                        )
+                      : null}
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Room types

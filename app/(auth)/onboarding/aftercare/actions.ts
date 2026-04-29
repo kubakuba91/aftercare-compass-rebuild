@@ -200,11 +200,12 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
     if (step === 2) {
       const parsed = stepTwoSchema.parse({
         profileId: formData.get("profileId"),
-        totalBeds: formData.get("totalBeds"),
-        bedsAvailable: formData.get("bedsAvailable"),
-        bedsMen: formData.get("bedsMen"),
-        bedsWomen: formData.get("bedsWomen"),
-        bedsLgbtq: formData.get("bedsLgbtq"),
+        bedsMen: formData.get("bedsMen") || "0",
+        bedsMenAvailable: formData.get("bedsMenAvailable") || "0",
+        bedsWomen: formData.get("bedsWomen") || "0",
+        bedsWomenAvailable: formData.get("bedsWomenAvailable") || "0",
+        bedsLgbtq: formData.get("bedsLgbtq") || "0",
+        bedsLgbtqAvailable: formData.get("bedsLgbtqAvailable") || "0",
         roomTypes: valuesFromForm(formData, "roomTypes"),
         bedsReservedNotes: formData.get("bedsReservedNotes") || undefined,
         wheelchairAccessible: formData.get("wheelchairAccessible"),
@@ -212,16 +213,23 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         pricePerWeek: formData.get("pricePerWeek")
       });
 
+      const totalBeds = parsed.bedsMen + parsed.bedsWomen + parsed.bedsLgbtq;
+      const bedsAvailable =
+        parsed.bedsMenAvailable + parsed.bedsWomenAvailable + parsed.bedsLgbtqAvailable;
+
       await requireOwnedSoberLivingProfile(parsed.profileId, organization.orgId);
       await prisma.aftercareProfile.update({
         where: { id: parsed.profileId },
         data: {
-          totalBeds: parsed.totalBeds,
-          bedsAvailable: parsed.bedsAvailable,
+          totalBeds,
+          bedsAvailable,
           bedsAvailableUpdatedAt: new Date(),
           bedsMen: parsed.bedsMen,
+          bedsMenAvailable: parsed.bedsMenAvailable,
           bedsWomen: parsed.bedsWomen,
+          bedsWomenAvailable: parsed.bedsWomenAvailable,
           bedsLgbtq: parsed.bedsLgbtq,
+          bedsLgbtqAvailable: parsed.bedsLgbtqAvailable,
           roomTypes: parsed.roomTypes,
           bedsReservedNotes: nullableText(parsed.bedsReservedNotes),
           wheelchairAccessibleBeds:

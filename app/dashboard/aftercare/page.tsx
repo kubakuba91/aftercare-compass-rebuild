@@ -39,6 +39,10 @@ export default async function AftercareDashboardPage() {
     const profileType =
       appUser.organization?.type === "aftercare_continued_care" ? "continued_care" : "sober_living";
 
+    if (profileType === "sober_living") {
+      redirect("/onboarding/aftercare/sober-living/1");
+    }
+
     redirect(`/onboarding/aftercare/profile?type=${profileType}`);
   }
 
@@ -69,7 +73,7 @@ export default async function AftercareDashboardPage() {
         </div>
         <Link
           className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-          href="/onboarding/aftercare/profile?type=sober_living"
+          href="/onboarding/aftercare/sober-living/1?new=1"
         >
           Add profile
         </Link>

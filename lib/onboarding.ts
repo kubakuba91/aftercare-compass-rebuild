@@ -109,5 +109,9 @@ export function destinationForAccountType(accountType: AccountType, alreadyOnboa
     return "/dashboard/referent";
   }
 
+  if (accountType === "sober_living") {
+    return "/onboarding/aftercare/sober-living/1";
+  }
+
   return `/onboarding/aftercare/profile?type=${accountType}`;
 }

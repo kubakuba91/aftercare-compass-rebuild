@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { redirect } from "next/navigation";
 import { createAftercareProfileDraft } from "../actions";
 
 export default async function AftercareProfileOnboardingPage({
@@ -9,6 +10,10 @@ export default async function AftercareProfileOnboardingPage({
   const params = await searchParams;
   const profileType = params.type === "continued_care" ? "continued_care" : "sober_living";
   const isSoberLiving = profileType === "sober_living";
+
+  if (isSoberLiving) {
+    redirect("/onboarding/aftercare/sober-living/1");
+  }
 
   return (
     <main className="shell py-10">

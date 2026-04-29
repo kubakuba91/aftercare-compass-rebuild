@@ -160,12 +160,18 @@ model AftercareProfile {
   admissionsContactPhone          String?
   admissionsContactEmail          String?
   preferredContactMethod          String?
+  websiteUrl                      String?
   populationServed                String?
   specialtyPopulations            String[]      @default([])
+  certificationsHeld              String[]      @default([])
   totalBeds                       Int?
   bedsMen                         Int?
   bedsWomen                       Int?
   bedsLgbtq                       Int?
+  roomTypes                       String[]      @default([])
+  bedsReservedNotes               String?
+  wheelchairAccessibleBeds        Int?
+  averageLengthOfStay             String?
   bedsAvailable                   Int?
   bedsAvailableUpdatedAt          DateTime?
   acceptingNewPatients            Boolean?
@@ -178,9 +184,19 @@ model AftercareProfile {
   insuranceAccepted               String[]      @default([])
   supportServices                 String[]      @default([])
   amenities                       String[]      @default([])
+  medicationAdministration        String?
+  matAccepted                     String[]      @default([])
+  medicationRestrictions          String?
+  drugTestingPolicy               String?
   description                     String?
   houseRulesUrl                   String?
+  houseRulesText                  String?
+  photoReadiness                  String[]      @default([])
   videoUrls                       String[]      @default([])
+  goodNeighborPolicyAcknowledged  Boolean       @default(false)
+  referralFitNotes                String?
+  onboardingStep                  Int           @default(1)
+  onboardingCompletedAt           DateTime?
   publishedAt                     DateTime?
   createdAt                       DateTime      @default(now())
   updatedAt                       DateTime      @updatedAt

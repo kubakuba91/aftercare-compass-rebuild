@@ -1,0 +1,17 @@
+ALTER TABLE "AftercareProfile"
+ADD COLUMN "websiteUrl" TEXT,
+ADD COLUMN "averageLengthOfStay" TEXT,
+ADD COLUMN "certificationsHeld" TEXT[] DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN "roomTypes" TEXT[] DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN "bedsReservedNotes" TEXT,
+ADD COLUMN "wheelchairAccessibleBeds" INTEGER,
+ADD COLUMN "medicationAdministration" TEXT,
+ADD COLUMN "matAccepted" TEXT[] DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN "medicationRestrictions" TEXT,
+ADD COLUMN "drugTestingPolicy" TEXT,
+ADD COLUMN "houseRulesText" TEXT,
+ADD COLUMN "photoReadiness" TEXT[] DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN "goodNeighborPolicyAcknowledged" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN "referralFitNotes" TEXT,
+ADD COLUMN "onboardingStep" INTEGER NOT NULL DEFAULT 1,
+ADD COLUMN "onboardingCompletedAt" TIMESTAMP(3);

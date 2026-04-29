@@ -26,6 +26,7 @@ export async function ensureOnboardingOrganization(accountType: AccountType) {
       organization: {
         select: {
           type: true,
+          id: true,
           _count: {
             select: { profiles: true }
           }
@@ -40,7 +41,23 @@ export async function ensureOnboardingOrganization(accountType: AccountType) {
       existingUser.organization?.type === OrganizationType.aftercare_sober_living ||
       existingUser.organization?.type === OrganizationType.aftercare_continued_care;
 
-    return { alreadyOnboarded: !isAftercareOrg || hasAftercareProfile };
+    if (!isAftercareOrg && accountType !== "referent" && !hasAftercareProfile) {
+      const role = defaultRoleForAccountType(accountType);
+
+      await prisma.organization.update({
+        where: { id: existingUser.orgId },
+        data: { type: accountTypeToOrgType[accountType] }
+      });
+
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { role }
+      });
+
+      return { alreadyOnboarded: false, orgId: existingUser.orgId };
+    }
+
+    return { alreadyOnboarded: !isAftercareOrg || hasAftercareProfile, orgId: existingUser.orgId };
   }
 
   const role = defaultRoleForAccountType(accountType);
@@ -80,7 +97,7 @@ export async function ensureOnboardingOrganization(accountType: AccountType) {
     });
   }
 
-  return { alreadyOnboarded: false };
+  return { alreadyOnboarded: false, orgId: organization.id };
 }
 
 export function destinationForAccountType(accountType: AccountType, _alreadyOnboarded: boolean) {

@@ -1,8 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { ProfileStatus, ProfileType, Role } from "@prisma/client";
-import { getRequiredClerkIdentity } from "@/lib/current-user";
+import { ProfileStatus, ProfileType } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
@@ -38,21 +37,11 @@ export async function createAftercareProfileDraft(formData: FormData) {
   let profileId: string;
 
   try {
-    await ensureOnboardingOrganization(parsed.profileType);
-
-    const identity = await getRequiredClerkIdentity();
-    const user = await prisma.user.findUnique({
-      where: { clerkUserId: identity.clerkUserId },
-      select: { orgId: true, role: true }
-    });
-
-    if (!user?.orgId || user.role !== Role.aftercare_admin) {
-      redirect("/onboarding/account-type");
-    }
+    const organization = await ensureOnboardingOrganization(parsed.profileType);
 
     const profile = await prisma.aftercareProfile.create({
       data: {
-        orgId: user.orgId,
+        orgId: organization.orgId,
         type: profileType,
         programName: parsed.programName,
         slug,

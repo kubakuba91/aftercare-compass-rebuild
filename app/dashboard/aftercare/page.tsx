@@ -51,6 +51,13 @@ export default async function AftercareDashboardPage() {
     ["Availability updates", profiles.filter((profile) => profile.updatedAt).length.toString()]
   ];
 
+  if (profiles.length === 0) {
+    const profileType =
+      appUser.organization?.type === "aftercare_continued_care" ? "continued_care" : "sober_living";
+
+    redirect(`/onboarding/aftercare/profile?type=${profileType}`);
+  }
+
   return (
     <main className="shell py-8">
       <Badge tone="verified">Aftercare dashboard</Badge>

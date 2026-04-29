@@ -20,11 +20,27 @@ export async function ensureOnboardingOrganization(accountType: AccountType) {
     where: {
       OR: [{ email: identity.email }, { clerkUserId: identity.clerkUserId }]
     },
-    select: { id: true, orgId: true }
+    select: {
+      id: true,
+      orgId: true,
+      organization: {
+        select: {
+          type: true,
+          _count: {
+            select: { profiles: true }
+          }
+        }
+      }
+    }
   });
 
   if (existingUser?.orgId) {
-    return { alreadyOnboarded: true };
+    const hasAftercareProfile = (existingUser.organization?._count.profiles ?? 0) > 0;
+    const isAftercareOrg =
+      existingUser.organization?.type === OrganizationType.aftercare_sober_living ||
+      existingUser.organization?.type === OrganizationType.aftercare_continued_care;
+
+    return { alreadyOnboarded: !isAftercareOrg || hasAftercareProfile };
   }
 
   const role = defaultRoleForAccountType(accountType);
@@ -78,4 +94,3 @@ export function destinationForAccountType(accountType: AccountType, alreadyOnboa
 
   return `/onboarding/aftercare/profile?type=${accountType}`;
 }
-

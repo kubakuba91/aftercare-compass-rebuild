@@ -38,6 +38,14 @@ export async function createAftercareProfileDraft(formData: FormData) {
 
   try {
     const organization = await ensureOnboardingOrganization(parsed.profileType);
+    const existingProfile = await prisma.aftercareProfile.findFirst({
+      where: { orgId: organization.orgId },
+      select: { id: true }
+    });
+
+    if (existingProfile) {
+      redirect("/dashboard/aftercare");
+    }
 
     const profile = await prisma.aftercareProfile.create({
       data: {

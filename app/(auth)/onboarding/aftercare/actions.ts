@@ -6,6 +6,7 @@ import { getRequiredClerkIdentity } from "@/lib/current-user";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
+import { ensureOnboardingOrganization } from "@/lib/onboarding";
 import { aftercareProfileDraftSchema } from "@/lib/validations/onboarding";
 
 export async function createAftercareProfileDraft(formData: FormData) {
@@ -37,6 +38,8 @@ export async function createAftercareProfileDraft(formData: FormData) {
   let profileId: string;
 
   try {
+    await ensureOnboardingOrganization(parsed.profileType);
+
     const identity = await getRequiredClerkIdentity();
     const user = await prisma.user.findUnique({
       where: { clerkUserId: identity.clerkUserId },

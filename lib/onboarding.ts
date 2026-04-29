@@ -83,11 +83,7 @@ export async function ensureOnboardingOrganization(accountType: AccountType) {
   return { alreadyOnboarded: false };
 }
 
-export function destinationForAccountType(accountType: AccountType, alreadyOnboarded: boolean) {
-  if (alreadyOnboarded) {
-    return "/dashboard";
-  }
-
+export function destinationForAccountType(accountType: AccountType, _alreadyOnboarded: boolean) {
   if (accountType === "referent") {
     return "/dashboard/referent";
   }

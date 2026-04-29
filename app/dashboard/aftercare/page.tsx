@@ -18,23 +18,31 @@ export default async function AftercareDashboardPage() {
     redirect("/onboarding/account-type");
   }
 
-  const [profiles, leadCount, openReferralCount] = await Promise.all([
-    prisma.aftercareProfile.findMany({
-      where: { orgId: appUser.orgId },
-      orderBy: { updatedAt: "desc" },
-      select: {
-        id: true,
-        programName: true,
-        type: true,
-        status: true,
-        publicCity: true,
-        publicState: true,
-        totalBeds: true,
-        bedsAvailable: true,
-        acceptingNewPatients: true,
-        updatedAt: true
-      }
-    }),
+  const profiles = await prisma.aftercareProfile.findMany({
+    where: { orgId: appUser.orgId },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      programName: true,
+      type: true,
+      status: true,
+      publicCity: true,
+      publicState: true,
+      totalBeds: true,
+      bedsAvailable: true,
+      acceptingNewPatients: true,
+      updatedAt: true
+    }
+  });
+
+  if (profiles.length === 0) {
+    const profileType =
+      appUser.organization?.type === "aftercare_continued_care" ? "continued_care" : "sober_living";
+
+    redirect(`/onboarding/aftercare/profile?type=${profileType}`);
+  }
+
+  const [leadCount, openReferralCount] = await Promise.all([
     prisma.lead.count({ where: { aftercareOrgId: appUser.orgId } }),
     prisma.referral.count({
       where: {
@@ -50,13 +58,6 @@ export default async function AftercareDashboardPage() {
     ["Public leads", leadCount.toString()],
     ["Availability updates", profiles.filter((profile) => profile.updatedAt).length.toString()]
   ];
-
-  if (profiles.length === 0) {
-    const profileType =
-      appUser.organization?.type === "aftercare_continued_care" ? "continued_care" : "sober_living";
-
-    redirect(`/onboarding/aftercare/profile?type=${profileType}`);
-  }
 
   return (
     <main className="shell py-8">

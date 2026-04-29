@@ -36,6 +36,18 @@ export async function ensureOnboardingOrganization(accountType: AccountType) {
   });
 
   if (existingUser?.orgId) {
+    await prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        clerkUserId: identity.clerkUserId,
+        email: identity.email,
+        firstName: identity.firstName,
+        lastName: identity.lastName,
+        emailVerified: identity.emailVerified,
+        emailVerifiedAt: identity.emailVerified ? new Date() : null
+      }
+    });
+
     const hasAftercareProfile = (existingUser.organization?._count.profiles ?? 0) > 0;
     const isAftercareOrg =
       existingUser.organization?.type === OrganizationType.aftercare_sober_living ||

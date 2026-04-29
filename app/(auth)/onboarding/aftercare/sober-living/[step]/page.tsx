@@ -109,6 +109,34 @@ function selectedPopulation(values?: string[] | null, legacyValue?: string | nul
   return [];
 }
 
+function OnboardingRecoveryCard() {
+  return (
+    <main className="shell flex min-h-screen items-center justify-center py-10">
+      <Card className="max-w-xl">
+        <h1 className="text-2xl font-semibold">Resume onboarding</h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          Your sign-in is active, but onboarding needs to refresh your account setup before
+          continuing.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link
+            className="focus-ring inline-flex min-h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+            href="/onboarding/start/sober_living"
+          >
+            Resume
+          </Link>
+          <Link
+            className="focus-ring inline-flex min-h-10 items-center rounded-md border border-border px-4 text-sm font-semibold"
+            href="/sign-in?redirect_url=/onboarding/start/sober_living"
+          >
+            Sign in again
+          </Link>
+        </div>
+      </Card>
+    </main>
+  );
+}
+
 export default async function SoberLivingStepPage({
   params,
   searchParams
@@ -124,24 +152,45 @@ export default async function SoberLivingStepPage({
     notFound();
   }
 
-  const organization = await ensureOnboardingOrganization("sober_living");
+  let organization: Awaited<ReturnType<typeof ensureOnboardingOrganization>>;
+
+  try {
+    organization = await ensureOnboardingOrganization("sober_living");
+  } catch (error) {
+    console.error("Sober living onboarding bootstrap failed", error);
+    return <OnboardingRecoveryCard />;
+  }
 
   const isNewProfile = query.new === "1";
-  let profile = query.profileId
-    ? await prisma.aftercareProfile.findFirst({
-        where: { id: query.profileId, orgId: organization.orgId, type: ProfileType.sober_living }
-      })
-    : null;
+  let profile;
+
+  try {
+    profile = query.profileId
+      ? await prisma.aftercareProfile.findFirst({
+          where: { id: query.profileId, orgId: organization.orgId, type: ProfileType.sober_living }
+        })
+      : null;
+  } catch (error) {
+    console.error("Sober living onboarding profile lookup failed", error);
+    return <OnboardingRecoveryCard />;
+  }
 
   if (query.profileId && !profile) {
     redirect("/dashboard/aftercare");
   }
 
   if (!profile && !isNewProfile) {
-    const latestProfile = await prisma.aftercareProfile.findFirst({
-      where: { orgId: organization.orgId, type: ProfileType.sober_living },
-      orderBy: { updatedAt: "desc" }
-    });
+    let latestProfile;
+
+    try {
+      latestProfile = await prisma.aftercareProfile.findFirst({
+        where: { orgId: organization.orgId, type: ProfileType.sober_living },
+        orderBy: { updatedAt: "desc" }
+      });
+    } catch (error) {
+      console.error("Sober living onboarding resume lookup failed", error);
+      return <OnboardingRecoveryCard />;
+    }
 
     if (latestProfile?.onboardingCompletedAt) {
       redirect("/dashboard/aftercare");

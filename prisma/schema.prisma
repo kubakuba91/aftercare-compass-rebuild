@@ -162,6 +162,7 @@ model AftercareProfile {
   preferredContactMethod          String?
   websiteUrl                      String?
   populationServed                String?
+  populationServedOptions         String[]      @default([])
   specialtyPopulations            String[]      @default([])
   certificationsHeld              String[]      @default([])
   totalBeds                       Int?

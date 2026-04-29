@@ -100,7 +100,11 @@ export default async function AftercareProfileDetailPage({
               </div>
               <div>
                 <dt className="text-muted-foreground">Population</dt>
-                <dd className="font-medium">{profile.populationServed || "Not set"}</dd>
+                <dd className="font-medium">
+                  {profile.populationServedOptions.length
+                    ? profile.populationServedOptions.join(", ")
+                    : profile.populationServed || "Not set"}
+                </dd>
               </div>
             </dl>
           </Card>

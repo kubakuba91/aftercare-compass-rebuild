@@ -85,6 +85,30 @@ function StepRail({ currentStep }: { currentStep: number }) {
   );
 }
 
+function selectedPopulation(values?: string[] | null, legacyValue?: string | null) {
+  if (values?.length) {
+    return values;
+  }
+
+  if (legacyValue === "men") {
+    return ["Men"];
+  }
+
+  if (legacyValue === "women") {
+    return ["Women"];
+  }
+
+  if (legacyValue === "lgbtq") {
+    return ["LGBTQ+"];
+  }
+
+  if (legacyValue === "both") {
+    return ["Men", "Women"];
+  }
+
+  return [];
+}
+
 export default async function SoberLivingStepPage({
   params,
   searchParams
@@ -190,14 +214,14 @@ export default async function SoberLivingStepPage({
                     Website URL
                     <input name="websiteUrl" type="url" placeholder="https://example.com" defaultValue={profile?.websiteUrl ?? ""} className={fieldClassName()} />
                   </label>
-                  <label className="grid gap-2 text-sm font-medium">
+                  <div className="grid gap-2 text-sm font-medium">
                     Population served
-                    <select name="populationServed" required defaultValue={profile?.populationServed ?? "both"} className={fieldClassName()}>
-                      {populationOptions.map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </select>
-                  </label>
+                    {checkboxGroup(
+                      "populationServed",
+                      populationOptions,
+                      selectedPopulation(profile?.populationServedOptions, profile?.populationServed)
+                    )}
+                  </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Specialty populations served
                     {checkboxGroup("specialtyPopulations", specialtyPopulationOptions, selected(profile?.specialtyPopulations))}

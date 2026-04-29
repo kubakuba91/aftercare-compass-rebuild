@@ -43,6 +43,7 @@ async function main() {
       admissionsContactPhone: "555-0100",
       admissionsContactEmail: "admissions@example.com",
       populationServed: "both",
+      populationServedOptions: ["Men", "Women"],
       totalBeds: 12,
       bedsMen: 6,
       bedsWomen: 6,
@@ -67,4 +68,3 @@ main()
     await prisma.$disconnect();
     process.exit(1);
   });
-

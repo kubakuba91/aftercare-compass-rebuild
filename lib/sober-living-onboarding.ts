@@ -11,10 +11,9 @@ export const soberLivingSteps = [
 export const maxSoberLivingStep = soberLivingSteps.length;
 
 export const populationOptions = [
-  ["men", "Men"],
-  ["women", "Women"],
-  ["both", "Both / Coed"],
-  ["lgbtq", "LGBTQ+"]
+  "Men",
+  "Women",
+  "LGBTQ+"
 ] as const;
 
 export const specialtyPopulationOptions = [
@@ -134,7 +133,7 @@ export const stepOneSchema = z.object({
   admissionsContactPhone: requiredText.max(40),
   admissionsContactEmail: z.string().trim().email(),
   websiteUrl: optionalUrl,
-  populationServed: z.enum(["men", "women", "both", "lgbtq"]),
+  populationServed: z.array(z.enum(populationOptions)).min(1),
   specialtyPopulations: z.array(z.string()).default([]),
   certificationsHeld: z.array(z.string()).default([]),
   averageLengthOfStay: requiredText.max(80)

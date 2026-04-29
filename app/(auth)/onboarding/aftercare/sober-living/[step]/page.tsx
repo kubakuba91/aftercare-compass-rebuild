@@ -152,25 +152,16 @@ function OnboardingRecoveryCard() {
   return (
     <main className="shell flex min-h-screen items-center justify-center py-10">
       <Card className="max-w-xl">
-        <h1 className="text-2xl font-semibold">Resume onboarding</h1>
+        <h1 className="text-2xl font-semibold">Session timed out</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Your sign-in is active, but onboarding needs to refresh your account setup before
-          continuing.
+          Please sign back in to continue onboarding.
         </p>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Link
-            className="focus-ring inline-flex min-h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-            href="/onboarding/start/sober_living"
-          >
-            Resume
-          </Link>
-          <Link
-            className="focus-ring inline-flex min-h-10 items-center rounded-md border border-border px-4 text-sm font-semibold"
-            href="/sign-in?redirect_url=/onboarding/start/sober_living"
-          >
-            Sign in again
-          </Link>
-        </div>
+        <Link
+          className="focus-ring mt-5 inline-flex min-h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+          href="/sign-in?redirect_url=/onboarding/start/sober_living&reason=session_timeout"
+        >
+          Sign in to continue
+        </Link>
       </Card>
     </main>
   );
@@ -199,7 +190,7 @@ export default async function SoberLivingStepPage({
     console.error("Sober living onboarding bootstrap failed", error);
 
     if (isClerkIdentityError(error)) {
-      redirect("/sign-in?redirect_url=/onboarding/start/sober_living");
+      redirect("/sign-in?redirect_url=/onboarding/start/sober_living&reason=session_timeout");
     }
 
     return <OnboardingRecoveryCard />;
@@ -220,7 +211,7 @@ export default async function SoberLivingStepPage({
   }
 
   if (query.profileId && !profile) {
-    redirect("/dashboard/aftercare");
+    redirect("/onboarding/start/sober_living");
   }
 
   if (!profile && !isNewProfile) {
@@ -498,13 +489,10 @@ export default async function SoberLivingStepPage({
                       Back
                     </Link>
                   ) : (
-                    <Link className="focus-ring inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold" href="/dashboard/aftercare">
+                    <Link className="focus-ring inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold" href="/onboarding/start/sober_living">
                       Back
                     </Link>
                   )}
-                  <button name="intent" value="save" className="focus-ring min-h-11 flex-1 rounded-md border border-border px-4 text-sm font-semibold">
-                    Save & continue later
-                  </button>
                   <button name="intent" value="continue" className="focus-ring min-h-11 flex-1 rounded-md bg-[#121b57] px-4 text-sm font-semibold text-white">
                     {currentStep === maxSoberLivingStep ? "Finish" : "Next"}
                   </button>

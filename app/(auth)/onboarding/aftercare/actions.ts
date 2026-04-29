@@ -117,8 +117,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
     redirect("/setup?missing=database");
   }
 
-  const intent = String(formData.get("intent") || "continue");
-  let destination = "/dashboard/aftercare";
+  let destination = "/onboarding/start/sober_living";
 
   try {
     const organization = await ensureOnboardingOrganization("sober_living");
@@ -194,7 +193,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             select: { id: true }
           });
 
-      destination = intent === "save" ? "/dashboard/aftercare" : stepRedirect(2, profile.id);
+      destination = stepRedirect(2, profile.id);
     }
 
     if (step === 2) {
@@ -239,7 +238,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         }
       });
 
-      destination = intent === "save" ? "/dashboard/aftercare" : stepRedirect(3, parsed.profileId);
+      destination = stepRedirect(3, parsed.profileId);
     }
 
     if (step === 3) {
@@ -273,7 +272,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         }
       });
 
-      destination = intent === "save" ? "/dashboard/aftercare" : stepRedirect(4, parsed.profileId);
+      destination = stepRedirect(4, parsed.profileId);
     }
 
     if (step === 4) {
@@ -299,7 +298,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         }
       });
 
-      destination = intent === "save" ? "/dashboard/aftercare" : stepRedirect(5, parsed.profileId);
+      destination = stepRedirect(5, parsed.profileId);
     }
 
     if (step === 5) {

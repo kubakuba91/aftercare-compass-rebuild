@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { requireCurrentAppUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
+import { maxSoberLivingStep } from "@/lib/sober-living-onboarding";
 
 export default async function AftercareDashboardPage() {
   const appUser = await requireCurrentAppUser();
@@ -31,6 +32,8 @@ export default async function AftercareDashboardPage() {
       totalBeds: true,
       bedsAvailable: true,
       acceptingNewPatients: true,
+      onboardingStep: true,
+      onboardingCompletedAt: true,
       updatedAt: true
     }
   });
@@ -44,6 +47,20 @@ export default async function AftercareDashboardPage() {
     }
 
     redirect(`/onboarding/aftercare/profile?type=${profileType}`);
+  }
+
+  const incompleteSoberLivingProfile = profiles.find(
+    (profile) => profile.type === "sober_living" && !profile.onboardingCompletedAt
+  );
+
+  if (incompleteSoberLivingProfile) {
+    const resumeStep = Math.min(
+      Math.max(incompleteSoberLivingProfile.onboardingStep ?? 1, 1),
+      maxSoberLivingStep
+    );
+    redirect(
+      `/onboarding/aftercare/sober-living/${resumeStep}?profileId=${incompleteSoberLivingProfile.id}`
+    );
   }
 
   const [leadCount, openReferralCount] = await Promise.all([

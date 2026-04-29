@@ -26,7 +26,7 @@ export async function selectAccountType(formData: FormData) {
     destination = destinationForAccountType(accountType, result.alreadyOnboarded);
   } catch (error) {
     console.error("Account type onboarding failed", error);
-    redirect("/sign-in?redirect_url=/onboarding/account-type");
+    redirect("/sign-in?redirect_url=/onboarding/account-type&reason=session_timeout");
   }
 
   redirect(destination);

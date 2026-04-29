@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { hasValidClerkPublishableKey } from "@/lib/clerk-config";
 
+export const dynamic = "force-dynamic";
+
 export default function SignUpPage() {
   if (!hasValidClerkPublishableKey()) {
     return (
@@ -26,7 +28,7 @@ export default function SignUpPage() {
         routing="path"
         path="/sign-up"
         signInUrl="/sign-in"
-        forceRedirectUrl="/onboarding/account-type"
+        fallbackRedirectUrl="/onboarding/account-type"
       />
     </main>
   );

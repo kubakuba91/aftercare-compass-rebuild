@@ -26,7 +26,7 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <ButtonLink href="/search">Search programs</ButtonLink>
-              <ButtonLink href="/onboarding/account-type" variant="secondary">
+              <ButtonLink href="/sign-up" variant="secondary">
                 Create account
               </ButtonLink>
             </div>
@@ -79,4 +79,3 @@ export default function HomePage() {
     </main>
   );
 }
-

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { hasValidClerkPublishableKey } from "@/lib/clerk-config";
 
+export const dynamic = "force-dynamic";
+
 export default function SignInPage() {
   if (!hasValidClerkPublishableKey()) {
     return (
@@ -22,7 +24,7 @@ export default function SignInPage() {
 
   return (
     <main className="shell flex min-h-screen items-center justify-center py-10">
-      <SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" />
+      <SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" fallbackRedirectUrl="/dashboard" />
     </main>
   );
 }

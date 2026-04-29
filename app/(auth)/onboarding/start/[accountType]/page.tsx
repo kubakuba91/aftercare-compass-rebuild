@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
+import { isClerkIdentityError } from "@/lib/current-user";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import {
   destinationForAccountType,
@@ -31,6 +32,10 @@ export default async function StartOnboardingPage({
   } catch (error) {
     console.error("Onboarding start failed", error);
 
+    if (isClerkIdentityError(error)) {
+      redirect(`/sign-in?redirect_url=/onboarding/start/${accountType}`);
+    }
+
     return (
       <main className="shell flex min-h-screen items-center justify-center py-10">
         <Card className="max-w-xl">
@@ -42,6 +47,9 @@ export default async function StartOnboardingPage({
           <div className="mt-5 flex flex-wrap gap-3">
             <Link className="text-sm font-semibold text-primary" href="/sign-in">
               Sign in again
+            </Link>
+            <Link className="text-sm font-semibold text-primary" href={`/onboarding/start/${accountType}`}>
+              Try again
             </Link>
             <Link className="text-sm font-semibold text-primary" href="/setup">
               Check setup

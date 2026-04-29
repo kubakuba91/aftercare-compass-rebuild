@@ -36,6 +36,18 @@ export default function OnboardingError({
           </button>
           <Link
             className="focus-ring inline-flex min-h-10 items-center rounded-md border border-border bg-white px-4 text-sm font-semibold"
+            href="/onboarding/start/sober_living"
+          >
+            Resume onboarding
+          </Link>
+          <Link
+            className="focus-ring inline-flex min-h-10 items-center rounded-md border border-border bg-white px-4 text-sm font-semibold"
+            href="/sign-in?redirect_url=/onboarding/start/sober_living"
+          >
+            Sign in again
+          </Link>
+          <Link
+            className="focus-ring inline-flex min-h-10 items-center rounded-md border border-border bg-white px-4 text-sm font-semibold"
             href="/setup"
           >
             Check setup
@@ -45,4 +57,3 @@ export default function OnboardingError({
     </main>
   );
 }
-

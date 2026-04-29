@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ProfileType } from "@prisma/client";
 import { Card } from "@/components/ui/card";
+import { isClerkIdentityError } from "@/lib/current-user";
 import { ensureOnboardingOrganization } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
@@ -196,6 +197,11 @@ export default async function SoberLivingStepPage({
     organization = await ensureOnboardingOrganization("sober_living");
   } catch (error) {
     console.error("Sober living onboarding bootstrap failed", error);
+
+    if (isClerkIdentityError(error)) {
+      redirect("/sign-in?redirect_url=/onboarding/start/sober_living");
+    }
+
     return <OnboardingRecoveryCard />;
   }
 

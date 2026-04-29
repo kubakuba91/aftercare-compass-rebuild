@@ -30,6 +30,13 @@ export async function getRequiredClerkIdentity() {
   };
 }
 
+export function isClerkIdentityError(error: unknown) {
+  return (
+    error instanceof Error &&
+    (error.message === "Authentication required" || error.message === "Primary email required")
+  );
+}
+
 export function defaultRoleForAccountType(accountType: string): Role {
   if (accountType === "referent") {
     return Role.referent_admin;
@@ -39,7 +46,17 @@ export function defaultRoleForAccountType(accountType: string): Role {
 }
 
 export async function getCurrentAppUser() {
-  const identity = await getRequiredClerkIdentity();
+  let identity: Awaited<ReturnType<typeof getRequiredClerkIdentity>>;
+
+  try {
+    identity = await getRequiredClerkIdentity();
+  } catch (error) {
+    if (isClerkIdentityError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
 
   return prisma.user.findUnique({
     where: { clerkUserId: identity.clerkUserId },
@@ -56,4 +73,3 @@ export async function requireCurrentAppUser() {
 
   return appUser;
 }
-

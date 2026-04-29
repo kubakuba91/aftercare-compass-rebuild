@@ -36,6 +36,10 @@ export default async function AftercareProfileDetailPage({
   }
 
   const isSoberLiving = profile.type === "sober_living";
+  const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
+  const privateAddress = [profile.streetAddress, profile.city, profile.state, profile.zip]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <main className="shell py-8">
@@ -53,7 +57,7 @@ export default async function AftercareProfileDetailPage({
           </div>
           <h1 className="mt-4 text-3xl font-semibold">{profile.programName}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Public location: {profile.publicCity}, {profile.publicState}
+            Public location: {publicLocation || "Not set"}
           </p>
         </div>
       </div>
@@ -74,7 +78,9 @@ export default async function AftercareProfileDetailPage({
 
           <Card>
             <h2 className="text-xl font-semibold">Profile overview</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">{profile.description}</p>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              {profile.description || "No description added yet."}
+            </p>
           </Card>
 
           <Card>
@@ -82,19 +88,19 @@ export default async function AftercareProfileDetailPage({
             <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
               <div>
                 <dt className="text-muted-foreground">Street address</dt>
-                <dd className="font-medium">{profile.streetAddress}</dd>
+                <dd className="font-medium">{privateAddress || "Not set"}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Admissions email</dt>
-                <dd className="font-medium">{profile.admissionsContactEmail}</dd>
+                <dd className="font-medium">{profile.admissionsContactEmail || "Not set"}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Admissions phone</dt>
-                <dd className="font-medium">{profile.admissionsContactPhone}</dd>
+                <dd className="font-medium">{profile.admissionsContactPhone || "Not set"}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Population</dt>
-                <dd className="font-medium">{profile.populationServed}</dd>
+                <dd className="font-medium">{profile.populationServed || "Not set"}</dd>
               </div>
             </dl>
           </Card>
@@ -132,4 +138,3 @@ export default async function AftercareProfileDetailPage({
     </main>
   );
 }
-

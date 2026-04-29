@@ -1,8 +1,4 @@
-import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { getCurrentAppUser } from "@/lib/current-user";
-import { hasDatabaseConfig } from "@/lib/database-status";
-import { prisma } from "@/lib/prisma";
 import { createAftercareProfileDraft } from "../actions";
 
 export default async function AftercareProfileOnboardingPage({
@@ -13,21 +9,6 @@ export default async function AftercareProfileOnboardingPage({
   const params = await searchParams;
   const profileType = params.type === "continued_care" ? "continued_care" : "sober_living";
   const isSoberLiving = profileType === "sober_living";
-
-  if (hasDatabaseConfig()) {
-    const appUser = await getCurrentAppUser();
-
-    if (appUser?.orgId) {
-      const existingProfile = await prisma.aftercareProfile.findFirst({
-        where: { orgId: appUser.orgId },
-        select: { id: true }
-      });
-
-      if (existingProfile) {
-        redirect("/dashboard/aftercare");
-      }
-    }
-  }
 
   return (
     <main className="shell py-10">

@@ -38,44 +38,35 @@ export async function createAftercareProfileDraft(formData: FormData) {
 
   try {
     const organization = await ensureOnboardingOrganization(parsed.profileType);
-    const existingProfile = await prisma.aftercareProfile.findFirst({
-      where: { orgId: organization.orgId },
+    const profile = await prisma.aftercareProfile.create({
+      data: {
+        orgId: organization.orgId,
+        type: profileType,
+        programName: parsed.programName,
+        slug,
+        status: ProfileStatus.draft,
+        streetAddress: parsed.streetAddress,
+        city: parsed.city,
+        state: parsed.state,
+        zip: parsed.zip,
+        publicCity: parsed.city,
+        publicState: parsed.state,
+        admissionsContactPhone: parsed.admissionsContactPhone,
+        admissionsContactEmail: parsed.admissionsContactEmail,
+        description: parsed.description,
+        populationServed: parsed.populationServed,
+        totalBeds: profileType === ProfileType.sober_living ? parsed.totalBeds : null,
+        bedsAvailable: profileType === ProfileType.sober_living ? parsed.bedsAvailable : null,
+        bedsAvailableUpdatedAt: profileType === ProfileType.sober_living ? new Date() : null,
+        acceptingNewPatients:
+          profileType === ProfileType.continued_care ? parsed.acceptingNewPatients === "yes" : null,
+        acceptingNewPatientsUpdatedAt:
+          profileType === ProfileType.continued_care ? new Date() : null
+      },
       select: { id: true }
     });
 
-    if (existingProfile) {
-      destination = "/dashboard/aftercare";
-    } else {
-      const profile = await prisma.aftercareProfile.create({
-        data: {
-          orgId: organization.orgId,
-          type: profileType,
-          programName: parsed.programName,
-          slug,
-          status: ProfileStatus.draft,
-          streetAddress: parsed.streetAddress,
-          city: parsed.city,
-          state: parsed.state,
-          zip: parsed.zip,
-          publicCity: parsed.city,
-          publicState: parsed.state,
-          admissionsContactPhone: parsed.admissionsContactPhone,
-          admissionsContactEmail: parsed.admissionsContactEmail,
-          description: parsed.description,
-          populationServed: parsed.populationServed,
-          totalBeds: profileType === ProfileType.sober_living ? parsed.totalBeds : null,
-          bedsAvailable: profileType === ProfileType.sober_living ? parsed.bedsAvailable : null,
-          bedsAvailableUpdatedAt: profileType === ProfileType.sober_living ? new Date() : null,
-          acceptingNewPatients:
-            profileType === ProfileType.continued_care ? parsed.acceptingNewPatients === "yes" : null,
-          acceptingNewPatientsUpdatedAt:
-            profileType === ProfileType.continued_care ? new Date() : null
-        },
-        select: { id: true }
-      });
-
-      destination = `/dashboard/aftercare?profile=${profile.id}`;
-    }
+    destination = `/dashboard/aftercare?profile=${profile.id}`;
   } catch (error) {
     console.error("Aftercare profile draft creation failed", error);
     redirect("/setup?missing=database&from=aftercare-profile");

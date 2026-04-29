@@ -1,9 +1,13 @@
 import { redirect } from "next/navigation";
 import { Role } from "@prisma/client";
-import { requireCurrentAppUser } from "@/lib/current-user";
+import { getCurrentAppUser } from "@/lib/current-user";
 
 export default async function DashboardRedirectPage() {
-  const appUser = await requireCurrentAppUser();
+  const appUser = await getCurrentAppUser();
+
+  if (!appUser) {
+    redirect("/onboarding/account-type");
+  }
 
   if (appUser.role === Role.system_admin) {
     redirect("/dashboard/admin");

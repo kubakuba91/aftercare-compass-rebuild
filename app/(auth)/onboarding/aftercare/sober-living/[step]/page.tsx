@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ProfileType } from "@prisma/client";
 import { Card } from "@/components/ui/card";
-import { requireCurrentAppUser } from "@/lib/current-user";
+import { ensureOnboardingOrganization } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import {
@@ -100,16 +100,12 @@ export default async function SoberLivingStepPage({
     notFound();
   }
 
-  const appUser = await requireCurrentAppUser();
-
-  if (!appUser.orgId) {
-    redirect("/onboarding/account-type");
-  }
+  const organization = await ensureOnboardingOrganization("sober_living");
 
   const isNewProfile = query.new === "1";
   let profile = query.profileId
     ? await prisma.aftercareProfile.findFirst({
-        where: { id: query.profileId, orgId: appUser.orgId, type: ProfileType.sober_living }
+        where: { id: query.profileId, orgId: organization.orgId, type: ProfileType.sober_living }
       })
     : null;
 
@@ -119,7 +115,7 @@ export default async function SoberLivingStepPage({
 
   if (!profile && !isNewProfile) {
     const latestProfile = await prisma.aftercareProfile.findFirst({
-      where: { orgId: appUser.orgId, type: ProfileType.sober_living },
+      where: { orgId: organization.orgId, type: ProfileType.sober_living },
       orderBy: { updatedAt: "desc" }
     });
 

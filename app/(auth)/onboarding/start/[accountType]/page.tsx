@@ -23,10 +23,6 @@ export default async function StartOnboardingPage({
     redirect("/setup?missing=database");
   }
 
-  if (accountType !== "referent") {
-    redirect(destinationForAccountType(accountType, false));
-  }
-
   let destination: string;
 
   try {

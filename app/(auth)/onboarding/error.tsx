@@ -17,15 +17,16 @@ export default function OnboardingError({
   return (
     <main className="shell flex min-h-screen items-center justify-center py-10">
       <section className="max-w-xl rounded-lg border border-border bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold">Please sign in again</h1>
+        <h1 className="text-2xl font-semibold">Onboarding needs a reset</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Please sign back in to continue onboarding.
+          This onboarding page could not continue. Return home, then sign out or start onboarding
+          again from a fresh page.
         </p>
         <Link
           className="focus-ring mt-5 inline-flex min-h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-          href="/sign-in"
+          href="/"
         >
-          Sign in to continue
+          Go home
         </Link>
       </section>
     </main>

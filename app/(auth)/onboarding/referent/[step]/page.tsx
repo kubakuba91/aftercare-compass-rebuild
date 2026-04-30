@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
+import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recovery-card";
 import { Card } from "@/components/ui/card";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
@@ -85,25 +86,6 @@ function StepRail({ currentStep }: { currentStep: number }) {
         <p className="mt-1 font-semibold">{referentSteps[currentStep - 1]?.label}</p>
       </div>
     </>
-  );
-}
-
-function OnboardingRecoveryCard() {
-  return (
-    <main className="shell flex min-h-screen items-center justify-center py-10">
-      <Card className="max-w-xl">
-        <h1 className="text-2xl font-semibold">Please sign in again</h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Please sign back in to continue onboarding.
-        </p>
-        <Link
-          className="focus-ring mt-5 inline-flex min-h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-          href="/sign-in"
-        >
-          Sign in to continue
-        </Link>
-      </Card>
-    </main>
   );
 }
 

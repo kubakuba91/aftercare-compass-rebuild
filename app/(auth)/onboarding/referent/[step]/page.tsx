@@ -24,6 +24,17 @@ function fieldClassName() {
   return "min-h-10 rounded-md border border-border bg-white px-3 text-sm";
 }
 
+function requiredLabel(label: string) {
+  return (
+    <span className="flex items-center gap-2">
+      <span>{label}</span>
+      <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-accent">
+        Required
+      </span>
+    </span>
+  );
+}
+
 function checkboxGroup(name: string, options: readonly string[], selected: string[] = []) {
   return (
     <div className="grid gap-2 md:grid-cols-2">
@@ -153,37 +164,37 @@ export default async function ReferentStepPage({
               {currentStep === 1 ? (
                 <>
                   <label className="grid gap-2 text-sm font-medium">
-                    Organization name
+                    {requiredLabel("Organization name")}
                     <input name="organization" required defaultValue={referentDetails?.organization ?? ""} className={fieldClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
-                    Organization type
+                    {requiredLabel("Organization type")}
                     <select name="orgTypeDetail" required defaultValue={referentDetails?.orgTypeDetail ?? ""} className={fieldClassName()}>
                       <option value="" disabled>Select one</option>
                       {referentOrgTypeOptions.map((option) => <option key={option}>{option}</option>)}
                     </select>
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
-                    Primary address
+                    {requiredLabel("Primary address")}
                     <input name="streetAddress" required defaultValue={referentDetails?.streetAddress ?? ""} className={fieldClassName()} />
                   </label>
                   <div className="grid gap-4 md:grid-cols-3">
                     <label className="grid gap-2 text-sm font-medium">
-                      City
+                      {requiredLabel("City")}
                       <input name="city" required defaultValue={referentDetails?.city ?? ""} className={fieldClassName()} />
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
-                      State
+                      {requiredLabel("State")}
                       <input name="state" required defaultValue={referentDetails?.state ?? ""} className={fieldClassName()} />
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
-                      Zip
+                      {requiredLabel("Zip")}
                       <input name="zip" required defaultValue={referentDetails?.zip ?? ""} className={fieldClassName()} />
                     </label>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
-                      Main phone
+                      {requiredLabel("Main phone")}
                       <input name="phone" required defaultValue={referentDetails?.phone ?? ""} className={fieldClassName()} />
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
@@ -210,13 +221,13 @@ export default async function ReferentStepPage({
                     </label>
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
-                    EHR system
+                    {requiredLabel("EHR system")}
                     <select name="ehrSystem" required defaultValue={referentDetails?.ehrSystem ?? "None"} className={fieldClassName()}>
                       {ehrSystemOptions.map((option) => <option key={option}>{option}</option>)}
                     </select>
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
-                    States operated in
+                    {requiredLabel("States operated in")}
                     {checkboxGroup("statesOperatedIn", statesOperatedOptions, selected(referentDetails?.statesOperatedIn))}
                   </div>
                 </>
@@ -225,7 +236,7 @@ export default async function ReferentStepPage({
               {currentStep === 2 ? (
                 <>
                   <div className="grid gap-2 text-sm font-medium">
-                    Level of care provided
+                    {requiredLabel("Level of care provided")}
                     {checkboxGroup("levelsOfCare", levelsOfCareOptions, selected(referentDetails?.levelsOfCare))}
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
@@ -237,7 +248,7 @@ export default async function ReferentStepPage({
                     )}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
-                    Average patients referred to aftercare per month
+                    {requiredLabel("Average patients referred to aftercare per month")}
                     <select name="avgMonthlyReferrals" required defaultValue={referentDetails?.avgMonthlyReferrals ?? ""} className={fieldClassName()}>
                       <option value="" disabled>Select one</option>
                       {avgMonthlyReferralOptions.map((option) => <option key={option}>{option}</option>)}
@@ -248,6 +259,7 @@ export default async function ReferentStepPage({
 
               {currentStep === 3 ? (
                 <>
+                  <div className="text-sm font-medium">{requiredLabel("Plan")}</div>
                   <div className="grid gap-3">
                     {referentPlanOptions.map((planKey) => {
                       const plan = referentPlans[planKey];
@@ -275,7 +287,7 @@ export default async function ReferentStepPage({
                     })}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
-                    Billing cycle
+                    {requiredLabel("Billing cycle")}
                     <select name="billingCycle" required defaultValue={referentDetails?.billingCycle ?? "monthly"} className={fieldClassName()}>
                       {billingCycleOptions.map((option) => <option key={option} value={option}>{option === "annual" ? "Annual" : "Monthly"}</option>)}
                     </select>

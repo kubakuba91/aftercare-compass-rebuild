@@ -33,6 +33,17 @@ function textAreaClassName() {
   return "min-h-28 rounded-md border border-border bg-white p-3 text-sm";
 }
 
+function requiredLabel(label: string) {
+  return (
+    <span className="flex items-center gap-2">
+      <span>{label}</span>
+      <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-accent">
+        Required
+      </span>
+    </span>
+  );
+}
+
 function checkboxGroup(name: string, options: readonly string[], selected: string[] = []) {
   return (
     <div className="grid gap-2 md:grid-cols-2">
@@ -118,10 +129,10 @@ function bedFieldsForPopulation(
 ) {
   return (
     <div className="rounded-md border border-border bg-white p-4">
-      <h3 className="text-sm font-semibold">{label} beds</h3>
+      <h3 className="text-sm font-semibold">{requiredLabel(`${label} beds`)}</h3>
       <div className="mt-3 grid gap-4 md:grid-cols-2">
         <label className="grid gap-2 text-sm font-medium">
-          Total beds
+          {requiredLabel("Total beds")}
           <input
             name={totalName}
             type="number"
@@ -132,7 +143,7 @@ function bedFieldsForPopulation(
           />
         </label>
         <label className="grid gap-2 text-sm font-medium">
-          Available beds
+          {requiredLabel("Available beds")}
           <input
             name={availableName}
             type="number"
@@ -226,34 +237,34 @@ export default async function SoberLivingStepPage({
               {currentStep === 1 ? (
                 <>
                   <label className="grid gap-2 text-sm font-medium">
-                    Program name
+                    {requiredLabel("Program name")}
                     <input name="programName" required defaultValue={profile?.programName ?? ""} className={fieldClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
-                    Main address
+                    {requiredLabel("Main address")}
                     <input name="streetAddress" required defaultValue={profile?.streetAddress ?? ""} className={fieldClassName()} />
                   </label>
                   <div className="grid gap-4 md:grid-cols-3">
                     <label className="grid gap-2 text-sm font-medium">
-                      City
+                      {requiredLabel("City")}
                       <input name="city" required defaultValue={profile?.city ?? ""} className={fieldClassName()} />
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
-                      State
+                      {requiredLabel("State")}
                       <input name="state" required defaultValue={profile?.state ?? ""} className={fieldClassName()} />
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
-                      Zip
+                      {requiredLabel("Zip")}
                       <input name="zip" required defaultValue={profile?.zip ?? ""} className={fieldClassName()} />
                     </label>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
-                      Admissions phone
+                      {requiredLabel("Admissions phone")}
                       <input name="admissionsContactPhone" required defaultValue={profile?.admissionsContactPhone ?? ""} className={fieldClassName()} />
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
-                      Admissions email
+                      {requiredLabel("Admissions email")}
                       <input name="admissionsContactEmail" type="email" required defaultValue={profile?.admissionsContactEmail ?? ""} className={fieldClassName()} />
                     </label>
                   </div>
@@ -262,7 +273,7 @@ export default async function SoberLivingStepPage({
                     <input name="websiteUrl" type="url" placeholder="https://example.com" defaultValue={profile?.websiteUrl ?? ""} className={fieldClassName()} />
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
-                    Population served
+                    {requiredLabel("Population served")}
                     {checkboxGroup(
                       "populationServed",
                       populationOptions,
@@ -278,7 +289,7 @@ export default async function SoberLivingStepPage({
                     {checkboxGroup("certificationsHeld", certificationOptions, selected(profile?.certificationsHeld))}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
-                    Average length of stay
+                    {requiredLabel("Average length of stay")}
                     <select name="averageLengthOfStay" required defaultValue={profile?.averageLengthOfStay ?? "90 days"} className={fieldClassName()}>
                       {averageLengthOptions.map((option) => <option key={option}>{option}</option>)}
                     </select>
@@ -327,7 +338,7 @@ export default async function SoberLivingStepPage({
                   </label>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
-                      Wheelchair accessible beds?
+                      {requiredLabel("Wheelchair accessible beds?")}
                       <select name="wheelchairAccessible" defaultValue={profile?.wheelchairAccessibleBeds ? "yes" : "no"} className={fieldClassName()}>
                         <option value="no">No</option>
                         <option value="yes">Yes</option>
@@ -361,7 +372,7 @@ export default async function SoberLivingStepPage({
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
-                      Funding available?
+                      {requiredLabel("Funding available?")}
                       <select name="fundingAvailable" defaultValue={profile?.fundingAvailable ? "yes" : "no"} className={fieldClassName()}>
                         <option value="no">No</option>
                         <option value="yes">Yes</option>
@@ -373,7 +384,7 @@ export default async function SoberLivingStepPage({
                     </label>
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
-                    Medication administration
+                    {requiredLabel("Medication administration")}
                     <select name="medicationAdministration" required defaultValue={profile?.medicationAdministration ?? "Self-administered only"} className={fieldClassName()}>
                       {medicationAdministrationOptions.map((option) => <option key={option}>{option}</option>)}
                     </select>
@@ -387,7 +398,7 @@ export default async function SoberLivingStepPage({
                     <input name="medicationRestrictions" defaultValue={profile?.medicationRestrictions ?? ""} className={fieldClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
-                    Drug testing policy
+                    {requiredLabel("Drug testing policy")}
                     <select name="drugTestingPolicy" required defaultValue={profile?.drugTestingPolicy ?? "Random"} className={fieldClassName()}>
                       {drugTestingPolicyOptions.map((option) => <option key={option}>{option}</option>)}
                     </select>
@@ -398,7 +409,7 @@ export default async function SoberLivingStepPage({
               {currentStep === 4 ? (
                 <>
                   <label className="grid gap-2 text-sm font-medium">
-                    Home description
+                    {requiredLabel("Home description")}
                     <textarea name="description" required defaultValue={profile?.description ?? ""} className={textAreaClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
@@ -416,7 +427,7 @@ export default async function SoberLivingStepPage({
                     </label>
                   ))}
                   <label className="grid gap-2 text-sm font-medium">
-                    Preferred contact method
+                    {requiredLabel("Preferred contact method")}
                     <select name="preferredContactMethod" required defaultValue={profile?.preferredContactMethod ?? "Any"} className={fieldClassName()}>
                       {preferredContactOptions.map((option) => <option key={option}>{option}</option>)}
                     </select>
@@ -436,7 +447,7 @@ export default async function SoberLivingStepPage({
                   </label>
                   <label className="flex items-start gap-3 rounded-md border border-border bg-white p-3 text-sm">
                     <input type="checkbox" name="goodNeighborPolicyAcknowledged" value="yes" defaultChecked={profile?.goodNeighborPolicyAcknowledged ?? false} required />
-                    <span>I acknowledge that the home will follow a Good Neighbor Policy and keep public profile information accurate.</span>
+                    <span>{requiredLabel("I acknowledge that the home will follow a Good Neighbor Policy and keep public profile information accurate.")}</span>
                   </label>
                   <div className="rounded-md border border-border bg-muted/60 p-4 text-sm">
                     Review the previous steps, then finish to open the aftercare dashboard.

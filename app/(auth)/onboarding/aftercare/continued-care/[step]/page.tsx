@@ -26,6 +26,17 @@ function textAreaClassName() {
   return "min-h-28 rounded-md border border-border bg-white p-3 text-sm";
 }
 
+function requiredLabel(label: string) {
+  return (
+    <span className="flex items-center gap-2">
+      <span>{label}</span>
+      <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-accent">
+        Required
+      </span>
+    </span>
+  );
+}
+
 function checkboxGroup(name: string, options: readonly string[], selected: string[] = []) {
   return (
     <div className="grid gap-2 md:grid-cols-2">
@@ -156,28 +167,28 @@ export default async function ContinuedCareStepPage({
               {currentStep === 1 ? (
                 <>
                   <label className="grid gap-2 text-sm font-medium">
-                    Program name
+                    {requiredLabel("Program name")}
                     <input name="programName" required defaultValue={profile?.programName ?? ""} className={fieldClassName()} />
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
-                    Program type
+                    {requiredLabel("Program type")}
                     {checkboxGroup("programTypes", programTypeOptions, selected(profile?.programTypes))}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
-                    Primary address
+                    {requiredLabel("Primary address")}
                     <input name="streetAddress" required defaultValue={profile?.streetAddress ?? ""} className={fieldClassName()} />
                   </label>
                   <div className="grid gap-4 md:grid-cols-3">
                     <label className="grid gap-2 text-sm font-medium">
-                      City
+                      {requiredLabel("City")}
                       <input name="city" required defaultValue={profile?.city ?? ""} className={fieldClassName()} />
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
-                      State
+                      {requiredLabel("State")}
                       <input name="state" required defaultValue={profile?.state ?? ""} className={fieldClassName()} />
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
-                      Zip
+                      {requiredLabel("Zip")}
                       <input name="zip" required defaultValue={profile?.zip ?? ""} className={fieldClassName()} />
                     </label>
                   </div>
@@ -186,7 +197,7 @@ export default async function ContinuedCareStepPage({
                     <input name="websiteUrl" type="url" placeholder="https://example.com" defaultValue={profile?.websiteUrl ?? ""} className={fieldClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
-                    Telehealth
+                    {requiredLabel("Telehealth")}
                     <select name="telehealthMode" required defaultValue={profile?.telehealthMode ?? "In-person only"} className={fieldClassName()}>
                       {telehealthModeOptions.map((option) => <option key={option}>{option}</option>)}
                     </select>
@@ -196,7 +207,7 @@ export default async function ContinuedCareStepPage({
                     <textarea name="additionalLocations" defaultValue={profile?.additionalLocations ?? ""} className={textAreaClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
-                    State license number
+                    {requiredLabel("State license number")}
                     <input name="stateLicenseNumber" required defaultValue={profile?.stateLicenseNumber ?? ""} className={fieldClassName()} />
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
@@ -209,15 +220,15 @@ export default async function ContinuedCareStepPage({
               {currentStep === 2 ? (
                 <>
                   <div className="grid gap-2 text-sm font-medium">
-                    Levels of care offered
+                    {requiredLabel("Levels of care offered")}
                     {checkboxGroup("levelsOfCare", levelOfCareOptions, selected(profile?.levelsOfCare))}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
-                    Hours of operation
+                    {requiredLabel("Hours of operation")}
                     <textarea name="hoursOfOperation" required defaultValue={profile?.hoursOfOperation ?? ""} className={textAreaClassName()} />
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
-                    Population served
+                    {requiredLabel("Population served")}
                     {checkboxGroup("populationServed", continuedCareOptionGroups.population, selected(profile?.populationServedOptions))}
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
@@ -226,14 +237,14 @@ export default async function ContinuedCareStepPage({
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
-                      MAT services offered?
+                      {requiredLabel("MAT services offered?")}
                       <select name="matServicesOffered" required defaultValue={profile?.matServicesOffered ? "yes" : "no"} className={fieldClassName()}>
                         <option value="no">No</option>
                         <option value="yes">Yes</option>
                       </select>
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
-                      Co-occurring mental health treatment?
+                      {requiredLabel("Co-occurring mental health treatment?")}
                       <select name="coOccurringTreatment" required defaultValue={profile?.coOccurringTreatment ? "yes" : "no"} className={fieldClassName()}>
                         <option value="no">No</option>
                         <option value="yes">Yes</option>
@@ -245,7 +256,7 @@ export default async function ContinuedCareStepPage({
                     {checkboxGroup("matAccepted", continuedCareOptionGroups.mat, selected(profile?.matAccepted))}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
-                    Average program duration
+                    {requiredLabel("Average program duration")}
                     <select name="averageLengthOfStay" required defaultValue={profile?.averageLengthOfStay ?? "30-60 days"} className={fieldClassName()}>
                       {continuedCareDurationOptions.map((option) => <option key={option}>{option}</option>)}
                     </select>
@@ -256,16 +267,16 @@ export default async function ContinuedCareStepPage({
               {currentStep === 3 ? (
                 <>
                   <label className="grid gap-2 text-sm font-medium">
-                    Intake contact name
+                    {requiredLabel("Intake contact name")}
                     <input name="intakeContactName" required defaultValue={profile?.intakeContactName ?? ""} className={fieldClassName()} />
                   </label>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
-                      Intake phone
+                      {requiredLabel("Intake phone")}
                       <input name="admissionsContactPhone" required defaultValue={profile?.admissionsContactPhone ?? ""} className={fieldClassName()} />
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
-                      Intake email
+                      {requiredLabel("Intake email")}
                       <input name="admissionsContactEmail" type="email" required defaultValue={profile?.admissionsContactEmail ?? ""} className={fieldClassName()} />
                     </label>
                   </div>
@@ -274,7 +285,7 @@ export default async function ContinuedCareStepPage({
                     {checkboxGroup("insuranceAccepted", continuedCareOptionGroups.insurance, selected(profile?.insuranceAccepted))}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
-                    Referral process description
+                    {requiredLabel("Referral process description")}
                     <textarea name="referralProcessDescription" required defaultValue={profile?.referralProcessDescription ?? ""} className={textAreaClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
@@ -291,7 +302,7 @@ export default async function ContinuedCareStepPage({
                     <textarea name="affiliatedSoberLivingHomes" defaultValue={profile?.affiliatedSoberLivingHomes ?? ""} className={textAreaClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
-                    Program description
+                    {requiredLabel("Program description")}
                     <textarea name="description" required defaultValue={profile?.description ?? ""} className={textAreaClassName()} />
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
@@ -299,7 +310,7 @@ export default async function ContinuedCareStepPage({
                     {checkboxGroup("supportServices", continuedCareOptionGroups.support, selected(profile?.supportServices))}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
-                    Preferred contact method
+                    {requiredLabel("Preferred contact method")}
                     <select name="preferredContactMethod" required defaultValue={profile?.preferredContactMethod ?? "Any"} className={fieldClassName()}>
                       {continuedCareOptionGroups.contact.map((option) => <option key={option}>{option}</option>)}
                     </select>
@@ -310,7 +321,7 @@ export default async function ContinuedCareStepPage({
               {currentStep === 5 ? (
                 <>
                   <label className="grid gap-2 text-sm font-medium">
-                    Accepting new patients?
+                    {requiredLabel("Accepting new patients?")}
                     <select name="acceptingNewPatients" required defaultValue={profile?.acceptingNewPatients === false ? "no" : "yes"} className={fieldClassName()}>
                       <option value="yes">Yes</option>
                       <option value="no">No</option>

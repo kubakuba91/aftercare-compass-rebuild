@@ -21,7 +21,7 @@ import {
   redirectIncompleteAftercareOnboarding
 } from "@/lib/protected-routing";
 import { cn } from "@/lib/utils";
-import { updateAftercareAvailability } from "./actions";
+import { updateAftercareAvailability, updateUserDisplayName } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -570,9 +570,33 @@ export default async function AftercareDashboardPage({
                 </div>
               </dl>
               <p className="mt-5 text-sm leading-6 text-muted-foreground">
-                Profile picture, display name editing, password settings, and notification
-                preferences will be added in a follow-up pass.
+                Profile picture, password settings, and notification preferences will be added in a
+                follow-up pass.
               </p>
+              <form action={updateUserDisplayName} className="mt-6 grid gap-4 rounded-md border border-border bg-muted/40 p-4">
+                <h3 className="font-semibold">Update display name</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="grid gap-2 text-sm font-medium">
+                    First name
+                    <input
+                      className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                      defaultValue={appUser.firstName ?? ""}
+                      name="firstName"
+                    />
+                  </label>
+                  <label className="grid gap-2 text-sm font-medium">
+                    Last name
+                    <input
+                      className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                      defaultValue={appUser.lastName ?? ""}
+                      name="lastName"
+                    />
+                  </label>
+                </div>
+                <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground md:w-fit">
+                  Save display name
+                </button>
+              </form>
             </Card>
           ) : null}
         </section>

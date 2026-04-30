@@ -63,3 +63,20 @@ export async function updateAftercareAvailability(formData: FormData) {
   revalidatePath("/dashboard/aftercare");
   redirect("/dashboard/aftercare");
 }
+
+export async function updateUserDisplayName(formData: FormData) {
+  const appUser = await getAftercareDashboardUser("/dashboard/aftercare?tab=account");
+  const firstName = String(formData.get("firstName") || "").trim();
+  const lastName = String(formData.get("lastName") || "").trim();
+
+  await prisma.user.update({
+    where: { id: appUser.id },
+    data: {
+      firstName: firstName || null,
+      lastName: lastName || null
+    }
+  });
+
+  revalidatePath("/dashboard/aftercare");
+  redirect("/dashboard/aftercare?tab=account");
+}

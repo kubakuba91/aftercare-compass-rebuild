@@ -1,17 +1,55 @@
 export function hasDatabaseConfig() {
-  return Boolean(process.env.DATABASE_URL && process.env.DIRECT_URL);
+  return Boolean(hasValidDatabaseUrl() && hasValidDirectUrl());
+}
+
+function hasValidPostgresUrl(value?: string) {
+  return Boolean(value?.startsWith("postgresql://") || value?.startsWith("postgres://"));
+}
+
+function usesSupabaseTransactionPooler(value?: string) {
+  return Boolean(value?.includes(".pooler.supabase.com:6543"));
+}
+
+function hasPgBouncerFlag(value?: string) {
+  if (!value) {
+    return false;
+  }
+
+  try {
+    return new URL(value).searchParams.get("pgbouncer") === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function hasValidDatabaseUrl() {
+  const value = process.env.DATABASE_URL;
+
+  if (!hasValidPostgresUrl(value)) {
+    return false;
+  }
+
+  if (usesSupabaseTransactionPooler(value) && !hasPgBouncerFlag(value)) {
+    return false;
+  }
+
+  return true;
+}
+
+export function hasValidDirectUrl() {
+  return hasValidPostgresUrl(process.env.DIRECT_URL);
 }
 
 export const databaseEnvRequirements = [
   {
     key: "DATABASE_URL",
-    valueHint: "Supabase transaction pooler URL, ideally ending with ?pgbouncer=true",
-    valid: Boolean(process.env.DATABASE_URL?.startsWith("postgresql://"))
+    valueHint: "Supabase transaction pooler URL with ?pgbouncer=true",
+    valid: hasValidDatabaseUrl()
   },
   {
     key: "DIRECT_URL",
     valueHint: "Supabase session pooler or direct URL for Prisma migrations",
-    valid: Boolean(process.env.DIRECT_URL?.startsWith("postgresql://"))
+    valid: hasValidDirectUrl()
   }
 ] as const;
 
@@ -19,6 +57,6 @@ export function missingDatabaseResponse() {
   return {
     error: "Database is not configured.",
     required: ["DATABASE_URL", "DIRECT_URL"],
-    next: "Create a Supabase project, add the pooled DATABASE_URL and direct DIRECT_URL, then run Prisma migrations."
+    next: "Use the Supabase transaction pooler for DATABASE_URL with ?pgbouncer=true, and use DIRECT_URL for migrations."
   };
 }

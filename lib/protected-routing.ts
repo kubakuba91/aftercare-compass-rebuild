@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { OrganizationType, Role } from "@prisma/client";
 import { getClerkSessionUserId, getCurrentAppUser } from "@/lib/current-user";
+import { hasDatabaseConfig } from "@/lib/database-status";
 import { prisma } from "@/lib/prisma";
 import { maxSoberLivingStep } from "@/lib/sober-living-onboarding";
 
@@ -13,6 +14,10 @@ export function signInToContinuePath() {
 }
 
 export async function getProtectedAppUser(_returnTo: string) {
+  if (!hasDatabaseConfig()) {
+    redirect("/setup?missing=database");
+  }
+
   const clerkUserId = await getClerkSessionUserId();
 
   if (!clerkUserId) {

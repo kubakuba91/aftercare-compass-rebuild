@@ -66,7 +66,7 @@ function multiSelectDropdown(name: string, options: readonly string[], selected:
         <span className="text-muted-foreground">{summary}</span>
         <span aria-hidden="true">▾</span>
       </summary>
-      <div className="grid max-h-72 gap-2 overflow-auto border-t border-border p-3 md:grid-cols-2">
+      <div className="grid max-h-72 gap-2 overflow-auto border-t border-border p-3">
         {options.map((option) => (
           <label key={option} className="flex min-h-9 items-center gap-2 rounded-md px-2 text-sm hover:bg-muted">
             <input type="checkbox" name={name} value={option} defaultChecked={selected.includes(option)} />

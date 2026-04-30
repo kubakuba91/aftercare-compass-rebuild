@@ -541,25 +541,37 @@ export default async function AftercareDashboardPage({
               <h2 className="mt-3 text-xl font-semibold">Account</h2>
               <dl className="mt-5 grid gap-4 text-sm md:grid-cols-2">
                 <div>
-                  <dt className="text-muted-foreground">Organization display name</dt>
-                  <dd className="mt-1 font-semibold">{appUser.organization?.name || "Not set"}</dd>
+                  <dt className="text-muted-foreground">Display name</dt>
+                  <dd className="mt-1 font-semibold">
+                    {[appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Primary email</dt>
-                  <dd className="mt-1 font-semibold">{appUser.organization?.email || appUser.email}</dd>
+                  <dd className="mt-1 font-semibold">{appUser.email}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Phone</dt>
-                  <dd className="mt-1 font-semibold">{appUser.organization?.phone || "Not set"}</dd>
+                  <dt className="text-muted-foreground">Role</dt>
+                  <dd className="mt-1 font-semibold">{appUser.role.replaceAll("_", " ")}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Website</dt>
-                  <dd className="mt-1 font-semibold">{appUser.organization?.website || "Not set"}</dd>
+                  <dt className="text-muted-foreground">Email status</dt>
+                  <dd className="mt-1 font-semibold">
+                    {appUser.emailVerified ? "Verified" : "Not verified"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Account status</dt>
+                  <dd className="mt-1 font-semibold">{appUser.isActive ? "Active" : "Inactive"}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Organization</dt>
+                  <dd className="mt-1 font-semibold">{appUser.organization?.name || "Not set"}</dd>
                 </div>
               </dl>
               <p className="mt-5 text-sm leading-6 text-muted-foreground">
-                Profile picture, display name editing, and account preferences will be added in a
-                follow-up pass.
+                Profile picture, display name editing, password settings, and notification
+                preferences will be added in a follow-up pass.
               </p>
             </Card>
           ) : null}

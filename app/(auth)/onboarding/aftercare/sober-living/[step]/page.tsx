@@ -205,6 +205,7 @@ export default async function SoberLivingStepPage({
   const action = saveSoberLivingOnboardingStep.bind(null, currentStep);
   const selected = (values?: string[] | null) => values ?? [];
   const servedPopulations = selectedPopulation(profile?.populationServedOptions, profile?.populationServed);
+  const videoUrls = Array.isArray(profile?.videoUrls) ? profile.videoUrls : [];
 
   return (
     <main className="grid min-h-screen lg:grid-cols-[320px_1fr]">
@@ -411,7 +412,7 @@ export default async function SoberLivingStepPage({
                   {[0, 1, 2].map((index) => (
                     <label key={index} className="grid gap-2 text-sm font-medium">
                       Video URL {index + 1}
-                      <input name="videoUrls" type="url" defaultValue={profile?.videoUrls[index] ?? ""} className={fieldClassName()} />
+                      <input name="videoUrls" type="url" defaultValue={videoUrls[index] ?? ""} className={fieldClassName()} />
                     </label>
                   ))}
                   <label className="grid gap-2 text-sm font-medium">

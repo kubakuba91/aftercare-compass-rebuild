@@ -54,8 +54,13 @@ async function finishExistingUserSetup(existingUser: ExistingOnboardingUser, acc
     const isAftercareOrg =
       existingUser.organization?.type === OrganizationType.aftercare_sober_living ||
       existingUser.organization?.type === OrganizationType.aftercare_continued_care;
+    const hasStartedReferentOnboarding = Boolean(existingUser.organization?.referentDetails);
 
-    if (!isAftercareOrg && accountType !== "referent" && !hasAftercareProfile) {
+    if (
+      existingUser.organization?.type !== accountTypeToOrgType[accountType] &&
+      !hasAftercareProfile &&
+      !hasStartedReferentOnboarding
+    ) {
       const role = defaultRoleForAccountType(accountType);
 
       await prisma.organization.update({

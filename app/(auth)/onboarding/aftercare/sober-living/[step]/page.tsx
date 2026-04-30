@@ -493,7 +493,7 @@ export default async function SoberLivingStepPage({
                       Back
                     </Link>
                   ) : (
-                    <Link className="focus-ring inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold" href="/onboarding/start/sober_living">
+                    <Link className="focus-ring inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold" href="/onboarding/account-type">
                       Back
                     </Link>
                   )}

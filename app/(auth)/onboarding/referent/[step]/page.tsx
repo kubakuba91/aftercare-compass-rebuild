@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { Card } from "@/components/ui/card";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
@@ -45,27 +46,6 @@ function checkboxGroup(name: string, options: readonly string[], selected: strin
         </label>
       ))}
     </div>
-  );
-}
-
-function multiSelectDropdown(name: string, options: readonly string[], selected: string[] = []) {
-  const summary = selected.length ? `${selected.length} selected` : "Select options";
-
-  return (
-    <details className="rounded-md border border-border bg-white">
-      <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm">
-        <span className="text-muted-foreground">{summary}</span>
-        <span aria-hidden="true">▾</span>
-      </summary>
-      <div className="grid max-h-72 gap-2 overflow-auto border-t border-border p-3">
-        {options.map((option) => (
-          <label key={option} className="flex min-h-9 items-center gap-2 rounded-md px-2 text-sm hover:bg-muted">
-            <input type="checkbox" name={name} value={option} defaultChecked={selected.includes(option)} />
-            <span>{option}</span>
-          </label>
-        ))}
-      </div>
-    </details>
   );
 }
 
@@ -249,7 +229,7 @@ export default async function ReferentStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     {requiredLabel("States operated in")}
-                    {multiSelectDropdown("statesOperatedIn", statesOperatedOptions, selected(referentDetails?.statesOperatedIn))}
+                    <MultiSelectDropdown name="statesOperatedIn" options={statesOperatedOptions} selected={selected(referentDetails?.statesOperatedIn)} />
                   </div>
                 </>
               ) : null}
@@ -258,15 +238,15 @@ export default async function ReferentStepPage({
                 <>
                   <div className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Level of care provided")}
-                    {multiSelectDropdown("levelsOfCare", levelsOfCareOptions, selected(referentDetails?.levelsOfCare))}
+                    <MultiSelectDropdown name="levelsOfCare" options={levelsOfCareOptions} selected={selected(referentDetails?.levelsOfCare)} />
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     How do you currently place patients?
-                    {multiSelectDropdown(
-                      "currentPlacementMethods",
-                      placementMethodOptions,
-                      selected(referentDetails?.currentPlacementMethods)
-                    )}
+                    <MultiSelectDropdown
+                      name="currentPlacementMethods"
+                      options={placementMethodOptions}
+                      selected={selected(referentDetails?.currentPlacementMethods)}
+                    />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Average patients referred to aftercare per month")}

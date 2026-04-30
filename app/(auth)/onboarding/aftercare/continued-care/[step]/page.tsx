@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { Card } from "@/components/ui/card";
 import {
   continuedCareDurationOptions,
@@ -47,27 +48,6 @@ function checkboxGroup(name: string, options: readonly string[], selected: strin
         </label>
       ))}
     </div>
-  );
-}
-
-function multiSelectDropdown(name: string, options: readonly string[], selected: string[] = []) {
-  const summary = selected.length ? `${selected.length} selected` : "Select options";
-
-  return (
-    <details className="rounded-md border border-border bg-white">
-      <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm">
-        <span className="text-muted-foreground">{summary}</span>
-        <span aria-hidden="true">▾</span>
-      </summary>
-      <div className="grid max-h-72 gap-2 overflow-auto border-t border-border p-3">
-        {options.map((option) => (
-          <label key={option} className="flex min-h-9 items-center gap-2 rounded-md px-2 text-sm hover:bg-muted">
-            <input type="checkbox" name={name} value={option} defaultChecked={selected.includes(option)} />
-            <span>{option}</span>
-          </label>
-        ))}
-      </div>
-    </details>
   );
 }
 
@@ -193,7 +173,7 @@ export default async function ContinuedCareStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Program type")}
-                    {multiSelectDropdown("programTypes", programTypeOptions, selected(profile?.programTypes))}
+                    <MultiSelectDropdown name="programTypes" options={programTypeOptions} selected={selected(profile?.programTypes)} />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Primary address")}
@@ -233,7 +213,11 @@ export default async function ContinuedCareStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     Accreditations
-                    {multiSelectDropdown("certificationsHeld", continuedCareOptionGroups.certifications, selected(profile?.certificationsHeld))}
+                    <MultiSelectDropdown
+                      name="certificationsHeld"
+                      options={continuedCareOptionGroups.certifications}
+                      selected={selected(profile?.certificationsHeld)}
+                    />
                   </div>
                 </>
               ) : null}
@@ -274,7 +258,7 @@ export default async function ContinuedCareStepPage({
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     MAT accepted
-                    {multiSelectDropdown("matAccepted", continuedCareOptionGroups.mat, selected(profile?.matAccepted))}
+                    <MultiSelectDropdown name="matAccepted" options={continuedCareOptionGroups.mat} selected={selected(profile?.matAccepted)} />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Average program duration")}
@@ -303,7 +287,11 @@ export default async function ContinuedCareStepPage({
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Insurance accepted
-                    {multiSelectDropdown("insuranceAccepted", continuedCareOptionGroups.insurance, selected(profile?.insuranceAccepted))}
+                    <MultiSelectDropdown
+                      name="insuranceAccepted"
+                      options={continuedCareOptionGroups.insurance}
+                      selected={selected(profile?.insuranceAccepted)}
+                    />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Referral process description")}
@@ -328,7 +316,11 @@ export default async function ContinuedCareStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     Support services
-                    {multiSelectDropdown("supportServices", continuedCareOptionGroups.support, selected(profile?.supportServices))}
+                    <MultiSelectDropdown
+                      name="supportServices"
+                      options={continuedCareOptionGroups.support}
+                      selected={selected(profile?.supportServices)}
+                    />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Preferred contact method")}

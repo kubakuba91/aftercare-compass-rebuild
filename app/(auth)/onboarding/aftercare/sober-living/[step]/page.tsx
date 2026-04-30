@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { Card } from "@/components/ui/card";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
@@ -54,27 +55,6 @@ function checkboxGroup(name: string, options: readonly string[], selected: strin
         </label>
       ))}
     </div>
-  );
-}
-
-function multiSelectDropdown(name: string, options: readonly string[], selected: string[] = []) {
-  const summary = selected.length ? `${selected.length} selected` : "Select options";
-
-  return (
-    <details className="rounded-md border border-border bg-white">
-      <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm">
-        <span className="text-muted-foreground">{summary}</span>
-        <span aria-hidden="true">▾</span>
-      </summary>
-      <div className="grid max-h-72 gap-2 overflow-auto border-t border-border p-3">
-        {options.map((option) => (
-          <label key={option} className="flex min-h-9 items-center gap-2 rounded-md px-2 text-sm hover:bg-muted">
-            <input type="checkbox" name={name} value={option} defaultChecked={selected.includes(option)} />
-            <span>{option}</span>
-          </label>
-        ))}
-      </div>
-    </details>
   );
 }
 
@@ -307,7 +287,7 @@ export default async function SoberLivingStepPage({
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Accreditations held
-                    {multiSelectDropdown("certificationsHeld", certificationOptions, selected(profile?.certificationsHeld))}
+                    <MultiSelectDropdown name="certificationsHeld" options={certificationOptions} selected={selected(profile?.certificationsHeld)} />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Average length of stay")}
@@ -381,15 +361,15 @@ export default async function SoberLivingStepPage({
                 <>
                   <div className="grid gap-2 text-sm font-medium">
                     Support services
-                    {multiSelectDropdown("supportServices", supportServiceOptions, selected(profile?.supportServices))}
+                    <MultiSelectDropdown name="supportServices" options={supportServiceOptions} selected={selected(profile?.supportServices)} />
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Amenities
-                    {multiSelectDropdown("amenities", amenityOptions, selected(profile?.amenities))}
+                    <MultiSelectDropdown name="amenities" options={amenityOptions} selected={selected(profile?.amenities)} />
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Insurance/payment accepted
-                    {multiSelectDropdown("insuranceAccepted", insuranceOptions, selected(profile?.insuranceAccepted))}
+                    <MultiSelectDropdown name="insuranceAccepted" options={insuranceOptions} selected={selected(profile?.insuranceAccepted)} />
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
@@ -412,7 +392,7 @@ export default async function SoberLivingStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     MAT accepted
-                    {multiSelectDropdown("matAccepted", matOptions, selected(profile?.matAccepted))}
+                    <MultiSelectDropdown name="matAccepted" options={matOptions} selected={selected(profile?.matAccepted)} />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     Medication restrictions

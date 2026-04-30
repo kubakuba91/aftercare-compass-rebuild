@@ -184,6 +184,18 @@ model AftercareProfile {
   admissionsContactEmail          String?
   preferredContactMethod          String?
   websiteUrl                      String?
+  programTypes                    String[]      @default([])
+  telehealthAvailable             Boolean?
+  telehealthMode                  String?
+  additionalLocations             String?
+  stateLicenseNumber              String?
+  levelsOfCare                    String[]      @default([])
+  hoursOfOperation                String?
+  matServicesOffered              Boolean?
+  coOccurringTreatment            Boolean?
+  intakeContactName               String?
+  referralProcessDescription      String?
+  affiliatedSoberLivingHomes      String?
   populationServed                String?
   populationServedOptions         String[]      @default([])
   specialtyPopulations            String[]      @default([])

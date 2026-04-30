@@ -4,6 +4,7 @@ import { getClerkSessionUserId, getCurrentAppUser } from "@/lib/current-user";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { draftDestinationForAccountType, isAccountType } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
+import { maxContinuedCareStep } from "@/lib/continued-care-onboarding";
 import { maxReferentStep } from "@/lib/referent-onboarding";
 import { maxSoberLivingStep } from "@/lib/sober-living-onboarding";
 
@@ -117,7 +118,7 @@ export async function getAuthenticatedLandingPath() {
 
     return profileType === "sober_living"
       ? "/onboarding/aftercare/sober-living/1"
-      : `/onboarding/aftercare/profile?type=${profileType}`;
+      : "/onboarding/aftercare/continued-care/1";
   }
 
   const incompleteSoberLivingProfile = profiles.find(
@@ -131,6 +132,19 @@ export async function getAuthenticatedLandingPath() {
     );
 
     return `/onboarding/aftercare/sober-living/${resumeStep}?profileId=${incompleteSoberLivingProfile.id}`;
+  }
+
+  const incompleteContinuedCareProfile = profiles.find(
+    (profile) => profile.type === "continued_care" && !profile.onboardingCompletedAt
+  );
+
+  if (incompleteContinuedCareProfile) {
+    const resumeStep = Math.min(
+      Math.max(incompleteContinuedCareProfile.onboardingStep ?? 1, 1),
+      maxContinuedCareStep
+    );
+
+    return `/onboarding/aftercare/continued-care/${resumeStep}`;
   }
 
   return "/dashboard/aftercare";
@@ -186,7 +200,7 @@ export async function redirectIncompleteAftercareOnboarding(orgId: string) {
       redirect("/onboarding/aftercare/sober-living/1");
     }
 
-    redirect(`/onboarding/aftercare/profile?type=${profileType}`);
+    redirect("/onboarding/aftercare/continued-care/1");
   }
 
   const incompleteSoberLivingProfile = profiles.find(
@@ -201,5 +215,17 @@ export async function redirectIncompleteAftercareOnboarding(orgId: string) {
     redirect(
       `/onboarding/aftercare/sober-living/${resumeStep}?profileId=${incompleteSoberLivingProfile.id}`
     );
+  }
+
+  const incompleteContinuedCareProfile = profiles.find(
+    (profile) => profile.type === "continued_care" && !profile.onboardingCompletedAt
+  );
+
+  if (incompleteContinuedCareProfile) {
+    const resumeStep = Math.min(
+      Math.max(incompleteContinuedCareProfile.onboardingStep ?? 1, 1),
+      maxContinuedCareStep
+    );
+    redirect(`/onboarding/aftercare/continued-care/${resumeStep}`);
   }
 }

@@ -7,6 +7,14 @@ import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
 import {
+  continuedCareStepFiveSchema,
+  continuedCareStepFourSchema,
+  continuedCareStepOneSchema,
+  continuedCareStepThreeSchema,
+  continuedCareStepTwoSchema,
+  maxContinuedCareStep
+} from "@/lib/continued-care-onboarding";
+import {
   maxSoberLivingStep,
   nullableText,
   stepFiveSchema,
@@ -41,6 +49,16 @@ function stepRedirect(step: number, error?: string) {
   }
 
   return `/onboarding/aftercare/sober-living/${step}${params.size ? `?${params.toString()}` : ""}`;
+}
+
+function continuedCareStepRedirect(step: number, error?: string) {
+  const params = new URLSearchParams();
+
+  if (error) {
+    params.set("error", error);
+  }
+
+  return `/onboarding/aftercare/continued-care/${step}${params.size ? `?${params.toString()}` : ""}`;
 }
 
 export async function createAftercareProfileDraft(formData: FormData) {
@@ -401,6 +419,236 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
   } catch (error) {
     console.error("Sober living onboarding step save failed", error);
     destination = stepRedirect(step, "Please check the highlighted fields and try again.");
+  }
+
+  redirect(destination);
+}
+
+export async function saveContinuedCareOnboardingStep(step: number, formData: FormData) {
+  if (!hasDatabaseConfig()) {
+    redirect("/setup?missing=database");
+  }
+
+  let destination = continuedCareStepRedirect(step);
+
+  try {
+    const draft = await getOrCreateOnboardingDraft("continued_care", false);
+    const currentDraft = draft.continuedCareDraft;
+
+    if (step === 1) {
+      const parsed = continuedCareStepOneSchema.parse({
+        programName: formData.get("programName"),
+        programTypes: valuesFromForm(formData, "programTypes"),
+        streetAddress: formData.get("streetAddress"),
+        city: formData.get("city"),
+        state: formData.get("state"),
+        zip: formData.get("zip"),
+        websiteUrl: formData.get("websiteUrl") || undefined,
+        telehealthMode: formData.get("telehealthMode"),
+        additionalLocations: formData.get("additionalLocations") || undefined,
+        stateLicenseNumber: formData.get("stateLicenseNumber"),
+        certificationsHeld: valuesFromForm(formData, "certificationsHeld")
+      });
+
+      await prisma.onboardingDraft.update({
+        where: { id: draft.id },
+        data: {
+          continuedCareDraft: jsonDraft(mergeDraft(currentDraft, {
+            ...parsed,
+            websiteUrl: nullableText(parsed.websiteUrl),
+            additionalLocations: nullableText(parsed.additionalLocations),
+            telehealthAvailable: parsed.telehealthMode !== "In-person only"
+          })),
+          selectedAccountType: "continued_care",
+          activeStep: 2,
+          completedAt: null
+        }
+      });
+
+      destination = continuedCareStepRedirect(2);
+    }
+
+    if (step === 2) {
+      const parsed = continuedCareStepTwoSchema.parse({
+        levelsOfCare: valuesFromForm(formData, "levelsOfCare"),
+        hoursOfOperation: formData.get("hoursOfOperation"),
+        populationServed: valuesFromForm(formData, "populationServed"),
+        specialtyPopulations: valuesFromForm(formData, "specialtyPopulations"),
+        matServicesOffered: formData.get("matServicesOffered"),
+        matAccepted: valuesFromForm(formData, "matAccepted"),
+        coOccurringTreatment: formData.get("coOccurringTreatment"),
+        averageLengthOfStay: formData.get("averageLengthOfStay")
+      });
+
+      await prisma.onboardingDraft.update({
+        where: { id: draft.id },
+        data: {
+          continuedCareDraft: jsonDraft(mergeDraft(currentDraft, {
+            ...parsed,
+            populationServed: parsed.populationServed.join(", "),
+            populationServedOptions: parsed.populationServed,
+            matServicesOffered: parsed.matServicesOffered === "yes",
+            coOccurringTreatment: parsed.coOccurringTreatment === "yes"
+          })),
+          selectedAccountType: "continued_care",
+          activeStep: 3,
+          completedAt: null
+        }
+      });
+
+      destination = continuedCareStepRedirect(3);
+    }
+
+    if (step === 3) {
+      const parsed = continuedCareStepThreeSchema.parse({
+        intakeContactName: formData.get("intakeContactName"),
+        admissionsContactPhone: formData.get("admissionsContactPhone"),
+        admissionsContactEmail: formData.get("admissionsContactEmail"),
+        insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
+        referralProcessDescription: formData.get("referralProcessDescription"),
+        medicalRecordsFax: formData.get("medicalRecordsFax") || undefined
+      });
+
+      await prisma.onboardingDraft.update({
+        where: { id: draft.id },
+        data: {
+          continuedCareDraft: jsonDraft(mergeDraft(currentDraft, {
+            ...parsed,
+            medicalRecordsFax: nullableText(parsed.medicalRecordsFax)
+          })),
+          selectedAccountType: "continued_care",
+          activeStep: 4,
+          completedAt: null
+        }
+      });
+
+      destination = continuedCareStepRedirect(4);
+    }
+
+    if (step === 4) {
+      const parsed = continuedCareStepFourSchema.parse({
+        affiliatedSoberLivingHomes: formData.get("affiliatedSoberLivingHomes") || undefined,
+        description: formData.get("description"),
+        supportServices: valuesFromForm(formData, "supportServices"),
+        preferredContactMethod: formData.get("preferredContactMethod")
+      });
+
+      await prisma.onboardingDraft.update({
+        where: { id: draft.id },
+        data: {
+          continuedCareDraft: jsonDraft(mergeDraft(currentDraft, {
+            ...parsed,
+            affiliatedSoberLivingHomes: nullableText(parsed.affiliatedSoberLivingHomes)
+          })),
+          selectedAccountType: "continued_care",
+          activeStep: 5,
+          completedAt: null
+        }
+      });
+
+      destination = continuedCareStepRedirect(5);
+    }
+
+    if (step === 5) {
+      const parsed = continuedCareStepFiveSchema.parse({
+        acceptingNewPatients: formData.get("acceptingNewPatients"),
+        availabilityNotes: formData.get("availabilityNotes") || undefined,
+        photoReadiness: valuesFromForm(formData, "photoReadiness"),
+        videoUrls: valuesFromForm(formData, "videoUrls")
+      });
+      const finalDraft = mergeDraft(currentDraft, {
+        acceptingNewPatients: parsed.acceptingNewPatients === "yes",
+        availabilityNotes: nullableText(parsed.availabilityNotes),
+        photoReadiness: parsed.photoReadiness,
+        videoUrls: parsed.videoUrls
+      }) as Record<string, unknown>;
+      const programName = String(finalDraft.programName || "Continued Care Program");
+      const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
+
+      await prisma.$transaction(async (tx) => {
+        const organization = await tx.organization.create({
+          data: {
+            type: "aftercare_continued_care",
+            name: programName,
+            email: draft.user.email,
+            phone: String(finalDraft.admissionsContactPhone || "")
+          }
+        });
+
+        await tx.user.update({
+          where: { id: draft.userId },
+          data: {
+            role: "aftercare_admin",
+            orgId: organization.id
+          }
+        });
+
+        await tx.aftercareProfile.create({
+          data: {
+            orgId: organization.id,
+            type: ProfileType.continued_care,
+            programName,
+            slug,
+            status: ProfileStatus.draft,
+            streetAddress: String(finalDraft.streetAddress || ""),
+            city: String(finalDraft.city || ""),
+            state: String(finalDraft.state || ""),
+            zip: String(finalDraft.zip || ""),
+            publicCity: String(finalDraft.city || ""),
+            publicState: String(finalDraft.state || ""),
+            admissionsContactPhone: String(finalDraft.admissionsContactPhone || ""),
+            admissionsContactEmail: String(finalDraft.admissionsContactEmail || ""),
+            preferredContactMethod: String(finalDraft.preferredContactMethod || ""),
+            websiteUrl: nullableText(String(finalDraft.websiteUrl || "")),
+            programTypes: arrayFromDraft(finalDraft.programTypes),
+            telehealthAvailable: Boolean(finalDraft.telehealthAvailable),
+            telehealthMode: String(finalDraft.telehealthMode || ""),
+            additionalLocations: nullableText(String(finalDraft.additionalLocations || "")),
+            stateLicenseNumber: String(finalDraft.stateLicenseNumber || ""),
+            certificationsHeld: arrayFromDraft(finalDraft.certificationsHeld),
+            levelsOfCare: arrayFromDraft(finalDraft.levelsOfCare),
+            hoursOfOperation: String(finalDraft.hoursOfOperation || ""),
+            populationServed: String(finalDraft.populationServed || ""),
+            populationServedOptions: arrayFromDraft(finalDraft.populationServedOptions),
+            specialtyPopulations: arrayFromDraft(finalDraft.specialtyPopulations),
+            matServicesOffered: Boolean(finalDraft.matServicesOffered),
+            matAccepted: arrayFromDraft(finalDraft.matAccepted),
+            coOccurringTreatment: Boolean(finalDraft.coOccurringTreatment),
+            averageLengthOfStay: String(finalDraft.averageLengthOfStay || ""),
+            intakeContactName: String(finalDraft.intakeContactName || ""),
+            insuranceAccepted: arrayFromDraft(finalDraft.insuranceAccepted),
+            referralProcessDescription: String(finalDraft.referralProcessDescription || ""),
+            referralFitNotes: String(finalDraft.referralProcessDescription || ""),
+            bedsReservedNotes: nullableText(String(finalDraft.medicalRecordsFax || "")),
+            affiliatedSoberLivingHomes: nullableText(String(finalDraft.affiliatedSoberLivingHomes || "")),
+            description: String(finalDraft.description || ""),
+            supportServices: arrayFromDraft(finalDraft.supportServices),
+            acceptingNewPatients: Boolean(finalDraft.acceptingNewPatients),
+            acceptingNewPatientsUpdatedAt: new Date(),
+            availabilityNotes: nullableText(String(finalDraft.availabilityNotes || "")),
+            photoReadiness: arrayFromDraft(finalDraft.photoReadiness),
+            videoUrls: arrayFromDraft(finalDraft.videoUrls),
+            onboardingStep: maxContinuedCareStep,
+            onboardingCompletedAt: new Date()
+          }
+        });
+
+        await tx.onboardingDraft.update({
+          where: { id: draft.id },
+          data: {
+            continuedCareDraft: jsonDraft(finalDraft),
+            selectedAccountType: "continued_care",
+            activeStep: maxContinuedCareStep,
+            completedAt: new Date()
+          }
+        });
+      });
+
+      destination = "/dashboard/aftercare";
+    }
+  } catch (error) {
+    console.error("Continued care onboarding step save failed", error);
+    destination = continuedCareStepRedirect(step, "Please check the highlighted fields and try again.");
   }
 
   redirect(destination);

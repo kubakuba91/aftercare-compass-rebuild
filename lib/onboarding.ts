@@ -36,7 +36,7 @@ export function draftDestinationForAccountType(accountType: AccountType, step = 
   }
 
   if (accountType === "continued_care") {
-    return "/onboarding/aftercare/profile?type=continued_care";
+    return "/onboarding/aftercare/continued-care/1";
   }
 
   return `/onboarding/aftercare/sober-living/${step}`;

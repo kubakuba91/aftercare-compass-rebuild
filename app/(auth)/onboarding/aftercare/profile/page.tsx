@@ -11,6 +11,10 @@ export default async function AftercareProfileOnboardingPage({
   const profileType = params.type === "continued_care" ? "continued_care" : "sober_living";
   const isSoberLiving = profileType === "sober_living";
 
+  if (profileType === "continued_care") {
+    redirect("/onboarding/aftercare/continued-care/1");
+  }
+
   if (isSoberLiving) {
     redirect("/onboarding/aftercare/sober-living/1");
   }

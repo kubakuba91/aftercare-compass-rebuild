@@ -57,6 +57,27 @@ function checkboxGroup(name: string, options: readonly string[], selected: strin
   );
 }
 
+function multiSelectDropdown(name: string, options: readonly string[], selected: string[] = []) {
+  const summary = selected.length ? `${selected.length} selected` : "Select options";
+
+  return (
+    <details className="rounded-md border border-border bg-white">
+      <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm">
+        <span className="text-muted-foreground">{summary}</span>
+        <span aria-hidden="true">▾</span>
+      </summary>
+      <div className="grid max-h-72 gap-2 overflow-auto border-t border-border p-3 md:grid-cols-2">
+        {options.map((option) => (
+          <label key={option} className="flex min-h-9 items-center gap-2 rounded-md px-2 text-sm hover:bg-muted">
+            <input type="checkbox" name={name} value={option} defaultChecked={selected.includes(option)} />
+            <span>{option}</span>
+          </label>
+        ))}
+      </div>
+    </details>
+  );
+}
+
 function StepRail({ currentStep }: { currentStep: number }) {
   return (
     <>
@@ -286,7 +307,7 @@ export default async function SoberLivingStepPage({
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Accreditations held
-                    {checkboxGroup("certificationsHeld", certificationOptions, selected(profile?.certificationsHeld))}
+                    {multiSelectDropdown("certificationsHeld", certificationOptions, selected(profile?.certificationsHeld))}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Average length of stay")}
@@ -360,15 +381,15 @@ export default async function SoberLivingStepPage({
                 <>
                   <div className="grid gap-2 text-sm font-medium">
                     Support services
-                    {checkboxGroup("supportServices", supportServiceOptions, selected(profile?.supportServices))}
+                    {multiSelectDropdown("supportServices", supportServiceOptions, selected(profile?.supportServices))}
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Amenities
-                    {checkboxGroup("amenities", amenityOptions, selected(profile?.amenities))}
+                    {multiSelectDropdown("amenities", amenityOptions, selected(profile?.amenities))}
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Insurance/payment accepted
-                    {checkboxGroup("insuranceAccepted", insuranceOptions, selected(profile?.insuranceAccepted))}
+                    {multiSelectDropdown("insuranceAccepted", insuranceOptions, selected(profile?.insuranceAccepted))}
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
@@ -391,7 +412,7 @@ export default async function SoberLivingStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     MAT accepted
-                    {checkboxGroup("matAccepted", matOptions, selected(profile?.matAccepted))}
+                    {multiSelectDropdown("matAccepted", matOptions, selected(profile?.matAccepted))}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     Medication restrictions

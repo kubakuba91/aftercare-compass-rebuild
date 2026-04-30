@@ -48,6 +48,27 @@ function checkboxGroup(name: string, options: readonly string[], selected: strin
   );
 }
 
+function multiSelectDropdown(name: string, options: readonly string[], selected: string[] = []) {
+  const summary = selected.length ? `${selected.length} selected` : "Select options";
+
+  return (
+    <details className="rounded-md border border-border bg-white">
+      <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm">
+        <span className="text-muted-foreground">{summary}</span>
+        <span aria-hidden="true">▾</span>
+      </summary>
+      <div className="grid max-h-72 gap-2 overflow-auto border-t border-border p-3 md:grid-cols-2">
+        {options.map((option) => (
+          <label key={option} className="flex min-h-9 items-center gap-2 rounded-md px-2 text-sm hover:bg-muted">
+            <input type="checkbox" name={name} value={option} defaultChecked={selected.includes(option)} />
+            <span>{option}</span>
+          </label>
+        ))}
+      </div>
+    </details>
+  );
+}
+
 function StepRail({ currentStep }: { currentStep: number }) {
   return (
     <>
@@ -228,7 +249,7 @@ export default async function ReferentStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     {requiredLabel("States operated in")}
-                    {checkboxGroup("statesOperatedIn", statesOperatedOptions, selected(referentDetails?.statesOperatedIn))}
+                    {multiSelectDropdown("statesOperatedIn", statesOperatedOptions, selected(referentDetails?.statesOperatedIn))}
                   </div>
                 </>
               ) : null}
@@ -237,11 +258,11 @@ export default async function ReferentStepPage({
                 <>
                   <div className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Level of care provided")}
-                    {checkboxGroup("levelsOfCare", levelsOfCareOptions, selected(referentDetails?.levelsOfCare))}
+                    {multiSelectDropdown("levelsOfCare", levelsOfCareOptions, selected(referentDetails?.levelsOfCare))}
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     How do you currently place patients?
-                    {checkboxGroup(
+                    {multiSelectDropdown(
                       "currentPlacementMethods",
                       placementMethodOptions,
                       selected(referentDetails?.currentPlacementMethods)

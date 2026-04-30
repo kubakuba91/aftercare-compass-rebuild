@@ -50,6 +50,27 @@ function checkboxGroup(name: string, options: readonly string[], selected: strin
   );
 }
 
+function multiSelectDropdown(name: string, options: readonly string[], selected: string[] = []) {
+  const summary = selected.length ? `${selected.length} selected` : "Select options";
+
+  return (
+    <details className="rounded-md border border-border bg-white">
+      <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm">
+        <span className="text-muted-foreground">{summary}</span>
+        <span aria-hidden="true">▾</span>
+      </summary>
+      <div className="grid max-h-72 gap-2 overflow-auto border-t border-border p-3 md:grid-cols-2">
+        {options.map((option) => (
+          <label key={option} className="flex min-h-9 items-center gap-2 rounded-md px-2 text-sm hover:bg-muted">
+            <input type="checkbox" name={name} value={option} defaultChecked={selected.includes(option)} />
+            <span>{option}</span>
+          </label>
+        ))}
+      </div>
+    </details>
+  );
+}
+
 function StepRail({ currentStep }: { currentStep: number }) {
   return (
     <>
@@ -172,7 +193,7 @@ export default async function ContinuedCareStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Program type")}
-                    {checkboxGroup("programTypes", programTypeOptions, selected(profile?.programTypes))}
+                    {multiSelectDropdown("programTypes", programTypeOptions, selected(profile?.programTypes))}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Primary address")}
@@ -212,7 +233,7 @@ export default async function ContinuedCareStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     Accreditations
-                    {checkboxGroup("certificationsHeld", continuedCareOptionGroups.certifications, selected(profile?.certificationsHeld))}
+                    {multiSelectDropdown("certificationsHeld", continuedCareOptionGroups.certifications, selected(profile?.certificationsHeld))}
                   </div>
                 </>
               ) : null}
@@ -253,7 +274,7 @@ export default async function ContinuedCareStepPage({
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     MAT accepted
-                    {checkboxGroup("matAccepted", continuedCareOptionGroups.mat, selected(profile?.matAccepted))}
+                    {multiSelectDropdown("matAccepted", continuedCareOptionGroups.mat, selected(profile?.matAccepted))}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Average program duration")}
@@ -282,7 +303,7 @@ export default async function ContinuedCareStepPage({
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Insurance accepted
-                    {checkboxGroup("insuranceAccepted", continuedCareOptionGroups.insurance, selected(profile?.insuranceAccepted))}
+                    {multiSelectDropdown("insuranceAccepted", continuedCareOptionGroups.insurance, selected(profile?.insuranceAccepted))}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Referral process description")}
@@ -307,7 +328,7 @@ export default async function ContinuedCareStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     Support services
-                    {checkboxGroup("supportServices", continuedCareOptionGroups.support, selected(profile?.supportServices))}
+                    {multiSelectDropdown("supportServices", continuedCareOptionGroups.support, selected(profile?.supportServices))}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Preferred contact method")}

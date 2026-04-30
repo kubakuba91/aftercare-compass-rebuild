@@ -1,7 +1,11 @@
+import { auth } from "@clerk/nextjs/server";
 import { ArrowRight, Building2, Search, ShieldCheck } from "lucide-react";
+import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
+
+export const dynamic = "force-dynamic";
 
 const supplySignals = [
   "Verification-ready provider profiles",
@@ -10,7 +14,13 @@ const supplySignals = [
   "Public lead capture without exposing exact addresses"
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { userId } = await auth();
+
+  if (userId) {
+    redirect("/auth/complete");
+  }
+
   return (
     <main>
       <section className="border-b border-border bg-white">

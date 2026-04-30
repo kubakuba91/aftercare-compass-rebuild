@@ -1,20 +1,11 @@
 import { SignUp } from "@clerk/nextjs";
-import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { hasValidClerkPublishableKey } from "@/lib/clerk-config";
-import { getAuthenticatedLandingPath } from "@/lib/protected-routing";
 
 export const dynamic = "force-dynamic";
 
-export default async function SignUpPage() {
-  const { userId } = await auth();
-
-  if (userId) {
-    redirect(await getAuthenticatedLandingPath());
-  }
-
+export default function SignUpPage() {
   if (!hasValidClerkPublishableKey()) {
     return (
       <main className="shell flex min-h-screen items-center justify-center py-10">
@@ -37,7 +28,8 @@ export default async function SignUpPage() {
         routing="path"
         path="/sign-up"
         signInUrl="/sign-in"
-        fallbackRedirectUrl="/onboarding/account-type"
+        forceRedirectUrl="/auth/complete"
+        fallbackRedirectUrl="/auth/complete"
       />
     </main>
   );

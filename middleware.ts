@@ -3,6 +3,7 @@ import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
 import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
 
 const isProtectedRoute = createRouteMatcher([
+  "/auth/complete(.*)",
   "/dashboard(.*)",
   "/onboarding/start(.*)",
   "/onboarding/aftercare(.*)",

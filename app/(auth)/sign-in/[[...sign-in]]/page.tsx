@@ -1,24 +1,11 @@
 import { SignIn } from "@clerk/nextjs";
-import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { hasValidClerkPublishableKey } from "@/lib/clerk-config";
-import { getAuthenticatedLandingPath } from "@/lib/protected-routing";
 
 export const dynamic = "force-dynamic";
 
-export default async function SignInPage({
-  searchParams: _searchParams
-}: {
-  searchParams: Promise<{ reason?: string }>;
-}) {
-  const { userId } = await auth();
-
-  if (userId) {
-    redirect(await getAuthenticatedLandingPath());
-  }
-
+export default function SignInPage() {
   if (!hasValidClerkPublishableKey()) {
     return (
       <main className="shell flex min-h-screen items-center justify-center py-10">
@@ -37,7 +24,13 @@ export default async function SignInPage({
 
   return (
     <main className="shell flex min-h-screen items-center justify-center py-10">
-      <SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" fallbackRedirectUrl="/dashboard" />
+      <SignIn
+        routing="path"
+        path="/sign-in"
+        signUpUrl="/sign-up"
+        forceRedirectUrl="/auth/complete"
+        fallbackRedirectUrl="/auth/complete"
+      />
     </main>
   );
 }

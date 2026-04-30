@@ -209,7 +209,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         bedsReservedNotes: formData.get("bedsReservedNotes") || undefined,
         wheelchairAccessible: formData.get("wheelchairAccessible"),
         wheelchairAccessibleBeds: formData.get("wheelchairAccessibleBeds") || undefined,
-        pricePerWeek: formData.get("pricePerWeek")
+        pricePerWeek: formData.get("pricePerWeek") || undefined
       });
 
       const totalBeds = parsed.bedsMen + parsed.bedsWomen + parsed.bedsLgbtq;

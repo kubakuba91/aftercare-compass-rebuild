@@ -378,7 +378,7 @@ export default async function SoberLivingStepPage({
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     Price per week
-                    <input name="pricePerWeek" type="number" min="0" required defaultValue={profile?.pricePerWeek ?? ""} className={fieldClassName()} />
+                    <input name="pricePerWeek" type="number" min="0" defaultValue={profile?.pricePerWeek ?? ""} className={fieldClassName()} />
                   </label>
                 </>
               ) : null}

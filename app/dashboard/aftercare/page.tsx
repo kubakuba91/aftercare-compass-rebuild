@@ -8,6 +8,8 @@ import {
   redirectIncompleteAftercareOnboarding
 } from "@/lib/protected-routing";
 
+export const dynamic = "force-dynamic";
+
 export default async function AftercareDashboardPage() {
   const appUser = await getAftercareDashboardUser();
   await redirectIncompleteAftercareOnboarding(appUser.orgId);

@@ -22,6 +22,18 @@ function hasPgBouncerFlag(value?: string) {
   }
 }
 
+function hasConnectionLimit(value?: string) {
+  if (!value) {
+    return false;
+  }
+
+  try {
+    return new URL(value).searchParams.get("connection_limit") === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function hasValidDatabaseUrl() {
   const value = process.env.DATABASE_URL;
 
@@ -29,7 +41,7 @@ export function hasValidDatabaseUrl() {
     return false;
   }
 
-  if (usesSupabaseTransactionPooler(value) && !hasPgBouncerFlag(value)) {
+  if (usesSupabaseTransactionPooler(value) && (!hasPgBouncerFlag(value) || !hasConnectionLimit(value))) {
     return false;
   }
 
@@ -43,7 +55,7 @@ export function hasValidDirectUrl() {
 export const databaseEnvRequirements = [
   {
     key: "DATABASE_URL",
-    valueHint: "Supabase transaction pooler URL with ?pgbouncer=true",
+    valueHint: "Supabase transaction pooler URL with ?pgbouncer=true&connection_limit=1",
     valid: hasValidDatabaseUrl()
   },
   {
@@ -57,6 +69,6 @@ export function missingDatabaseResponse() {
   return {
     error: "Database is not configured.",
     required: ["DATABASE_URL", "DIRECT_URL"],
-    next: "Use the Supabase transaction pooler for DATABASE_URL with ?pgbouncer=true, and use DIRECT_URL for migrations."
+    next: "Use the Supabase transaction pooler for DATABASE_URL with ?pgbouncer=true&connection_limit=1, and use DIRECT_URL for migrations."
   };
 }

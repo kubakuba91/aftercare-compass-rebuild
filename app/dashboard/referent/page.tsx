@@ -2,6 +2,8 @@ import { Heart, MessageSquare, Search, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
+export const dynamic = "force-dynamic";
+
 export default function ReferentDashboardPage() {
   return (
     <main className="shell py-8">
@@ -53,4 +55,3 @@ export default function ReferentDashboardPage() {
     </main>
   );
 }
-

@@ -31,10 +31,10 @@ export default async function StartOnboardingPage({
     console.error("Onboarding start failed", error);
 
     if (isClerkIdentityError(error)) {
-      redirect(`/sign-in?redirect_url=/onboarding/start/${accountType}&reason=session_timeout`);
+      redirect("/sign-in?reason=session_timeout");
     }
 
-    redirect(`/sign-in?redirect_url=/onboarding/start/${accountType}&reason=session_timeout`);
+    redirect("/sign-in?reason=session_timeout");
   }
 
   redirect(destination);

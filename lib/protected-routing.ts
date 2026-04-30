@@ -4,20 +4,19 @@ import { getClerkSessionUserId, getCurrentAppUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { maxSoberLivingStep } from "@/lib/sober-living-onboarding";
 
-export function signInToContinuePath(returnTo: string) {
+export function signInToContinuePath() {
   const params = new URLSearchParams({
-    redirect_url: returnTo,
     reason: "session_timeout"
   });
 
   return `/sign-in?${params.toString()}`;
 }
 
-export async function getProtectedAppUser(returnTo: string) {
+export async function getProtectedAppUser(_returnTo: string) {
   const clerkUserId = await getClerkSessionUserId();
 
   if (!clerkUserId) {
-    redirect(signInToContinuePath(returnTo));
+    redirect(signInToContinuePath());
   }
 
   const appUser = await getCurrentAppUser();

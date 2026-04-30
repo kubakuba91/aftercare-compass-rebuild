@@ -14,20 +14,15 @@ const isProtectedRoute = createRouteMatcher([
 
 const authMiddleware = clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
-    const { userId } = await auth();
+    const { userId, redirectToSignIn } = await auth();
 
     if (!userId) {
-      const signInUrl = new URL("/sign-in", req.url);
-      signInUrl.searchParams.set("redirect_url", req.url);
-      signInUrl.searchParams.set("reason", "session_timeout");
-
       if (req.nextUrl.pathname.startsWith("/onboarding/start")) {
         const signUpUrl = new URL("/sign-up", req.url);
-        signUpUrl.searchParams.set("redirect_url", req.url);
         return NextResponse.redirect(signUpUrl);
       }
 
-      return NextResponse.redirect(signInUrl);
+      return redirectToSignIn({ returnBackUrl: "/dashboard" });
     }
   }
 }, {

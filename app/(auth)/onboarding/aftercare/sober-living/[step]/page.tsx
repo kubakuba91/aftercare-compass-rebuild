@@ -158,7 +158,7 @@ function OnboardingRecoveryCard() {
         </p>
         <Link
           className="focus-ring mt-5 inline-flex min-h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-          href="/sign-in?redirect_url=/onboarding/start/sober_living&reason=session_timeout"
+          href="/sign-in?reason=session_timeout"
         >
           Sign in to continue
         </Link>
@@ -190,7 +190,7 @@ export default async function SoberLivingStepPage({
     console.error("Sober living onboarding bootstrap failed", error);
 
     if (isClerkIdentityError(error)) {
-      redirect("/sign-in?redirect_url=/onboarding/start/sober_living&reason=session_timeout");
+      redirect("/sign-in?reason=session_timeout");
     }
 
     return <OnboardingRecoveryCard />;

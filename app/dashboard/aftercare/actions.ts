@@ -27,7 +27,10 @@ export async function updateAftercareAvailability(formData: FormData) {
     select: {
       id: true,
       type: true,
-      totalBeds: true
+      totalBeds: true,
+      bedsMen: true,
+      bedsWomen: true,
+      bedsLgbtq: true
     }
   });
 
@@ -36,14 +39,28 @@ export async function updateAftercareAvailability(formData: FormData) {
   }
 
   if (profile.type === ProfileType.sober_living) {
-    const bedsAvailable = Math.min(
-      numberFromForm(formData.get("bedsAvailable")) ?? 0,
-      profile.totalBeds ?? 0
-    );
+    const bedsMenAvailable = numberFromForm(formData.get("bedsMenAvailable")) ?? 0;
+    const bedsWomenAvailable = numberFromForm(formData.get("bedsWomenAvailable")) ?? 0;
+    const bedsLgbtqAvailable = numberFromForm(formData.get("bedsLgbtqAvailable")) ?? 0;
+
+    if (
+      bedsMenAvailable > (profile.bedsMen ?? 0) ||
+      bedsWomenAvailable > (profile.bedsWomen ?? 0) ||
+      bedsLgbtqAvailable > (profile.bedsLgbtq ?? 0)
+    ) {
+      redirect(
+        "/dashboard/aftercare?tab=overview&availabilityError=Available%20beds%20cannot%20exceed%20the%20total%20beds%20for%20that%20population."
+      );
+    }
+
+    const bedsAvailable = bedsMenAvailable + bedsWomenAvailable + bedsLgbtqAvailable;
 
     await prisma.aftercareProfile.update({
       where: { id: profile.id },
       data: {
+        bedsMenAvailable,
+        bedsWomenAvailable,
+        bedsLgbtqAvailable,
         bedsAvailable,
         bedsAvailableUpdatedAt: new Date(),
         availabilityNotes: String(formData.get("availabilityNotes") || "").trim() || null
@@ -61,7 +78,7 @@ export async function updateAftercareAvailability(formData: FormData) {
   }
 
   revalidatePath("/dashboard/aftercare");
-  redirect("/dashboard/aftercare");
+  redirect("/dashboard/aftercare?tab=overview");
 }
 
 export async function updateUserDisplayName(formData: FormData) {

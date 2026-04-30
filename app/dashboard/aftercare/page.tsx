@@ -14,6 +14,7 @@ import {
   Users
 } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { AftercareQuickAvailability } from "@/components/dashboard/aftercare-quick-availability";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
@@ -111,7 +112,7 @@ function addProfileHref(organizationType: string | undefined) {
 export default async function AftercareDashboardPage({
   searchParams
 }: {
-  searchParams: Promise<{ tab?: string; edit?: string }>;
+  searchParams: Promise<{ tab?: string; edit?: string; availabilityError?: string }>;
 }) {
   const appUser = await getAftercareDashboardUser();
   await redirectIncompleteAftercareOnboarding(appUser.orgId);
@@ -144,6 +145,12 @@ export default async function AftercareDashboardPage({
         photoReadiness: true,
         totalBeds: true,
         bedsAvailable: true,
+        bedsMen: true,
+        bedsMenAvailable: true,
+        bedsWomen: true,
+        bedsWomenAvailable: true,
+        bedsLgbtq: true,
+        bedsLgbtqAvailable: true,
         bedsAvailableUpdatedAt: true,
         acceptingNewPatients: true,
         acceptingNewPatientsUpdatedAt: true,
@@ -331,12 +338,30 @@ export default async function AftercareDashboardPage({
                 </Card>
 
                 <Card>
-                  <ShieldCheck className="text-primary" size={24} />
-                  <h2 className="mt-3 font-semibold">Verification status</h2>
+                  <BedDouble className="text-primary" size={24} />
+                  <h2 className="mt-3 font-semibold">Quick availability</h2>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Profiles can operate as Tier 1 self-reported listings while documents wait for
-                    admin review. Reviews and ratings stay out of v1.
+                    Update live bed counts or patient availability without opening each profile.
                   </p>
+                  <div className="mt-4">
+                    <AftercareQuickAvailability
+                      error={query.availabilityError}
+                      profiles={profiles.map((profile) => ({
+                        id: profile.id,
+                        programName: profile.programName,
+                        type: profile.type,
+                        bedsMen: profile.bedsMen,
+                        bedsMenAvailable: profile.bedsMenAvailable,
+                        bedsWomen: profile.bedsWomen,
+                        bedsWomenAvailable: profile.bedsWomenAvailable,
+                        bedsLgbtq: profile.bedsLgbtq,
+                        bedsLgbtqAvailable: profile.bedsLgbtqAvailable,
+                        acceptingNewPatients: profile.acceptingNewPatients,
+                        availabilityNotes: profile.availabilityNotes
+                      }))}
+                      updateAction={updateAftercareAvailability}
+                    />
+                  </div>
                 </Card>
               </div>
 
@@ -422,6 +447,7 @@ export default async function AftercareDashboardPage({
                         <th className="py-3 pr-4 font-semibold">Type</th>
                         <th className="py-3 pr-4 font-semibold">Status</th>
                         <th className="py-3 pr-4 font-semibold">Availability</th>
+                        <th className="py-3 pr-4 font-semibold">Population beds</th>
                         <th className="py-3 pr-4 font-semibold">Readiness</th>
                         <th className="py-3 pr-4 font-semibold">Last update</th>
                         <th className="py-3 text-right font-semibold">Actions</th>
@@ -448,6 +474,17 @@ export default async function AftercareDashboardPage({
                               </Badge>
                             </td>
                             <td className="py-4 pr-4">{availabilityLabel(profile)}</td>
+                            <td className="py-4 pr-4">
+                              {profile.type === "sober_living" ? (
+                                <div className="grid gap-1 text-xs">
+                                  <span>Men: {profile.bedsMenAvailable ?? 0}/{profile.bedsMen ?? 0}</span>
+                                  <span>Women: {profile.bedsWomenAvailable ?? 0}/{profile.bedsWomen ?? 0}</span>
+                                  <span>LGBTQ+: {profile.bedsLgbtqAvailable ?? 0}/{profile.bedsLgbtq ?? 0}</span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">Program availability</span>
+                              )}
+                            </td>
                             <td className="py-4 pr-4">{readiness.percent}%</td>
                             <td className="py-4 pr-4">
                               {formatDate(

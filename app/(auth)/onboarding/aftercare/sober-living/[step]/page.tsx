@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ProfileType } from "@prisma/client";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Card } from "@/components/ui/card";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { ensureOnboardingOrganization } from "@/lib/onboarding";
@@ -251,7 +252,10 @@ export default async function SoberLivingStepPage({
       <StepRail currentStep={currentStep} />
       <section className="pb-28">
         <div className="mx-auto w-full max-w-3xl px-4 py-10 lg:py-16">
-          <h1 className="text-3xl font-semibold">{step.title}</h1>
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+            <h1 className="text-3xl font-semibold">{step.title}</h1>
+            <SignOutButton />
+          </div>
           {query.error ? (
             <div className="mt-5 rounded-md border border-accent/30 bg-accent/10 p-3 text-sm">
               {query.error}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BedDouble, ClipboardList, Inbox, Users } from "lucide-react";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
@@ -58,12 +59,15 @@ export default async function AftercareDashboardPage() {
           <h1 className="text-3xl font-semibold">Provider operations</h1>
           <p className="mt-2 text-sm text-muted-foreground">{appUser.organization?.name}</p>
         </div>
-        <Link
-          className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-          href="/onboarding/aftercare/sober-living/1?new=1"
-        >
-          Add profile
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <SignOutButton />
+          <Link
+            className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+            href="/onboarding/aftercare/sober-living/1?new=1"
+          >
+            Add profile
+          </Link>
+        </div>
       </div>
       <div className="mt-6 grid gap-4 md:grid-cols-4">
         {metrics.map(([label, value]) => (

@@ -1,4 +1,5 @@
 import { Flag, ShieldCheck, Users } from "lucide-react";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
@@ -7,8 +8,13 @@ export const dynamic = "force-dynamic";
 export default function AdminDashboardPage() {
   return (
     <main className="shell py-8">
-      <Badge tone="verified">System admin</Badge>
-      <h1 className="mt-3 text-3xl font-semibold">Marketplace controls</h1>
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <div>
+          <Badge tone="verified">System admin</Badge>
+          <h1 className="mt-3 text-3xl font-semibold">Marketplace controls</h1>
+        </div>
+        <SignOutButton />
+      </div>
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         <Card>
           <ShieldCheck className="text-primary" size={24} />

@@ -35,6 +35,11 @@ async function findOnboardingUserBySession(clerkUserId: string) {
           id: true,
           _count: {
             select: { profiles: true }
+          },
+          referentDetails: {
+            select: {
+              onboardingCompletedAt: true
+            }
           }
         }
       }
@@ -45,6 +50,7 @@ async function findOnboardingUserBySession(clerkUserId: string) {
 async function finishExistingUserSetup(existingUser: ExistingOnboardingUser, accountType: AccountType) {
   if (existingUser?.orgId) {
     const hasAftercareProfile = (existingUser.organization?._count.profiles ?? 0) > 0;
+    const hasCompletedReferentOnboarding = Boolean(existingUser.organization?.referentDetails?.onboardingCompletedAt);
     const isAftercareOrg =
       existingUser.organization?.type === OrganizationType.aftercare_sober_living ||
       existingUser.organization?.type === OrganizationType.aftercare_continued_care;
@@ -65,7 +71,11 @@ async function finishExistingUserSetup(existingUser: ExistingOnboardingUser, acc
       return { alreadyOnboarded: false, orgId: existingUser.orgId };
     }
 
-    return { alreadyOnboarded: !isAftercareOrg || hasAftercareProfile, orgId: existingUser.orgId };
+    if (existingUser.organization?.type === OrganizationType.referent) {
+      return { alreadyOnboarded: hasCompletedReferentOnboarding, orgId: existingUser.orgId };
+    }
+
+    return { alreadyOnboarded: isAftercareOrg && hasAftercareProfile, orgId: existingUser.orgId };
   }
 }
 
@@ -98,6 +108,11 @@ export async function ensureOnboardingOrganization(accountType: AccountType) {
           id: true,
           _count: {
             select: { profiles: true }
+          },
+          referentDetails: {
+            select: {
+              onboardingCompletedAt: true
+            }
           }
         }
       }
@@ -170,7 +185,7 @@ export function destinationForAccountType(accountType: AccountType, alreadyOnboa
   }
 
   if (accountType === "referent") {
-    return "/dashboard/referent";
+    return "/onboarding/referent/1";
   }
 
   if (accountType === "sober_living") {

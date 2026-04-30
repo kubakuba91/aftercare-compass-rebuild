@@ -3,6 +3,7 @@ import { OrganizationType, Role } from "@prisma/client";
 import { getClerkSessionUserId, getCurrentAppUser } from "@/lib/current-user";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { prisma } from "@/lib/prisma";
+import { maxReferentStep } from "@/lib/referent-onboarding";
 import { maxSoberLivingStep } from "@/lib/sober-living-onboarding";
 
 export async function getProtectedAppUser(_returnTo: string) {
@@ -47,6 +48,27 @@ export async function getAuthenticatedLandingPath() {
   }
 
   if (appUser.role === Role.referent_admin || appUser.role === Role.referent_manager) {
+    if (!appUser.orgId) {
+      return "/onboarding/account-type";
+    }
+
+    const referentDetails = await prisma.referentOrganization.findUnique({
+      where: { orgId: appUser.orgId },
+      select: {
+        onboardingStep: true,
+        onboardingCompletedAt: true
+      }
+    });
+
+    if (!referentDetails?.onboardingCompletedAt) {
+      const resumeStep = Math.min(
+        Math.max(referentDetails?.onboardingStep ?? 1, 1),
+        maxReferentStep
+      );
+
+      return `/onboarding/referent/${resumeStep}`;
+    }
+
     return "/dashboard/referent";
   }
 

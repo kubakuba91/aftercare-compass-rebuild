@@ -130,6 +130,10 @@ model ReferentOrganization {
   orgId                    String       @unique
   organization             Organization @relation(fields: [orgId], references: [id])
   orgTypeDetail            String
+  streetAddress            String?
+  city                     String?
+  state                    String?
+  zip                      String?
   healthSystemAffiliation  String?
   medicalRecordsFax        String?
   npiNumber                String?
@@ -137,7 +141,11 @@ model ReferentOrganization {
   ehrSystem                String?
   statesOperatedIn         String[] @default([])
   levelsOfCare             String[] @default([])
+  currentPlacementMethods  String[] @default([])
   avgMonthlyReferrals      String?
+  invitedTeamEmails        String[] @default([])
+  onboardingStep           Int      @default(1)
+  onboardingCompletedAt    DateTime?
 }
 
 model AftercareProfile {

@@ -1,11 +1,39 @@
 import { Heart, MessageSquare, Search, Send } from "lucide-react";
+import { redirect } from "next/navigation";
+import { Role } from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { getProtectedAppUser } from "@/lib/protected-routing";
+import { prisma } from "@/lib/prisma";
+import { maxReferentStep } from "@/lib/referent-onboarding";
 
 export const dynamic = "force-dynamic";
 
-export default function ReferentDashboardPage() {
+export default async function ReferentDashboardPage() {
+  const appUser = await getProtectedAppUser("/dashboard/referent");
+
+  if (appUser.role !== Role.referent_admin && appUser.role !== Role.referent_manager) {
+    redirect("/dashboard");
+  }
+
+  if (!appUser.orgId) {
+    redirect("/onboarding/account-type");
+  }
+
+  const referentDetails = await prisma.referentOrganization.findUnique({
+    where: { orgId: appUser.orgId },
+    select: {
+      onboardingStep: true,
+      onboardingCompletedAt: true
+    }
+  });
+
+  if (!referentDetails?.onboardingCompletedAt) {
+    const resumeStep = Math.min(Math.max(referentDetails?.onboardingStep ?? 1, 1), maxReferentStep);
+    redirect(`/onboarding/referent/${resumeStep}`);
+  }
+
   return (
     <main className="shell py-8">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">

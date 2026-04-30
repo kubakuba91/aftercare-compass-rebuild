@@ -1,11 +1,19 @@
 import { SignIn } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { hasValidClerkPublishableKey } from "@/lib/clerk-config";
 
 export const dynamic = "force-dynamic";
 
-export default function SignInPage() {
+export default async function SignInPage() {
+  const { userId } = await auth();
+
+  if (userId) {
+    redirect("/auth/complete");
+  }
+
   if (!hasValidClerkPublishableKey()) {
     return (
       <main className="shell flex min-h-screen items-center justify-center py-10">

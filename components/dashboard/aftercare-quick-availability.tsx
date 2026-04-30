@@ -1,7 +1,5 @@
 "use client";
 
-import { useMemo, useState } from "react";
-
 type QuickAvailabilityProfile = {
   id: string;
   programName: string;
@@ -17,7 +15,7 @@ type QuickAvailabilityProfile = {
 };
 
 type AftercareQuickAvailabilityProps = {
-  profiles: QuickAvailabilityProfile[];
+  profile: QuickAvailabilityProfile | null;
   error?: string;
   updateAction: (formData: FormData) => void;
 };
@@ -53,20 +51,14 @@ function bedInput(
 }
 
 export function AftercareQuickAvailability({
-  profiles,
+  profile,
   error,
   updateAction
 }: AftercareQuickAvailabilityProps) {
-  const [selectedProfileId, setSelectedProfileId] = useState(profiles[0]?.id ?? "");
-  const selectedProfile = useMemo(
-    () => profiles.find((profile) => profile.id === selectedProfileId) ?? profiles[0],
-    [profiles, selectedProfileId]
-  );
-
-  if (!profiles.length) {
+  if (!profile) {
     return (
       <div className="rounded-md border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-        Add a home or program before using quick availability.
+        Select a home or program above to make quick availability updates.
       </div>
     );
   }
@@ -78,64 +70,47 @@ export function AftercareQuickAvailability({
           {error}
         </div>
       ) : null}
-      <label className="grid gap-2 text-sm font-medium">
-        Home or program
-        <select
-          className={fieldClassName()}
-          onChange={(event) => setSelectedProfileId(event.target.value)}
-          value={selectedProfile?.id ?? ""}
-        >
-          {profiles.map((profile) => (
-            <option key={profile.id} value={profile.id}>
-              {profile.programName}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {selectedProfile ? (
-        <form action={updateAction} className="grid gap-4 rounded-md border border-border bg-muted/40 p-4">
-          <input type="hidden" name="profileId" value={selectedProfile.id} />
-          {selectedProfile.type === "sober_living" ? (
-            <>
-              <div className="grid gap-3 md:grid-cols-3">
-                {bedInput("Men", "bedsMenAvailable", selectedProfile.bedsMen, selectedProfile.bedsMenAvailable)}
-                {bedInput("Women", "bedsWomenAvailable", selectedProfile.bedsWomen, selectedProfile.bedsWomenAvailable)}
-                {bedInput("LGBTQ+", "bedsLgbtqAvailable", selectedProfile.bedsLgbtq, selectedProfile.bedsLgbtqAvailable)}
-              </div>
-              {!selectedProfile.bedsMen && !selectedProfile.bedsWomen && !selectedProfile.bedsLgbtq ? (
-                <p className="text-sm text-muted-foreground">
-                  This home does not have population-specific bed totals yet. Edit the home profile
-                  to set totals before using quick updates.
-                </p>
-              ) : null}
-            </>
-          ) : (
-            <label className="grid gap-2 text-sm font-medium">
-              Accepting new patients
-              <select
-                className={fieldClassName()}
-                defaultValue={selectedProfile.acceptingNewPatients ? "yes" : "no"}
-                name="acceptingNewPatients"
-              >
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-            </label>
-          )}
+      <form action={updateAction} className="grid gap-4 rounded-md border border-border bg-muted/40 p-4">
+        <input type="hidden" name="profileId" value={profile.id} />
+        {profile.type === "sober_living" ? (
+          <>
+            <div className="grid gap-3 md:grid-cols-3">
+              {bedInput("Men", "bedsMenAvailable", profile.bedsMen, profile.bedsMenAvailable)}
+              {bedInput("Women", "bedsWomenAvailable", profile.bedsWomen, profile.bedsWomenAvailable)}
+              {bedInput("LGBTQ+", "bedsLgbtqAvailable", profile.bedsLgbtq, profile.bedsLgbtqAvailable)}
+            </div>
+            {!profile.bedsMen && !profile.bedsWomen && !profile.bedsLgbtq ? (
+              <p className="text-sm text-muted-foreground">
+                This home does not have population-specific bed totals yet. Edit the home profile
+                to set totals before using quick updates.
+              </p>
+            ) : null}
+          </>
+        ) : (
           <label className="grid gap-2 text-sm font-medium">
-            Availability notes
-            <textarea
-              className="min-h-20 rounded-md border border-border bg-white p-3 text-sm"
-              defaultValue={selectedProfile.availabilityNotes ?? ""}
-              name="availabilityNotes"
-            />
+            Accepting new patients
+            <select
+              className={fieldClassName()}
+              defaultValue={profile.acceptingNewPatients ? "yes" : "no"}
+              name="acceptingNewPatients"
+            >
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
           </label>
-          <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground md:w-fit">
-            Update availability
-          </button>
-        </form>
-      ) : null}
+        )}
+        <label className="grid gap-2 text-sm font-medium">
+          Availability notes
+          <textarea
+            className="min-h-20 rounded-md border border-border bg-white p-3 text-sm"
+            defaultValue={profile.availabilityNotes ?? ""}
+            name="availabilityNotes"
+          />
+        </label>
+        <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground md:w-fit">
+          Update availability
+        </button>
+      </form>
     </div>
   );
 }

@@ -15,6 +15,19 @@ function numberFromForm(value: FormDataEntryValue | null) {
   return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null;
 }
 
+function overviewHref(profileId: string, error?: string) {
+  const params = new URLSearchParams({
+    tab: "overview",
+    profileId
+  });
+
+  if (error) {
+    params.set("availabilityError", error);
+  }
+
+  return `/dashboard/aftercare?${params.toString()}`;
+}
+
 export async function updateAftercareAvailability(formData: FormData) {
   const appUser = await getAftercareDashboardUser("/dashboard/aftercare");
   const profileId = String(formData.get("profileId") || "");
@@ -49,7 +62,7 @@ export async function updateAftercareAvailability(formData: FormData) {
       bedsLgbtqAvailable > (profile.bedsLgbtq ?? 0)
     ) {
       redirect(
-        "/dashboard/aftercare?tab=overview&availabilityError=Available%20beds%20cannot%20exceed%20the%20total%20beds%20for%20that%20population."
+        overviewHref(profile.id, "Available beds cannot exceed the total beds for that population.")
       );
     }
 
@@ -78,7 +91,7 @@ export async function updateAftercareAvailability(formData: FormData) {
   }
 
   revalidatePath("/dashboard/aftercare");
-  redirect("/dashboard/aftercare?tab=overview");
+  redirect(overviewHref(profile.id));
 }
 
 export async function updateUserDisplayName(formData: FormData) {

@@ -14,6 +14,7 @@ import {
   Users
 } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { AftercareOverviewSelector } from "@/components/dashboard/aftercare-overview-selector";
 import { AftercareQuickAvailability } from "@/components/dashboard/aftercare-quick-availability";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -112,7 +113,7 @@ function addProfileHref(organizationType: string | undefined) {
 export default async function AftercareDashboardPage({
   searchParams
 }: {
-  searchParams: Promise<{ tab?: string; edit?: string; availabilityError?: string }>;
+  searchParams: Promise<{ tab?: string; edit?: string; availabilityError?: string; profileId?: string }>;
 }) {
   const appUser = await getAftercareDashboardUser();
   await redirectIncompleteAftercareOnboarding(appUser.orgId);
@@ -171,6 +172,7 @@ export default async function AftercareDashboardPage({
       take: 5,
       select: {
         id: true,
+        profileId: true,
         name: true,
         email: true,
         status: true,
@@ -187,6 +189,7 @@ export default async function AftercareDashboardPage({
       take: 5,
       select: {
         id: true,
+        aftercareProfileId: true,
         status: true,
         caseManagerOrganization: true,
         clientAgeRange: true,
@@ -195,11 +198,12 @@ export default async function AftercareDashboardPage({
         aftercareProfile: { select: { programName: true } }
       }
     }),
-    prisma.verificationDocument.count({
+    prisma.verificationDocument.findMany({
       where: {
         status: "pending",
         profile: { orgId: appUser.orgId }
-      }
+      },
+      select: { profileId: true }
     }),
     prisma.user.findMany({
       where: { orgId: appUser.orgId },
@@ -216,10 +220,21 @@ export default async function AftercareDashboardPage({
     })
   ]);
 
-  const totalBeds = profiles.reduce((sum, profile) => sum + (profile.totalBeds ?? 0), 0);
-  const availableBeds = profiles.reduce((sum, profile) => sum + (profile.bedsAvailable ?? 0), 0);
-  const newLeadCount = leads.filter((lead) => lead.status === "new").length;
-  const staleAvailabilityCount = profiles.filter((profile) => {
+  const selectedProfile = profiles.find((profile) => profile.id === query.profileId) ?? null;
+  const scopedProfiles = selectedProfile ? [selectedProfile] : profiles;
+  const scopedLeads = selectedProfile
+    ? leads.filter((lead) => lead.profileId === selectedProfile.id)
+    : leads;
+  const scopedReferrals = selectedProfile
+    ? referrals.filter((referral) => referral.aftercareProfileId === selectedProfile.id)
+    : referrals;
+  const scopedPendingDocumentCount = selectedProfile
+    ? pendingDocumentCount.filter((document) => document.profileId === selectedProfile.id).length
+    : pendingDocumentCount.length;
+  const totalBeds = scopedProfiles.reduce((sum, profile) => sum + (profile.totalBeds ?? 0), 0);
+  const availableBeds = scopedProfiles.reduce((sum, profile) => sum + (profile.bedsAvailable ?? 0), 0);
+  const newLeadCount = scopedLeads.filter((lead) => lead.status === "new").length;
+  const staleAvailabilityCount = scopedProfiles.filter((profile) => {
     const lastUpdated =
       profile.type === "sober_living"
         ? profile.bedsAvailableUpdatedAt
@@ -235,7 +250,7 @@ export default async function AftercareDashboardPage({
   const metrics = [
     { label: "Total beds", value: totalBeds.toString(), icon: BedDouble },
     { label: "Beds available now", value: availableBeds.toString(), icon: CalendarClock },
-    { label: "Open referrals", value: referrals.length.toString(), icon: Inbox },
+    { label: "Open referrals", value: scopedReferrals.length.toString(), icon: Inbox },
     { label: "New public leads", value: newLeadCount.toString(), icon: MessageSquare }
   ];
 
@@ -291,6 +306,16 @@ export default async function AftercareDashboardPage({
         <section className="min-w-0">
           {activeTab === "overview" ? (
             <div className="grid gap-5">
+              <div className="rounded-lg border border-border bg-white p-4 shadow-sm">
+                <AftercareOverviewSelector
+                  profiles={profiles.map((profile) => ({
+                    id: profile.id,
+                    programName: profile.programName
+                  }))}
+                  selectedProfileId={selectedProfile?.id}
+                />
+              </div>
+
               <div className="grid gap-4 md:grid-cols-4">
                 {metrics.map((metric) => {
                   const Icon = metric.icon;
@@ -309,10 +334,13 @@ export default async function AftercareDashboardPage({
                 <Card>
                   <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
                     <div>
-                      <h2 className="text-xl font-semibold">High-level insights</h2>
+                      <h2 className="text-xl font-semibold">
+                        {selectedProfile ? `Insights for ${selectedProfile.programName}` : "High-level insights"}
+                      </h2>
                       <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        Keep homes referral-ready, availability fresh, and inbound lead/referral
-                        work visible from one place.
+                        {selectedProfile
+                          ? "Review this profile's readiness, availability, leads, and open referral work."
+                          : "Keep homes referral-ready, availability fresh, and inbound lead/referral work visible from one place."}
                       </p>
                     </div>
                     <Badge tone={staleAvailabilityCount ? "warning" : "success"}>
@@ -322,16 +350,16 @@ export default async function AftercareDashboardPage({
                   <div className="mt-5 grid gap-3 md:grid-cols-3">
                     <div className="rounded-md border border-border bg-muted/50 p-3">
                       <p className="text-sm text-muted-foreground">Profiles</p>
-                      <p className="mt-1 text-2xl font-semibold">{profiles.length}</p>
+                      <p className="mt-1 text-2xl font-semibold">{scopedProfiles.length}</p>
                     </div>
                     <div className="rounded-md border border-border bg-muted/50 p-3">
                       <p className="text-sm text-muted-foreground">Pending documents</p>
-                      <p className="mt-1 text-2xl font-semibold">{pendingDocumentCount}</p>
+                      <p className="mt-1 text-2xl font-semibold">{scopedPendingDocumentCount}</p>
                     </div>
                     <div className="rounded-md border border-border bg-muted/50 p-3">
                       <p className="text-sm text-muted-foreground">Self-reported listings</p>
                       <p className="mt-1 text-2xl font-semibold">
-                        {profiles.filter((profile) => profile.verificationTier === 1).length}
+                        {scopedProfiles.filter((profile) => profile.verificationTier === 1).length}
                       </p>
                     </div>
                   </div>
@@ -346,19 +374,23 @@ export default async function AftercareDashboardPage({
                   <div className="mt-4">
                     <AftercareQuickAvailability
                       error={query.availabilityError}
-                      profiles={profiles.map((profile) => ({
-                        id: profile.id,
-                        programName: profile.programName,
-                        type: profile.type,
-                        bedsMen: profile.bedsMen,
-                        bedsMenAvailable: profile.bedsMenAvailable,
-                        bedsWomen: profile.bedsWomen,
-                        bedsWomenAvailable: profile.bedsWomenAvailable,
-                        bedsLgbtq: profile.bedsLgbtq,
-                        bedsLgbtqAvailable: profile.bedsLgbtqAvailable,
-                        acceptingNewPatients: profile.acceptingNewPatients,
-                        availabilityNotes: profile.availabilityNotes
-                      }))}
+                      profile={
+                        selectedProfile
+                          ? {
+                              id: selectedProfile.id,
+                              programName: selectedProfile.programName,
+                              type: selectedProfile.type,
+                              bedsMen: selectedProfile.bedsMen,
+                              bedsMenAvailable: selectedProfile.bedsMenAvailable,
+                              bedsWomen: selectedProfile.bedsWomen,
+                              bedsWomenAvailable: selectedProfile.bedsWomenAvailable,
+                              bedsLgbtq: selectedProfile.bedsLgbtq,
+                              bedsLgbtqAvailable: selectedProfile.bedsLgbtqAvailable,
+                              acceptingNewPatients: selectedProfile.acceptingNewPatients,
+                              availabilityNotes: selectedProfile.availabilityNotes
+                            }
+                          : null
+                      }
                       updateAction={updateAftercareAvailability}
                     />
                   </div>
@@ -369,11 +401,11 @@ export default async function AftercareDashboardPage({
                 <Card>
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="font-semibold">Recent referrals</h2>
-                    <Badge>{referrals.length} open</Badge>
+                    <Badge>{scopedReferrals.length} open</Badge>
                   </div>
-                  {referrals.length ? (
+                  {scopedReferrals.length ? (
                     <div className="mt-4 grid gap-3">
-                      {referrals.map((referral) => (
+                      {scopedReferrals.map((referral) => (
                         <div key={referral.id} className="rounded-md border border-border bg-muted/40 p-3 text-sm">
                           <div className="flex justify-between gap-3">
                             <p className="font-semibold">{referral.caseManagerOrganization}</p>
@@ -395,11 +427,11 @@ export default async function AftercareDashboardPage({
                 <Card>
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="font-semibold">Recent public leads</h2>
-                    <Badge>{leads.length} recent</Badge>
+                    <Badge>{scopedLeads.length} recent</Badge>
                   </div>
-                  {leads.length ? (
+                  {scopedLeads.length ? (
                     <div className="mt-4 grid gap-3">
-                      {leads.map((lead) => (
+                      {scopedLeads.map((lead) => (
                         <div key={lead.id} className="rounded-md border border-border bg-muted/40 p-3 text-sm">
                           <div className="flex justify-between gap-3">
                             <p className="font-semibold">{lead.name}</p>

@@ -1,6 +1,11 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+
+export async function getClerkSessionUserId() {
+  const { userId } = await auth();
+  return userId;
+}
 
 export async function getRequiredClerkIdentity() {
   const clerkUser = await currentUser();
@@ -46,20 +51,14 @@ export function defaultRoleForAccountType(accountType: string): Role {
 }
 
 export async function getCurrentAppUser() {
-  let identity: Awaited<ReturnType<typeof getRequiredClerkIdentity>>;
+  const clerkUserId = await getClerkSessionUserId();
 
-  try {
-    identity = await getRequiredClerkIdentity();
-  } catch (error) {
-    if (isClerkIdentityError(error)) {
-      return null;
-    }
-
-    throw error;
+  if (!clerkUserId) {
+    return null;
   }
 
   return prisma.user.findUnique({
-    where: { clerkUserId: identity.clerkUserId },
+    where: { clerkUserId },
     include: { organization: true }
   });
 }

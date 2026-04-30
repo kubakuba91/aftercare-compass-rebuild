@@ -1,22 +1,21 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, BedDouble, Building2 } from "lucide-react";
-import { Role } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { requireCurrentAppUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
+import {
+  getAftercareDashboardUser,
+  redirectIncompleteAftercareOnboarding
+} from "@/lib/protected-routing";
 
 export default async function AftercareProfileDetailPage({
   params
 }: {
   params: Promise<{ profileId: string }>;
 }) {
-  const appUser = await requireCurrentAppUser();
-
-  if (appUser.role !== Role.aftercare_admin && appUser.role !== Role.aftercare_manager) {
-    redirect("/dashboard");
-  }
+  const appUser = await getAftercareDashboardUser("/dashboard/aftercare");
+  await redirectIncompleteAftercareOnboarding(appUser.orgId);
 
   const { profileId } = await params;
   const profile = await prisma.aftercareProfile.findFirst({

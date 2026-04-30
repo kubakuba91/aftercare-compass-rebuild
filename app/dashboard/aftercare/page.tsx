@@ -1,23 +1,16 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { BedDouble, ClipboardList, Inbox, Users } from "lucide-react";
-import { Role } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { requireCurrentAppUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
-import { maxSoberLivingStep } from "@/lib/sober-living-onboarding";
+import {
+  getAftercareDashboardUser,
+  redirectIncompleteAftercareOnboarding
+} from "@/lib/protected-routing";
 
 export default async function AftercareDashboardPage() {
-  const appUser = await requireCurrentAppUser();
-
-  if (appUser.role !== Role.aftercare_admin && appUser.role !== Role.aftercare_manager) {
-    redirect("/dashboard");
-  }
-
-  if (!appUser.orgId) {
-    redirect("/onboarding/account-type");
-  }
+  const appUser = await getAftercareDashboardUser();
+  await redirectIncompleteAftercareOnboarding(appUser.orgId);
 
   const profiles = await prisma.aftercareProfile.findMany({
     where: { orgId: appUser.orgId },
@@ -37,31 +30,6 @@ export default async function AftercareDashboardPage() {
       updatedAt: true
     }
   });
-
-  if (profiles.length === 0) {
-    const profileType =
-      appUser.organization?.type === "aftercare_continued_care" ? "continued_care" : "sober_living";
-
-    if (profileType === "sober_living") {
-      redirect("/onboarding/aftercare/sober-living/1");
-    }
-
-    redirect(`/onboarding/aftercare/profile?type=${profileType}`);
-  }
-
-  const incompleteSoberLivingProfile = profiles.find(
-    (profile) => profile.type === "sober_living" && !profile.onboardingCompletedAt
-  );
-
-  if (incompleteSoberLivingProfile) {
-    const resumeStep = Math.min(
-      Math.max(incompleteSoberLivingProfile.onboardingStep ?? 1, 1),
-      maxSoberLivingStep
-    );
-    redirect(
-      `/onboarding/aftercare/sober-living/${resumeStep}?profileId=${incompleteSoberLivingProfile.id}`
-    );
-  }
 
   const [leadCount, openReferralCount] = await Promise.all([
     prisma.lead.count({ where: { aftercareOrgId: appUser.orgId } }),

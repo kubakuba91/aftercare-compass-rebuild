@@ -152,13 +152,13 @@ function OnboardingRecoveryCard() {
   return (
     <main className="shell flex min-h-screen items-center justify-center py-10">
       <Card className="max-w-xl">
-        <h1 className="text-2xl font-semibold">Session timed out</h1>
+        <h1 className="text-2xl font-semibold">Please sign in again</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
           Please sign back in to continue onboarding.
         </p>
         <Link
           className="focus-ring mt-5 inline-flex min-h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-          href="/sign-in?reason=session_timeout"
+          href="/sign-in"
         >
           Sign in to continue
         </Link>
@@ -190,7 +190,7 @@ export default async function SoberLivingStepPage({
     console.error("Sober living onboarding bootstrap failed", error);
 
     if (isClerkIdentityError(error)) {
-      redirect("/sign-in?reason=session_timeout");
+      redirect("/sign-in");
     }
 
     return <OnboardingRecoveryCard />;

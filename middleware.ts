@@ -22,7 +22,7 @@ const authMiddleware = clerkMiddleware(async (auth, req) => {
         return NextResponse.redirect(signUpUrl);
       }
 
-      return redirectToSignIn({ returnBackUrl: "/dashboard" });
+      return redirectToSignIn({ returnBackUrl: req.url });
     }
   }
 }, {

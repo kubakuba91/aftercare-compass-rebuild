@@ -5,14 +5,6 @@ import { hasDatabaseConfig } from "@/lib/database-status";
 import { prisma } from "@/lib/prisma";
 import { maxSoberLivingStep } from "@/lib/sober-living-onboarding";
 
-export function signInToContinuePath() {
-  const params = new URLSearchParams({
-    reason: "session_timeout"
-  });
-
-  return `/sign-in?${params.toString()}`;
-}
-
 export async function getProtectedAppUser(_returnTo: string) {
   if (!hasDatabaseConfig()) {
     redirect("/setup?missing=database");
@@ -21,7 +13,7 @@ export async function getProtectedAppUser(_returnTo: string) {
   const clerkUserId = await getClerkSessionUserId();
 
   if (!clerkUserId) {
-    redirect(signInToContinuePath());
+    redirect("/sign-in");
   }
 
   const appUser = await getCurrentAppUser();

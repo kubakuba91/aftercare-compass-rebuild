@@ -261,6 +261,9 @@ export default async function ReferentStepPage({
               {currentStep === 3 ? (
                 <>
                   <div className="text-sm font-medium">{requiredLabel("Plan")}</div>
+                  <div className="rounded-md border border-border bg-muted/60 p-4 text-sm text-muted-foreground">
+                    No payment is collected during onboarding. This saves your plan preference so billing can be completed later.
+                  </div>
                   <div className="grid gap-3">
                     {referentPlanOptions.map((planKey) => {
                       const plan = referentPlans[planKey];
@@ -288,14 +291,11 @@ export default async function ReferentStepPage({
                     })}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
-                    {requiredLabel("Billing cycle")}
-                    <select name="billingCycle" required defaultValue={referentDetails?.billingCycle ?? "monthly"} className={fieldClassName()}>
+                    Preferred billing cycle
+                    <select name="billingCycle" defaultValue={referentDetails?.billingCycle ?? "monthly"} className={fieldClassName()}>
                       {billingCycleOptions.map((option) => <option key={option} value={option}>{option === "annual" ? "Annual" : "Monthly"}</option>)}
                     </select>
                   </label>
-                  <div className="rounded-md border border-border bg-muted/60 p-4 text-sm text-muted-foreground">
-                    Stripe checkout will be connected in the billing pass. This saves the selected plan for now.
-                  </div>
                 </>
               ) : null}
 

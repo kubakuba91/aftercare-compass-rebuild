@@ -3,7 +3,7 @@ import { z } from "zod";
 export const referentSteps = [
   { number: 1, slug: "organization", label: "Organization", title: "Tell us about your organization" },
   { number: 2, slug: "referral-context", label: "Referral Context", title: "Set up your referral context" },
-  { number: 3, slug: "plan", label: "Plan", title: "Choose your referent plan" },
+  { number: 3, slug: "plan", label: "Plan Preference", title: "Choose your starting plan" },
   { number: 4, slug: "team", label: "Team", title: "Invite your team" }
 ] as const;
 
@@ -151,7 +151,7 @@ export const referentStepTwoSchema = z.object({
 
 export const referentStepThreeSchema = z.object({
   selectedPlan: z.enum(referentPlanOptions),
-  billingCycle: z.enum(billingCycleOptions)
+  billingCycle: z.enum(billingCycleOptions).default("monthly")
 });
 
 export const referentStepFourSchema = z.object({

@@ -146,8 +146,7 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
             website: nullableText(String(finalDraft.website || "")),
             subscriptionPlan: selectedPlan,
             subscriptionBillingCycle: String(finalDraft.billingCycle || "monthly"),
-            subscriptionStatus:
-              selectedPlan === "professional" ? SubscriptionStatus.trialing : SubscriptionStatus.incomplete
+            subscriptionStatus: SubscriptionStatus.trialing
           }
         });
 

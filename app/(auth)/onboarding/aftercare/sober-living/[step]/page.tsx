@@ -1,11 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ProfileType } from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Card } from "@/components/ui/card";
 import { isClerkIdentityError } from "@/lib/current-user";
-import { ensureOnboardingOrganization } from "@/lib/onboarding";
-import { prisma } from "@/lib/prisma";
+import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { cn } from "@/lib/utils";
 import {
   amenityOptions,
@@ -183,10 +181,10 @@ export default async function SoberLivingStepPage({
     notFound();
   }
 
-  let organization: Awaited<ReturnType<typeof ensureOnboardingOrganization>>;
+  let draft: Awaited<ReturnType<typeof getOrCreateOnboardingDraft>>;
 
   try {
-    organization = await ensureOnboardingOrganization("sober_living");
+    draft = await getOrCreateOnboardingDraft("sober_living", false);
   } catch (error) {
     console.error("Sober living onboarding bootstrap failed", error);
 
@@ -197,46 +195,7 @@ export default async function SoberLivingStepPage({
     return <OnboardingRecoveryCard />;
   }
 
-  const isNewProfile = query.new === "1";
-  let profile;
-
-  try {
-    profile = query.profileId
-      ? await prisma.aftercareProfile.findFirst({
-          where: { id: query.profileId, orgId: organization.orgId, type: ProfileType.sober_living }
-        })
-      : null;
-  } catch (error) {
-    console.error("Sober living onboarding profile lookup failed", error);
-    return <OnboardingRecoveryCard />;
-  }
-
-  if (query.profileId && !profile) {
-    redirect("/onboarding/start/sober_living");
-  }
-
-  if (!profile && !isNewProfile) {
-    let latestProfile;
-
-    try {
-      latestProfile = await prisma.aftercareProfile.findFirst({
-        where: { orgId: organization.orgId, type: ProfileType.sober_living },
-        orderBy: { updatedAt: "desc" }
-      });
-    } catch (error) {
-      console.error("Sober living onboarding resume lookup failed", error);
-      return <OnboardingRecoveryCard />;
-    }
-
-    if (latestProfile?.onboardingCompletedAt) {
-      redirect("/dashboard/aftercare");
-    }
-
-    if (latestProfile) {
-      const resumeStep = Math.min(Math.max(latestProfile.onboardingStep ?? 1, 1), maxSoberLivingStep);
-      redirect(`/onboarding/aftercare/sober-living/${resumeStep}?profileId=${latestProfile.id}`);
-    }
-  }
+  const profile = draft.soberLivingDraft as Record<string, any> | null;
 
   if (!profile && currentStep > 1) {
     redirect("/onboarding/aftercare/sober-living/1");
@@ -263,8 +222,6 @@ export default async function SoberLivingStepPage({
           ) : null}
           <Card className="mt-8">
             <form action={action} className="grid gap-5">
-              {profile ? <input type="hidden" name="profileId" value={profile.id} /> : null}
-
               {currentStep === 1 ? (
                 <>
                   <label className="grid gap-2 text-sm font-medium">
@@ -489,7 +446,7 @@ export default async function SoberLivingStepPage({
               <div className="fixed inset-x-0 bottom-0 border-t border-border bg-white p-4 lg:left-[320px]">
                 <div className="mx-auto flex max-w-3xl gap-3">
                   {currentStep > 1 && profile ? (
-                    <Link className="focus-ring inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold" href={`/onboarding/aftercare/sober-living/${currentStep - 1}?profileId=${profile.id}`}>
+                    <Link className="focus-ring inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold" href={`/onboarding/aftercare/sober-living/${currentStep - 1}`}>
                       Back
                     </Link>
                   ) : (

@@ -2,8 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import {
-  destinationForAccountType,
-  ensureOnboardingOrganization,
+  draftDestinationForAccountType,
+  getOrCreateOnboardingDraft,
   isAccountType
 } from "@/lib/onboarding";
 
@@ -22,11 +22,8 @@ export default async function StartOnboardingPage({
     redirect("/setup?missing=database");
   }
 
-  let destination: string;
-
   try {
-    const result = await ensureOnboardingOrganization(accountType);
-    destination = destinationForAccountType(accountType, result.alreadyOnboarded);
+    await getOrCreateOnboardingDraft(accountType);
   } catch (error) {
     console.error("Onboarding start failed", error);
 
@@ -37,5 +34,5 @@ export default async function StartOnboardingPage({
     redirect("/sign-in");
   }
 
-  redirect(destination);
+  redirect(draftDestinationForAccountType(accountType));
 }

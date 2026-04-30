@@ -3,8 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Card } from "@/components/ui/card";
 import { isClerkIdentityError } from "@/lib/current-user";
-import { ensureOnboardingOrganization } from "@/lib/onboarding";
-import { prisma } from "@/lib/prisma";
+import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { referentPlans } from "@/lib/plans";
 import {
   avgMonthlyReferralOptions,
@@ -111,10 +110,10 @@ export default async function ReferentStepPage({
     notFound();
   }
 
-  let organizationResult: Awaited<ReturnType<typeof ensureOnboardingOrganization>>;
+  let draft: Awaited<ReturnType<typeof getOrCreateOnboardingDraft>>;
 
   try {
-    organizationResult = await ensureOnboardingOrganization("referent");
+    draft = await getOrCreateOnboardingDraft("referent", false);
   } catch (error) {
     console.error("Referent onboarding bootstrap failed", error);
 
@@ -125,34 +124,10 @@ export default async function ReferentStepPage({
     return <OnboardingRecoveryCard />;
   }
 
-  let organization;
-
-  try {
-    organization = await prisma.organization.findUnique({
-      where: { id: organizationResult.orgId },
-      include: { referentDetails: true }
-    });
-  } catch (error) {
-    console.error("Referent onboarding lookup failed", error);
-    return <OnboardingRecoveryCard />;
-  }
-
-  if (!organization) {
-    redirect("/onboarding/account-type");
-  }
-
-  const referentDetails = organization.referentDetails;
-
-  if (referentDetails?.onboardingCompletedAt) {
-    redirect("/dashboard/referent");
-  }
+  const referentDetails = draft.referentDraft as Record<string, any> | null;
 
   if (!referentDetails && currentStep > 1) {
     redirect("/onboarding/referent/1");
-  }
-
-  if (referentDetails && currentStep > Math.max(referentDetails.onboardingStep ?? 1, 1)) {
-    redirect(`/onboarding/referent/${referentDetails.onboardingStep ?? 1}`);
   }
 
   const step = referentSteps[currentStep - 1];
@@ -179,7 +154,7 @@ export default async function ReferentStepPage({
                 <>
                   <label className="grid gap-2 text-sm font-medium">
                     Organization name
-                    <input name="organization" required defaultValue={organization.name} className={fieldClassName()} />
+                    <input name="organization" required defaultValue={referentDetails?.organization ?? ""} className={fieldClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
                     Organization type
@@ -209,7 +184,7 @@ export default async function ReferentStepPage({
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
                       Main phone
-                      <input name="phone" required defaultValue={organization.phone ?? ""} className={fieldClassName()} />
+                      <input name="phone" required defaultValue={referentDetails?.phone ?? ""} className={fieldClassName()} />
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
                       Medical records fax
@@ -218,7 +193,7 @@ export default async function ReferentStepPage({
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     Website URL
-                    <input name="website" type="url" placeholder="https://example.com" defaultValue={organization.website ?? ""} className={fieldClassName()} />
+                    <input name="website" type="url" placeholder="https://example.com" defaultValue={referentDetails?.website ?? ""} className={fieldClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
                     Health system affiliation
@@ -286,7 +261,7 @@ export default async function ReferentStepPage({
                               name="selectedPlan"
                               value={planKey}
                               required
-                              defaultChecked={(organization.subscriptionPlan ?? "professional") === planKey}
+                              defaultChecked={(referentDetails?.selectedPlan ?? "professional") === planKey}
                             />
                             <span>
                               <span className="block font-semibold">{plan.label}</span>
@@ -301,7 +276,7 @@ export default async function ReferentStepPage({
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     Billing cycle
-                    <select name="billingCycle" required defaultValue={organization.subscriptionBillingCycle ?? "monthly"} className={fieldClassName()}>
+                    <select name="billingCycle" required defaultValue={referentDetails?.billingCycle ?? "monthly"} className={fieldClassName()}>
                       {billingCycleOptions.map((option) => <option key={option} value={option}>{option === "annual" ? "Annual" : "Monthly"}</option>)}
                     </select>
                   </label>

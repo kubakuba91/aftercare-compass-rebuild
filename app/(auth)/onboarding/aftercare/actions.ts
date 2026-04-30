@@ -1,11 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { ProfileStatus, ProfileType } from "@prisma/client";
+import { Prisma, ProfileStatus, ProfileType } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
+import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
-import { ensureOnboardingOrganization } from "@/lib/onboarding";
 import {
   maxSoberLivingStep,
   nullableText,
@@ -17,6 +17,31 @@ import {
   valuesFromForm
 } from "@/lib/sober-living-onboarding";
 import { aftercareProfileDraftSchema } from "@/lib/validations/onboarding";
+
+function mergeDraft(currentDraft: unknown, nextValues: Record<string, unknown>) {
+  return {
+    ...(currentDraft && typeof currentDraft === "object" && !Array.isArray(currentDraft) ? currentDraft : {}),
+    ...nextValues
+  };
+}
+
+function jsonDraft(value: Record<string, unknown>) {
+  return value as Prisma.InputJsonValue;
+}
+
+function arrayFromDraft(value: unknown) {
+  return Array.isArray(value) ? value.map(String) : [];
+}
+
+function stepRedirect(step: number, error?: string) {
+  const params = new URLSearchParams();
+
+  if (error) {
+    params.set("error", error);
+  }
+
+  return `/onboarding/aftercare/sober-living/${step}${params.size ? `?${params.toString()}` : ""}`;
+}
 
 export async function createAftercareProfileDraft(formData: FormData) {
   if (!hasDatabaseConfig()) {
@@ -39,77 +64,77 @@ export async function createAftercareProfileDraft(formData: FormData) {
     acceptingNewPatients: formData.get("acceptingNewPatients") || undefined
   });
 
+  const accountType = parsed.profileType === "continued_care" ? "continued_care" : "sober_living";
+  const draft = await getOrCreateOnboardingDraft(accountType, false);
   const profileType =
     parsed.profileType === "sober_living" ? ProfileType.sober_living : ProfileType.continued_care;
-  const baseSlug = slugify(parsed.programName);
-  const slug = `${baseSlug}-${Date.now().toString(36)}`;
-
-  let destination: string;
+  const programName = parsed.programName;
+  const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
 
   try {
-    const organization = await ensureOnboardingOrganization(parsed.profileType);
-    const profile = await prisma.aftercareProfile.create({
-      data: {
-        orgId: organization.orgId,
-        type: profileType,
-        programName: parsed.programName,
-        slug,
-        status: ProfileStatus.draft,
-        streetAddress: parsed.streetAddress,
-        city: parsed.city,
-        state: parsed.state,
-        zip: parsed.zip,
-        publicCity: parsed.city,
-        publicState: parsed.state,
-        admissionsContactPhone: parsed.admissionsContactPhone,
-        admissionsContactEmail: parsed.admissionsContactEmail,
-        description: parsed.description,
-        populationServed: parsed.populationServed,
-        totalBeds: profileType === ProfileType.sober_living ? parsed.totalBeds : null,
-        bedsAvailable: profileType === ProfileType.sober_living ? parsed.bedsAvailable : null,
-        bedsAvailableUpdatedAt: profileType === ProfileType.sober_living ? new Date() : null,
-        acceptingNewPatients:
-          profileType === ProfileType.continued_care ? parsed.acceptingNewPatients === "yes" : null,
-        acceptingNewPatientsUpdatedAt:
-          profileType === ProfileType.continued_care ? new Date() : null
-      },
-      select: { id: true }
-    });
+    await prisma.$transaction(async (tx) => {
+      const organization = await tx.organization.create({
+        data: {
+          type: accountType === "continued_care" ? "aftercare_continued_care" : "aftercare_sober_living",
+          name: programName,
+          email: draft.user.email,
+          phone: parsed.admissionsContactPhone
+        }
+      });
 
-    destination = `/dashboard/aftercare?profile=${profile.id}`;
+      await tx.user.update({
+        where: { id: draft.userId },
+        data: {
+          role: "aftercare_admin",
+          orgId: organization.id
+        }
+      });
+
+      await tx.aftercareProfile.create({
+        data: {
+          orgId: organization.id,
+          type: profileType,
+          programName,
+          slug,
+          status: ProfileStatus.draft,
+          streetAddress: parsed.streetAddress,
+          city: parsed.city,
+          state: parsed.state,
+          zip: parsed.zip,
+          publicCity: parsed.city,
+          publicState: parsed.state,
+          admissionsContactPhone: parsed.admissionsContactPhone,
+          admissionsContactEmail: parsed.admissionsContactEmail,
+          description: parsed.description,
+          populationServed: parsed.populationServed,
+          totalBeds: profileType === ProfileType.sober_living ? parsed.totalBeds : null,
+          bedsAvailable: profileType === ProfileType.sober_living ? parsed.bedsAvailable : null,
+          bedsAvailableUpdatedAt: profileType === ProfileType.sober_living ? new Date() : null,
+          acceptingNewPatients:
+            profileType === ProfileType.continued_care ? parsed.acceptingNewPatients === "yes" : null,
+          acceptingNewPatientsUpdatedAt:
+            profileType === ProfileType.continued_care ? new Date() : null,
+          onboardingCompletedAt: new Date()
+        }
+      });
+
+      await tx.onboardingDraft.update({
+        where: { id: draft.id },
+        data: {
+          selectedAccountType: accountType,
+          ...(accountType === "continued_care"
+            ? { continuedCareDraft: jsonDraft(mergeDraft(draft.continuedCareDraft, parsed)) }
+            : { soberLivingDraft: jsonDraft(mergeDraft(draft.soberLivingDraft, parsed)) }),
+          completedAt: new Date()
+        }
+      });
+    });
   } catch (error) {
     console.error("Aftercare profile draft creation failed", error);
     redirect("/setup?missing=database&from=aftercare-profile");
   }
 
-  redirect(destination);
-}
-
-function stepRedirect(step: number, profileId: string, error?: string) {
-  const params = new URLSearchParams({ profileId });
-
-  if (error) {
-    params.set("error", error);
-  }
-
-  return `/onboarding/aftercare/sober-living/${step}?${params.toString()}`;
-}
-
-async function requireOwnedSoberLivingProfile(profileId: string, orgId: string) {
-  const profile = await prisma.aftercareProfile.findFirst({
-    where: {
-      id: profileId,
-      orgId,
-      type: ProfileType.sober_living
-    },
-    select: { id: true }
-  });
-
-  if (!profile) {
-    redirect("/dashboard/aftercare");
-  }
-
-  return profile;
+  redirect("/dashboard/aftercare");
 }
 
 export async function saveSoberLivingOnboardingStep(step: number, formData: FormData) {
@@ -117,10 +142,11 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
     redirect("/setup?missing=database");
   }
 
-  let destination = "/onboarding/start/sober_living";
+  let destination = stepRedirect(step);
 
   try {
-    const organization = await ensureOnboardingOrganization("sober_living");
+    const draft = await getOrCreateOnboardingDraft("sober_living", false);
+    const currentDraft = draft.soberLivingDraft;
 
     if (step === 1) {
       const parsed = stepOneSchema.parse({
@@ -138,67 +164,27 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         averageLengthOfStay: formData.get("averageLengthOfStay")
       });
 
-      const existingProfileId = String(formData.get("profileId") || "");
-      const existingProfile = existingProfileId
-        ? await requireOwnedSoberLivingProfile(existingProfileId, organization.orgId)
-        : null;
+      await prisma.onboardingDraft.update({
+        where: { id: draft.id },
+        data: {
+          soberLivingDraft: jsonDraft(mergeDraft(currentDraft, {
+            ...parsed,
+            websiteUrl: nullableText(parsed.websiteUrl),
+            populationServed: parsed.populationServed.join(", "),
+            populationServedOptions: parsed.populationServed
+          })),
+          selectedAccountType: "sober_living",
+          activeStep: 2,
+          completedAt: null
+        }
+      });
 
-      const slug = `${slugify(parsed.programName)}-${Date.now().toString(36)}`;
-      const profile = existingProfile
-        ? await prisma.aftercareProfile.update({
-            where: { id: existingProfile.id },
-            data: {
-              programName: parsed.programName,
-              streetAddress: parsed.streetAddress,
-              city: parsed.city,
-              state: parsed.state,
-              zip: parsed.zip,
-              publicCity: parsed.city,
-              publicState: parsed.state,
-              admissionsContactPhone: parsed.admissionsContactPhone,
-              admissionsContactEmail: parsed.admissionsContactEmail,
-              websiteUrl: nullableText(parsed.websiteUrl),
-              populationServed: parsed.populationServed.join(", "),
-              populationServedOptions: parsed.populationServed,
-              specialtyPopulations: parsed.specialtyPopulations,
-              certificationsHeld: parsed.certificationsHeld,
-              averageLengthOfStay: parsed.averageLengthOfStay,
-              onboardingStep: 2
-            },
-            select: { id: true }
-          })
-        : await prisma.aftercareProfile.create({
-            data: {
-              orgId: organization.orgId,
-              type: ProfileType.sober_living,
-              programName: parsed.programName,
-              slug,
-              status: ProfileStatus.draft,
-              streetAddress: parsed.streetAddress,
-              city: parsed.city,
-              state: parsed.state,
-              zip: parsed.zip,
-              publicCity: parsed.city,
-              publicState: parsed.state,
-              admissionsContactPhone: parsed.admissionsContactPhone,
-              admissionsContactEmail: parsed.admissionsContactEmail,
-              websiteUrl: nullableText(parsed.websiteUrl),
-              populationServed: parsed.populationServed.join(", "),
-              populationServedOptions: parsed.populationServed,
-              specialtyPopulations: parsed.specialtyPopulations,
-              certificationsHeld: parsed.certificationsHeld,
-              averageLengthOfStay: parsed.averageLengthOfStay,
-              onboardingStep: 2
-            },
-            select: { id: true }
-          });
-
-      destination = stepRedirect(2, profile.id);
+      destination = stepRedirect(2);
     }
 
     if (step === 2) {
       const parsed = stepTwoSchema.parse({
-        profileId: formData.get("profileId"),
+        profileId: "draft",
         bedsMen: formData.get("bedsMen") || "0",
         bedsMenAvailable: formData.get("bedsMenAvailable") || "0",
         bedsWomen: formData.get("bedsWomen") || "0",
@@ -216,34 +202,36 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
       const bedsAvailable =
         parsed.bedsMenAvailable + parsed.bedsWomenAvailable + parsed.bedsLgbtqAvailable;
 
-      await requireOwnedSoberLivingProfile(parsed.profileId, organization.orgId);
-      await prisma.aftercareProfile.update({
-        where: { id: parsed.profileId },
+      await prisma.onboardingDraft.update({
+        where: { id: draft.id },
         data: {
-          totalBeds,
-          bedsAvailable,
-          bedsAvailableUpdatedAt: new Date(),
-          bedsMen: parsed.bedsMen,
-          bedsMenAvailable: parsed.bedsMenAvailable,
-          bedsWomen: parsed.bedsWomen,
-          bedsWomenAvailable: parsed.bedsWomenAvailable,
-          bedsLgbtq: parsed.bedsLgbtq,
-          bedsLgbtqAvailable: parsed.bedsLgbtqAvailable,
-          roomTypes: parsed.roomTypes,
-          bedsReservedNotes: nullableText(parsed.bedsReservedNotes),
-          wheelchairAccessibleBeds:
-            parsed.wheelchairAccessible === "yes" ? parsed.wheelchairAccessibleBeds ?? 0 : null,
-          pricePerWeek: parsed.pricePerWeek,
-          onboardingStep: 3
+          soberLivingDraft: jsonDraft(mergeDraft(currentDraft, {
+            totalBeds,
+            bedsAvailable,
+            bedsMen: parsed.bedsMen,
+            bedsMenAvailable: parsed.bedsMenAvailable,
+            bedsWomen: parsed.bedsWomen,
+            bedsWomenAvailable: parsed.bedsWomenAvailable,
+            bedsLgbtq: parsed.bedsLgbtq,
+            bedsLgbtqAvailable: parsed.bedsLgbtqAvailable,
+            roomTypes: parsed.roomTypes,
+            bedsReservedNotes: nullableText(parsed.bedsReservedNotes),
+            wheelchairAccessibleBeds:
+              parsed.wheelchairAccessible === "yes" ? parsed.wheelchairAccessibleBeds ?? 0 : null,
+            pricePerWeek: parsed.pricePerWeek
+          })),
+          selectedAccountType: "sober_living",
+          activeStep: 3,
+          completedAt: null
         }
       });
 
-      destination = stepRedirect(3, parsed.profileId);
+      destination = stepRedirect(3);
     }
 
     if (step === 3) {
       const parsed = stepThreeSchema.parse({
-        profileId: formData.get("profileId"),
+        profileId: "draft",
         supportServices: valuesFromForm(formData, "supportServices"),
         amenities: valuesFromForm(formData, "amenities"),
         insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
@@ -255,29 +243,32 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         drugTestingPolicy: formData.get("drugTestingPolicy")
       });
 
-      await requireOwnedSoberLivingProfile(parsed.profileId, organization.orgId);
-      await prisma.aftercareProfile.update({
-        where: { id: parsed.profileId },
+      await prisma.onboardingDraft.update({
+        where: { id: draft.id },
         data: {
-          supportServices: parsed.supportServices,
-          amenities: parsed.amenities,
-          insuranceAccepted: parsed.insuranceAccepted,
-          fundingAvailable: parsed.fundingAvailable === "yes",
-          fundingNotes: nullableText(parsed.fundingNotes),
-          medicationAdministration: parsed.medicationAdministration,
-          matAccepted: parsed.matAccepted,
-          medicationRestrictions: nullableText(parsed.medicationRestrictions),
-          drugTestingPolicy: parsed.drugTestingPolicy,
-          onboardingStep: 4
+          soberLivingDraft: jsonDraft(mergeDraft(currentDraft, {
+            supportServices: parsed.supportServices,
+            amenities: parsed.amenities,
+            insuranceAccepted: parsed.insuranceAccepted,
+            fundingAvailable: parsed.fundingAvailable === "yes",
+            fundingNotes: nullableText(parsed.fundingNotes),
+            medicationAdministration: parsed.medicationAdministration,
+            matAccepted: parsed.matAccepted,
+            medicationRestrictions: nullableText(parsed.medicationRestrictions),
+            drugTestingPolicy: parsed.drugTestingPolicy
+          })),
+          selectedAccountType: "sober_living",
+          activeStep: 4,
+          completedAt: null
         }
       });
 
-      destination = stepRedirect(4, parsed.profileId);
+      destination = stepRedirect(4);
     }
 
     if (step === 4) {
       const parsed = stepFourSchema.parse({
-        profileId: formData.get("profileId"),
+        profileId: "draft",
         description: formData.get("description"),
         houseRulesText: formData.get("houseRulesText") || undefined,
         photoReadiness: valuesFromForm(formData, "photoReadiness"),
@@ -285,50 +276,131 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         preferredContactMethod: formData.get("preferredContactMethod")
       });
 
-      await requireOwnedSoberLivingProfile(parsed.profileId, organization.orgId);
-      await prisma.aftercareProfile.update({
-        where: { id: parsed.profileId },
+      await prisma.onboardingDraft.update({
+        where: { id: draft.id },
         data: {
-          description: parsed.description,
-          houseRulesText: nullableText(parsed.houseRulesText),
-          photoReadiness: parsed.photoReadiness,
-          videoUrls: parsed.videoUrls,
-          preferredContactMethod: parsed.preferredContactMethod,
-          onboardingStep: 5
+          soberLivingDraft: jsonDraft(mergeDraft(currentDraft, {
+            description: parsed.description,
+            houseRulesText: nullableText(parsed.houseRulesText),
+            photoReadiness: parsed.photoReadiness,
+            videoUrls: parsed.videoUrls,
+            preferredContactMethod: parsed.preferredContactMethod
+          })),
+          selectedAccountType: "sober_living",
+          activeStep: 5,
+          completedAt: null
         }
       });
 
-      destination = stepRedirect(5, parsed.profileId);
+      destination = stepRedirect(5);
     }
 
     if (step === 5) {
       const parsed = stepFiveSchema.parse({
-        profileId: formData.get("profileId"),
+        profileId: "draft",
         availabilityNotes: formData.get("availabilityNotes") || undefined,
         referralFitNotes: formData.get("referralFitNotes") || undefined,
         goodNeighborPolicyAcknowledged: formData.get("goodNeighborPolicyAcknowledged")
       });
+      const finalDraft = mergeDraft(currentDraft, {
+        availabilityNotes: nullableText(parsed.availabilityNotes),
+        referralFitNotes: nullableText(parsed.referralFitNotes),
+        goodNeighborPolicyAcknowledged: true
+      }) as Record<string, unknown>;
+      const programName = String(finalDraft.programName || "Sober Living Home");
+      const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
 
-      await requireOwnedSoberLivingProfile(parsed.profileId, organization.orgId);
-      await prisma.aftercareProfile.update({
-        where: { id: parsed.profileId },
-        data: {
-          availabilityNotes: nullableText(parsed.availabilityNotes),
-          referralFitNotes: nullableText(parsed.referralFitNotes),
-          goodNeighborPolicyAcknowledged: true,
-          onboardingStep: maxSoberLivingStep,
-          onboardingCompletedAt: new Date()
-        }
+      await prisma.$transaction(async (tx) => {
+        const organization = await tx.organization.create({
+          data: {
+            type: "aftercare_sober_living",
+            name: programName,
+            email: draft.user.email,
+            phone: String(finalDraft.admissionsContactPhone || "")
+          }
+        });
+
+        await tx.user.update({
+          where: { id: draft.userId },
+          data: {
+            role: "aftercare_admin",
+            orgId: organization.id
+          }
+        });
+
+        await tx.aftercareProfile.create({
+          data: {
+            orgId: organization.id,
+            type: ProfileType.sober_living,
+            programName,
+            slug,
+            status: ProfileStatus.draft,
+            streetAddress: String(finalDraft.streetAddress || ""),
+            city: String(finalDraft.city || ""),
+            state: String(finalDraft.state || ""),
+            zip: String(finalDraft.zip || ""),
+            publicCity: String(finalDraft.city || ""),
+            publicState: String(finalDraft.state || ""),
+            admissionsContactPhone: String(finalDraft.admissionsContactPhone || ""),
+            admissionsContactEmail: String(finalDraft.admissionsContactEmail || ""),
+            websiteUrl: nullableText(String(finalDraft.websiteUrl || "")),
+            populationServed: String(finalDraft.populationServed || ""),
+            populationServedOptions: arrayFromDraft(finalDraft.populationServedOptions),
+            specialtyPopulations: arrayFromDraft(finalDraft.specialtyPopulations),
+            certificationsHeld: arrayFromDraft(finalDraft.certificationsHeld),
+            averageLengthOfStay: String(finalDraft.averageLengthOfStay || ""),
+            totalBeds: Number(finalDraft.totalBeds || 0),
+            bedsAvailable: Number(finalDraft.bedsAvailable || 0),
+            bedsAvailableUpdatedAt: new Date(),
+            bedsMen: Number(finalDraft.bedsMen || 0),
+            bedsMenAvailable: Number(finalDraft.bedsMenAvailable || 0),
+            bedsWomen: Number(finalDraft.bedsWomen || 0),
+            bedsWomenAvailable: Number(finalDraft.bedsWomenAvailable || 0),
+            bedsLgbtq: Number(finalDraft.bedsLgbtq || 0),
+            bedsLgbtqAvailable: Number(finalDraft.bedsLgbtqAvailable || 0),
+            roomTypes: arrayFromDraft(finalDraft.roomTypes),
+            bedsReservedNotes: nullableText(String(finalDraft.bedsReservedNotes || "")),
+            wheelchairAccessibleBeds:
+              finalDraft.wheelchairAccessibleBeds === null ? null : Number(finalDraft.wheelchairAccessibleBeds || 0),
+            pricePerWeek: finalDraft.pricePerWeek === undefined ? null : Number(finalDraft.pricePerWeek || 0),
+            supportServices: arrayFromDraft(finalDraft.supportServices),
+            amenities: arrayFromDraft(finalDraft.amenities),
+            insuranceAccepted: arrayFromDraft(finalDraft.insuranceAccepted),
+            fundingAvailable: Boolean(finalDraft.fundingAvailable),
+            fundingNotes: nullableText(String(finalDraft.fundingNotes || "")),
+            medicationAdministration: String(finalDraft.medicationAdministration || ""),
+            matAccepted: arrayFromDraft(finalDraft.matAccepted),
+            medicationRestrictions: nullableText(String(finalDraft.medicationRestrictions || "")),
+            drugTestingPolicy: String(finalDraft.drugTestingPolicy || ""),
+            description: String(finalDraft.description || ""),
+            houseRulesText: nullableText(String(finalDraft.houseRulesText || "")),
+            photoReadiness: arrayFromDraft(finalDraft.photoReadiness),
+            videoUrls: arrayFromDraft(finalDraft.videoUrls),
+            preferredContactMethod: String(finalDraft.preferredContactMethod || ""),
+            availabilityNotes: nullableText(String(finalDraft.availabilityNotes || "")),
+            referralFitNotes: nullableText(String(finalDraft.referralFitNotes || "")),
+            goodNeighborPolicyAcknowledged: true,
+            onboardingStep: maxSoberLivingStep,
+            onboardingCompletedAt: new Date()
+          }
+        });
+
+        await tx.onboardingDraft.update({
+          where: { id: draft.id },
+          data: {
+            soberLivingDraft: jsonDraft(finalDraft),
+            selectedAccountType: "sober_living",
+            activeStep: maxSoberLivingStep,
+            completedAt: new Date()
+          }
+        });
       });
 
       destination = "/dashboard/aftercare";
     }
   } catch (error) {
     console.error("Sober living onboarding step save failed", error);
-    const profileId = String(formData.get("profileId") || "");
-    destination = profileId
-      ? stepRedirect(step, profileId, "Please check the highlighted fields and try again.")
-      : `/onboarding/aftercare/sober-living/${step}?error=Please+check+the+fields+and+try+again.`;
+    destination = stepRedirect(step, "Please check the highlighted fields and try again.");
   }
 
   redirect(destination);

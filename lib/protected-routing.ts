@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { OrganizationType, Role } from "@prisma/client";
 import { getClerkSessionUserId, getCurrentAppUser } from "@/lib/current-user";
 import { hasDatabaseConfig } from "@/lib/database-status";
+import { draftDestinationForAccountType, isAccountType } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { maxReferentStep } from "@/lib/referent-onboarding";
 import { maxSoberLivingStep } from "@/lib/sober-living-onboarding";
@@ -41,6 +42,23 @@ export async function getAuthenticatedLandingPath() {
 
   if (!appUser) {
     return "/onboarding/account-type";
+  }
+
+  const onboardingDraft = await prisma.onboardingDraft.findUnique({
+    where: { userId: appUser.id },
+    select: {
+      selectedAccountType: true,
+      activeStep: true,
+      completedAt: true
+    }
+  });
+
+  if (!appUser.orgId && onboardingDraft?.selectedAccountType && !onboardingDraft.completedAt) {
+    const accountType = onboardingDraft.selectedAccountType;
+
+    if (isAccountType(accountType)) {
+      return draftDestinationForAccountType(accountType, onboardingDraft.activeStep);
+    }
   }
 
   if (appUser.role === Role.system_admin) {

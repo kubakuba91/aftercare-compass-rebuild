@@ -1,9 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { SubscriptionStatus } from "@prisma/client";
+import { OrganizationType, Prisma, Role, SubscriptionStatus } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
-import { ensureOnboardingOrganization } from "@/lib/onboarding";
+import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import {
   emailsFromText,
@@ -26,6 +26,21 @@ function stepRedirect(step: number, error?: string) {
   return `/onboarding/referent/${step}${params.size ? `?${params.toString()}` : ""}`;
 }
 
+function mergeDraft(currentDraft: unknown, nextValues: Record<string, unknown>) {
+  return {
+    ...(currentDraft && typeof currentDraft === "object" && !Array.isArray(currentDraft) ? currentDraft : {}),
+    ...nextValues
+  };
+}
+
+function jsonDraft(value: Record<string, unknown>) {
+  return value as Prisma.InputJsonValue;
+}
+
+function arrayFromDraft(value: unknown) {
+  return Array.isArray(value) ? value.map(String) : [];
+}
+
 export async function saveReferentOnboardingStep(step: number, formData: FormData) {
   if (!hasDatabaseConfig()) {
     redirect("/setup?missing=database");
@@ -34,7 +49,8 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
   let destination = "/onboarding/referent/1";
 
   try {
-    const organization = await ensureOnboardingOrganization("referent");
+    const draft = await getOrCreateOnboardingDraft("referent", false);
+    const currentDraft = draft.referentDraft;
 
     if (step === 1) {
       const parsed = referentStepOneSchema.parse({
@@ -54,48 +70,22 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
         statesOperatedIn: valuesFromForm(formData, "statesOperatedIn")
       });
 
-      await prisma.$transaction([
-        prisma.organization.update({
-          where: { id: organization.orgId },
-          data: {
-            name: parsed.organization,
-            phone: parsed.phone,
-            website: nullableText(parsed.website)
-          }
-        }),
-        prisma.referentOrganization.upsert({
-          where: { orgId: organization.orgId },
-          create: {
-            orgId: organization.orgId,
-            orgTypeDetail: parsed.orgTypeDetail,
-            streetAddress: parsed.streetAddress,
-            city: parsed.city,
-            state: parsed.state,
-            zip: parsed.zip,
+      await prisma.onboardingDraft.update({
+        where: { id: draft.id },
+        data: {
+          referentDraft: jsonDraft(mergeDraft(currentDraft, {
+            ...parsed,
+            website: nullableText(parsed.website),
             medicalRecordsFax: nullableText(parsed.medicalRecordsFax),
             healthSystemAffiliation: nullableText(parsed.healthSystemAffiliation),
             npiNumber: nullableText(parsed.npiNumber),
-            stateLicenseNumber: nullableText(parsed.stateLicenseNumber),
-            ehrSystem: parsed.ehrSystem,
-            statesOperatedIn: parsed.statesOperatedIn,
-            onboardingStep: 2
-          },
-          update: {
-            orgTypeDetail: parsed.orgTypeDetail,
-            streetAddress: parsed.streetAddress,
-            city: parsed.city,
-            state: parsed.state,
-            zip: parsed.zip,
-            medicalRecordsFax: nullableText(parsed.medicalRecordsFax),
-            healthSystemAffiliation: nullableText(parsed.healthSystemAffiliation),
-            npiNumber: nullableText(parsed.npiNumber),
-            stateLicenseNumber: nullableText(parsed.stateLicenseNumber),
-            ehrSystem: parsed.ehrSystem,
-            statesOperatedIn: parsed.statesOperatedIn,
-            onboardingStep: 2
-          }
-        })
-      ]);
+            stateLicenseNumber: nullableText(parsed.stateLicenseNumber)
+          })),
+          selectedAccountType: "referent",
+          activeStep: 2,
+          completedAt: null
+        }
+      });
 
       destination = stepRedirect(2);
     }
@@ -107,13 +97,13 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
         avgMonthlyReferrals: formData.get("avgMonthlyReferrals")
       });
 
-      await prisma.referentOrganization.update({
-        where: { orgId: organization.orgId },
+      await prisma.onboardingDraft.update({
+        where: { id: draft.id },
         data: {
-          levelsOfCare: parsed.levelsOfCare,
-          currentPlacementMethods: parsed.currentPlacementMethods,
-          avgMonthlyReferrals: parsed.avgMonthlyReferrals,
-          onboardingStep: 3
+          referentDraft: jsonDraft(mergeDraft(currentDraft, parsed)),
+          selectedAccountType: "referent",
+          activeStep: 3,
+          completedAt: null
         }
       });
 
@@ -126,21 +116,15 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
         billingCycle: formData.get("billingCycle")
       });
 
-      await prisma.$transaction([
-        prisma.organization.update({
-          where: { id: organization.orgId },
-          data: {
-            subscriptionPlan: parsed.selectedPlan,
-            subscriptionBillingCycle: parsed.billingCycle,
-            subscriptionStatus:
-              parsed.selectedPlan === "professional" ? SubscriptionStatus.trialing : SubscriptionStatus.incomplete
-          }
-        }),
-        prisma.referentOrganization.update({
-          where: { orgId: organization.orgId },
-          data: { onboardingStep: 4 }
-        })
-      ]);
+      await prisma.onboardingDraft.update({
+        where: { id: draft.id },
+        data: {
+          referentDraft: jsonDraft(mergeDraft(currentDraft, parsed)),
+          selectedAccountType: "referent",
+          activeStep: 4,
+          completedAt: null
+        }
+      });
 
       destination = stepRedirect(4);
     }
@@ -149,14 +133,64 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
       const parsed = referentStepFourSchema.parse({
         invitedTeamEmails: emailsFromText(String(formData.get("invitedTeamEmails") || ""))
       });
+      const finalDraft = mergeDraft(currentDraft, parsed) as Record<string, unknown>;
+      const selectedPlan = String(finalDraft.selectedPlan || "professional");
 
-      await prisma.referentOrganization.update({
-        where: { orgId: organization.orgId },
-        data: {
-          invitedTeamEmails: parsed.invitedTeamEmails,
-          onboardingStep: maxReferentStep,
-          onboardingCompletedAt: new Date()
-        }
+      await prisma.$transaction(async (tx) => {
+        const organization = await tx.organization.create({
+          data: {
+            type: OrganizationType.referent,
+            name: String(finalDraft.organization || `${draft.user.email} Referent Organization`),
+            phone: String(finalDraft.phone || ""),
+            email: draft.user.email,
+            website: nullableText(String(finalDraft.website || "")),
+            subscriptionPlan: selectedPlan,
+            subscriptionBillingCycle: String(finalDraft.billingCycle || "monthly"),
+            subscriptionStatus:
+              selectedPlan === "professional" ? SubscriptionStatus.trialing : SubscriptionStatus.incomplete
+          }
+        });
+
+        await tx.user.update({
+          where: { id: draft.userId },
+          data: {
+            role: Role.referent_admin,
+            orgId: organization.id
+          }
+        });
+
+        await tx.referentOrganization.create({
+          data: {
+            orgId: organization.id,
+            orgTypeDetail: String(finalDraft.orgTypeDetail || ""),
+            streetAddress: String(finalDraft.streetAddress || ""),
+            city: String(finalDraft.city || ""),
+            state: String(finalDraft.state || ""),
+            zip: String(finalDraft.zip || ""),
+            medicalRecordsFax: nullableText(String(finalDraft.medicalRecordsFax || "")),
+            healthSystemAffiliation: nullableText(String(finalDraft.healthSystemAffiliation || "")),
+            npiNumber: nullableText(String(finalDraft.npiNumber || "")),
+            stateLicenseNumber: nullableText(String(finalDraft.stateLicenseNumber || "")),
+            ehrSystem: String(finalDraft.ehrSystem || "None"),
+            statesOperatedIn: arrayFromDraft(finalDraft.statesOperatedIn),
+            levelsOfCare: arrayFromDraft(finalDraft.levelsOfCare),
+            currentPlacementMethods: arrayFromDraft(finalDraft.currentPlacementMethods),
+            avgMonthlyReferrals: String(finalDraft.avgMonthlyReferrals || ""),
+            invitedTeamEmails: parsed.invitedTeamEmails,
+            onboardingStep: maxReferentStep,
+            onboardingCompletedAt: new Date()
+          }
+        });
+
+        await tx.onboardingDraft.update({
+          where: { id: draft.id },
+          data: {
+            referentDraft: jsonDraft(finalDraft),
+            selectedAccountType: "referent",
+            activeStep: maxReferentStep,
+            completedAt: new Date()
+          }
+        });
       });
 
       destination = "/dashboard/referent";

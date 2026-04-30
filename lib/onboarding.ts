@@ -18,6 +18,114 @@ export function isAccountType(value: string): value is AccountType {
   return value in accountTypeToOrgType;
 }
 
+export function draftKeyForAccountType(accountType: AccountType) {
+  if (accountType === "referent") {
+    return "referentDraft" as const;
+  }
+
+  if (accountType === "continued_care") {
+    return "continuedCareDraft" as const;
+  }
+
+  return "soberLivingDraft" as const;
+}
+
+export function draftDestinationForAccountType(accountType: AccountType, step = 1) {
+  if (accountType === "referent") {
+    return `/onboarding/referent/${step}`;
+  }
+
+  if (accountType === "continued_care") {
+    return "/onboarding/aftercare/profile?type=continued_care";
+  }
+
+  return `/onboarding/aftercare/sober-living/${step}`;
+}
+
+export function destinationForAccountType(accountType: AccountType, alreadyOnboarded: boolean) {
+  if (alreadyOnboarded) {
+    return accountType === "referent" ? "/dashboard/referent" : "/dashboard/aftercare";
+  }
+
+  return draftDestinationForAccountType(accountType);
+}
+
+export async function ensureOnboardingUser(preferredAccountType?: AccountType) {
+  const clerkUserId = await getClerkSessionUserId();
+
+  if (!clerkUserId) {
+    throw new Error("Authentication required");
+  }
+
+  const identity = await getRequiredClerkIdentity();
+  const role = defaultRoleForAccountType(preferredAccountType ?? "referent");
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      OR: [{ email: identity.email }, { clerkUserId: identity.clerkUserId }]
+    }
+  });
+
+  const data = {
+    clerkUserId: identity.clerkUserId,
+    email: identity.email,
+    firstName: identity.firstName,
+    lastName: identity.lastName,
+    emailVerified: identity.emailVerified,
+    emailVerifiedAt: identity.emailVerified ? new Date() : null
+  };
+
+  if (existingUser) {
+    return prisma.user.update({
+      where: { id: existingUser.id },
+      data: preferredAccountType ? { ...data, role } : data
+    });
+  }
+
+  return prisma.user.create({
+    data: {
+      ...data,
+      role
+    }
+  });
+}
+
+export async function getOrCreateOnboardingDraft(accountType?: AccountType, resetActiveStep = true) {
+  const user = await ensureOnboardingUser(accountType);
+  const selectedAccountType = accountType ?? undefined;
+
+  return prisma.onboardingDraft.upsert({
+    where: { userId: user.id },
+    create: {
+      userId: user.id,
+      selectedAccountType,
+      activeStep: 1
+    },
+    update: selectedAccountType
+      ? {
+          selectedAccountType,
+          ...(resetActiveStep ? { activeStep: 1 } : {}),
+          completedAt: null
+        }
+      : {},
+    include: { user: true }
+  });
+}
+
+export async function getOnboardingDraftForSession() {
+  const clerkUserId = await getClerkSessionUserId();
+
+  if (!clerkUserId) {
+    return null;
+  }
+
+  return prisma.onboardingDraft.findFirst({
+    where: {
+      user: { clerkUserId },
+      completedAt: null
+    }
+  });
+}
+
 type ExistingOnboardingUser = NonNullable<
   Awaited<ReturnType<typeof findOnboardingUserBySession>>
 >;
@@ -182,20 +290,4 @@ export async function ensureOnboardingOrganization(accountType: AccountType) {
   }
 
   return { alreadyOnboarded: false, orgId: organization.id };
-}
-
-export function destinationForAccountType(accountType: AccountType, alreadyOnboarded: boolean) {
-  if (alreadyOnboarded) {
-    return accountType === "referent" ? "/dashboard/referent" : "/dashboard/aftercare";
-  }
-
-  if (accountType === "referent") {
-    return "/onboarding/referent/1";
-  }
-
-  if (accountType === "sober_living") {
-    return "/onboarding/aftercare/sober-living/1";
-  }
-
-  return `/onboarding/aftercare/profile?type=${accountType}`;
 }

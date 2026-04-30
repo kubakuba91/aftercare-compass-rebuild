@@ -7,6 +7,7 @@ import {
   Home,
   Inbox,
   MessageSquare,
+  Pencil,
   Settings,
   ShieldCheck,
   UserCircle,
@@ -110,13 +111,15 @@ function addProfileHref(organizationType: string | undefined) {
 export default async function AftercareDashboardPage({
   searchParams
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; edit?: string }>;
 }) {
   const appUser = await getAftercareDashboardUser();
   await redirectIncompleteAftercareOnboarding(appUser.orgId);
 
-  const { tab } = await searchParams;
+  const query = await searchParams;
+  const { tab } = query;
   const activeTab = isDashboardTab(tab) ? tab : "overview";
+  const isEditingDisplayName = activeTab === "account" && query.edit === "displayName";
 
   const [profiles, leads, referrals, pendingDocumentCount, managers] = await Promise.all([
     prisma.aftercareProfile.findMany({
@@ -542,8 +545,16 @@ export default async function AftercareDashboardPage({
               <dl className="mt-5 grid gap-4 text-sm md:grid-cols-2">
                 <div>
                   <dt className="text-muted-foreground">Display name</dt>
-                  <dd className="mt-1 font-semibold">
-                    {[appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email}
+                  <dd className="mt-1 flex items-center gap-2 font-semibold">
+                    <span>{[appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email}</span>
+                    <Link
+                      aria-label="Edit display name"
+                      className="focus-ring inline-flex size-8 items-center justify-center rounded-md border border-border bg-white text-muted-foreground hover:text-foreground"
+                      href="/dashboard/aftercare?tab=account&edit=displayName"
+                      title="Edit display name"
+                    >
+                      <Pencil size={14} />
+                    </Link>
                   </dd>
                 </div>
                 <div>
@@ -573,30 +584,40 @@ export default async function AftercareDashboardPage({
                 Profile picture, password settings, and notification preferences will be added in a
                 follow-up pass.
               </p>
-              <form action={updateUserDisplayName} className="mt-6 grid gap-4 rounded-md border border-border bg-muted/40 p-4">
-                <h3 className="font-semibold">Update display name</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="grid gap-2 text-sm font-medium">
-                    First name
-                    <input
-                      className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
-                      defaultValue={appUser.firstName ?? ""}
-                      name="firstName"
-                    />
-                  </label>
-                  <label className="grid gap-2 text-sm font-medium">
-                    Last name
-                    <input
-                      className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
-                      defaultValue={appUser.lastName ?? ""}
-                      name="lastName"
-                    />
-                  </label>
-                </div>
-                <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground md:w-fit">
-                  Save display name
-                </button>
-              </form>
+              {isEditingDisplayName ? (
+                <form action={updateUserDisplayName} className="mt-6 grid gap-4 rounded-md border border-border bg-muted/40 p-4">
+                  <h3 className="font-semibold">Update display name</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="grid gap-2 text-sm font-medium">
+                      First name
+                      <input
+                        className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                        defaultValue={appUser.firstName ?? ""}
+                        name="firstName"
+                      />
+                    </label>
+                    <label className="grid gap-2 text-sm font-medium">
+                      Last name
+                      <input
+                        className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                        defaultValue={appUser.lastName ?? ""}
+                        name="lastName"
+                      />
+                    </label>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                      Save display name
+                    </button>
+                    <Link
+                      className="focus-ring inline-flex min-h-10 items-center rounded-md border border-border bg-white px-4 text-sm font-semibold"
+                      href="/dashboard/aftercare?tab=account"
+                    >
+                      Cancel
+                    </Link>
+                  </div>
+                </form>
+              ) : null}
             </Card>
           ) : null}
         </section>

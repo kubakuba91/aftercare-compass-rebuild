@@ -25,22 +25,85 @@ export async function getProtectedAppUser(_returnTo: string) {
   return appUser;
 }
 
-export async function redirectToDashboardDestination(returnTo = "/dashboard") {
-  const appUser = await getProtectedAppUser(returnTo);
+export async function getAuthenticatedLandingPath() {
+  if (!hasDatabaseConfig()) {
+    return "/setup?missing=database";
+  }
+
+  const clerkUserId = await getClerkSessionUserId();
+
+  if (!clerkUserId) {
+    return "/sign-in";
+  }
+
+  const appUser = await getCurrentAppUser();
+
+  if (!appUser) {
+    return "/onboarding/account-type";
+  }
 
   if (appUser.role === Role.system_admin) {
-    redirect("/dashboard/admin");
+    return "/dashboard/admin";
   }
 
   if (appUser.role === Role.referent_admin || appUser.role === Role.referent_manager) {
-    redirect("/dashboard/referent");
+    return "/dashboard/referent";
   }
 
-  if (appUser.role === Role.aftercare_admin || appUser.role === Role.aftercare_manager) {
-    redirect("/dashboard/aftercare");
+  if (appUser.role !== Role.aftercare_admin && appUser.role !== Role.aftercare_manager) {
+    return "/onboarding/account-type";
   }
 
-  redirect("/onboarding/account-type");
+  if (!appUser.orgId) {
+    return "/onboarding/account-type";
+  }
+
+  const profiles = await prisma.aftercareProfile.findMany({
+    where: { orgId: appUser.orgId },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      type: true,
+      onboardingStep: true,
+      onboardingCompletedAt: true
+    }
+  });
+
+  if (profiles.length === 0) {
+    const profileType =
+      appUser.organization?.type === OrganizationType.aftercare_continued_care
+        ? "continued_care"
+        : "sober_living";
+
+    return profileType === "sober_living"
+      ? "/onboarding/aftercare/sober-living/1"
+      : `/onboarding/aftercare/profile?type=${profileType}`;
+  }
+
+  const incompleteSoberLivingProfile = profiles.find(
+    (profile) => profile.type === "sober_living" && !profile.onboardingCompletedAt
+  );
+
+  if (incompleteSoberLivingProfile) {
+    const resumeStep = Math.min(
+      Math.max(incompleteSoberLivingProfile.onboardingStep ?? 1, 1),
+      maxSoberLivingStep
+    );
+
+    return `/onboarding/aftercare/sober-living/${resumeStep}?profileId=${incompleteSoberLivingProfile.id}`;
+  }
+
+  return "/dashboard/aftercare";
+}
+
+export async function redirectToDashboardDestination(returnTo = "/dashboard") {
+  const destination = await getAuthenticatedLandingPath();
+
+  if (destination === "/sign-in") {
+    redirect(returnTo === "/dashboard" ? "/sign-in" : `/sign-in?redirect_url=${encodeURIComponent(returnTo)}`);
+  }
+
+  redirect(destination);
 }
 
 export async function getAftercareDashboardUser(returnTo = "/dashboard/aftercare") {

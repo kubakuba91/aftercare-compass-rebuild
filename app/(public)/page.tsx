@@ -36,6 +36,9 @@ export default async function HomePage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <ButtonLink href="/search">Search programs</ButtonLink>
+              <ButtonLink href="/sign-in" variant="secondary">
+                Sign in
+              </ButtonLink>
               <ButtonLink href="/sign-up" variant="secondary">
                 Create account
               </ButtonLink>

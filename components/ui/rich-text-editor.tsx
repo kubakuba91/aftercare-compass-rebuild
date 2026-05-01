@@ -1,7 +1,7 @@
 "use client";
 
 import { Bold, Italic, List, ListOrdered } from "lucide-react";
-import { useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 type RichTextEditorProps = {
   initialValue?: string | null;
@@ -20,11 +20,34 @@ export function RichTextEditor({ initialValue = "", name, required = false }: Ri
   const editorRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  function syncValue() {
+  const syncValue = useCallback(() => {
     if (inputRef.current && editorRef.current) {
       inputRef.current.value = editorRef.current.innerHTML;
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    const form = editorRef.current?.closest("form");
+    if (!form) {
+      return;
+    }
+
+    const syncBeforeSubmit = () => syncValue();
+    const syncFormData = (event: Event) => {
+      syncValue();
+      if (inputRef.current && "formData" in event) {
+        (event as FormDataEvent).formData.set(name, inputRef.current.value);
+      }
+    };
+
+    form.addEventListener("submit", syncBeforeSubmit);
+    form.addEventListener("formdata", syncFormData);
+
+    return () => {
+      form.removeEventListener("submit", syncBeforeSubmit);
+      form.removeEventListener("formdata", syncFormData);
+    };
+  }, [name, syncValue]);
 
   function runCommand(command: string) {
     editorRef.current?.focus();
@@ -56,6 +79,7 @@ export function RichTextEditor({ initialValue = "", name, required = false }: Ri
         className="min-h-36 px-3 py-3 text-sm leading-6 outline-none [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc"
         contentEditable
         dangerouslySetInnerHTML={{ __html: initialValue || "" }}
+        onBlur={syncValue}
         onInput={syncValue}
         role="textbox"
         suppressContentEditableWarning

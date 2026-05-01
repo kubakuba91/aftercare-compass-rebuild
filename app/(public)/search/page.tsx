@@ -1,17 +1,11 @@
 import { Prisma, ProfileType } from "@prisma/client";
-import { MapPin, Search, SlidersHorizontal } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
-import {
-  amenityOptions,
-  averageLengthOptions,
-  matOptions,
-  populationOptions,
-  specialtyPopulationOptions
-} from "@/lib/sober-living-onboarding";
+import { amenityOptions, matOptions, populationOptions, specialtyPopulationOptions } from "@/lib/sober-living-onboarding";
 
 export const dynamic = "force-dynamic";
 
@@ -30,10 +24,6 @@ function availabilityText(profile: {
 
 function typeLabel(type: string) {
   return type === "sober_living" ? "Sober Living" : "Continued Care";
-}
-
-function selected(value: string | undefined, option: string) {
-  return value === option;
 }
 
 function valuesFromQuery(value: string | string[] | undefined) {
@@ -74,6 +64,7 @@ export default async function SearchPage({
     mat?: string | string[];
     verified?: string | string[];
     availability?: string | string[];
+    filters?: string | string[];
   }>;
 }) {
   const query = await searchParams;
@@ -95,6 +86,20 @@ export default async function SearchPage({
   const mat = valuesFromQuery(query.mat).filter((value) => matOptions.includes(value as never));
   const verified = firstFromQuery(query.verified) === "yes";
   const availability = firstFromQuery(query.availability) === "available" ? "available" : "";
+  const showFilters = firstFromQuery(query.filters) === "1";
+  const filterParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(query)) {
+    if (key === "filters") {
+      continue;
+    }
+
+    for (const item of valuesFromQuery(value)) {
+      filterParams.append(key, item);
+    }
+  }
+
+  filterParams.set("filters", showFilters ? "0" : "1");
 
   const andFilters: Prisma.AftercareProfileWhereInput[] = [{ status: "published" }];
 
@@ -189,9 +194,20 @@ export default async function SearchPage({
   return (
     <>
       <PublicSearchHeader
+        amenities={amenities}
+        clearHref="/search"
         defaultAvailability={availability}
         defaultLocation={q}
         defaultType={type}
+        duration={duration}
+        filtersHref={`/search?${filterParams.toString()}`}
+        mat={mat}
+        maxPrice={maxPrice}
+        minPrice={minPrice}
+        population={population}
+        showFilters={showFilters}
+        specialty={specialty}
+        verified={verified}
       />
       <main className="shell py-8">
         <div className="flex flex-col justify-between gap-4 border-b border-border pb-6 md:flex-row md:items-end">
@@ -207,142 +223,7 @@ export default async function SearchPage({
           </ButtonLink>
         </div>
 
-      <div className="grid gap-5 py-6 lg:grid-cols-[280px_1fr]">
-        <Card className="h-fit">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal size={18} />
-            <h2 className="font-semibold">Filters</h2>
-          </div>
-          <form className="mt-4 grid gap-4" action="/search">
-            <label className="grid gap-2 text-sm font-medium">
-              Search
-              <div className="flex items-center rounded-md border border-border bg-white px-3">
-                <Search className="text-muted-foreground" size={16} />
-                <input
-                  className="min-h-10 flex-1 bg-transparent px-2 text-sm outline-none"
-                  defaultValue={q}
-                  name="q"
-                  placeholder="City, state, or name"
-                />
-              </div>
-            </label>
-            <label className="grid gap-2 text-sm font-medium">
-              Program type
-              <select className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" defaultValue={type} name="type">
-                <option value="">Any</option>
-                <option value="sober_living">Sober Living</option>
-                <option value="continued_care">Continued Care</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-medium">
-              Population served
-              <select
-                className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
-                defaultValue={population[0] || ""}
-                name="population"
-              >
-                <option value="">Any</option>
-                {populationOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-medium">
-              Specialty populations
-              <select
-                className="min-h-24 rounded-md border border-border bg-white px-3 py-2 text-sm"
-                defaultValue={specialty}
-                multiple
-                name="specialty"
-              >
-                {specialtyPopulationOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="grid gap-2">
-              <span className="text-sm font-medium">Price per week</span>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
-                  defaultValue={minPrice ?? ""}
-                  min="0"
-                  name="minPrice"
-                  placeholder="Min"
-                  type="number"
-                />
-                <input
-                  className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
-                  defaultValue={maxPrice ?? ""}
-                  min="0"
-                  name="maxPrice"
-                  placeholder="Max"
-                  type="number"
-                />
-              </div>
-            </div>
-            <label className="grid gap-2 text-sm font-medium">
-              Average program duration
-              <select className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" defaultValue={duration} name="duration">
-                <option value="">Any</option>
-                {averageLengthOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-medium">
-              Specialties / amenities
-              <select
-                className="min-h-24 rounded-md border border-border bg-white px-3 py-2 text-sm"
-                defaultValue={amenities}
-                multiple
-                name="amenity"
-              >
-                {amenityOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-medium">
-              Medication / MAT fit
-              <select
-                className="min-h-24 rounded-md border border-border bg-white px-3 py-2 text-sm"
-                defaultValue={mat}
-                multiple
-                name="mat"
-              >
-                {matOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input defaultChecked={selected(availability, "available")} name="availability" type="checkbox" value="available" />
-              Available now
-            </label>
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input defaultChecked={verified} name="verified" type="checkbox" value="yes" />
-              Is verified
-            </label>
-            <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
-              Apply filters
-            </button>
-            <ButtonLink href="/search" variant="secondary">
-              Clear all
-            </ButtonLink>
-          </form>
-        </Card>
-
+      <div className="grid gap-5 py-6">
         <div className="grid gap-4">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-semibold">{profiles.length} listings</p>

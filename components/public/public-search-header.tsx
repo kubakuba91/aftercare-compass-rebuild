@@ -57,9 +57,9 @@ export function PublicSearchHeader({
         <Link className="text-lg font-semibold text-primary" href="/">
           Aftercare Compass
         </Link>
-        <form action="/search" className="grid flex-1 gap-2 md:grid-cols-[220px_1fr_180px_160px]">
-          <div className="flex rounded-md border border-border bg-white">
-            <label className="flex flex-1 items-center justify-center border-r border-border px-3 text-sm font-semibold">
+        <form action="/search" className="grid flex-1 gap-2 md:grid-cols-[260px_1fr_180px_160px]">
+          <div className="grid rounded-md border border-border bg-white p-1 sm:grid-cols-2">
+            <label className="focus-within:ring-ring flex min-h-10 cursor-pointer items-center justify-center rounded px-3 text-center text-sm font-semibold transition has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:ring-2">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "sober_living" || !defaultType}
@@ -69,7 +69,7 @@ export function PublicSearchHeader({
               />
               Sober Living
             </label>
-            <label className="flex flex-1 items-center justify-center px-3 text-sm font-semibold">
+            <label className="focus-within:ring-ring flex min-h-10 cursor-pointer items-center justify-center rounded px-3 text-center text-sm font-semibold transition has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:ring-2">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "continued_care"}

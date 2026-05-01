@@ -4,9 +4,11 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recovery-card";
 import { Card } from "@/components/ui/card";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
+import { richTextHtml } from "@/lib/rich-text";
 import { cn } from "@/lib/utils";
 import {
   amenityOptions,
@@ -408,11 +410,11 @@ export default async function SoberLivingStepPage({
                 <>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Home description")}
-                    <textarea name="description" required defaultValue={profile?.description ?? ""} className={textAreaClassName()} />
+                    <RichTextEditor initialValue={richTextHtml(profile?.description)} name="description" required />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
                     House rules
-                    <textarea name="houseRulesText" defaultValue={profile?.houseRulesText ?? ""} className={textAreaClassName()} />
+                    <RichTextEditor initialValue={richTextHtml(profile?.houseRulesText)} name="houseRulesText" />
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     Photo checklist

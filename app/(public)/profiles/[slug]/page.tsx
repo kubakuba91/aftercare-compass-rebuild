@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
 import { getCurrentAppUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
+import { richTextHtml } from "@/lib/rich-text";
 import { createProfileReferral, createPublicProfileLead } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -275,10 +276,27 @@ export default async function PublicProfilePage({
           <div className="mt-5 grid gap-4">
             <Card>
               <h2 className="text-xl font-semibold">About</h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                {profile.description || "No description has been added yet."}
-              </p>
+              {profile.description ? (
+                <div
+                  className="mt-3 text-sm leading-6 text-muted-foreground [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc"
+                  dangerouslySetInnerHTML={{ __html: richTextHtml(profile.description) }}
+                />
+              ) : (
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  No description has been added yet.
+                </p>
+              )}
             </Card>
+
+            {isSoberLiving && profile.houseRulesText ? (
+              <Card>
+                <h2 className="text-xl font-semibold">House rules</h2>
+                <div
+                  className="mt-3 text-sm leading-6 text-muted-foreground [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc"
+                  dangerouslySetInnerHTML={{ __html: richTextHtml(profile.houseRulesText) }}
+                />
+              </Card>
+            ) : null}
 
             {isSoberLiving ? (
               <Card>

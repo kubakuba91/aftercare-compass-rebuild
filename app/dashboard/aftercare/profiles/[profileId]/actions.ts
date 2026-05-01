@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { ProfileStatus, ProfileType } from "@prisma/client";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
 import { prisma } from "@/lib/prisma";
+import { sanitizeRichText } from "@/lib/rich-text";
 import { getAftercareDashboardUser } from "@/lib/protected-routing";
 import { valuesFromForm } from "@/lib/sober-living-onboarding";
 
@@ -150,8 +151,8 @@ export async function updateAftercareProfileContent(formData: FormData) {
   await prisma.aftercareProfile.update({
     where: { id: profile.id },
     data: {
-      description: nullableText(formData.get("description")),
-      houseRulesText: nullableText(formData.get("houseRulesText")),
+      description: sanitizeRichText(nullableText(formData.get("description"))),
+      houseRulesText: sanitizeRichText(nullableText(formData.get("houseRulesText"))),
       referralFitNotes: nullableText(formData.get("referralFitNotes")),
       referralProcessDescription: nullableText(formData.get("referralProcessDescription")),
       populationServedOptions: valuesFromForm(formData, "populationServedOptions"),

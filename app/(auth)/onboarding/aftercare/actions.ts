@@ -5,6 +5,7 @@ import { Prisma, ProfileStatus, ProfileType } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
+import { sanitizeRichText } from "@/lib/rich-text";
 import { slugify } from "@/lib/slug";
 import {
   continuedCareStepFiveSchema,
@@ -328,8 +329,8 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         where: { id: draft.id },
         data: {
           soberLivingDraft: jsonDraft(mergeDraft(currentDraft, {
-            description: parsed.description,
-            houseRulesText: nullableText(parsed.houseRulesText),
+            description: sanitizeRichText(parsed.description),
+            houseRulesText: sanitizeRichText(nullableText(parsed.houseRulesText)),
             photoReadiness: parsed.photoReadiness,
             videoUrls: parsed.videoUrls,
             preferredContactMethod: parsed.preferredContactMethod
@@ -409,8 +410,8 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             matAccepted: arrayFromDraft(finalDraft.matAccepted),
             medicationRestrictions: nullableText(String(finalDraft.medicationRestrictions || "")),
             drugTestingPolicy: String(finalDraft.drugTestingPolicy || ""),
-            description: String(finalDraft.description || ""),
-            houseRulesText: nullableText(String(finalDraft.houseRulesText || "")),
+            description: sanitizeRichText(String(finalDraft.description || "")) || "",
+            houseRulesText: sanitizeRichText(nullableText(String(finalDraft.houseRulesText || ""))),
             photoReadiness: arrayFromDraft(finalDraft.photoReadiness),
             videoUrls: arrayFromDraft(finalDraft.videoUrls),
             preferredContactMethod: String(finalDraft.preferredContactMethod || ""),

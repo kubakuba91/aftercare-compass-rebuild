@@ -1,3 +1,5 @@
+import { richTextToPlainText } from "@/lib/rich-text";
+
 type AftercareReadinessProfile = {
   type: string;
   programName: string | null;
@@ -39,7 +41,7 @@ export function getAftercareProfileReadiness(profile: AftercareReadinessProfile)
     },
     {
       label: "Profile description",
-      complete: Boolean(profile.description?.trim()),
+      complete: Boolean(richTextToPlainText(profile.description)),
       required: true,
       message: "Profile description is required."
     },

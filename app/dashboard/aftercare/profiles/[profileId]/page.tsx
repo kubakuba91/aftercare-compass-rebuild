@@ -22,6 +22,8 @@ import {
 } from "@/lib/continued-care-onboarding";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { richTextHtml } from "@/lib/rich-text";
 import { prisma } from "@/lib/prisma";
 import {
   getAftercareDashboardUser,
@@ -335,12 +337,12 @@ export default async function AftercareProfileDetailPage({
               <input name="profileId" type="hidden" value={profile.id} />
               <label className={labelClassName()}>
                 Description
-                <textarea className="min-h-32 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.description)} name="description" />
+                <RichTextEditor initialValue={richTextHtml(profile.description)} name="description" required />
               </label>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className={labelClassName()}>
                   House rules
-                  <textarea className="min-h-28 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.houseRulesText)} name="houseRulesText" />
+                  <RichTextEditor initialValue={richTextHtml(profile.houseRulesText)} name="houseRulesText" />
                 </label>
                 <label className={labelClassName()}>
                   Referral fit notes

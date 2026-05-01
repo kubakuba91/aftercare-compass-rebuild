@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
+import { richTextToPlainText } from "@/lib/rich-text";
 import { amenityOptions, matOptions, populationOptions, specialtyPopulationOptions } from "@/lib/sober-living-onboarding";
 
 export const dynamic = "force-dynamic";
@@ -377,7 +378,7 @@ export default async function SearchPage({
                       {[profile.publicCity, profile.publicState].filter(Boolean).join(", ") || "Location not listed"}
                     </p>
                     <p className="mt-3 line-clamp-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                      {profile.description || "No description added yet."}
+                      {richTextToPlainText(profile.description) || "No description added yet."}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {profile.populationServedOptions.slice(0, 3).map((item) => (

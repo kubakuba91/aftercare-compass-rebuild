@@ -1,11 +1,17 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, ProfileType } from "@prisma/client";
 import { MapPin, Search, SlidersHorizontal } from "lucide-react";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
-import { populationOptions } from "@/lib/sober-living-onboarding";
+import {
+  amenityOptions,
+  averageLengthOptions,
+  matOptions,
+  populationOptions,
+  specialtyPopulationOptions
+} from "@/lib/sober-living-onboarding";
 
 export const dynamic = "force-dynamic";
 
@@ -30,44 +36,127 @@ function selected(value: string | undefined, option: string) {
   return value === option;
 }
 
+function valuesFromQuery(value: string | string[] | undefined) {
+  if (!value) {
+    return [];
+  }
+
+  return Array.isArray(value) ? value.filter(Boolean) : [value].filter(Boolean);
+}
+
+function firstFromQuery(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function numberFromQuery(value: string | string[] | undefined) {
+  const raw = firstFromQuery(value);
+
+  if (!raw) {
+    return undefined;
+  }
+
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export default async function SearchPage({
   searchParams
 }: {
   searchParams: Promise<{
-    q?: string;
-    type?: string;
-    population?: string;
-    availability?: string;
+    q?: string | string[];
+    type?: string | string[];
+    population?: string | string[];
+    specialty?: string | string[];
+    minPrice?: string | string[];
+    maxPrice?: string | string[];
+    duration?: string | string[];
+    amenity?: string | string[];
+    mat?: string | string[];
+    verified?: string | string[];
+    availability?: string | string[];
   }>;
 }) {
   const query = await searchParams;
-  const q = query.q?.trim() || "";
-  const type = query.type === "sober_living" || query.type === "continued_care" ? query.type : "";
-  const population = populationOptions.includes(query.population as never) ? query.population : "";
-  const availability = query.availability === "available" ? "available" : "";
+  const q = firstFromQuery(query.q)?.trim() || "";
+  const rawType = firstFromQuery(query.type);
+  const type = rawType === "sober_living" || rawType === "continued_care" ? rawType : "";
+  const population = valuesFromQuery(query.population).filter((value) =>
+    populationOptions.includes(value as never)
+  );
+  const specialty = valuesFromQuery(query.specialty).filter((value) =>
+    specialtyPopulationOptions.includes(value as never)
+  );
+  const minPrice = numberFromQuery(query.minPrice);
+  const maxPrice = numberFromQuery(query.maxPrice);
+  const duration = firstFromQuery(query.duration) || "";
+  const amenities = valuesFromQuery(query.amenity).filter((value) =>
+    amenityOptions.includes(value as never)
+  );
+  const mat = valuesFromQuery(query.mat).filter((value) => matOptions.includes(value as never));
+  const verified = firstFromQuery(query.verified) === "yes";
+  const availability = firstFromQuery(query.availability) === "available" ? "available" : "";
+
+  const andFilters: Prisma.AftercareProfileWhereInput[] = [{ status: "published" }];
+
+  if (type) {
+    andFilters.push({ type: type as ProfileType });
+  }
+
+  if (population.length) {
+    andFilters.push({ populationServedOptions: { hasSome: population } });
+  }
+
+  if (specialty.length) {
+    andFilters.push({ specialtyPopulations: { hasSome: specialty } });
+  }
+
+  if (duration) {
+    andFilters.push({ averageLengthOfStay: duration });
+  }
+
+  if (amenities.length) {
+    andFilters.push({ amenities: { hasSome: amenities } });
+  }
+
+  if (mat.length) {
+    andFilters.push({ matAccepted: { hasSome: mat } });
+  }
+
+  if (verified) {
+    andFilters.push({ verificationTier: { gt: 1 } });
+  }
+
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    andFilters.push({
+      pricePerWeek: {
+        ...(minPrice !== undefined ? { gte: minPrice } : {}),
+        ...(maxPrice !== undefined ? { lte: maxPrice } : {})
+      }
+    });
+  }
+
+  if (availability) {
+    andFilters.push({
+      OR: [
+        { type: ProfileType.sober_living, bedsAvailable: { gt: 0 } },
+        { type: ProfileType.continued_care, acceptingNewPatients: true }
+      ]
+    });
+  }
+
+  if (q) {
+    andFilters.push({
+      OR: [
+        { programName: { contains: q, mode: Prisma.QueryMode.insensitive } },
+        { publicCity: { contains: q, mode: Prisma.QueryMode.insensitive } },
+        { publicState: { contains: q, mode: Prisma.QueryMode.insensitive } },
+        { description: { contains: q, mode: Prisma.QueryMode.insensitive } }
+      ]
+    });
+  }
 
   const where: Prisma.AftercareProfileWhereInput = {
-    status: "published",
-    ...(type ? { type } : {}),
-    ...(population ? { populationServedOptions: { has: population } } : {}),
-    ...(availability
-      ? {
-          OR: [
-            { type: "sober_living", bedsAvailable: { gt: 0 } },
-            { type: "continued_care", acceptingNewPatients: true }
-          ]
-        }
-      : {}),
-    ...(q
-      ? {
-          OR: [
-            { programName: { contains: q, mode: "insensitive" } },
-            { publicCity: { contains: q, mode: "insensitive" } },
-            { publicState: { contains: q, mode: "insensitive" } },
-            { description: { contains: q, mode: "insensitive" } }
-          ]
-        }
-      : {})
+    AND: andFilters
   };
 
   const profiles = await prisma.aftercareProfile.findMany({
@@ -87,6 +176,10 @@ export default async function SearchPage({
       bedsAvailable: true,
       acceptingNewPatients: true,
       populationServedOptions: true,
+      specialtyPopulations: true,
+      averageLengthOfStay: true,
+      pricePerWeek: true,
+      amenities: true,
       certificationsHeld: true,
       supportServices: true,
       insuranceAccepted: true
@@ -145,7 +238,7 @@ export default async function SearchPage({
               Population served
               <select
                 className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
-                defaultValue={population}
+                defaultValue={population[0] || ""}
                 name="population"
               >
                 <option value="">Any</option>
@@ -156,13 +249,97 @@ export default async function SearchPage({
                 ))}
               </select>
             </label>
+            <label className="grid gap-2 text-sm font-medium">
+              Specialty populations
+              <select
+                className="min-h-24 rounded-md border border-border bg-white px-3 py-2 text-sm"
+                defaultValue={specialty}
+                multiple
+                name="specialty"
+              >
+                {specialtyPopulationOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="grid gap-2">
+              <span className="text-sm font-medium">Price per week</span>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                  defaultValue={minPrice ?? ""}
+                  min="0"
+                  name="minPrice"
+                  placeholder="Min"
+                  type="number"
+                />
+                <input
+                  className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                  defaultValue={maxPrice ?? ""}
+                  min="0"
+                  name="maxPrice"
+                  placeholder="Max"
+                  type="number"
+                />
+              </div>
+            </div>
+            <label className="grid gap-2 text-sm font-medium">
+              Average program duration
+              <select className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" defaultValue={duration} name="duration">
+                <option value="">Any</option>
+                {averageLengthOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-2 text-sm font-medium">
+              Specialties / amenities
+              <select
+                className="min-h-24 rounded-md border border-border bg-white px-3 py-2 text-sm"
+                defaultValue={amenities}
+                multiple
+                name="amenity"
+              >
+                {amenityOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-2 text-sm font-medium">
+              Medication / MAT fit
+              <select
+                className="min-h-24 rounded-md border border-border bg-white px-3 py-2 text-sm"
+                defaultValue={mat}
+                multiple
+                name="mat"
+              >
+                {matOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="flex items-center gap-2 text-sm font-medium">
               <input defaultChecked={selected(availability, "available")} name="availability" type="checkbox" value="available" />
               Available now
             </label>
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input defaultChecked={verified} name="verified" type="checkbox" value="yes" />
+              Is verified
+            </label>
             <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
               Apply filters
             </button>
+            <ButtonLink href="/search" variant="secondary">
+              Clear all
+            </ButtonLink>
           </form>
         </Card>
 

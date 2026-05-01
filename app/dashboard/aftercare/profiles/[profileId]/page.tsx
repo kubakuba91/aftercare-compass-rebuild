@@ -1,6 +1,25 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, BedDouble, Building2 } from "lucide-react";
+import { notFound } from "next/navigation";
+import { ArrowLeft, BedDouble, Building2, Eye, Save, ShieldCheck } from "lucide-react";
+import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
+import {
+  amenityOptions,
+  certificationOptions,
+  drugTestingPolicyOptions,
+  insuranceOptions,
+  matOptions,
+  medicationAdministrationOptions,
+  populationOptions,
+  preferredContactOptions,
+  roomTypeOptions,
+  specialtyPopulationOptions,
+  supportServiceOptions
+} from "@/lib/sober-living-onboarding";
+import {
+  levelOfCareOptions,
+  programTypeOptions,
+  telehealthModeOptions
+} from "@/lib/continued-care-onboarding";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
@@ -8,16 +27,90 @@ import {
   getAftercareDashboardUser,
   redirectIncompleteAftercareOnboarding
 } from "@/lib/protected-routing";
+import {
+  updateAftercareProfileAvailability,
+  updateAftercareProfileBasics,
+  updateAftercareProfileContent,
+  updateAftercareProfileStatus
+} from "./actions";
+
+const photoReadinessOptions = [
+  "Exterior photo ready",
+  "Bedroom photo ready",
+  "Shared space photo ready",
+  "Kitchen photo ready",
+  "Team or program photo ready"
+];
+
+function fieldClassName() {
+  return "min-h-11 rounded-md border border-border bg-white px-3 text-sm";
+}
+
+function labelClassName() {
+  return "grid gap-2 text-sm font-medium";
+}
+
+function textValue(value: string | null | undefined) {
+  return value ?? "";
+}
+
+function CheckboxGroup({
+  label,
+  name,
+  options,
+  selected
+}: {
+  label: string;
+  name: string;
+  options: readonly string[];
+  selected: string[];
+}) {
+  return (
+    <fieldset className="grid gap-2">
+      <legend className="text-sm font-medium">{label}</legend>
+      <div className="grid gap-2 md:grid-cols-2">
+        {options.map((option) => (
+          <label
+            key={option}
+            className="flex min-h-10 items-center gap-2 rounded-md border border-border bg-white px-3 text-sm"
+          >
+            <input defaultChecked={selected.includes(option)} name={name} type="checkbox" value={option} />
+            {option}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+function ReadinessList({ title, items }: { title: string; items: string[] }) {
+  if (!items.length) {
+    return null;
+  }
+
+  return (
+    <div>
+      <p className="text-sm font-semibold">{title}</p>
+      <ul className="mt-2 grid gap-2 text-sm text-muted-foreground">
+        {items.map((item) => (
+          <li key={item}>- {item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export default async function AftercareProfileDetailPage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ profileId: string }>;
+  searchParams: Promise<{ message?: string }>;
 }) {
   const appUser = await getAftercareDashboardUser("/dashboard/aftercare");
   await redirectIncompleteAftercareOnboarding(appUser.orgId);
 
-  const { profileId } = await params;
+  const [{ profileId }, query] = await Promise.all([params, searchParams]);
   const profile = await prisma.aftercareProfile.findFirst({
     where: {
       id: profileId,
@@ -35,16 +128,14 @@ export default async function AftercareProfileDetailPage({
   }
 
   const isSoberLiving = profile.type === "sober_living";
+  const readiness = getAftercareProfileReadiness(profile);
   const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
-  const privateAddress = [profile.streetAddress, profile.city, profile.state, profile.zip]
-    .filter(Boolean)
-    .join(", ");
 
   return (
     <main className="shell py-8">
-      <Link className="inline-flex items-center gap-2 text-sm font-semibold text-primary" href="/dashboard/aftercare">
+      <Link className="inline-flex items-center gap-2 text-sm font-semibold text-primary" href="/dashboard/aftercare?tab=homes">
         <ArrowLeft size={16} />
-        Back to dashboard
+        Back to homes
       </Link>
 
       <div className="mt-5 flex flex-col justify-between gap-4 border-b border-border pb-5 md:flex-row md:items-end">
@@ -59,66 +150,306 @@ export default async function AftercareProfileDetailPage({
             Public location: {publicLocation || "Not set"}
           </p>
         </div>
+        <Link
+          className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border bg-white px-4 text-sm font-semibold"
+          href={`/profiles/${profile.slug}`}
+        >
+          <Eye size={16} />
+          Preview profile
+        </Link>
       </div>
 
+      {query.message ? (
+        <div className="mt-5 rounded-md border border-primary/25 bg-primary/10 p-4 text-sm font-semibold text-primary">
+          {query.message}
+        </div>
+      ) : null}
+
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_360px]">
-        <section className="grid gap-4">
+        <section className="grid gap-5">
+          <Card>
+            <h2 className="text-xl font-semibold">Program basics</h2>
+            <form action={updateAftercareProfileBasics} className="mt-5 grid gap-4">
+              <input name="profileId" type="hidden" value={profile.id} />
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className={labelClassName()}>
+                  Program name
+                  <input className={fieldClassName()} defaultValue={profile.programName} name="programName" required />
+                </label>
+                <label className={labelClassName()}>
+                  Website URL
+                  <input className={fieldClassName()} defaultValue={textValue(profile.websiteUrl)} name="websiteUrl" type="url" />
+                </label>
+                <label className={labelClassName()}>
+                  Street address
+                  <input className={fieldClassName()} defaultValue={textValue(profile.streetAddress)} name="streetAddress" />
+                </label>
+                <label className={labelClassName()}>
+                  City
+                  <input className={fieldClassName()} defaultValue={profile.city} name="city" required />
+                </label>
+                <label className={labelClassName()}>
+                  State
+                  <input className={fieldClassName()} defaultValue={profile.state} name="state" required />
+                </label>
+                <label className={labelClassName()}>
+                  ZIP
+                  <input className={fieldClassName()} defaultValue={textValue(profile.zip)} name="zip" />
+                </label>
+                <label className={labelClassName()}>
+                  Admissions phone
+                  <input className={fieldClassName()} defaultValue={textValue(profile.admissionsContactPhone)} name="admissionsContactPhone" />
+                </label>
+                <label className={labelClassName()}>
+                  Admissions email
+                  <input className={fieldClassName()} defaultValue={textValue(profile.admissionsContactEmail)} name="admissionsContactEmail" type="email" />
+                </label>
+                <label className={labelClassName()}>
+                  Preferred contact method
+                  <select className={fieldClassName()} defaultValue={textValue(profile.preferredContactMethod)} name="preferredContactMethod">
+                    <option value="">Select one</option>
+                    {preferredContactOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className={labelClassName()}>
+                  Intake contact name
+                  <input className={fieldClassName()} defaultValue={textValue(profile.intakeContactName)} name="intakeContactName" />
+                </label>
+                <label className={labelClassName()}>
+                  License number
+                  <input className={fieldClassName()} defaultValue={textValue(profile.stateLicenseNumber)} name="stateLicenseNumber" />
+                </label>
+              </div>
+              <button className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground md:w-fit">
+                <Save size={16} />
+                Save basics
+              </button>
+            </form>
+          </Card>
+
           <Card>
             {isSoberLiving ? <BedDouble className="text-primary" size={24} /> : <Building2 className="text-primary" size={24} />}
             <h2 className="mt-3 text-xl font-semibold">Availability</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {isSoberLiving
-                ? `${profile.bedsAvailable ?? 0} beds available out of ${profile.totalBeds ?? 0} total.`
-                : profile.acceptingNewPatients
-                  ? "This program is accepting new patients."
-                  : "This program is not currently accepting new patients."}
-            </p>
+            <form action={updateAftercareProfileAvailability} className="mt-5 grid gap-4">
+              <input name="profileId" type="hidden" value={profile.id} />
+              {isSoberLiving ? (
+                <>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    {[
+                      ["Men", "bedsMen", "bedsMenAvailable", profile.bedsMen, profile.bedsMenAvailable],
+                      ["Women", "bedsWomen", "bedsWomenAvailable", profile.bedsWomen, profile.bedsWomenAvailable],
+                      ["LGBTQ+", "bedsLgbtq", "bedsLgbtqAvailable", profile.bedsLgbtq, profile.bedsLgbtqAvailable]
+                    ].map(([label, totalName, availableName, total, available]) => (
+                      <div key={String(totalName)} className="rounded-md border border-border bg-muted/30 p-3">
+                        <p className="font-semibold">{label}</p>
+                        <div className="mt-3 grid gap-3">
+                          <label className={labelClassName()}>
+                            Total beds
+                            <input className={fieldClassName()} defaultValue={Number(total ?? 0)} min="0" name={String(totalName)} type="number" />
+                          </label>
+                          <label className={labelClassName()}>
+                            Available beds
+                            <input className={fieldClassName()} defaultValue={Number(available ?? 0)} min="0" name={String(availableName)} type="number" />
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <CheckboxGroup label="Room types" name="roomTypes" options={roomTypeOptions} selected={profile.roomTypes} />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className={labelClassName()}>
+                      Price per week
+                      <input className={fieldClassName()} defaultValue={profile.pricePerWeek ?? ""} min="0" name="pricePerWeek" type="number" />
+                    </label>
+                    <label className={labelClassName()}>
+                      Wheelchair accessible bed count
+                      <input className={fieldClassName()} defaultValue={profile.wheelchairAccessibleBeds ?? ""} min="0" name="wheelchairAccessibleBeds" type="number" />
+                    </label>
+                  </div>
+                  <label className={labelClassName()}>
+                    Reserved beds notes
+                    <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.bedsReservedNotes)} name="bedsReservedNotes" />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className={labelClassName()}>
+                      Accepting new patients
+                      <select className={fieldClassName()} defaultValue={profile.acceptingNewPatients ? "yes" : "no"} name="acceptingNewPatients">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </label>
+                    <label className={labelClassName()}>
+                      Telehealth mode
+                      <select className={fieldClassName()} defaultValue={textValue(profile.telehealthMode)} name="telehealthMode">
+                        <option value="">Select one</option>
+                        {telehealthModeOptions.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <CheckboxGroup label="Program types" name="programTypes" options={programTypeOptions} selected={profile.programTypes} />
+                  <CheckboxGroup label="Levels of care" name="levelsOfCare" options={levelOfCareOptions} selected={profile.levelsOfCare} />
+                  <label className={labelClassName()}>
+                    Hours of operation
+                    <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.hoursOfOperation)} name="hoursOfOperation" />
+                  </label>
+                </>
+              )}
+              <label className={labelClassName()}>
+                Availability notes
+                <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.availabilityNotes)} name="availabilityNotes" />
+              </label>
+              <button className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground md:w-fit">
+                <Save size={16} />
+                Save availability
+              </button>
+            </form>
           </Card>
 
           <Card>
-            <h2 className="text-xl font-semibold">Profile overview</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              {profile.description || "No description added yet."}
-            </p>
-          </Card>
-
-          <Card>
-            <h2 className="text-xl font-semibold">Private operations data</h2>
-            <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
-              <div>
-                <dt className="text-muted-foreground">Street address</dt>
-                <dd className="font-medium">{privateAddress || "Not set"}</dd>
+            <h2 className="text-xl font-semibold">Profile content</h2>
+            <form action={updateAftercareProfileContent} className="mt-5 grid gap-5">
+              <input name="profileId" type="hidden" value={profile.id} />
+              <label className={labelClassName()}>
+                Description
+                <textarea className="min-h-32 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.description)} name="description" />
+              </label>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className={labelClassName()}>
+                  House rules
+                  <textarea className="min-h-28 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.houseRulesText)} name="houseRulesText" />
+                </label>
+                <label className={labelClassName()}>
+                  Referral fit notes
+                  <textarea className="min-h-28 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.referralFitNotes)} name="referralFitNotes" />
+                </label>
               </div>
-              <div>
-                <dt className="text-muted-foreground">Admissions email</dt>
-                <dd className="font-medium">{profile.admissionsContactEmail || "Not set"}</dd>
+              {!isSoberLiving ? (
+                <label className={labelClassName()}>
+                  Referral process
+                  <textarea className="min-h-28 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.referralProcessDescription)} name="referralProcessDescription" />
+                </label>
+              ) : null}
+              <CheckboxGroup label="Population served" name="populationServedOptions" options={populationOptions} selected={profile.populationServedOptions} />
+              <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={specialtyPopulationOptions} selected={profile.specialtyPopulations} />
+              <CheckboxGroup label="Certifications held" name="certificationsHeld" options={certificationOptions} selected={profile.certificationsHeld} />
+              <CheckboxGroup label="Support services" name="supportServices" options={supportServiceOptions} selected={profile.supportServices} />
+              {isSoberLiving ? (
+                <CheckboxGroup label="Amenities" name="amenities" options={amenityOptions} selected={profile.amenities} />
+              ) : null}
+              <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={insuranceOptions} selected={profile.insuranceAccepted} />
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className={labelClassName()}>
+                  Funding available
+                  <select className={fieldClassName()} defaultValue={profile.fundingAvailable === null ? "" : profile.fundingAvailable ? "yes" : "no"} name="fundingAvailable">
+                    <option value="">Not set</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </label>
+                <label className={labelClassName()}>
+                  Medication administration
+                  <select className={fieldClassName()} defaultValue={textValue(profile.medicationAdministration)} name="medicationAdministration">
+                    <option value="">Not set</option>
+                    {medicationAdministrationOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
               </div>
-              <div>
-                <dt className="text-muted-foreground">Admissions phone</dt>
-                <dd className="font-medium">{profile.admissionsContactPhone || "Not set"}</dd>
+              <label className={labelClassName()}>
+                Funding notes
+                <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
+              </label>
+              <CheckboxGroup label="MAT accepted" name="matAccepted" options={matOptions} selected={profile.matAccepted} />
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className={labelClassName()}>
+                  Medication restrictions
+                  <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.medicationRestrictions)} name="medicationRestrictions" />
+                </label>
+                <label className={labelClassName()}>
+                  Drug testing policy
+                  <select className={fieldClassName()} defaultValue={textValue(profile.drugTestingPolicy)} name="drugTestingPolicy">
+                    <option value="">Not set</option>
+                    {drugTestingPolicyOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
               </div>
-              <div>
-                <dt className="text-muted-foreground">Population</dt>
-                <dd className="font-medium">
-                  {profile.populationServedOptions.length
-                    ? profile.populationServedOptions.join(", ")
-                    : profile.populationServed || "Not set"}
-                </dd>
+              <CheckboxGroup label="Photo readiness" name="photoReadiness" options={photoReadinessOptions} selected={profile.photoReadiness} />
+              <div className="grid gap-3">
+                <p className="text-sm font-medium">Video URLs</p>
+                {[0, 1, 2].map((index) => (
+                  <input
+                    key={index}
+                    className={fieldClassName()}
+                    defaultValue={profile.videoUrls[index] ?? ""}
+                    name="videoUrls"
+                    placeholder="https://..."
+                    type="url"
+                  />
+                ))}
               </div>
-            </dl>
+              {isSoberLiving ? (
+                <label className="flex items-start gap-3 rounded-md border border-border bg-muted/40 p-3 text-sm">
+                  <input
+                    defaultChecked={profile.goodNeighborPolicyAcknowledged}
+                    name="goodNeighborPolicyAcknowledged"
+                    type="checkbox"
+                    value="yes"
+                  />
+                  Good Neighbor Policy acknowledged
+                </label>
+              ) : null}
+              <button className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground md:w-fit">
+                <Save size={16} />
+                Save content
+              </button>
+            </form>
           </Card>
         </section>
 
         <aside className="grid h-fit gap-4">
           <Card>
-            <h2 className="font-semibold">Readiness</h2>
-            <ul className="mt-4 grid gap-3 text-sm text-muted-foreground">
-              <li>Photos required before publishing</li>
-              <li>Subscription check pending</li>
-              <li>Verification documents pending</li>
-              <li>No reviews or ratings in v1</li>
-            </ul>
+            <ShieldCheck className="text-primary" size={24} />
+            <h2 className="mt-3 font-semibold">Publish readiness</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{readiness.percent}% complete</p>
+            <div className="mt-4 grid gap-4">
+              <ReadinessList title="Needs attention" items={readiness.blockers} />
+              <ReadinessList title="Recommended" items={readiness.warnings} />
+              {readiness.canPublish ? (
+                <p className="rounded-md border border-primary/20 bg-primary/10 p-3 text-sm font-semibold text-primary">
+                  This profile is ready to publish.
+                </p>
+              ) : null}
+            </div>
+            <form action={updateAftercareProfileStatus} className="mt-5 grid gap-3">
+              <input name="profileId" type="hidden" value={profile.id} />
+              <button
+                className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!readiness.canPublish}
+                name="status"
+                value="published"
+              >
+                Publish profile
+              </button>
+              <button
+                className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold"
+                name="status"
+                value="draft"
+              >
+                Move to draft
+              </button>
+            </form>
           </Card>
+
           <Card>
             <h2 className="font-semibold">Activity</h2>
             <dl className="mt-4 grid gap-3 text-sm">

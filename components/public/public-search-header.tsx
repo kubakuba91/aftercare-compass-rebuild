@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, SlidersHorizontal, UserCircle } from "lucide-react";
+import { SlidersHorizontal, UserCircle } from "lucide-react";
 import {
   amenityOptions,
   averageLengthOptions,
@@ -57,7 +57,7 @@ export function PublicSearchHeader({
         <Link className="text-lg font-semibold text-primary" href="/">
           Aftercare Compass
         </Link>
-        <form action="/search" className="grid flex-1 gap-2 md:grid-cols-[220px_1fr_180px_180px_160px]">
+        <form action="/search" className="grid flex-1 gap-2 md:grid-cols-[220px_1fr_180px_160px]">
           <div className="flex rounded-md border border-border bg-white">
             <label className="flex flex-1 items-center justify-center border-r border-border px-3 text-sm font-semibold">
               <input
@@ -86,10 +86,6 @@ export function PublicSearchHeader({
             name="q"
             placeholder="City, state, or name"
           />
-          <div className="flex min-h-11 items-center gap-2 rounded-md border border-border px-3 text-sm text-muted-foreground">
-            <Calendar size={16} />
-            Admission date
-          </div>
           <Link
             className="focus-ring flex min-h-11 items-center gap-2 rounded-md border border-border bg-white px-3 text-sm font-semibold"
             href={filtersHref}

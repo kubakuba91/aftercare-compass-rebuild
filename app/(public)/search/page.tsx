@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { Prisma, ProfileType } from "@prisma/client";
 import { MapPin } from "lucide-react";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
@@ -67,7 +68,8 @@ export default async function SearchPage({
     filters?: string | string[];
   }>;
 }) {
-  const query = await searchParams;
+  const [query, session] = await Promise.all([searchParams, auth()]);
+  const isSignedIn = Boolean(session.userId);
   const q = firstFromQuery(query.q)?.trim() || "";
   const rawType = firstFromQuery(query.type);
   const type = rawType === "sober_living" || rawType === "continued_care" ? rawType : "";
@@ -218,9 +220,11 @@ export default async function SearchPage({
               Find sober living homes and continued care programs. Public listings show city and state only.
             </p>
           </div>
-          <ButtonLink href="/onboarding/account-type" variant="secondary">
-            Join marketplace
-          </ButtonLink>
+          {!isSignedIn ? (
+            <ButtonLink href="/onboarding/account-type" variant="secondary">
+              Join marketplace
+            </ButtonLink>
+          ) : null}
         </div>
 
       <div className="grid gap-5 py-6">

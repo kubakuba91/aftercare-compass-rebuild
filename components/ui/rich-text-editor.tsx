@@ -18,7 +18,7 @@ const commands = [
 
 export function RichTextEditor({ initialValue = "", name, required = false }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const syncValue = useCallback(() => {
     if (inputRef.current && editorRef.current) {
@@ -33,6 +33,13 @@ export function RichTextEditor({ initialValue = "", name, required = false }: Ri
     }
 
     const syncBeforeSubmit = () => syncValue();
+    const syncBeforeSubmitClick = (event: Event) => {
+      const target = event.target;
+
+      if (target instanceof HTMLButtonElement && target.type !== "button") {
+        syncValue();
+      }
+    };
     const syncFormData = (event: Event) => {
       syncValue();
       if (inputRef.current && "formData" in event) {
@@ -40,10 +47,12 @@ export function RichTextEditor({ initialValue = "", name, required = false }: Ri
       }
     };
 
+    form.addEventListener("click", syncBeforeSubmitClick, true);
     form.addEventListener("submit", syncBeforeSubmit);
     form.addEventListener("formdata", syncFormData);
 
     return () => {
+      form.removeEventListener("click", syncBeforeSubmitClick, true);
       form.removeEventListener("submit", syncBeforeSubmit);
       form.removeEventListener("formdata", syncFormData);
     };
@@ -81,10 +90,21 @@ export function RichTextEditor({ initialValue = "", name, required = false }: Ri
         dangerouslySetInnerHTML={{ __html: initialValue || "" }}
         onBlur={syncValue}
         onInput={syncValue}
+        onKeyUp={syncValue}
+        onPaste={() => window.setTimeout(syncValue, 0)}
         role="textbox"
         suppressContentEditableWarning
       />
-      <input ref={inputRef} defaultValue={initialValue || ""} name={name} required={required} type="hidden" />
+      <textarea
+        ref={inputRef}
+        aria-hidden="true"
+        className="sr-only"
+        defaultValue={initialValue || ""}
+        data-required={required ? "true" : undefined}
+        name={name}
+        readOnly
+        tabIndex={-1}
+      />
     </div>
   );
 }

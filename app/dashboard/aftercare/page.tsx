@@ -267,15 +267,7 @@ export default async function AftercareDashboardPage({
             <p className="mt-1 text-sm text-muted-foreground">{appUser.organization?.name}</p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <SignOutButton />
-          <Link
-            className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-            href={addProfileHref(appUser.organization?.type)}
-          >
-            Add home
-          </Link>
-        </div>
+        <SignOutButton />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr]">

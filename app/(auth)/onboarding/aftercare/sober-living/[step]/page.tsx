@@ -6,6 +6,7 @@ import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recov
 import { Card } from "@/components/ui/card";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
+import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import {
   amenityOptions,
@@ -187,6 +188,20 @@ export default async function SoberLivingStepPage({
     }
 
     return <OnboardingRecoveryCard />;
+  }
+
+  if (query.new === "1" && currentStep === 1) {
+    await prisma.onboardingDraft.update({
+      where: { id: draft.id },
+      data: {
+        soberLivingDraft: {},
+        selectedAccountType: "sober_living",
+        activeStep: 1,
+        completedAt: null
+      }
+    });
+
+    redirect("/onboarding/aftercare/sober-living/1");
   }
 
   const profile = draft.soberLivingDraft as Record<string, any> | null;

@@ -15,6 +15,7 @@ import {
 } from "@/lib/continued-care-onboarding";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
+import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { saveContinuedCareOnboardingStep } from "../../actions";
 
@@ -96,7 +97,7 @@ export default async function ContinuedCareStepPage({
   searchParams
 }: {
   params: Promise<{ step: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; new?: string }>;
 }) {
   const { step: stepParam } = await params;
   const query = await searchParams;
@@ -118,6 +119,20 @@ export default async function ContinuedCareStepPage({
     }
 
     return <OnboardingRecoveryCard />;
+  }
+
+  if (query.new === "1" && currentStep === 1) {
+    await prisma.onboardingDraft.update({
+      where: { id: draft.id },
+      data: {
+        continuedCareDraft: {},
+        selectedAccountType: "continued_care",
+        activeStep: 1,
+        completedAt: null
+      }
+    });
+
+    redirect("/onboarding/aftercare/continued-care/1");
   }
 
   const profile = draft.continuedCareDraft as Record<string, any> | null;

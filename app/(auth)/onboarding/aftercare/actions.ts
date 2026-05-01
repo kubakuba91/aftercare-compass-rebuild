@@ -61,6 +61,36 @@ function continuedCareStepRedirect(step: number, error?: string) {
   return `/onboarding/aftercare/continued-care/${step}${params.size ? `?${params.toString()}` : ""}`;
 }
 
+async function getOrCreateAftercareOrganization(tx: Prisma.TransactionClient, draft: Awaited<ReturnType<typeof getOrCreateOnboardingDraft>>, data: {
+  accountType: "sober_living" | "continued_care";
+  admissionsContactPhone?: string;
+  programName: string;
+}) {
+  if (draft.user.orgId) {
+    return draft.user.orgId;
+  }
+
+  const organization = await tx.organization.create({
+    data: {
+      type: data.accountType === "continued_care" ? "aftercare_continued_care" : "aftercare_sober_living",
+      name: data.programName,
+      email: draft.user.email,
+      phone: data.admissionsContactPhone
+    },
+    select: { id: true }
+  });
+
+  await tx.user.update({
+    where: { id: draft.userId },
+    data: {
+      role: "aftercare_admin",
+      orgId: organization.id
+    }
+  });
+
+  return organization.id;
+}
+
 export async function createAftercareProfileDraft(formData: FormData) {
   if (!hasDatabaseConfig()) {
     redirect("/setup?missing=database");
@@ -329,26 +359,15 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
       const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
 
       await prisma.$transaction(async (tx) => {
-        const organization = await tx.organization.create({
-          data: {
-            type: "aftercare_sober_living",
-            name: programName,
-            email: draft.user.email,
-            phone: String(finalDraft.admissionsContactPhone || "")
-          }
-        });
-
-        await tx.user.update({
-          where: { id: draft.userId },
-          data: {
-            role: "aftercare_admin",
-            orgId: organization.id
-          }
+        const orgId = await getOrCreateAftercareOrganization(tx, draft, {
+          accountType: "sober_living",
+          admissionsContactPhone: String(finalDraft.admissionsContactPhone || ""),
+          programName
         });
 
         await tx.aftercareProfile.create({
           data: {
-            orgId: organization.id,
+            orgId,
             type: ProfileType.sober_living,
             programName,
             slug,
@@ -566,26 +585,15 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
       const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
 
       await prisma.$transaction(async (tx) => {
-        const organization = await tx.organization.create({
-          data: {
-            type: "aftercare_continued_care",
-            name: programName,
-            email: draft.user.email,
-            phone: String(finalDraft.admissionsContactPhone || "")
-          }
-        });
-
-        await tx.user.update({
-          where: { id: draft.userId },
-          data: {
-            role: "aftercare_admin",
-            orgId: organization.id
-          }
+        const orgId = await getOrCreateAftercareOrganization(tx, draft, {
+          accountType: "continued_care",
+          admissionsContactPhone: String(finalDraft.admissionsContactPhone || ""),
+          programName
         });
 
         await tx.aftercareProfile.create({
           data: {
-            orgId: organization.id,
+            orgId,
             type: ProfileType.continued_care,
             programName,
             slug,

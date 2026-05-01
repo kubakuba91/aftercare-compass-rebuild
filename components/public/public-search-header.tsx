@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SlidersHorizontal, UserCircle } from "lucide-react";
+import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import {
   amenityOptions,
   averageLengthOptions,
@@ -170,33 +171,21 @@ export function PublicSearchHeader({
               </label>
               <label className="grid gap-2 text-sm font-medium">
                 Specialties / Amenities
-                <select
-                  className="min-h-24 w-full min-w-0 rounded-md border border-border bg-white px-3 py-2 text-sm"
-                  defaultValue={amenities}
-                  multiple
+                <MultiSelectDropdown
                   name="amenity"
-                >
-                  {amenityOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+                  options={amenityOptions}
+                  placeholder="Select amenities..."
+                  selected={amenities}
+                />
               </label>
               <label className="grid gap-2 text-sm font-medium">
                 Restricted Medications
-                <select
-                  className="min-h-24 w-full min-w-0 rounded-md border border-border bg-white px-3 py-2 text-sm"
-                  defaultValue={mat}
-                  multiple
+                <MultiSelectDropdown
                   name="mat"
-                >
-                  {matOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+                  options={matOptions}
+                  placeholder="Select medications..."
+                  selected={mat}
+                />
               </label>
               <label className="flex items-center gap-2 text-sm font-medium">
                 <input defaultChecked={verified} name="verified" type="checkbox" value="yes" />

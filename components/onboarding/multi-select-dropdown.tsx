@@ -5,19 +5,25 @@ import { useMemo, useState } from "react";
 type MultiSelectDropdownProps = {
   name: string;
   options: readonly string[];
+  placeholder?: string;
   selected?: string[];
 };
 
-export function MultiSelectDropdown({ name, options, selected = [] }: MultiSelectDropdownProps) {
+export function MultiSelectDropdown({
+  name,
+  options,
+  placeholder = "Select options",
+  selected = []
+}: MultiSelectDropdownProps) {
   const [selectedValues, setSelectedValues] = useState(() => new Set(selected));
 
   const summary = useMemo(() => {
     if (!selectedValues.size) {
-      return "Select options";
+      return placeholder;
     }
 
     return options.filter((option) => selectedValues.has(option)).join(", ");
-  }, [options, selectedValues]);
+  }, [options, placeholder, selectedValues]);
 
   function toggleValue(option: string) {
     setSelectedValues((current) => {

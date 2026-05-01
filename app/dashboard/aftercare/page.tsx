@@ -257,7 +257,7 @@ export default async function AftercareDashboardPage({
 
   return (
     <main className="shell py-8">
-      <div className="flex flex-col justify-between gap-4 border-b border-border pb-6 md:flex-row md:items-center">
+      <div className="border-b border-border pb-6">
         <div className="flex items-center gap-4">
           <div className="flex size-12 items-center justify-center rounded-md bg-primary/10 text-primary">
             <ShieldCheck size={24} />
@@ -267,7 +267,6 @@ export default async function AftercareDashboardPage({
             <p className="mt-1 text-sm text-muted-foreground">{appUser.organization?.name}</p>
           </div>
         </div>
-        <SignOutButton />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr]">
@@ -687,6 +686,15 @@ export default async function AftercareDashboardPage({
                   </div>
                 </form>
               ) : null}
+              <div className="mt-6 rounded-md border border-border bg-muted/40 p-4">
+                <h3 className="font-semibold">Session</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Sign out of this account on the current device.
+                </p>
+                <div className="mt-4">
+                  <SignOutButton />
+                </div>
+              </div>
             </Card>
           ) : null}
         </section>

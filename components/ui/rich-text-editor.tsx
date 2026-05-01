@@ -1,7 +1,7 @@
 "use client";
 
 import { Bold, Italic, List, ListOrdered } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { useRef } from "react";
 
 type RichTextEditorProps = {
   initialValue?: string | null;
@@ -12,56 +12,74 @@ type RichTextEditorProps = {
 const commands = [
   { command: "bold", icon: Bold, label: "Bold" },
   { command: "italic", icon: Italic, label: "Italic" },
-  { command: "insertUnorderedList", icon: List, label: "Bulleted list" },
-  { command: "insertOrderedList", icon: ListOrdered, label: "Numbered list" }
+  { command: "unorderedList", icon: List, label: "Bulleted list" },
+  { command: "orderedList", icon: ListOrdered, label: "Numbered list" }
 ] as const;
 
+function wrapSelection(textarea: HTMLTextAreaElement, before: string, after = before) {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selected = textarea.value.slice(start, end);
+  const nextValue = `${textarea.value.slice(0, start)}${before}${selected || "Text"}${after}${textarea.value.slice(end)}`;
+
+  textarea.value = nextValue;
+  textarea.focus();
+  textarea.selectionStart = start + before.length;
+  textarea.selectionEnd = start + before.length + (selected || "Text").length;
+}
+
+function insertList(textarea: HTMLTextAreaElement, ordered = false) {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selected = textarea.value.slice(start, end).trim();
+  const lines = selected ? selected.split(/\n+/) : ["List item"];
+  const list = lines.map((line, index) => (ordered ? `${index + 1}. ${line}` : `- ${line}`)).join("\n");
+  const prefix = start > 0 && !textarea.value.slice(0, start).endsWith("\n") ? "\n" : "";
+  const suffix = end < textarea.value.length && !textarea.value.slice(end).startsWith("\n") ? "\n" : "";
+
+  textarea.value = `${textarea.value.slice(0, start)}${prefix}${list}${suffix}${textarea.value.slice(end)}`;
+  textarea.focus();
+  textarea.selectionStart = start + prefix.length;
+  textarea.selectionEnd = start + prefix.length + list.length;
+}
+
+function editableText(value: string | null | undefined) {
+  return String(value || "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|li)>/gi, "\n")
+    .replace(/<li>/gi, "- ")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export function RichTextEditor({ initialValue = "", name, required = false }: RichTextEditorProps) {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const syncValue = useCallback(() => {
-    if (inputRef.current && editorRef.current) {
-      inputRef.current.value = editorRef.current.innerHTML;
-    }
-  }, []);
+  function runCommand(command: string) {
+    const textarea = textareaRef.current;
 
-  useEffect(() => {
-    const form = editorRef.current?.closest("form");
-    if (!form) {
+    if (!textarea) {
       return;
     }
 
-    const syncBeforeSubmit = () => syncValue();
-    const syncBeforeSubmitClick = (event: Event) => {
-      const target = event.target;
+    if (command === "bold") {
+      wrapSelection(textarea, "<strong>", "</strong>");
+      return;
+    }
 
-      if (target instanceof HTMLButtonElement && target.type !== "button") {
-        syncValue();
-      }
-    };
-    const syncFormData = (event: Event) => {
-      syncValue();
-      if (inputRef.current && "formData" in event) {
-        (event as FormDataEvent).formData.set(name, inputRef.current.value);
-      }
-    };
+    if (command === "italic") {
+      wrapSelection(textarea, "<em>", "</em>");
+      return;
+    }
 
-    form.addEventListener("click", syncBeforeSubmitClick, true);
-    form.addEventListener("submit", syncBeforeSubmit);
-    form.addEventListener("formdata", syncFormData);
-
-    return () => {
-      form.removeEventListener("click", syncBeforeSubmitClick, true);
-      form.removeEventListener("submit", syncBeforeSubmit);
-      form.removeEventListener("formdata", syncFormData);
-    };
-  }, [name, syncValue]);
-
-  function runCommand(command: string) {
-    editorRef.current?.focus();
-    document.execCommand(command);
-    syncValue();
+    insertList(textarea, command === "orderedList");
   }
 
   return (
@@ -83,27 +101,12 @@ export function RichTextEditor({ initialValue = "", name, required = false }: Ri
           );
         })}
       </div>
-      <div
-        ref={editorRef}
-        className="min-h-36 px-3 py-3 text-sm leading-6 outline-none [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc"
-        contentEditable
-        dangerouslySetInnerHTML={{ __html: initialValue || "" }}
-        onBlur={syncValue}
-        onInput={syncValue}
-        onKeyUp={syncValue}
-        onPaste={() => window.setTimeout(syncValue, 0)}
-        role="textbox"
-        suppressContentEditableWarning
-      />
       <textarea
-        ref={inputRef}
-        aria-hidden="true"
-        className="sr-only"
-        defaultValue={initialValue || ""}
-        data-required={required ? "true" : undefined}
+        ref={textareaRef}
+        className="min-h-40 w-full resize-y border-0 bg-white px-3 py-3 text-sm leading-6 outline-none"
+        defaultValue={editableText(initialValue)}
         name={name}
-        readOnly
-        tabIndex={-1}
+        required={required}
       />
     </div>
   );

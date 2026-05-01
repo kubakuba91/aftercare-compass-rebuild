@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BedDouble, CheckCircle2, Mail, MapPin, ShieldCheck, Video } from "lucide-react";
+import { BedDouble, CheckCircle2, Mail, MapPin, Send, ShieldCheck, Video } from "lucide-react";
+import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
+import { getCurrentAppUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
-import { createPublicProfileLead } from "./actions";
+import { createProfileReferral, createPublicProfileLead } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -26,14 +28,184 @@ function availabilityText(profile: {
   return profile.acceptingNewPatients ? "Accepting new patients" : "Not accepting new patients";
 }
 
+function ContactForm({
+  profile,
+  leadStatus
+}: {
+  profile: { id: string; slug: string };
+  leadStatus?: string;
+}) {
+  return (
+    <Card className="h-fit">
+      <div className="flex items-center gap-2">
+        <Mail size={18} />
+        <h2 className="font-semibold">Contact this program</h2>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        Send a contact request to the provider. This creates an internal lead for their team.
+      </p>
+      {leadStatus === "sent" ? (
+        <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">
+          Contact request sent.
+        </div>
+      ) : null}
+      {leadStatus === "invalid" ? (
+        <div className="mt-4 rounded-md border border-accent/30 bg-accent/10 p-3 text-sm font-semibold">
+          Please complete the required contact fields.
+        </div>
+      ) : null}
+      <form action={createPublicProfileLead} className="mt-5 grid gap-3">
+        <input name="profileId" type="hidden" value={profile.id} />
+        <input name="slug" type="hidden" value={profile.slug} />
+        <label className="grid gap-2 text-sm font-medium">
+          Name
+          <input className="min-h-10 rounded-md border border-border px-3" name="name" required />
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          Email
+          <input className="min-h-10 rounded-md border border-border px-3" name="email" required type="email" />
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          Phone
+          <input className="min-h-10 rounded-md border border-border px-3" name="phone" />
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          Message
+          <textarea className="min-h-28 rounded-md border border-border p-3" name="message" required />
+        </label>
+        <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+          Send contact request
+        </button>
+      </form>
+    </Card>
+  );
+}
+
+function PlaceClientForm({
+  profile,
+  referralStatus,
+  userName,
+  userEmail,
+  organizationName
+}: {
+  profile: { id: string; slug: string };
+  referralStatus?: string;
+  userName: string;
+  userEmail: string;
+  organizationName: string;
+}) {
+  return (
+    <Card className="h-fit">
+      <div className="flex items-center gap-2">
+        <Send size={18} />
+        <h2 className="font-semibold">Place client</h2>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        Submit a de-identified referral. Do not include patient name, DOB, address, phone, email, or MRN.
+      </p>
+      {referralStatus === "sent" ? (
+        <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">
+          Referral sent.
+        </div>
+      ) : null}
+      {referralStatus === "invalid" ? (
+        <div className="mt-4 rounded-md border border-accent/30 bg-accent/10 p-3 text-sm font-semibold">
+          Please complete the referral fields and avoid direct patient identifiers.
+        </div>
+      ) : null}
+      <form action={createProfileReferral} className="mt-5 grid gap-3">
+        <input name="aftercareProfileId" type="hidden" value={profile.id} />
+        <input name="slug" type="hidden" value={profile.slug} />
+        <label className="grid gap-2 text-sm font-medium">
+          Case manager name
+          <input className="min-h-10 rounded-md border border-border px-3" defaultValue={userName} name="caseManagerName" required />
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          Case manager email
+          <input className="min-h-10 rounded-md border border-border px-3" defaultValue={userEmail} name="caseManagerEmail" required type="email" />
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          Case manager phone
+          <input className="min-h-10 rounded-md border border-border px-3" name="caseManagerPhone" required />
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          Organization name
+          <input className="min-h-10 rounded-md border border-border px-3" defaultValue={organizationName} name="caseManagerOrganization" required />
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          Client age range
+          <select className="min-h-10 rounded-md border border-border px-3" name="clientAgeRange" required>
+            <option value="">Select one</option>
+            <option value="18_25">18-25</option>
+            <option value="26_35">26-35</option>
+            <option value="36_45">36-45</option>
+            <option value="46_55">46-55</option>
+            <option value="55_plus">55+</option>
+          </select>
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          Support category
+          <select className="min-h-10 rounded-md border border-border px-3" name="supportCategory" required>
+            <option value="">Select one</option>
+            <option value="substance_use">Substance use recovery</option>
+            <option value="mental_health">Mental health support</option>
+            <option value="co_occurring">Co-occurring support</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          Insurance category
+          <select className="min-h-10 rounded-md border border-border px-3" name="insuranceCategory" required>
+            <option value="">Select one</option>
+            <option value="medicaid">Medicaid</option>
+            <option value="medicare">Medicare</option>
+            <option value="commercial">Commercial</option>
+            <option value="self_pay">Self-pay</option>
+          </select>
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          Preferred start window
+          <select className="min-h-10 rounded-md border border-border px-3" name="preferredStartWindow" required>
+            <option value="">Select one</option>
+            <option value="within_1_week">Within 1 week</option>
+            <option value="1_2_weeks">1-2 weeks</option>
+            <option value="2_4_weeks">2-4 weeks</option>
+            <option value="flexible">Flexible</option>
+          </select>
+        </label>
+        <fieldset className="grid gap-2">
+          <legend className="text-sm font-medium">Special needs/preferences</legend>
+          {["MAT-friendly", "Gender-specific housing", "12-Step oriented", "Pet friendly"].map((item) => (
+            <label key={item} className="flex items-center gap-2 text-sm">
+              <input name="specialNeeds" type="checkbox" value={item} />
+              {item}
+            </label>
+          ))}
+        </fieldset>
+        <label className="grid gap-2 text-sm font-medium">
+          Reason for referral
+          <textarea className="min-h-28 rounded-md border border-border p-3" name="reasonForReferral" required />
+        </label>
+        <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+          Send referral
+        </button>
+      </form>
+    </Card>
+  );
+}
+
 export default async function PublicProfilePage({
   params,
   searchParams
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ lead?: string }>;
+  searchParams: Promise<{ lead?: string; referral?: string }>;
 }) {
-  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const [{ slug }, query, appUser] = await Promise.all([
+    params,
+    searchParams,
+    getCurrentAppUser()
+  ]);
   const profile = await prisma.aftercareProfile.findFirst({
     where: {
       slug,
@@ -48,14 +220,23 @@ export default async function PublicProfilePage({
   const isSoberLiving = profile.type === "sober_living";
   const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
   const visiblePopulationBeds = getVisiblePopulationBeds(profile);
+  const isReferent = appUser?.role.startsWith("referent") ?? false;
+  const isAftercareUser = appUser?.role.startsWith("aftercare") ?? false;
+  const userName = [appUser?.firstName, appUser?.lastName].filter(Boolean).join(" ") || "";
 
   return (
-    <main className="shell py-8">
-      <div className="mb-5">
-        <Link className="text-sm font-semibold text-primary" href="/search">
-          Back to search
-        </Link>
-      </div>
+    <>
+      <PublicSearchHeader
+        defaultLocation={publicLocation}
+        defaultType={profile.type}
+        defaultAvailability={profile.bedsAvailable || profile.acceptingNewPatients ? "available" : ""}
+      />
+      <main className="shell py-8">
+        <div className="mb-5">
+          <Link className="text-sm font-semibold text-primary" href="/search">
+            Back to search
+          </Link>
+        </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <section>
@@ -187,52 +368,45 @@ export default async function PublicProfilePage({
                 </div>
               </Card>
             ) : null}
+
+            <Card>
+              <MapPin className="text-primary" size={22} />
+              <h2 className="mt-3 text-xl font-semibold">Location area</h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                {publicLocation || "Location not listed"}. Exact addresses are private and are never
+                shown on public or referent-facing pages.
+              </p>
+              <div className="mt-4 rounded-md border border-dashed border-border bg-muted/40 p-6 text-sm text-muted-foreground">
+                Generalized map area placeholder
+              </div>
+            </Card>
           </div>
         </section>
 
-        <Card className="h-fit">
-          <div className="flex items-center gap-2">
-            <Mail size={18} />
-            <h2 className="font-semibold">Contact this program</h2>
-          </div>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Send a contact request to the provider. This creates an internal lead for their team.
-          </p>
-          {query.lead === "sent" ? (
-            <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">
-              Contact request sent.
-            </div>
-          ) : null}
-          {query.lead === "invalid" ? (
-            <div className="mt-4 rounded-md border border-accent/30 bg-accent/10 p-3 text-sm font-semibold">
-              Please complete the required contact fields.
-            </div>
-          ) : null}
-          <form action={createPublicProfileLead} className="mt-5 grid gap-3">
-            <input name="profileId" type="hidden" value={profile.id} />
-            <input name="slug" type="hidden" value={profile.slug} />
-            <label className="grid gap-2 text-sm font-medium">
-              Name
-              <input className="min-h-10 rounded-md border border-border px-3" name="name" required />
-            </label>
-            <label className="grid gap-2 text-sm font-medium">
-              Email
-              <input className="min-h-10 rounded-md border border-border px-3" name="email" required type="email" />
-            </label>
-            <label className="grid gap-2 text-sm font-medium">
-              Phone
-              <input className="min-h-10 rounded-md border border-border px-3" name="phone" />
-            </label>
-            <label className="grid gap-2 text-sm font-medium">
-              Message
-              <textarea className="min-h-28 rounded-md border border-border p-3" name="message" required />
-            </label>
-            <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
-              Send contact request
-            </button>
-          </form>
-        </Card>
+        {isReferent ? (
+          <PlaceClientForm
+            organizationName={appUser?.organization?.name || ""}
+            profile={profile}
+            referralStatus={query.referral}
+            userEmail={appUser?.email || ""}
+            userName={userName}
+          />
+        ) : isAftercareUser ? (
+          <Card className="h-fit">
+            <h2 className="font-semibold">Provider view</h2>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              Aftercare users can preview public profiles here. Use the dashboard to manage leads,
+              referrals, and profile content.
+            </p>
+            <Link className="mt-4 inline-flex text-sm font-semibold text-primary" href="/dashboard/aftercare">
+              Go to dashboard
+            </Link>
+          </Card>
+        ) : (
+          <ContactForm leadStatus={query.lead} profile={profile} />
+        )}
       </div>
-    </main>
+      </main>
+    </>
   );
 }

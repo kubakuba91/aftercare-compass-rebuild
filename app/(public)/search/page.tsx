@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { MapPin, Search, SlidersHorizontal } from "lucide-react";
+import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
@@ -93,19 +94,25 @@ export default async function SearchPage({
   });
 
   return (
-    <main className="shell py-8">
-      <div className="flex flex-col justify-between gap-4 border-b border-border pb-6 md:flex-row md:items-end">
-        <div>
-          <Badge tone="warning">No exact addresses shown</Badge>
-          <h1 className="mt-3 text-3xl font-semibold">Search aftercare programs</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Find sober living homes and continued care programs. Public listings show city and state only.
-          </p>
+    <>
+      <PublicSearchHeader
+        defaultAvailability={availability}
+        defaultLocation={q}
+        defaultType={type}
+      />
+      <main className="shell py-8">
+        <div className="flex flex-col justify-between gap-4 border-b border-border pb-6 md:flex-row md:items-end">
+          <div>
+            <Badge tone="warning">No exact addresses shown</Badge>
+            <h1 className="mt-3 text-3xl font-semibold">Search aftercare programs</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Find sober living homes and continued care programs. Public listings show city and state only.
+            </p>
+          </div>
+          <ButtonLink href="/onboarding/account-type" variant="secondary">
+            Join marketplace
+          </ButtonLink>
         </div>
-        <ButtonLink href="/onboarding/account-type" variant="secondary">
-          Join marketplace
-        </ButtonLink>
-      </div>
 
       <div className="grid gap-5 py-6 lg:grid-cols-[280px_1fr]">
         <Card className="h-fit">
@@ -213,6 +220,7 @@ export default async function SearchPage({
           )}
         </div>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

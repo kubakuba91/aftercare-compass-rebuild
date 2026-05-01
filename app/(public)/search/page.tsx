@@ -10,6 +10,59 @@ import { amenityOptions, matOptions, populationOptions, specialtyPopulationOptio
 
 export const dynamic = "force-dynamic";
 
+const stateAliases: Record<string, string> = {
+  alabama: "AL",
+  alaska: "AK",
+  arizona: "AZ",
+  arkansas: "AR",
+  california: "CA",
+  colorado: "CO",
+  connecticut: "CT",
+  delaware: "DE",
+  florida: "FL",
+  georgia: "GA",
+  hawaii: "HI",
+  idaho: "ID",
+  illinois: "IL",
+  indiana: "IN",
+  iowa: "IA",
+  kansas: "KS",
+  kentucky: "KY",
+  louisiana: "LA",
+  maine: "ME",
+  maryland: "MD",
+  massachusetts: "MA",
+  michigan: "MI",
+  minnesota: "MN",
+  mississippi: "MS",
+  missouri: "MO",
+  montana: "MT",
+  nebraska: "NE",
+  nevada: "NV",
+  "new hampshire": "NH",
+  "new jersey": "NJ",
+  "new mexico": "NM",
+  "new york": "NY",
+  "north carolina": "NC",
+  "north dakota": "ND",
+  ohio: "OH",
+  oklahoma: "OK",
+  oregon: "OR",
+  pennsylvania: "PA",
+  "rhode island": "RI",
+  "south carolina": "SC",
+  "south dakota": "SD",
+  tennessee: "TN",
+  texas: "TX",
+  utah: "UT",
+  vermont: "VT",
+  virginia: "VA",
+  washington: "WA",
+  "west virginia": "WV",
+  wisconsin: "WI",
+  wyoming: "WY"
+};
+
 function availabilityText(profile: {
   type: string;
   totalBeds: number | null;
@@ -48,6 +101,76 @@ function numberFromQuery(value: string | string[] | undefined) {
 
   const parsed = Number(raw);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function stateSearchTerms(rawState: string) {
+  const cleaned = rawState.trim();
+
+  if (!cleaned) {
+    return [];
+  }
+
+  const alias = stateAliases[cleaned.toLowerCase()];
+  const terms = new Set([cleaned, cleaned.toUpperCase()]);
+
+  if (alias) {
+    terms.add(alias);
+  }
+
+  return Array.from(terms);
+}
+
+function locationSearchFilters(q: string): Prisma.AftercareProfileWhereInput[] {
+  const normalized = q.replace(/\s+/g, " ").trim();
+
+  if (!normalized) {
+    return [];
+  }
+
+  const commaParts = normalized.split(",").map((part) => part.trim()).filter(Boolean);
+
+  if (commaParts.length >= 2) {
+    const city = commaParts[0];
+    const stateTerms = stateSearchTerms(commaParts.slice(1).join(" "));
+
+    if (city && stateTerms.length) {
+      return [
+        {
+          AND: [
+            { publicCity: { contains: city, mode: Prisma.QueryMode.insensitive } },
+            {
+              OR: stateTerms.map((state) => ({
+                publicState: { contains: state, mode: Prisma.QueryMode.insensitive }
+              }))
+            }
+          ]
+        }
+      ];
+    }
+  }
+
+  const spaceParts = normalized.split(" ");
+  const possibleState = spaceParts.at(-1) || "";
+
+  if (/^[a-z]{2}$/i.test(possibleState) && spaceParts.length > 1) {
+    const city = spaceParts.slice(0, -1).join(" ");
+    const stateTerms = stateSearchTerms(possibleState);
+
+    return [
+      {
+        AND: [
+          { publicCity: { contains: city, mode: Prisma.QueryMode.insensitive } },
+          {
+            OR: stateTerms.map((state) => ({
+              publicState: { contains: state, mode: Prisma.QueryMode.insensitive }
+            }))
+          }
+        ]
+      }
+    ];
+  }
+
+  return [];
 }
 
 export default async function SearchPage({
@@ -157,7 +280,8 @@ export default async function SearchPage({
         { programName: { contains: q, mode: Prisma.QueryMode.insensitive } },
         { publicCity: { contains: q, mode: Prisma.QueryMode.insensitive } },
         { publicState: { contains: q, mode: Prisma.QueryMode.insensitive } },
-        { description: { contains: q, mode: Prisma.QueryMode.insensitive } }
+        { description: { contains: q, mode: Prisma.QueryMode.insensitive } },
+        ...locationSearchFilters(q)
       ]
     });
   }

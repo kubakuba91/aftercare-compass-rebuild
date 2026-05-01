@@ -1,7 +1,7 @@
 "use client";
 
 import { Bold, Italic, List, ListOrdered } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 
 type RichTextEditorProps = {
   initialValue?: string | null;
@@ -18,12 +18,18 @@ const commands = [
 
 export function RichTextEditor({ initialValue = "", name, required = false }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
-  const [value, setValue] = useState(initialValue || "");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function syncValue() {
+    if (inputRef.current && editorRef.current) {
+      inputRef.current.value = editorRef.current.innerHTML;
+    }
+  }
 
   function runCommand(command: string) {
     editorRef.current?.focus();
     document.execCommand(command);
-    setValue(editorRef.current?.innerHTML || "");
+    syncValue();
   }
 
   return (
@@ -50,11 +56,11 @@ export function RichTextEditor({ initialValue = "", name, required = false }: Ri
         className="min-h-36 px-3 py-3 text-sm leading-6 outline-none [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc"
         contentEditable
         dangerouslySetInnerHTML={{ __html: initialValue || "" }}
-        onInput={(event) => setValue(event.currentTarget.innerHTML)}
+        onInput={syncValue}
         role="textbox"
         suppressContentEditableWarning
       />
-      <input name={name} required={required} type="hidden" value={value} />
+      <input ref={inputRef} defaultValue={initialValue || ""} name={name} required={required} type="hidden" />
     </div>
   );
 }

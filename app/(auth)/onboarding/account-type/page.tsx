@@ -1,6 +1,8 @@
+import { redirect } from "next/navigation";
 import { Building2, Hospital, Home } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Card } from "@/components/ui/card";
+import { getAuthenticatedLandingPath } from "@/lib/protected-routing";
 import { selectAccountType } from "../actions";
 
 const accountTypes = [
@@ -26,7 +28,13 @@ const accountTypes = [
 
 export const dynamic = "force-dynamic";
 
-export default function AccountTypePage() {
+export default async function AccountTypePage() {
+  const destination = await getAuthenticatedLandingPath();
+
+  if (destination !== "/onboarding/account-type") {
+    redirect(destination);
+  }
+
   return (
     <main className="shell py-10">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">

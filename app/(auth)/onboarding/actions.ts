@@ -9,6 +9,7 @@ import {
   isAccountType
 } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
+import { getAuthenticatedLandingPath } from "@/lib/protected-routing";
 
 export async function selectAccountType(formData: FormData) {
   if (!hasDatabaseConfig()) {
@@ -19,6 +20,12 @@ export async function selectAccountType(formData: FormData) {
 
   if (!isAccountType(accountType)) {
     throw new Error("Invalid account type");
+  }
+
+  const currentDestination = await getAuthenticatedLandingPath();
+
+  if (currentDestination !== "/onboarding/account-type") {
+    redirect(currentDestination);
   }
 
   try {

@@ -18,60 +18,91 @@ type AftercareReadinessProfile = {
 };
 
 export function getAftercareProfileReadiness(profile: AftercareReadinessProfile) {
-  const blockers: string[] = [];
-  const warnings: string[] = [];
-
-  if (!profile.programName?.trim()) {
-    blockers.push("Program name is required.");
-  }
-
-  if (!profile.city?.trim() || !profile.state?.trim()) {
-    blockers.push("Public city and state are required.");
-  }
-
-  if (!profile.admissionsContactEmail?.trim() && !profile.admissionsContactPhone?.trim()) {
-    blockers.push("Add at least one admissions contact method.");
-  }
-
-  if (!profile.description?.trim()) {
-    blockers.push("Profile description is required.");
-  }
-
-  if (!profile.populationServedOptions.length && !profile.populationServed?.trim()) {
-    blockers.push("Population served is required.");
-  }
-
-  if (profile.type === "sober_living") {
-    if (profile.totalBeds === null || profile.bedsAvailable === null) {
-      blockers.push("Sober living bed totals and availability are required.");
+  const checks = [
+    {
+      label: "Program name",
+      complete: Boolean(profile.programName?.trim()),
+      required: true,
+      message: "Program name is required."
+    },
+    {
+      label: "Public city and state",
+      complete: Boolean(profile.city?.trim() && profile.state?.trim()),
+      required: true,
+      message: "Public city and state are required."
+    },
+    {
+      label: "Admissions contact",
+      complete: Boolean(profile.admissionsContactEmail?.trim() || profile.admissionsContactPhone?.trim()),
+      required: true,
+      message: "Add at least one admissions contact method."
+    },
+    {
+      label: "Profile description",
+      complete: Boolean(profile.description?.trim()),
+      required: true,
+      message: "Profile description is required."
+    },
+    {
+      label: "Population served",
+      complete: Boolean(profile.populationServedOptions.length || profile.populationServed?.trim()),
+      required: true,
+      message: "Population served is required."
+    },
+    ...(profile.type === "sober_living"
+      ? [
+          {
+            label: "Bed totals and availability",
+            complete: profile.totalBeds !== null && profile.bedsAvailable !== null,
+            required: true,
+            message: "Sober living bed totals and availability are required."
+          },
+          {
+            label: "Good Neighbor Policy",
+            complete: profile.goodNeighborPolicyAcknowledged,
+            required: true,
+            message: "Good Neighbor Policy acknowledgment is required."
+          }
+        ]
+      : [
+          {
+            label: "Patient availability status",
+            complete: profile.acceptingNewPatients !== null,
+            required: true,
+            message: "Patient availability status is required."
+          },
+          {
+            label: "Program type",
+            complete: Boolean(profile.programTypes?.length),
+            required: true,
+            message: "Program type is required."
+          },
+          {
+            label: "Level of care",
+            complete: Boolean(profile.levelsOfCare?.length),
+            required: true,
+            message: "Level of care is required."
+          }
+        ]),
+    {
+      label: "Photo readiness",
+      complete: Boolean(profile.photoReadiness.length),
+      required: false,
+      message: "Photos are not ready yet."
     }
+  ];
 
-    if (!profile.goodNeighborPolicyAcknowledged) {
-      blockers.push("Good Neighbor Policy acknowledgment is required.");
-    }
-  } else {
-    if (profile.acceptingNewPatients === null) {
-      blockers.push("Patient availability status is required.");
-    }
-
-    if (!profile.programTypes?.length) {
-      blockers.push("Program type is required.");
-    }
-
-    if (!profile.levelsOfCare?.length) {
-      blockers.push("Level of care is required.");
-    }
-  }
-
-  if (!profile.photoReadiness.length) {
-    warnings.push("Photos are not ready yet.");
-  }
-
-  const totalChecks = blockers.length + warnings.length + 7;
-  const percent = Math.max(0, Math.round(((totalChecks - blockers.length - warnings.length) / totalChecks) * 100));
+  const blockers = checks
+    .filter((check) => check.required && !check.complete)
+    .map((check) => check.message);
+  const warnings = checks
+    .filter((check) => !check.required && !check.complete)
+    .map((check) => check.message);
+  const percent = Math.round((checks.filter((check) => check.complete).length / checks.length) * 100);
 
   return {
     blockers,
+    checks,
     warnings,
     canPublish: blockers.length === 0,
     percent

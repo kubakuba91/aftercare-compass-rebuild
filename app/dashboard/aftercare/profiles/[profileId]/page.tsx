@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, BedDouble, Building2, Eye, Save, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BedDouble, Building2, CheckCircle2, CircleAlert, Eye, Save, ShieldCheck } from "lucide-react";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
 import {
   amenityOptions,
@@ -83,19 +83,36 @@ function CheckboxGroup({
   );
 }
 
-function ReadinessList({ title, items }: { title: string; items: string[] }) {
-  if (!items.length) {
-    return null;
-  }
-
+function ReadinessChecklist({
+  checks
+}: {
+  checks: Array<{ label: string; complete: boolean; required: boolean; message: string }>;
+}) {
   return (
-    <div>
-      <p className="text-sm font-semibold">{title}</p>
-      <ul className="mt-2 grid gap-2 text-sm text-muted-foreground">
-        {items.map((item) => (
-          <li key={item}>- {item}</li>
-        ))}
-      </ul>
+    <div className="grid gap-2">
+      {checks.map((check) => {
+        const Icon = check.complete ? CheckCircle2 : CircleAlert;
+        return (
+          <div
+            key={check.label}
+            className="flex items-start gap-2 rounded-md border border-border bg-white p-3 text-sm"
+          >
+            <Icon
+              className={check.complete ? "mt-0.5 shrink-0 text-primary" : "mt-0.5 shrink-0 text-accent"}
+              size={16}
+            />
+            <div>
+              <p className="font-semibold">
+                {check.label}
+                {!check.required ? <span className="ml-2 font-normal text-muted-foreground">Recommended</span> : null}
+              </p>
+              {!check.complete ? (
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">{check.message}</p>
+              ) : null}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -422,8 +439,7 @@ export default async function AftercareProfileDetailPage({
             <h2 className="mt-3 font-semibold">Publish readiness</h2>
             <p className="mt-2 text-sm text-muted-foreground">{readiness.percent}% complete</p>
             <div className="mt-4 grid gap-4">
-              <ReadinessList title="Needs attention" items={readiness.blockers} />
-              <ReadinessList title="Recommended" items={readiness.warnings} />
+              <ReadinessChecklist checks={readiness.checks} />
               {readiness.canPublish ? (
                 <p className="rounded-md border border-primary/20 bg-primary/10 p-3 text-sm font-semibold text-primary">
                   This profile is ready to publish.
@@ -438,15 +454,17 @@ export default async function AftercareProfileDetailPage({
                 name="status"
                 value="published"
               >
-                Publish profile
+                {profile.status === "published" ? "Republish profile" : "Publish profile"}
               </button>
-              <button
-                className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold"
-                name="status"
-                value="draft"
-              >
-                Move to draft
-              </button>
+              {profile.status === "published" ? (
+                <button
+                  className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold"
+                  name="status"
+                  value="draft"
+                >
+                  Unpublish profile
+                </button>
+              ) : null}
             </form>
           </Card>
 

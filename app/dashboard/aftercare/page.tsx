@@ -18,6 +18,7 @@ import { AftercareOverviewSelector } from "@/components/dashboard/aftercare-over
 import { AftercareQuickAvailability } from "@/components/dashboard/aftercare-quick-availability";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { getVisiblePopulationBeds } from "@/lib/bed-display";
 import { prisma } from "@/lib/prisma";
 import {
   getAftercareDashboardUser,
@@ -488,6 +489,7 @@ export default async function AftercareDashboardPage({
                     <tbody>
                       {profiles.map((profile) => {
                         const readiness = profileReadiness(profile);
+                        const visiblePopulationBeds = getVisiblePopulationBeds(profile);
 
                         return (
                           <tr key={profile.id} className="border-b border-border last:border-0">
@@ -509,9 +511,15 @@ export default async function AftercareDashboardPage({
                             <td className="py-4 pr-4">
                               {profile.type === "sober_living" ? (
                                 <div className="grid gap-1 text-xs">
-                                  <span>Men: {profile.bedsMenAvailable ?? 0}/{profile.bedsMen ?? 0}</span>
-                                  <span>Women: {profile.bedsWomenAvailable ?? 0}/{profile.bedsWomen ?? 0}</span>
-                                  <span>LGBTQ+: {profile.bedsLgbtqAvailable ?? 0}/{profile.bedsLgbtq ?? 0}</span>
+                                  {visiblePopulationBeds.length ? (
+                                    visiblePopulationBeds.map((bed) => (
+                                      <span key={bed.label}>
+                                        {bed.label}: {bed.available}/{bed.total}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <span className="text-muted-foreground">Not set</span>
+                                  )}
                                 </div>
                               ) : (
                                 <span className="text-muted-foreground">Program availability</span>

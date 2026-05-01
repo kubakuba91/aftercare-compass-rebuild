@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { BedDouble, CheckCircle2, Mail, MapPin, ShieldCheck, Video } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { getVisiblePopulationBeds } from "@/lib/bed-display";
 import { prisma } from "@/lib/prisma";
 import { createPublicProfileLead } from "./actions";
 
@@ -46,6 +47,7 @@ export default async function PublicProfilePage({
 
   const isSoberLiving = profile.type === "sober_living";
   const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
+  const visiblePopulationBeds = getVisiblePopulationBeds(profile);
 
   return (
     <main className="shell py-8">
@@ -93,20 +95,20 @@ export default async function PublicProfilePage({
               <Card>
                 <BedDouble className="text-primary" size={22} />
                 <h2 className="mt-3 text-xl font-semibold">Bed availability</h2>
-                <div className="mt-4 grid gap-3 md:grid-cols-3">
-                  <div className="rounded-md border border-border bg-muted/40 p-3">
-                    <p className="text-sm text-muted-foreground">Men</p>
-                    <p className="mt-1 text-2xl font-semibold">{profile.bedsMenAvailable ?? 0}/{profile.bedsMen ?? 0}</p>
+                {visiblePopulationBeds.length ? (
+                  <div className="mt-4 grid gap-3 md:grid-cols-3">
+                    {visiblePopulationBeds.map((bed) => (
+                      <div key={bed.label} className="rounded-md border border-border bg-muted/40 p-3">
+                        <p className="text-sm text-muted-foreground">{bed.label}</p>
+                        <p className="mt-1 text-2xl font-semibold">{bed.available}/{bed.total}</p>
+                      </div>
+                    ))}
                   </div>
-                  <div className="rounded-md border border-border bg-muted/40 p-3">
-                    <p className="text-sm text-muted-foreground">Women</p>
-                    <p className="mt-1 text-2xl font-semibold">{profile.bedsWomenAvailable ?? 0}/{profile.bedsWomen ?? 0}</p>
-                  </div>
-                  <div className="rounded-md border border-border bg-muted/40 p-3">
-                    <p className="text-sm text-muted-foreground">LGBTQ+</p>
-                    <p className="mt-1 text-2xl font-semibold">{profile.bedsLgbtqAvailable ?? 0}/{profile.bedsLgbtq ?? 0}</p>
-                  </div>
-                </div>
+                ) : (
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    Population-specific bed counts are not listed.
+                  </p>
+                )}
               </Card>
             ) : (
               <Card>

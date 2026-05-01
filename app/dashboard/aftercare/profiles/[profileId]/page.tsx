@@ -152,7 +152,7 @@ export default async function AftercareProfileDetailPage({
         </div>
         <Link
           className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border bg-white px-4 text-sm font-semibold"
-          href={`/profiles/${profile.slug}`}
+          href={`/profiles/${profile.slug}?preview=1`}
         >
           <Eye size={16} />
           Preview profile

@@ -199,21 +199,29 @@ export default async function PublicProfilePage({
   searchParams
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ lead?: string; referral?: string }>;
+  searchParams: Promise<{ lead?: string; referral?: string; preview?: string }>;
 }) {
   const [{ slug }, query, appUser] = await Promise.all([
     params,
     searchParams,
     getCurrentAppUser()
   ]);
-  const profile = await prisma.aftercareProfile.findFirst({
+  const profile = await prisma.aftercareProfile.findUnique({
     where: {
-      slug,
-      status: "published"
+      slug
     }
   });
 
   if (!profile) {
+    notFound();
+  }
+
+  const canPreviewDraft =
+    query.preview === "1" &&
+    appUser?.orgId === profile.orgId &&
+    appUser.role.startsWith("aftercare");
+
+  if (profile.status !== "published" && !canPreviewDraft) {
     notFound();
   }
 

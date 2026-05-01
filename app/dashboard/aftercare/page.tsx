@@ -543,7 +543,7 @@ export default async function AftercareDashboardPage({
                                 </Link>
                                 <Link
                                   className="focus-ring inline-flex min-h-9 items-center rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground"
-                                  href={`/profiles/${profile.slug}`}
+                                  href={`/profiles/${profile.slug}?preview=1`}
                                 >
                                   View profile
                                 </Link>

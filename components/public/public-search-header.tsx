@@ -103,12 +103,12 @@ export function PublicSearchHeader({
             <input name="availability" type="hidden" value="available" />
           ) : null}
           {showFilters ? (
-            <div className="z-10 grid gap-4 rounded-lg border border-border bg-white p-5 shadow-sm md:col-start-3 md:col-end-5">
+            <div className="z-10 grid w-full min-w-0 gap-4 rounded-lg border border-border bg-white p-5 shadow-sm md:col-start-3 md:col-end-5 md:w-[min(100vw-2rem,420px)]">
               <h2 className="text-lg font-semibold">Filter Options</h2>
               <label className="grid gap-2 text-sm font-medium">
                 Population Served
                 <select
-                  className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                  className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm"
                   defaultValue={population[0] || ""}
                   name="population"
                 >
@@ -123,7 +123,7 @@ export function PublicSearchHeader({
               <label className="grid gap-2 text-sm font-medium">
                 Specialty Populations Served
                 <select
-                  className="min-h-24 rounded-md border border-border bg-white px-3 py-2 text-sm"
+                  className="min-h-24 w-full min-w-0 rounded-md border border-border bg-white px-3 py-2 text-sm"
                   defaultValue={specialty}
                   multiple
                   name="specialty"
@@ -137,9 +137,9 @@ export function PublicSearchHeader({
               </label>
               <div className="grid gap-2">
                 <span className="text-sm font-medium">Price per week</span>
-                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
                   <input
-                    className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                    className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm"
                     defaultValue={minPrice ?? ""}
                     min="0"
                     name="minPrice"
@@ -148,7 +148,7 @@ export function PublicSearchHeader({
                   />
                   <span className="text-sm text-muted-foreground">to</span>
                   <input
-                    className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                    className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm"
                     defaultValue={maxPrice ?? ""}
                     min="0"
                     name="maxPrice"
@@ -159,7 +159,7 @@ export function PublicSearchHeader({
               </div>
               <label className="grid gap-2 text-sm font-medium">
                 Average Program Duration
-                <select className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" defaultValue={duration} name="duration">
+                <select className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm" defaultValue={duration} name="duration">
                   <option value="">Select duration...</option>
                   {averageLengthOptions.map((option) => (
                     <option key={option} value={option}>
@@ -171,7 +171,7 @@ export function PublicSearchHeader({
               <label className="grid gap-2 text-sm font-medium">
                 Specialties / Amenities
                 <select
-                  className="min-h-24 rounded-md border border-border bg-white px-3 py-2 text-sm"
+                  className="min-h-24 w-full min-w-0 rounded-md border border-border bg-white px-3 py-2 text-sm"
                   defaultValue={amenities}
                   multiple
                   name="amenity"
@@ -186,7 +186,7 @@ export function PublicSearchHeader({
               <label className="grid gap-2 text-sm font-medium">
                 Restricted Medications
                 <select
-                  className="min-h-24 rounded-md border border-border bg-white px-3 py-2 text-sm"
+                  className="min-h-24 w-full min-w-0 rounded-md border border-border bg-white px-3 py-2 text-sm"
                   defaultValue={mat}
                   multiple
                   name="mat"

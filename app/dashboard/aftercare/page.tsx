@@ -321,6 +321,107 @@ export default async function AftercareDashboardPage({
 
   return (
     <main className="shell py-8">
+      {selectedReferral ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 px-4 py-6">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg border border-border bg-white p-5 shadow-xl">
+            <div className="flex flex-col justify-between gap-3 border-b border-border pb-4 md:flex-row md:items-start">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-xl font-semibold">Referral details</h2>
+                  <Badge tone={["accepted", "placed"].includes(selectedReferral.status) ? "success" : "warning"}>
+                    {formatReferralValue(selectedReferral.status)}
+                  </Badge>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {selectedReferral.aftercareProfile.programName} · Submitted {formatDate(selectedReferral.createdAt)} · Updated {formatDate(selectedReferral.statusUpdatedAt)}
+                </p>
+              </div>
+              <Link
+                className="focus-ring inline-flex min-h-9 items-center justify-center rounded-md border border-border bg-white px-3 text-xs font-semibold"
+                href={selectedProfile ? `/dashboard/aftercare?tab=overview&profileId=${selectedProfile.id}` : "/dashboard/aftercare?tab=overview"}
+              >
+                Close
+              </Link>
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              <div className="rounded-md border border-border bg-muted/40 p-4">
+                <h3 className="font-semibold">Case manager</h3>
+                <dl className="mt-3 grid gap-3 text-sm">
+                  <div>
+                    <dt className="text-muted-foreground">Name</dt>
+                    <dd className="font-medium">{selectedReferral.caseManagerName}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Organization</dt>
+                    <dd className="font-medium">{selectedReferral.caseManagerOrganization}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Email</dt>
+                    <dd className="font-medium">{selectedReferral.caseManagerEmail}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Phone</dt>
+                    <dd className="font-medium">{selectedReferral.caseManagerPhone}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="rounded-md border border-border bg-muted/40 p-4">
+                <h3 className="font-semibold">Referral fit</h3>
+                <dl className="mt-3 grid gap-3 text-sm">
+                  <div>
+                    <dt className="text-muted-foreground">Client age range</dt>
+                    <dd className="font-medium">{formatReferralValue(selectedReferral.clientAgeRange)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Support category</dt>
+                    <dd className="font-medium">{formatReferralValue(selectedReferral.supportCategory)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Insurance category</dt>
+                    <dd className="font-medium">{formatReferralValue(selectedReferral.insuranceCategory)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Preferred start window</dt>
+                    <dd className="font-medium">{formatReferralValue(selectedReferral.preferredStartWindow)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Special needs/preferences</dt>
+                    <dd className="font-medium">
+                      {selectedReferral.specialNeeds.length ? selectedReferral.specialNeeds.join(", ") : "None listed"}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-md border border-border bg-muted/40 p-4">
+              <h3 className="font-semibold">Reason for referral</h3>
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                {selectedReferral.reasonForReferral}
+              </p>
+            </div>
+
+            {referralActionOptions(selectedReferral.status).length ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {referralActionOptions(selectedReferral.status).map(([status, label]) => (
+                  <form key={status} action={updateReferralStatus}>
+                    <input name="referralId" type="hidden" value={selectedReferral.id} />
+                    <button
+                      className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold"
+                      name="status"
+                      value={status}
+                    >
+                      {label}
+                    </button>
+                  </form>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <div className="border-b border-border pb-6">
         <div className="flex items-center gap-4">
           <div className="flex size-12 items-center justify-center rounded-md bg-primary/10 text-primary">
@@ -452,106 +553,6 @@ export default async function AftercareDashboardPage({
                   </div>
                 </Card>
               </div>
-
-              {selectedReferral ? (
-                <Card>
-                  <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-xl font-semibold">Referral details</h2>
-                        <Badge tone={["accepted", "placed"].includes(selectedReferral.status) ? "success" : "warning"}>
-                          {formatReferralValue(selectedReferral.status)}
-                        </Badge>
-                      </div>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {selectedReferral.aftercareProfile.programName} · Submitted {formatDate(selectedReferral.createdAt)} · Updated {formatDate(selectedReferral.statusUpdatedAt)}
-                      </p>
-                    </div>
-                    <Link
-                      className="focus-ring inline-flex min-h-9 items-center justify-center rounded-md border border-border bg-white px-3 text-xs font-semibold"
-                      href={selectedProfile ? `/dashboard/aftercare?tab=overview&profileId=${selectedProfile.id}` : "/dashboard/aftercare?tab=overview"}
-                    >
-                      Close details
-                    </Link>
-                  </div>
-
-                  <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-md border border-border bg-muted/40 p-4">
-                      <h3 className="font-semibold">Case manager</h3>
-                      <dl className="mt-3 grid gap-3 text-sm">
-                        <div>
-                          <dt className="text-muted-foreground">Name</dt>
-                          <dd className="font-medium">{selectedReferral.caseManagerName}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground">Organization</dt>
-                          <dd className="font-medium">{selectedReferral.caseManagerOrganization}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground">Email</dt>
-                          <dd className="font-medium">{selectedReferral.caseManagerEmail}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground">Phone</dt>
-                          <dd className="font-medium">{selectedReferral.caseManagerPhone}</dd>
-                        </div>
-                      </dl>
-                    </div>
-
-                    <div className="rounded-md border border-border bg-muted/40 p-4">
-                      <h3 className="font-semibold">Referral fit</h3>
-                      <dl className="mt-3 grid gap-3 text-sm">
-                        <div>
-                          <dt className="text-muted-foreground">Client age range</dt>
-                          <dd className="font-medium">{formatReferralValue(selectedReferral.clientAgeRange)}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground">Support category</dt>
-                          <dd className="font-medium">{formatReferralValue(selectedReferral.supportCategory)}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground">Insurance category</dt>
-                          <dd className="font-medium">{formatReferralValue(selectedReferral.insuranceCategory)}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground">Preferred start window</dt>
-                          <dd className="font-medium">{formatReferralValue(selectedReferral.preferredStartWindow)}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-muted-foreground">Special needs/preferences</dt>
-                          <dd className="font-medium">
-                            {selectedReferral.specialNeeds.length ? selectedReferral.specialNeeds.join(", ") : "None listed"}
-                          </dd>
-                        </div>
-                      </dl>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 rounded-md border border-border bg-muted/40 p-4">
-                    <h3 className="font-semibold">Reason for referral</h3>
-                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-                      {selectedReferral.reasonForReferral}
-                    </p>
-                  </div>
-
-                  {referralActionOptions(selectedReferral.status).length ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {referralActionOptions(selectedReferral.status).map(([status, label]) => (
-                        <form key={status} action={updateReferralStatus}>
-                          <input name="referralId" type="hidden" value={selectedReferral.id} />
-                          <button
-                            className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold"
-                            name="status"
-                            value={status}
-                          >
-                            {label}
-                          </button>
-                        </form>
-                      ))}
-                    </div>
-                  ) : null}
-                </Card>
-              ) : null}
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card>

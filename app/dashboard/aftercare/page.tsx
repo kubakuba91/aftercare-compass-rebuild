@@ -25,7 +25,7 @@ import {
   redirectIncompleteAftercareOnboarding
 } from "@/lib/protected-routing";
 import { cn } from "@/lib/utils";
-import { updateAftercareAvailability, updateUserDisplayName } from "./actions";
+import { updateAftercareAvailability, updateReferralStatus, updateUserDisplayName } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -103,6 +103,41 @@ function availabilityLabel(profile: {
   return profile.acceptingNewPatients ? "Accepting new patients" : "Not accepting patients";
 }
 
+function formatReferralValue(value: string) {
+  return value
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function referralActionOptions(status: string) {
+  if (status === "pending" || status === "viewed") {
+    return [
+      ["accepted", "Accept"],
+      ["waitlisted", "Waitlist"],
+      ["declined", "Decline"],
+      ["closed", "Close"]
+    ];
+  }
+
+  if (status === "accepted") {
+    return [
+      ["placed", "Mark placed"],
+      ["closed", "Close"]
+    ];
+  }
+
+  if (status === "waitlisted") {
+    return [
+      ["accepted", "Accept"],
+      ["declined", "Decline"],
+      ["closed", "Close"]
+    ];
+  }
+
+  return [];
+}
+
 function addProfileHref(organizationType: string | undefined) {
   if (organizationType === "aftercare_continued_care") {
     return "/onboarding/aftercare/continued-care/1?new=1";
@@ -114,7 +149,7 @@ function addProfileHref(organizationType: string | undefined) {
 export default async function AftercareDashboardPage({
   searchParams
 }: {
-  searchParams: Promise<{ tab?: string; edit?: string; availabilityError?: string; profileId?: string }>;
+  searchParams: Promise<{ tab?: string; edit?: string; availabilityError?: string; profileId?: string; referralError?: string }>;
 }) {
   const appUser = await getAftercareDashboardUser();
   await redirectIncompleteAftercareOnboarding(appUser.orgId);
@@ -183,18 +218,25 @@ export default async function AftercareDashboardPage({
     }),
     prisma.referral.findMany({
       where: {
-        aftercareOrgId: appUser.orgId,
-        status: { in: ["pending", "viewed", "accepted", "waitlisted"] }
+        aftercareOrgId: appUser.orgId
       },
       orderBy: { createdAt: "desc" },
-      take: 5,
+      take: 20,
       select: {
         id: true,
         aftercareProfileId: true,
         status: true,
+        caseManagerName: true,
+        caseManagerEmail: true,
+        caseManagerPhone: true,
         caseManagerOrganization: true,
         clientAgeRange: true,
+        supportCategory: true,
+        insuranceCategory: true,
         preferredStartWindow: true,
+        specialNeeds: true,
+        reasonForReferral: true,
+        statusUpdatedAt: true,
         createdAt: true,
         aftercareProfile: { select: { programName: true } }
       }
@@ -229,6 +271,7 @@ export default async function AftercareDashboardPage({
   const scopedReferrals = selectedProfile
     ? referrals.filter((referral) => referral.aftercareProfileId === selectedProfile.id)
     : referrals;
+  const openReferrals = scopedReferrals.filter((referral) => !["declined", "placed", "closed"].includes(referral.status));
   const scopedPendingDocumentCount = selectedProfile
     ? pendingDocumentCount.filter((document) => document.profileId === selectedProfile.id).length
     : pendingDocumentCount.length;
@@ -251,7 +294,7 @@ export default async function AftercareDashboardPage({
   const metrics = [
     { label: "Total beds", value: totalBeds.toString(), icon: BedDouble },
     { label: "Beds available now", value: availableBeds.toString(), icon: CalendarClock },
-    { label: "Open referrals", value: scopedReferrals.length.toString(), icon: Inbox },
+    { label: "Open referrals", value: openReferrals.length.toString(), icon: Inbox },
     { label: "New public leads", value: newLeadCount.toString(), icon: MessageSquare }
   ];
 
@@ -393,19 +436,49 @@ export default async function AftercareDashboardPage({
                 <Card>
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="font-semibold">Recent referrals</h2>
-                    <Badge>{scopedReferrals.length} open</Badge>
+                    <Badge>{openReferrals.length} open</Badge>
                   </div>
+                  {query.referralError ? (
+                    <div className="mt-3 rounded-md border border-accent/30 bg-accent/10 p-3 text-sm">
+                      {query.referralError}
+                    </div>
+                  ) : null}
                   {scopedReferrals.length ? (
                     <div className="mt-4 grid gap-3">
                       {scopedReferrals.map((referral) => (
                         <div key={referral.id} className="rounded-md border border-border bg-muted/40 p-3 text-sm">
                           <div className="flex justify-between gap-3">
                             <p className="font-semibold">{referral.caseManagerOrganization}</p>
-                            <Badge tone="warning">{referral.status}</Badge>
+                            <Badge tone={["accepted", "placed"].includes(referral.status) ? "success" : "warning"}>
+                              {formatReferralValue(referral.status)}
+                            </Badge>
                           </div>
                           <p className="mt-1 text-muted-foreground">
-                            {referral.aftercareProfile.programName} · {referral.clientAgeRange} · {referral.preferredStartWindow}
+                            {referral.aftercareProfile.programName} · {formatReferralValue(referral.clientAgeRange)} · {formatReferralValue(referral.preferredStartWindow)}
                           </p>
+                          <p className="mt-2 line-clamp-2 text-muted-foreground">
+                            {referral.reasonForReferral}
+                          </p>
+                          <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
+                            <span>{referral.caseManagerName} · {referral.caseManagerEmail} · {referral.caseManagerPhone}</span>
+                            <span>{formatReferralValue(referral.supportCategory)} · {formatReferralValue(referral.insuranceCategory)}</span>
+                          </div>
+                          {referralActionOptions(referral.status).length ? (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {referralActionOptions(referral.status).map(([status, label]) => (
+                                <form key={status} action={updateReferralStatus}>
+                                  <input name="referralId" type="hidden" value={referral.id} />
+                                  <button
+                                    className="focus-ring min-h-9 rounded-md border border-border bg-white px-3 text-xs font-semibold"
+                                    name="status"
+                                    value={status}
+                                  >
+                                    {label}
+                                  </button>
+                                </form>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
                       ))}
                     </div>

@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { ProfileType } from "@prisma/client";
+import { ProfileType, ReferralStatus } from "@prisma/client";
+import { canTransitionReferral, referralStatuses } from "@/lib/product-rules";
 import { prisma } from "@/lib/prisma";
 import { getAftercareDashboardUser } from "@/lib/protected-routing";
 
@@ -109,4 +110,45 @@ export async function updateUserDisplayName(formData: FormData) {
 
   revalidatePath("/dashboard/aftercare");
   redirect("/dashboard/aftercare?tab=account");
+}
+
+export async function updateReferralStatus(formData: FormData) {
+  const appUser = await getAftercareDashboardUser("/dashboard/aftercare");
+  const referralId = String(formData.get("referralId") || "");
+  const nextStatus = String(formData.get("status") || "") as ReferralStatus;
+
+  if (!referralStatuses.includes(nextStatus)) {
+    redirect("/dashboard/aftercare?referralError=Invalid referral status");
+  }
+
+  const referral = await prisma.referral.findFirst({
+    where: {
+      id: referralId,
+      aftercareOrgId: appUser.orgId
+    },
+    select: {
+      id: true,
+      status: true
+    }
+  });
+
+  if (!referral) {
+    redirect("/dashboard/aftercare?referralError=Referral not found");
+  }
+
+  if (!canTransitionReferral(referral.status, nextStatus)) {
+    redirect("/dashboard/aftercare?referralError=That status change is not available");
+  }
+
+  await prisma.referral.update({
+    where: { id: referral.id },
+    data: {
+      status: nextStatus,
+      statusUpdatedAt: new Date()
+    }
+  });
+
+  revalidatePath("/dashboard/aftercare");
+  revalidatePath("/dashboard/referent");
+  redirect("/dashboard/aftercare");
 }

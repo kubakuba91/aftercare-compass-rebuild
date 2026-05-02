@@ -26,7 +26,7 @@ export const referralStatuses = [
 export type ReferralStatus = (typeof referralStatuses)[number];
 
 export const allowedReferralTransitions: Record<ReferralStatus, ReferralStatus[]> = {
-  pending: ["viewed", "closed"],
+  pending: ["viewed", "accepted", "declined", "waitlisted", "closed"],
   viewed: ["accepted", "declined", "waitlisted", "closed"],
   accepted: ["placed", "closed"],
   declined: ["closed"],
@@ -38,4 +38,3 @@ export const allowedReferralTransitions: Record<ReferralStatus, ReferralStatus[]
 export function canTransitionReferral(from: ReferralStatus, to: ReferralStatus) {
   return allowedReferralTransitions[from].includes(to);
 }
-

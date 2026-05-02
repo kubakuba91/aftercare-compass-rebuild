@@ -242,9 +242,9 @@ export default async function ReferentStepPage({
 
               {currentStep === 3 ? (
                 <>
-                  <div className="text-sm font-medium">{requiredLabel("Plan")}</div>
+                  <div className="text-sm font-medium">Plan preference</div>
                   <div className="rounded-md border border-border bg-muted/60 p-4 text-sm text-muted-foreground">
-                    No payment is collected during onboarding. This saves your plan preference so billing can be completed later.
+                    Billing is skipped during beta onboarding. Choose a preference now, or continue with the default Professional plan.
                   </div>
                   <div className="grid gap-3">
                     {referentPlanOptions.map((planKey) => {
@@ -258,7 +258,6 @@ export default async function ReferentStepPage({
                               type="radio"
                               name="selectedPlan"
                               value={planKey}
-                              required
                               defaultChecked={(referentDetails?.selectedPlan ?? "professional") === planKey}
                             />
                             <span>

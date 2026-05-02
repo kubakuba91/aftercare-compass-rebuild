@@ -112,8 +112,8 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
 
     if (step === 3) {
       const parsed = referentStepThreeSchema.parse({
-        selectedPlan: formData.get("selectedPlan"),
-        billingCycle: formData.get("billingCycle")
+        selectedPlan: formData.get("selectedPlan") || "professional",
+        billingCycle: formData.get("billingCycle") || "monthly"
       });
 
       await prisma.onboardingDraft.update({

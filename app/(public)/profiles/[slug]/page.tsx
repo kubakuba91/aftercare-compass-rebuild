@@ -274,30 +274,6 @@ export default async function PublicProfilePage({
           </div>
 
           <div className="mt-5 grid gap-4">
-            <Card>
-              <h2 className="text-xl font-semibold">About</h2>
-              {profile.description ? (
-                <div
-                  className="mt-3 text-sm leading-6 text-muted-foreground [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc"
-                  dangerouslySetInnerHTML={{ __html: richTextHtml(profile.description) }}
-                />
-              ) : (
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  No description has been added yet.
-                </p>
-              )}
-            </Card>
-
-            {isSoberLiving && profile.houseRulesText ? (
-              <Card>
-                <h2 className="text-xl font-semibold">House rules</h2>
-                <div
-                  className="mt-3 text-sm leading-6 text-muted-foreground [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc"
-                  dangerouslySetInnerHTML={{ __html: richTextHtml(profile.houseRulesText) }}
-                />
-              </Card>
-            ) : null}
-
             {isSoberLiving ? (
               <Card>
                 <BedDouble className="text-primary" size={22} />
@@ -374,6 +350,30 @@ export default async function PublicProfilePage({
                 </dl>
               </Card>
             </div>
+
+            <Card>
+              <h2 className="text-xl font-semibold">About</h2>
+              {profile.description ? (
+                <div
+                  className="mt-3 text-sm leading-6 text-muted-foreground [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc"
+                  dangerouslySetInnerHTML={{ __html: richTextHtml(profile.description) }}
+                />
+              ) : (
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  No description has been added yet.
+                </p>
+              )}
+            </Card>
+
+            {isSoberLiving && profile.houseRulesText ? (
+              <Card>
+                <h2 className="text-xl font-semibold">House rules</h2>
+                <div
+                  className="mt-3 text-sm leading-6 text-muted-foreground [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc"
+                  dangerouslySetInnerHTML={{ __html: richTextHtml(profile.houseRulesText) }}
+                />
+              </Card>
+            ) : null}
 
             {profile.videoUrls.length ? (
               <Card>

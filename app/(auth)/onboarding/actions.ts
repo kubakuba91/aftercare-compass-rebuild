@@ -24,7 +24,7 @@ export async function selectAccountType(formData: FormData) {
 
   const currentDestination = await getAuthenticatedLandingPath();
 
-  if (currentDestination !== "/onboarding/account-type") {
+  if (!currentDestination.startsWith("/onboarding/")) {
     redirect(currentDestination);
   }
 

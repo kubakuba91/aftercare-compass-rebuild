@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { isClerkIdentityError } from "@/lib/current-user";
+import { getCurrentAppUser, isClerkIdentityError } from "@/lib/current-user";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import {
   draftDestinationForAccountType,
@@ -20,6 +20,20 @@ export default async function StartOnboardingPage({
 
   if (!hasDatabaseConfig()) {
     redirect("/setup?missing=database");
+  }
+
+  const appUser = await getCurrentAppUser();
+
+  if (appUser?.orgId) {
+    if (appUser.role.startsWith("referent")) {
+      redirect("/dashboard/referent");
+    }
+
+    if (appUser.role.startsWith("aftercare")) {
+      redirect("/dashboard/aftercare");
+    }
+
+    redirect("/dashboard");
   }
 
   try {

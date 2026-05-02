@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { Building2, Hospital, Home } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Card } from "@/components/ui/card";
-import { getAuthenticatedLandingPath } from "@/lib/protected-routing";
+import { getCurrentAppUser } from "@/lib/current-user";
 import { selectAccountType } from "../actions";
 
 const accountTypes = [
@@ -29,10 +29,18 @@ const accountTypes = [
 export const dynamic = "force-dynamic";
 
 export default async function AccountTypePage() {
-  const destination = await getAuthenticatedLandingPath();
+  const appUser = await getCurrentAppUser();
 
-  if (destination !== "/onboarding/account-type") {
-    redirect(destination);
+  if (appUser?.orgId) {
+    if (appUser.role.startsWith("referent")) {
+      redirect("/dashboard/referent");
+    }
+
+    if (appUser.role.startsWith("aftercare")) {
+      redirect("/dashboard/aftercare");
+    }
+
+    redirect("/dashboard");
   }
 
   return (

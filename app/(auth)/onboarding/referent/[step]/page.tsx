@@ -127,6 +127,9 @@ export default async function ReferentStepPage({
   const step = referentSteps[currentStep - 1];
   const action = saveReferentOnboardingStep.bind(null, currentStep);
   const selected = (values?: string[] | null) => values ?? [];
+  const invitedTeamEmails = Array.isArray(referentDetails?.invitedTeamEmails)
+    ? referentDetails.invitedTeamEmails.map(String)
+    : [];
 
   return (
     <main className="grid min-h-screen lg:grid-cols-[320px_1fr]">
@@ -287,7 +290,7 @@ export default async function ReferentStepPage({
                     <textarea
                       name="invitedTeamEmails"
                       placeholder="one@email.com&#10;two@email.com"
-                      defaultValue={referentDetails?.invitedTeamEmails.join("\n") ?? ""}
+                      defaultValue={invitedTeamEmails.join("\n")}
                       className="min-h-36 rounded-md border border-border bg-white p-3 text-sm"
                     />
                   </label>

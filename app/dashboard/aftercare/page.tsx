@@ -564,95 +564,104 @@ export default async function AftercareDashboardPage({
                   </div>
                   <Badge>{openReferrals.length + newLeadCount} open</Badge>
                 </div>
-                <div className="mt-5 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-                  <div>
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="font-semibold">Referrals</h3>
-                      <Badge>{openReferrals.length} open</Badge>
-                    </div>
                   {query.referralError ? (
                     <div className="mt-3 rounded-md border border-accent/30 bg-accent/10 p-3 text-sm">
                       {query.referralError}
                     </div>
                   ) : null}
-                  {scopedReferrals.length ? (
-                    <div className="mt-4 grid gap-2">
+                  {scopedReferrals.length || scopedLeads.length ? (
+                    <div className="mt-5 overflow-x-auto">
+                      <table className="w-full min-w-[860px] text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-border text-xs uppercase text-muted-foreground">
+                            <th className="py-3 pr-4 font-semibold">Type</th>
+                            <th className="py-3 pr-4 font-semibold">From</th>
+                            <th className="py-3 pr-4 font-semibold">Home/program</th>
+                            <th className="py-3 pr-4 font-semibold">Details</th>
+                            <th className="py-3 pr-4 font-semibold">Status</th>
+                            <th className="py-3 text-right font-semibold">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
                       {scopedReferrals.map((referral) => (
-                        <div key={referral.id} className="rounded-md border border-border bg-muted/40 p-2.5 text-sm">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="truncate font-semibold">{referral.caseManagerOrganization}</p>
-                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                                {referral.aftercareProfile.programName} · {formatReferralValue(referral.clientAgeRange)} · {formatReferralValue(referral.preferredStartWindow)}
-                              </p>
-                            </div>
-                            <Badge tone={["accepted", "placed"].includes(referral.status) ? "success" : "warning"}>
+                            <tr key={referral.id} className="border-b border-border last:border-0">
+                              <td className="py-4 pr-4">
+                                <Badge>Referral</Badge>
+                              </td>
+                              <td className="py-4 pr-4">
+                                <p className="font-semibold">{referral.caseManagerOrganization}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">{referral.caseManagerName}</p>
+                              </td>
+                              <td className="py-4 pr-4">{referral.aftercareProfile.programName}</td>
+                              <td className="py-4 pr-4">
+                                <p className="font-medium">
+                                  {formatReferralValue(referral.clientAgeRange)} · {formatReferralValue(referral.preferredStartWindow)}
+                                </p>
+                                <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                                  {referral.reasonForReferral}
+                                </p>
+                              </td>
+                              <td className="py-4 pr-4">
+                                <Badge tone={["accepted", "placed"].includes(referral.status) ? "success" : "warning"}>
                               {formatReferralValue(referral.status)}
                             </Badge>
-                          </div>
-                          <p className="mt-2 line-clamp-1 text-muted-foreground">
-                            {referral.reasonForReferral}
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <Link
-                              className="focus-ring inline-flex min-h-8 items-center rounded-md border border-border bg-white px-2.5 text-xs font-semibold"
-                              href={referralDetailHref(referral.id, selectedProfile?.id)}
-                            >
-                              View referral
-                            </Link>
-                            {compactReferralActionOptions(referral.status).length ? (
-                              <>
-                              {compactReferralActionOptions(referral.status).map(([status, label]) => (
-                                <form key={status} action={updateReferralStatus}>
-                                  <input name="referralId" type="hidden" value={referral.id} />
-                                  <button
-                                    className="focus-ring min-h-8 rounded-md border border-border bg-white px-2.5 text-xs font-semibold"
-                                    name="status"
-                                    value={status}
+                              </td>
+                              <td className="py-4">
+                                <div className="flex flex-wrap justify-end gap-2">
+                                  <Link
+                                    className="focus-ring inline-flex min-h-8 items-center rounded-md border border-border bg-white px-2.5 text-xs font-semibold"
+                                    href={referralDetailHref(referral.id, selectedProfile?.id)}
                                   >
-                                    {label}
-                                  </button>
-                                </form>
-                              ))}
-                              </>
-                            ) : null}
-                          </div>
-                        </div>
+                                    View
+                                  </Link>
+                                  {compactReferralActionOptions(referral.status).map(([status, label]) => (
+                                    <form key={status} action={updateReferralStatus}>
+                                      <input name="referralId" type="hidden" value={referral.id} />
+                                      <button
+                                        className="focus-ring min-h-8 rounded-md border border-border bg-white px-2.5 text-xs font-semibold"
+                                        name="status"
+                                        value={status}
+                                      >
+                                        {label}
+                                      </button>
+                                    </form>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
                       ))}
+                          {scopedLeads.map((lead) => (
+                            <tr key={lead.id} className="border-b border-border last:border-0">
+                              <td className="py-4 pr-4">
+                                <Badge>Public lead</Badge>
+                              </td>
+                              <td className="py-4 pr-4">
+                                <p className="font-semibold">{lead.name}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">{lead.email}</p>
+                              </td>
+                              <td className="py-4 pr-4">{lead.profile.programName}</td>
+                              <td className="py-4 pr-4">
+                                <p className="font-medium">Public contact form</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Submitted {formatDate(lead.createdAt)}
+                                </p>
+                              </td>
+                              <td className="py-4 pr-4">
+                              <Badge tone={lead.status === "new" ? "warning" : "neutral"}>{lead.status}</Badge>
+                              </td>
+                              <td className="py-4 text-right text-xs text-muted-foreground">
+                                Follow up directly
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   ) : (
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      New referrals will appear here with status actions in the next dashboard phase.
+                    <p className="mt-5 rounded-md border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
+                      New referrals and public profile contact forms will appear here.
                     </p>
                   )}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="font-semibold">Public leads</h3>
-                      <Badge>{scopedLeads.length} recent</Badge>
-                    </div>
-                    {scopedLeads.length ? (
-                      <div className="mt-4 grid gap-2">
-                        {scopedLeads.map((lead) => (
-                          <div key={lead.id} className="rounded-md border border-border bg-muted/40 p-2.5 text-sm">
-                            <div className="flex justify-between gap-3">
-                              <p className="truncate font-semibold">{lead.name}</p>
-                              <Badge tone={lead.status === "new" ? "warning" : "neutral"}>{lead.status}</Badge>
-                            </div>
-                            <p className="mt-1 truncate text-xs text-muted-foreground">
-                              {lead.profile.programName} · {lead.email}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        Public profile contact forms will create internal lead records here.
-                      </p>
-                    )}
-                  </div>
-                </div>
               </Card>
 
               <Card>

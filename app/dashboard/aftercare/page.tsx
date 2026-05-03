@@ -138,6 +138,25 @@ function referralActionOptions(status: string) {
   return [];
 }
 
+function compactReferralActionOptions(status: string) {
+  if (status === "pending" || status === "viewed") {
+    return [
+      ["accepted", "Accept"],
+      ["waitlisted", "Waitlist"]
+    ];
+  }
+
+  if (status === "accepted") {
+    return [["placed", "Mark placed"]];
+  }
+
+  if (status === "waitlisted") {
+    return [["accepted", "Accept"]];
+  }
+
+  return [];
+}
+
 function referralDetailHref(referralId: string, profileId?: string) {
   const params = new URLSearchParams({
     tab: "overview",
@@ -566,39 +585,37 @@ export default async function AftercareDashboardPage({
                     </div>
                   ) : null}
                   {scopedReferrals.length ? (
-                    <div className="mt-4 grid gap-3">
+                    <div className="mt-4 grid gap-2">
                       {scopedReferrals.map((referral) => (
-                        <div key={referral.id} className="rounded-md border border-border bg-muted/40 p-3 text-sm">
-                          <div className="flex justify-between gap-3">
-                            <p className="font-semibold">{referral.caseManagerOrganization}</p>
+                        <div key={referral.id} className="rounded-md border border-border bg-muted/40 p-2.5 text-sm">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold">{referral.caseManagerOrganization}</p>
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                {referral.aftercareProfile.programName} · {formatReferralValue(referral.clientAgeRange)} · {formatReferralValue(referral.preferredStartWindow)}
+                              </p>
+                            </div>
                             <Badge tone={["accepted", "placed"].includes(referral.status) ? "success" : "warning"}>
                               {formatReferralValue(referral.status)}
                             </Badge>
                           </div>
-                          <p className="mt-1 text-muted-foreground">
-                            {referral.aftercareProfile.programName} · {formatReferralValue(referral.clientAgeRange)} · {formatReferralValue(referral.preferredStartWindow)}
-                          </p>
-                          <p className="mt-2 line-clamp-2 text-muted-foreground">
+                          <p className="mt-2 line-clamp-1 text-muted-foreground">
                             {referral.reasonForReferral}
                           </p>
-                          <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
-                            <span>{referral.caseManagerName} · {referral.caseManagerEmail} · {referral.caseManagerPhone}</span>
-                            <span>{formatReferralValue(referral.supportCategory)} · {formatReferralValue(referral.insuranceCategory)}</span>
-                          </div>
-                          <div className="mt-3 flex flex-wrap gap-2">
+                          <div className="mt-2 flex flex-wrap gap-2">
                             <Link
-                              className="focus-ring inline-flex min-h-9 items-center rounded-md border border-border bg-white px-3 text-xs font-semibold"
+                              className="focus-ring inline-flex min-h-8 items-center rounded-md border border-border bg-white px-2.5 text-xs font-semibold"
                               href={referralDetailHref(referral.id, selectedProfile?.id)}
                             >
                               View referral
                             </Link>
-                            {referralActionOptions(referral.status).length ? (
+                            {compactReferralActionOptions(referral.status).length ? (
                               <>
-                              {referralActionOptions(referral.status).map(([status, label]) => (
+                              {compactReferralActionOptions(referral.status).map(([status, label]) => (
                                 <form key={status} action={updateReferralStatus}>
                                   <input name="referralId" type="hidden" value={referral.id} />
                                   <button
-                                    className="focus-ring min-h-9 rounded-md border border-border bg-white px-3 text-xs font-semibold"
+                                    className="focus-ring min-h-8 rounded-md border border-border bg-white px-2.5 text-xs font-semibold"
                                     name="status"
                                     value={status}
                                   >

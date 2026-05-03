@@ -300,7 +300,6 @@ export default async function AftercareDashboardPage({
   ]);
 
   const selectedProfile = profiles.find((profile) => profile.id === query.profileId) ?? null;
-  const quickAvailabilityProfile = selectedProfile ?? profiles[0] ?? null;
   const scopedProfiles = selectedProfile ? [selectedProfile] : profiles;
   const scopedLeads = selectedProfile
     ? leads.filter((lead) => lead.profileId === selectedProfile.id)
@@ -513,6 +512,7 @@ export default async function AftercareDashboardPage({
                   </div>
                 </div>
 
+                {selectedProfile ? (
                 <div className="mt-5 border-t border-border pt-5">
                   <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-center">
                     <div>
@@ -521,9 +521,7 @@ export default async function AftercareDashboardPage({
                         <h2 className="font-semibold">Quick bed update</h2>
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {quickAvailabilityProfile
-                          ? `Updating ${quickAvailabilityProfile.programName}.`
-                          : "Create a home or program before updating availability."}
+                        Updating {selectedProfile.programName}.
                       </p>
                     </div>
                     <Badge tone={staleAvailabilityCount ? "warning" : "success"}>
@@ -532,26 +530,28 @@ export default async function AftercareDashboardPage({
                   </div>
                   <AftercareQuickAvailability
                     error={query.availabilityError}
-                    profile={
-                      quickAvailabilityProfile
-                        ? {
-                            id: quickAvailabilityProfile.id,
-                            programName: quickAvailabilityProfile.programName,
-                            type: quickAvailabilityProfile.type,
-                            bedsMen: quickAvailabilityProfile.bedsMen,
-                            bedsMenAvailable: quickAvailabilityProfile.bedsMenAvailable,
-                            bedsWomen: quickAvailabilityProfile.bedsWomen,
-                            bedsWomenAvailable: quickAvailabilityProfile.bedsWomenAvailable,
-                            bedsLgbtq: quickAvailabilityProfile.bedsLgbtq,
-                            bedsLgbtqAvailable: quickAvailabilityProfile.bedsLgbtqAvailable,
-                            acceptingNewPatients: quickAvailabilityProfile.acceptingNewPatients,
-                            availabilityNotes: quickAvailabilityProfile.availabilityNotes
-                          }
-                        : null
-                    }
+                    profile={{
+                      id: selectedProfile.id,
+                      programName: selectedProfile.programName,
+                      type: selectedProfile.type,
+                      bedsMen: selectedProfile.bedsMen,
+                      bedsMenAvailable: selectedProfile.bedsMenAvailable,
+                      bedsWomen: selectedProfile.bedsWomen,
+                      bedsWomenAvailable: selectedProfile.bedsWomenAvailable,
+                      bedsLgbtq: selectedProfile.bedsLgbtq,
+                      bedsLgbtqAvailable: selectedProfile.bedsLgbtqAvailable,
+                      acceptingNewPatients: selectedProfile.acceptingNewPatients,
+                      availabilityNotes: selectedProfile.availabilityNotes
+                    }}
                     updateAction={updateAftercareAvailability}
                   />
                 </div>
+                ) : (
+                  <div className="mt-5 rounded-md border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                    Select a specific home or program above to update availability. The all-homes view
+                    stays read-only so bed changes are not applied to the wrong listing.
+                  </div>
+                )}
               </Card>
 
               <Card>

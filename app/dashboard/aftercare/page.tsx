@@ -2,11 +2,8 @@ import Link from "next/link";
 import {
   BedDouble,
   Building2,
-  CalendarClock,
   CreditCard,
   Home,
-  Inbox,
-  MessageSquare,
   Pencil,
   Settings,
   ShieldCheck,
@@ -303,6 +300,7 @@ export default async function AftercareDashboardPage({
   ]);
 
   const selectedProfile = profiles.find((profile) => profile.id === query.profileId) ?? null;
+  const quickAvailabilityProfile = selectedProfile ?? profiles[0] ?? null;
   const scopedProfiles = selectedProfile ? [selectedProfile] : profiles;
   const scopedLeads = selectedProfile
     ? leads.filter((lead) => lead.profileId === selectedProfile.id)
@@ -330,13 +328,6 @@ export default async function AftercareDashboardPage({
 
     return Date.now() - lastUpdated.getTime() > 1000 * 60 * 60 * 24 * 7;
   }).length;
-
-  const metrics = [
-    { label: "Total beds", value: totalBeds.toString(), icon: BedDouble },
-    { label: "Beds available now", value: availableBeds.toString(), icon: CalendarClock },
-    { label: "Open referrals", value: openReferrals.length.toString(), icon: Inbox },
-    { label: "New public leads", value: newLeadCount.toString(), icon: MessageSquare }
-  ];
 
   return (
     <main className="shell py-8">
@@ -482,103 +473,103 @@ export default async function AftercareDashboardPage({
         <section className="min-w-0">
           {activeTab === "overview" ? (
             <div className="grid gap-5">
-              <div className="rounded-lg border border-border bg-white p-4 shadow-sm">
-                <AftercareOverviewSelector
-                  profiles={profiles.map((profile) => ({
-                    id: profile.id,
-                    programName: profile.programName
-                  }))}
-                  selectedProfileId={selectedProfile?.id}
-                />
-              </div>
+              <Card>
+                <div className="grid gap-5 xl:grid-cols-[320px_1fr]">
+                  <div>
+                    <h2 className="text-xl font-semibold">Today&apos;s workspace</h2>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      Pick a home, update availability, and handle new requests from the same place.
+                    </p>
+                    <div className="mt-4">
+                      <AftercareOverviewSelector
+                        profiles={profiles.map((profile) => ({
+                          id: profile.id,
+                          programName: profile.programName
+                        }))}
+                        selectedProfileId={selectedProfile?.id}
+                      />
+                    </div>
+                  </div>
 
-              <div className="grid gap-4 md:grid-cols-4">
-                {metrics.map((metric) => {
-                  const Icon = metric.icon;
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="rounded-md border border-border bg-muted/50 p-3">
+                      <p className="text-sm text-muted-foreground">Open requests</p>
+                      <p className="mt-1 text-2xl font-semibold">{openReferrals.length + newLeadCount}</p>
+                    </div>
+                    <div className="rounded-md border border-border bg-muted/50 p-3">
+                      <p className="text-sm text-muted-foreground">Open referrals</p>
+                      <p className="mt-1 text-2xl font-semibold">{openReferrals.length}</p>
+                    </div>
+                    <div className="rounded-md border border-border bg-muted/50 p-3">
+                      <p className="text-sm text-muted-foreground">Beds available</p>
+                      <p className="mt-1 text-2xl font-semibold">{availableBeds}</p>
+                    </div>
+                    <div className="rounded-md border border-border bg-muted/50 p-3">
+                      <p className="text-sm text-muted-foreground">Availability</p>
+                      <p className="mt-1 text-lg font-semibold">
+                        {staleAvailabilityCount ? `${staleAvailabilityCount} stale` : "Current"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-                  return (
-                    <Card key={metric.label} className="min-h-32">
-                      <Icon className="text-primary" size={22} />
-                      <p className="mt-3 text-sm text-muted-foreground">{metric.label}</p>
-                      <p className="mt-2 text-3xl font-semibold">{metric.value}</p>
-                    </Card>
-                  );
-                })}
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-[1.3fr_0.9fr]">
-                <Card>
-                  <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                <div className="mt-5 border-t border-border pt-5">
+                  <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-center">
                     <div>
-                      <h2 className="text-xl font-semibold">
-                        {selectedProfile ? `Insights for ${selectedProfile.programName}` : "High-level insights"}
-                      </h2>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        {selectedProfile
-                          ? "Review this profile's readiness, availability, leads, and open referral work."
-                          : "Keep homes referral-ready, availability fresh, and inbound lead/referral work visible from one place."}
+                      <div className="flex items-center gap-2">
+                        <BedDouble className="text-primary" size={20} />
+                        <h2 className="font-semibold">Quick bed update</h2>
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {quickAvailabilityProfile
+                          ? `Updating ${quickAvailabilityProfile.programName}.`
+                          : "Create a home or program before updating availability."}
                       </p>
                     </div>
                     <Badge tone={staleAvailabilityCount ? "warning" : "success"}>
-                      {staleAvailabilityCount ? `${staleAvailabilityCount} stale availability` : "Availability current"}
+                      {staleAvailabilityCount ? "Needs review" : "Availability current"}
                     </Badge>
                   </div>
-                  <div className="mt-5 grid gap-3 md:grid-cols-3">
-                    <div className="rounded-md border border-border bg-muted/50 p-3">
-                      <p className="text-sm text-muted-foreground">Profiles</p>
-                      <p className="mt-1 text-2xl font-semibold">{scopedProfiles.length}</p>
-                    </div>
-                    <div className="rounded-md border border-border bg-muted/50 p-3">
-                      <p className="text-sm text-muted-foreground">Pending documents</p>
-                      <p className="mt-1 text-2xl font-semibold">{scopedPendingDocumentCount}</p>
-                    </div>
-                    <div className="rounded-md border border-border bg-muted/50 p-3">
-                      <p className="text-sm text-muted-foreground">Self-reported listings</p>
-                      <p className="mt-1 text-2xl font-semibold">
-                        {scopedProfiles.filter((profile) => profile.verificationTier === 1).length}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
+                  <AftercareQuickAvailability
+                    error={query.availabilityError}
+                    profile={
+                      quickAvailabilityProfile
+                        ? {
+                            id: quickAvailabilityProfile.id,
+                            programName: quickAvailabilityProfile.programName,
+                            type: quickAvailabilityProfile.type,
+                            bedsMen: quickAvailabilityProfile.bedsMen,
+                            bedsMenAvailable: quickAvailabilityProfile.bedsMenAvailable,
+                            bedsWomen: quickAvailabilityProfile.bedsWomen,
+                            bedsWomenAvailable: quickAvailabilityProfile.bedsWomenAvailable,
+                            bedsLgbtq: quickAvailabilityProfile.bedsLgbtq,
+                            bedsLgbtqAvailable: quickAvailabilityProfile.bedsLgbtqAvailable,
+                            acceptingNewPatients: quickAvailabilityProfile.acceptingNewPatients,
+                            availabilityNotes: quickAvailabilityProfile.availabilityNotes
+                          }
+                        : null
+                    }
+                    updateAction={updateAftercareAvailability}
+                  />
+                </div>
+              </Card>
 
-                <Card>
-                  <BedDouble className="text-primary" size={24} />
-                  <h2 className="mt-3 font-semibold">Quick availability</h2>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Update live bed counts or patient availability without opening each profile.
-                  </p>
-                  <div className="mt-4">
-                    <AftercareQuickAvailability
-                      error={query.availabilityError}
-                      profile={
-                        selectedProfile
-                          ? {
-                              id: selectedProfile.id,
-                              programName: selectedProfile.programName,
-                              type: selectedProfile.type,
-                              bedsMen: selectedProfile.bedsMen,
-                              bedsMenAvailable: selectedProfile.bedsMenAvailable,
-                              bedsWomen: selectedProfile.bedsWomen,
-                              bedsWomenAvailable: selectedProfile.bedsWomenAvailable,
-                              bedsLgbtq: selectedProfile.bedsLgbtq,
-                              bedsLgbtqAvailable: selectedProfile.bedsLgbtqAvailable,
-                              acceptingNewPatients: selectedProfile.acceptingNewPatients,
-                              availabilityNotes: selectedProfile.availabilityNotes
-                            }
-                          : null
-                      }
-                      updateAction={updateAftercareAvailability}
-                    />
+              <Card>
+                <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+                  <div>
+                    <h2 className="text-xl font-semibold">New requests</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Referrals and public leads that need review.
+                    </p>
                   </div>
-                </Card>
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-2">
-                <Card>
-                  <div className="flex items-center justify-between gap-3">
-                    <h2 className="font-semibold">Recent referrals</h2>
-                    <Badge>{openReferrals.length} open</Badge>
-                  </div>
+                  <Badge>{openReferrals.length + newLeadCount} open</Badge>
+                </div>
+                <div className="mt-5 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+                  <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="font-semibold">Referrals</h3>
+                      <Badge>{openReferrals.length} open</Badge>
+                    </div>
                   {query.referralError ? (
                     <div className="mt-3 rounded-md border border-accent/30 bg-accent/10 p-3 text-sm">
                       {query.referralError}
@@ -634,34 +625,125 @@ export default async function AftercareDashboardPage({
                       New referrals will appear here with status actions in the next dashboard phase.
                     </p>
                   )}
-                </Card>
-
-                <Card>
-                  <div className="flex items-center justify-between gap-3">
-                    <h2 className="font-semibold">Recent public leads</h2>
-                    <Badge>{scopedLeads.length} recent</Badge>
                   </div>
-                  {scopedLeads.length ? (
-                    <div className="mt-4 grid gap-3">
-                      {scopedLeads.map((lead) => (
-                        <div key={lead.id} className="rounded-md border border-border bg-muted/40 p-3 text-sm">
-                          <div className="flex justify-between gap-3">
-                            <p className="font-semibold">{lead.name}</p>
-                            <Badge tone={lead.status === "new" ? "warning" : "neutral"}>{lead.status}</Badge>
-                          </div>
-                          <p className="mt-1 text-muted-foreground">
-                            {lead.profile.programName} · {lead.email}
-                          </p>
-                        </div>
-                      ))}
+
+                  <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="font-semibold">Public leads</h3>
+                      <Badge>{scopedLeads.length} recent</Badge>
                     </div>
-                  ) : (
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      Public profile contact forms will create internal lead records here.
+                    {scopedLeads.length ? (
+                      <div className="mt-4 grid gap-2">
+                        {scopedLeads.map((lead) => (
+                          <div key={lead.id} className="rounded-md border border-border bg-muted/40 p-2.5 text-sm">
+                            <div className="flex justify-between gap-3">
+                              <p className="truncate font-semibold">{lead.name}</p>
+                              <Badge tone={lead.status === "new" ? "warning" : "neutral"}>{lead.status}</Badge>
+                            </div>
+                            <p className="mt-1 truncate text-xs text-muted-foreground">
+                              {lead.profile.programName} · {lead.email}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        Public profile contact forms will create internal lead records here.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </Card>
+
+              <Card>
+                <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+                  <div>
+                    <h2 className="text-xl font-semibold">Availability snapshot</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Scan all homes and spot stale bed counts quickly.
                     </p>
-                  )}
-                </Card>
-              </div>
+                  </div>
+                  <Badge>{availableBeds} of {totalBeds} beds available</Badge>
+                </div>
+                {scopedProfiles.length ? (
+                  <div className="mt-5 grid gap-3">
+                    {scopedProfiles.map((profile) => {
+                      const visiblePopulationBeds = getVisiblePopulationBeds(profile);
+                      const lastUpdated =
+                        profile.type === "sober_living"
+                          ? profile.bedsAvailableUpdatedAt
+                          : profile.acceptingNewPatientsUpdatedAt;
+
+                      return (
+                        <div key={profile.id} className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-[1fr_1.4fr_auto] md:items-center">
+                          <div>
+                            <p className="font-semibold">{profile.programName}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">{availabilityLabel(profile)}</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-xs">
+                            {profile.type === "sober_living" && visiblePopulationBeds.length ? (
+                              visiblePopulationBeds.map((bed) => (
+                                <span key={bed.label} className="rounded-md border border-border bg-muted/50 px-2 py-1">
+                                  {bed.label}: {bed.available}/{bed.total}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="rounded-md border border-border bg-muted/50 px-2 py-1">
+                                {profile.type === "continued_care"
+                                  ? availabilityLabel(profile)
+                                  : "Population beds not set"}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                            <span className="text-xs text-muted-foreground">{formatDate(lastUpdated)}</span>
+                            <Link
+                              className="focus-ring inline-flex min-h-8 items-center rounded-md border border-border bg-white px-2.5 text-xs font-semibold"
+                              href={`/dashboard/aftercare?tab=overview&profileId=${profile.id}`}
+                            >
+                              Update
+                            </Link>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="mt-4 rounded-md border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                    No homes or programs have been created yet.
+                  </p>
+                )}
+              </Card>
+
+              <Card>
+                <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+                  <div>
+                    <h2 className="text-xl font-semibold">Profile readiness</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Items that can affect visibility, trust, or referral conversion.
+                    </p>
+                  </div>
+                  <Badge tone={scopedPendingDocumentCount || staleAvailabilityCount ? "warning" : "success"}>
+                    {scopedPendingDocumentCount || staleAvailabilityCount ? "Needs attention" : "Ready"}
+                  </Badge>
+                </div>
+                <div className="mt-5 grid gap-3 md:grid-cols-3">
+                  <div className="rounded-md border border-border bg-muted/50 p-3">
+                    <p className="text-sm text-muted-foreground">Profiles shown</p>
+                    <p className="mt-1 text-2xl font-semibold">{scopedProfiles.length}</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-muted/50 p-3">
+                    <p className="text-sm text-muted-foreground">Pending documents</p>
+                    <p className="mt-1 text-2xl font-semibold">{scopedPendingDocumentCount}</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-muted/50 p-3">
+                    <p className="text-sm text-muted-foreground">Self-reported listings</p>
+                    <p className="mt-1 text-2xl font-semibold">
+                      {scopedProfiles.filter((profile) => profile.verificationTier === 1).length}
+                    </p>
+                  </div>
+                </div>
+              </Card>
             </div>
           ) : null}
 

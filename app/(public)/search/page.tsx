@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { Prisma, ProfileType } from "@prisma/client";
 import { MapPin } from "lucide-react";
+import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -303,6 +304,8 @@ export default async function SearchPage({
       verificationTier: true,
       publicCity: true,
       publicState: true,
+      latitude: true,
+      longitude: true,
       description: true,
       totalBeds: true,
       bedsAvailable: true,
@@ -352,7 +355,7 @@ export default async function SearchPage({
           ) : null}
         </div>
 
-      <div className="grid gap-5 py-6">
+      <div className="grid gap-5 py-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
         <div className="grid gap-4">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-semibold">{profiles.length} listings</p>
@@ -406,6 +409,19 @@ export default async function SearchPage({
             </Card>
           )}
         </div>
+        <ApproximateLocationMap
+          listings={profiles.map((profile) => ({
+            id: profile.id,
+            slug: profile.slug,
+            programName: profile.programName,
+            type: profile.type,
+            publicCity: profile.publicCity,
+            publicState: profile.publicState,
+            latitude: profile.latitude ? Number(profile.latitude) : null,
+            longitude: profile.longitude ? Number(profile.longitude) : null,
+            isAvailable: Boolean(profile.bedsAvailable || profile.acceptingNewPatients)
+          }))}
+        />
       </div>
       </main>
     </>

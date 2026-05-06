@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma, ProfileType } from "@prisma/client";
-import { MapPin } from "lucide-react";
+import { Heart, MapPin } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { Badge } from "@/components/ui/badge";
@@ -80,6 +81,22 @@ function availabilityText(profile: {
 
 function typeLabel(type: string) {
   return type === "sober_living" ? "Sober Living" : "Continued Care";
+}
+
+function compactItems(values: Array<string | null | undefined>, limit: number) {
+  const items = Array.from(new Set(values.filter((value): value is string => Boolean(value))));
+  const visible = items.slice(0, limit);
+  const hiddenCount = Math.max(items.length - visible.length, 0);
+
+  return { visible, hiddenCount };
+}
+
+function formatPricePerWeek(value: number | null) {
+  if (!value) {
+    return "Price not listed";
+  }
+
+  return `$${value}/week`;
 }
 
 function valuesFromQuery(value: string | string[] | undefined) {
@@ -314,10 +331,14 @@ export default async function SearchPage({
       specialtyPopulations: true,
       averageLengthOfStay: true,
       pricePerWeek: true,
+      programTypes: true,
+      levelsOfCare: true,
       amenities: true,
       certificationsHeld: true,
       supportServices: true,
-      insuranceAccepted: true
+      insuranceAccepted: true,
+      matAccepted: true,
+      roomTypes: true
     }
   });
 
@@ -362,44 +383,111 @@ export default async function SearchPage({
             <p className="text-xs text-muted-foreground">Reviews and rating sort are intentionally excluded from v1.</p>
           </div>
           {profiles.length ? (
-            profiles.map((profile) => (
-              <Card key={profile.id}>
-                <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge tone={profile.verificationTier > 1 ? "verified" : "neutral"}>
-                        {profile.verificationTier > 1 ? "Verified" : "Self-reported"}
-                      </Badge>
-                      <Badge>{typeLabel(profile.type)}</Badge>
-                      <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
-                        {availabilityText(profile)}
-                      </Badge>
-                    </div>
-                    <h2 className="mt-3 text-xl font-semibold">{profile.programName}</h2>
-                    <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin size={16} />
-                      {[profile.publicCity, profile.publicState].filter(Boolean).join(", ") || "Location not listed"}
-                    </p>
-                    <p className="mt-3 line-clamp-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                      {richTextToPlainText(profile.description) || "No description added yet."}
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {profile.populationServedOptions.slice(0, 3).map((item) => (
-                        <Badge key={item}>{item}</Badge>
-                      ))}
-                      {profile.certificationsHeld.slice(0, 2).map((item) => (
-                        <Badge key={item} tone="verified">{item}</Badge>
-                      ))}
+            profiles.map((profile, index) => {
+              const offerings = compactItems(
+                [
+                  typeLabel(profile.type),
+                  ...profile.programTypes,
+                  ...profile.levelsOfCare,
+                  ...profile.populationServedOptions,
+                  ...profile.specialtyPopulations,
+                  ...profile.matAccepted,
+                  ...profile.insuranceAccepted,
+                  ...profile.certificationsHeld
+                ],
+                5
+              );
+              const amenitySummary = compactItems(
+                [
+                  ...profile.amenities,
+                  ...profile.supportServices,
+                  ...profile.roomTypes.map((roomType) => `${roomType} rooms`)
+                ],
+                3
+              );
+
+              return (
+                <Card key={profile.id} className="overflow-hidden p-0">
+                  <div className="grid gap-0 md:grid-cols-[240px_1fr]">
+                    <Link
+                      className="focus-ring relative min-h-48 bg-muted md:min-h-full"
+                      href={`/profiles/${profile.slug}`}
+                    >
+                      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(20,184,166,0.18),rgba(30,64,175,0.12)),linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:100%_100%,34px_34px,34px_34px]" />
+                      <div className="absolute left-4 top-4 rounded-full bg-white/90 px-2 py-1 text-xs font-semibold">
+                        {index + 1}
+                      </div>
+                    </Link>
+
+                    <div className="grid gap-4 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="text-xl font-semibold">{profile.programName}</h2>
+                            <Badge tone={profile.verificationTier > 1 ? "verified" : "neutral"}>
+                              {profile.verificationTier > 1 ? "Verified" : "Self-reported"}
+                            </Badge>
+                          </div>
+                          <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin size={16} />
+                            {[profile.publicCity, profile.publicState].filter(Boolean).join(", ") || "Location not listed"}
+                          </p>
+                        </div>
+                        <button
+                          aria-label="Save listing"
+                          className="focus-ring flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-white"
+                          type="button"
+                        >
+                          <Heart size={20} />
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {offerings.visible.map((item) => (
+                          <Badge key={item}>{item}</Badge>
+                        ))}
+                        {offerings.hiddenCount ? <Badge>+{offerings.hiddenCount} more</Badge> : null}
+                      </div>
+
+                      <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+                        {richTextToPlainText(profile.description) || "No description added yet."}
+                      </p>
+
+                      <div className="flex flex-col justify-between gap-4 border-t border-border pt-3 md:flex-row md:items-end">
+                        <div>
+                          <p className="text-xs font-semibold uppercase text-muted-foreground">Amenities</p>
+                          {amenitySummary.visible.length ? (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {amenitySummary.visible.map((item) => (
+                                <span key={item} className="inline-flex items-center gap-1 text-sm">
+                                  <span className="size-2 rounded-full border border-foreground" />
+                                  {item}
+                                </span>
+                              ))}
+                              {amenitySummary.hiddenCount ? (
+                                <span className="text-sm text-muted-foreground">+{amenitySummary.hiddenCount} more</span>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-sm text-muted-foreground">Amenities not listed</p>
+                          )}
+                        </div>
+
+                        <div className="grid gap-2 md:justify-items-end">
+                          <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
+                            {availabilityText(profile)}
+                          </Badge>
+                          <p className="text-sm font-semibold">{formatPricePerWeek(profile.pricePerWeek)}</p>
+                          <ButtonLink href={`/profiles/${profile.slug}`} variant="secondary">
+                            View profile
+                          </ButtonLink>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-3 md:items-end">
-                    <ButtonLink href={`/profiles/${profile.slug}`} variant="secondary">
-                      View profile
-                    </ButtonLink>
-                  </div>
-                </div>
-              </Card>
-            ))
+                </Card>
+              );
+            })
           ) : (
             <Card>
               <h2 className="text-xl font-semibold">No matching listings yet</h2>

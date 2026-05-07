@@ -57,10 +57,70 @@ export async function getCurrentAppUser() {
     return null;
   }
 
-  return prisma.user.findUnique({
+  const appUser = await prisma.user.findUnique({
     where: { clerkUserId },
     include: { organization: true }
   });
+
+  if (appUser?.orgId) {
+    return appUser;
+  }
+
+  const identity = await getRequiredClerkIdentity();
+  const invitedReferentOrg = await prisma.referentOrganization.findFirst({
+    where: {
+      invitedTeamEmails: { has: identity.email.toLowerCase() },
+      onboardingCompletedAt: { not: null }
+    },
+    select: {
+      orgId: true,
+      invitedTeamEmails: true
+    }
+  });
+
+  if (!invitedReferentOrg) {
+    return appUser;
+  }
+
+  const user = appUser
+    ? await prisma.user.update({
+        where: { id: appUser.id },
+        data: {
+          clerkUserId: identity.clerkUserId,
+          email: identity.email,
+          firstName: identity.firstName,
+          lastName: identity.lastName,
+          role: Role.referent_manager,
+          orgId: invitedReferentOrg.orgId,
+          emailVerified: identity.emailVerified,
+          emailVerifiedAt: identity.emailVerified ? new Date() : null
+        },
+        include: { organization: true }
+      })
+    : await prisma.user.create({
+        data: {
+          clerkUserId: identity.clerkUserId,
+          email: identity.email,
+          firstName: identity.firstName,
+          lastName: identity.lastName,
+          role: Role.referent_manager,
+          orgId: invitedReferentOrg.orgId,
+          emailVerified: identity.emailVerified,
+          emailVerifiedAt: identity.emailVerified ? new Date() : null
+        },
+        include: { organization: true }
+      });
+
+  await prisma.referentOrganization.update({
+    where: { orgId: invitedReferentOrg.orgId },
+    data: {
+      invitedTeamEmails: invitedReferentOrg.invitedTeamEmails.filter(
+        (email) => email.toLowerCase() !== identity.email.toLowerCase()
+      )
+    }
+  });
+
+  return user;
 }
 
 export async function requireCurrentAppUser() {

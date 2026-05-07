@@ -77,6 +77,8 @@ model User {
   id              String        @id @default(cuid())
   clerkUserId     String        @unique
   email           String        @unique
+  phone           String?
+  smsOptIn        Boolean       @default(false)
   firstName       String?
   lastName        String?
   role            Role
@@ -98,6 +100,7 @@ model User {
   onboardingDraft OnboardingDraft?
   sentOrganizationInvites OrganizationInvite[] @relation("OrganizationInviteSender")
   acceptedOrganizationInvites OrganizationInvite[] @relation("OrganizationInviteAcceptedUser")
+  availabilitySmsChecks AvailabilitySmsCheck[]
 
   @@index([orgId])
 }
@@ -270,6 +273,7 @@ model AftercareProfile {
   leads          Lead[]
   flags          Flag[]
   favorites      Favorite[]
+  availabilitySmsChecks AvailabilitySmsCheck[]
 
   @@index([orgId])
   @@index([type, status])
@@ -291,6 +295,29 @@ model Favorite {
   @@index([userId])
   @@index([orgId, createdAt])
   @@index([profileId])
+}
+
+model AvailabilitySmsCheck {
+  id            String           @id @default(cuid())
+  token         String           @unique
+  orgId         String
+  profileId     String
+  profile       AftercareProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone         String
+  status        String           @default("pending")
+  outboundBody  String
+  inboundBody   String?
+  errorMessage  String?
+  sentAt        DateTime?
+  respondedAt   DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([phone, status, createdAt])
+  @@index([profileId, status])
+  @@index([orgId, status])
 }
 
 model VerificationDocument {

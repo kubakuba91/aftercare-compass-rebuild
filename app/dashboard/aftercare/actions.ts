@@ -4,10 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ProfileType, ReferralStatus, Role } from "@prisma/client";
 import { z } from "zod";
+import { availabilityReplyExample } from "@/lib/availability-sms";
 import { aftercarePlans } from "@/lib/plans";
+import { normalizePhoneNumber } from "@/lib/phone";
 import { canTransitionReferral, referralStatuses } from "@/lib/product-rules";
 import { prisma } from "@/lib/prisma";
 import { getAftercareDashboardUser } from "@/lib/protected-routing";
+import { sendSms } from "@/lib/sms";
 
 function numberFromForm(value: FormDataEntryValue | null) {
   if (value === null || value === "") {
@@ -45,6 +48,16 @@ function managersHref(message?: string, invite = false) {
   return `/dashboard/aftercare?${params.toString()}`;
 }
 
+function smsHref(profileId: string, message: string) {
+  const params = new URLSearchParams({
+    tab: "overview",
+    profileId,
+    availabilityError: message
+  });
+
+  return `/dashboard/aftercare?${params.toString()}`;
+}
+
 function aftercareManagerLimit(planKey: string | null | undefined) {
   const plan = planKey && planKey in aftercarePlans
     ? aftercarePlans[planKey as keyof typeof aftercarePlans]
@@ -65,6 +78,10 @@ function emailsFromText(value: string) {
 }
 
 const emailListSchema = z.array(z.string().email()).min(1);
+
+function smsToken() {
+  return `AC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+}
 
 export async function updateAftercareAvailability(formData: FormData) {
   const appUser = await getAftercareDashboardUser("/dashboard/aftercare");
@@ -275,6 +292,131 @@ export async function removeAftercareManagerInvite(formData: FormData) {
 
   revalidatePath("/dashboard/aftercare");
   redirect(managersHref("Pending invite removed."));
+}
+
+export async function updateManagerSmsSettings(formData: FormData) {
+  const appUser = await getAftercareDashboardUser("/dashboard/aftercare?tab=managers");
+  const managerId = String(formData.get("managerId") || "");
+  const phone = normalizePhoneNumber(String(formData.get("phone") || ""));
+  const smsOptIn = formData.get("smsOptIn") === "yes";
+
+  if (appUser.role !== Role.aftercare_admin && appUser.id !== managerId) {
+    redirect(managersHref("Only admins can update manager SMS settings."));
+  }
+
+  if (smsOptIn && !phone) {
+    redirect(managersHref("Enter a valid phone number before enabling SMS."));
+  }
+
+  await prisma.user.updateMany({
+    where: {
+      id: managerId,
+      orgId: appUser.orgId
+    },
+    data: {
+      phone: phone || null,
+      smsOptIn: Boolean(phone && smsOptIn)
+    }
+  });
+
+  revalidatePath("/dashboard/aftercare");
+  redirect(managersHref("SMS settings updated."));
+}
+
+export async function sendBedAvailabilityTextCheck(formData: FormData) {
+  const appUser = await getAftercareDashboardUser("/dashboard/aftercare");
+  const profileId = String(formData.get("profileId") || "");
+  const managerId = String(formData.get("managerId") || "");
+
+  const [profile, manager] = await Promise.all([
+    prisma.aftercareProfile.findFirst({
+      where: {
+        id: profileId,
+        orgId: appUser.orgId,
+        type: ProfileType.sober_living
+      },
+      select: {
+        id: true,
+        orgId: true,
+        programName: true,
+        bedsMen: true,
+        bedsWomen: true,
+        bedsLgbtq: true,
+        bedsMenAvailable: true,
+        bedsWomenAvailable: true,
+        bedsLgbtqAvailable: true
+      }
+    }),
+    prisma.user.findFirst({
+      where: {
+        id: managerId,
+        orgId: appUser.orgId,
+        isActive: true,
+        smsOptIn: true,
+        phone: { not: null }
+      },
+      select: {
+        id: true,
+        phone: true
+      }
+    })
+  ]);
+
+  if (!profile) {
+    redirect("/dashboard/aftercare?tab=overview");
+  }
+
+  if (!manager?.phone) {
+    redirect(smsHref(profile.id, "Choose a manager with SMS enabled first."));
+  }
+
+  const token = smsToken();
+  const body =
+    `Aftercare Compass bed check for ${profile.programName}. ` +
+    `Current: MEN ${profile.bedsMenAvailable ?? 0}/${profile.bedsMen ?? 0}, ` +
+    `WOMEN ${profile.bedsWomenAvailable ?? 0}/${profile.bedsWomen ?? 0}, ` +
+    `LGBTQ ${profile.bedsLgbtqAvailable ?? 0}/${profile.bedsLgbtq ?? 0}. ` +
+    `Reply: ${token} MEN # WOMEN # LGBTQ #. Or NO CHANGE.`;
+
+  const check = await prisma.availabilitySmsCheck.create({
+    data: {
+      token,
+      orgId: appUser.orgId,
+      profileId: profile.id,
+      userId: manager.id,
+      phone: manager.phone,
+      outboundBody: body
+    }
+  });
+
+  try {
+    await sendSms({ to: manager.phone, body });
+    await prisma.availabilitySmsCheck.update({
+      where: { id: check.id },
+      data: {
+        status: "sent",
+        sentAt: new Date()
+      }
+    });
+  } catch (error) {
+    await prisma.availabilitySmsCheck.update({
+      where: { id: check.id },
+      data: {
+        status: "failed",
+        errorMessage: error instanceof Error ? error.message : "SMS send failed"
+      }
+    });
+
+    redirect(
+      smsHref(
+        profile.id,
+        `SMS could not be sent. Check Twilio env vars. ${availabilityReplyExample()}`
+      )
+    );
+  }
+
+  revalidatePath("/dashboard/aftercare");
+  redirect(smsHref(profile.id, "Bed check text sent."));
 }
 
 export async function updateReferralStatus(formData: FormData) {

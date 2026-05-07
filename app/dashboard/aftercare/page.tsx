@@ -18,6 +18,7 @@ import { AftercareQuickAvailability } from "@/components/dashboard/aftercare-qui
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
+import { formatPhoneForDisplay } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 import {
   getAftercareDashboardUser,
@@ -27,7 +28,9 @@ import { cn } from "@/lib/utils";
 import {
   inviteAftercareManagers,
   removeAftercareManagerInvite,
+  sendBedAvailabilityTextCheck,
   updateAftercareAvailability,
+  updateManagerSmsSettings,
   updateReferralStatus,
   updateUserDisplayName
 } from "./actions";
@@ -305,6 +308,8 @@ export default async function AftercareDashboardPage({
         email: true,
         role: true,
         isActive: true,
+        phone: true,
+        smsOptIn: true,
         updatedAt: true
       }
     }),
@@ -351,6 +356,7 @@ export default async function AftercareDashboardPage({
 
     return Date.now() - lastUpdated.getTime() > 1000 * 60 * 60 * 24 * 7;
   }).length;
+  const smsEnabledManagers = managers.filter((manager) => manager.isActive && manager.smsOptIn && manager.phone);
 
   return (
     <main className="shell py-8">
@@ -569,6 +575,43 @@ export default async function AftercareDashboardPage({
                     }}
                     updateAction={updateAftercareAvailability}
                   />
+                  {selectedProfile.type === "sober_living" ? (
+                    <form action={sendBedAvailabilityTextCheck} className="mt-4 grid gap-3 rounded-md border border-border bg-muted/40 p-4">
+                      <input name="profileId" type="hidden" value={selectedProfile.id} />
+                      <div>
+                        <h3 className="font-semibold">Text a bed check</h3>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                          Send a quick SMS to a manager. Their reply can update this home&apos;s available beds.
+                        </p>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+                        <select
+                          className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                          disabled={!smsEnabledManagers.length}
+                          name="managerId"
+                          required
+                        >
+                          <option value="">Select SMS-enabled manager</option>
+                          {smsEnabledManagers.map((manager) => (
+                            <option key={manager.id} value={manager.id}>
+                              {[manager.firstName, manager.lastName].filter(Boolean).join(" ") || manager.email} · {formatPhoneForDisplay(manager.phone)}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                          disabled={!smsEnabledManagers.length}
+                        >
+                          Send bed check text
+                        </button>
+                      </div>
+                      {!smsEnabledManagers.length ? (
+                        <p className="text-xs leading-5 text-muted-foreground">
+                          Add a manager phone number and enable SMS in the Managers tab first.
+                        </p>
+                      ) : null}
+                    </form>
+                  ) : null}
                 </div>
                 ) : (
                   <div className="mt-5 rounded-md border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
@@ -925,7 +968,39 @@ export default async function AftercareDashboardPage({
                       <Badge tone={manager.isActive ? "success" : "warning"}>
                         {manager.isActive ? "Active" : "Inactive"}
                       </Badge>
+                      <Badge tone={manager.smsOptIn && manager.phone ? "success" : "neutral"}>
+                        {manager.smsOptIn && manager.phone ? "SMS enabled" : "SMS off"}
+                      </Badge>
                     </div>
+                    <form action={updateManagerSmsSettings} className="grid gap-3 rounded-md border border-border bg-muted/40 p-3 md:col-span-2">
+                      <input name="managerId" type="hidden" value={manager.id} />
+                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
+                        <label className="grid gap-2 text-sm font-medium">
+                          SMS phone
+                          <input
+                            className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                            defaultValue={manager.phone ?? ""}
+                            name="phone"
+                            placeholder="(555) 555-5555"
+                          />
+                        </label>
+                        <label className="flex min-h-10 items-center gap-2 text-sm font-medium">
+                          <input
+                            defaultChecked={manager.smsOptIn}
+                            name="smsOptIn"
+                            type="checkbox"
+                            value="yes"
+                          />
+                          Allow bed check texts
+                        </label>
+                        <button className="focus-ring min-h-10 rounded-md border border-border bg-white px-3 text-sm font-semibold">
+                          Save SMS
+                        </button>
+                      </div>
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        Phone is only used for operational bed availability checks.
+                      </p>
+                    </form>
                   </div>
                 ))}
                 {pendingManagerInvites.map((invite) => (

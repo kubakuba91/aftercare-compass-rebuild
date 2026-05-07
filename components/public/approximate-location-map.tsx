@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
+import { approximatePublicPoint } from "@/lib/public-location";
 
 type ApproximateMapListing = {
   id: string;
@@ -67,77 +68,9 @@ declare global {
   }
 }
 
-const cityCenters: Record<string, [number, number]> = {
-  "harrisburg,pa": [40.2732, -76.8867],
-  "lancaster,pa": [40.0379, -76.3055],
-  "philadelphia,pa": [39.9526, -75.1652],
-  "pittsburgh,pa": [40.4406, -79.9959],
-  "allentown,pa": [40.6023, -75.4714],
-  "reading,pa": [40.3356, -75.9269],
-  "york,pa": [39.9626, -76.7277],
-  "honey brook,pa": [40.0943, -75.9119],
-  "west chester,pa": [39.9607, -75.6055],
-  "king of prussia,pa": [40.1013, -75.3836]
-};
-
-const stateCenters: Record<string, [number, number]> = {
-  PA: [40.8781, -77.7996],
-  NJ: [40.0583, -74.4057],
-  NY: [42.9538, -75.5268],
-  DE: [38.9108, -75.5277],
-  MD: [39.0458, -76.6413],
-  VA: [37.4316, -78.6569],
-  OH: [40.4173, -82.9071],
-  WV: [38.5976, -80.4549],
-  CT: [41.6032, -73.0877],
-  MA: [42.4072, -71.3824],
-  DC: [38.9072, -77.0369]
-};
-
-function hashNumber(value: string) {
-  let hash = 0;
-
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 31 + value.charCodeAt(index)) % 100000;
-  }
-
-  return hash / 100000;
-}
-
-function offsetCoordinate([lat, lng]: [number, number], seed: string, scale: number) {
-  const latOffset = (hashNumber(`${seed}:lat`) - 0.5) * scale;
-  const lngOffset = (hashNumber(`${seed}:lng`) - 0.5) * scale;
-
-  return [lat + latOffset, lng + lngOffset] as const;
-}
-
 function approximatePoint(listing: ApproximateMapListing): MapPinPoint | null {
-  if (listing.latitude !== null && listing.longitude !== null) {
-    const rounded: [number, number] = [
-      Math.round(listing.latitude * 100) / 100,
-      Math.round(listing.longitude * 100) / 100
-    ];
-    const [lat, lng] = offsetCoordinate(rounded, listing.id, 0.02);
-
-    return { ...listing, lat, lng };
-  }
-
-  const cityKey = `${listing.publicCity},${listing.publicState}`.toLowerCase();
-  const cityCenter = cityCenters[cityKey];
-
-  if (cityCenter) {
-    const [lat, lng] = offsetCoordinate(cityCenter, listing.id, 0.04);
-    return { ...listing, lat, lng };
-  }
-
-  const stateCenter = stateCenters[listing.publicState.toUpperCase()];
-
-  if (stateCenter) {
-    const [lat, lng] = offsetCoordinate(stateCenter, `${listing.publicCity}:${listing.id}`, 0.9);
-    return { ...listing, lat, lng };
-  }
-
-  return null;
+  const point = approximatePublicPoint(listing);
+  return point ? { ...listing, lat: point.lat, lng: point.lng } : null;
 }
 
 export function ApproximateLocationMap({

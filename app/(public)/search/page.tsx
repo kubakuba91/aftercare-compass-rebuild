@@ -8,6 +8,7 @@ import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
+import { approximatePublicPoint, milesBetween, searchCenterFromQuery } from "@/lib/public-location";
 import { richTextToPlainText } from "@/lib/rich-text";
 import { amenityOptions, matOptions, populationOptions, specialtyPopulationOptions } from "@/lib/sober-living-onboarding";
 import { cn } from "@/lib/utils";
@@ -203,6 +204,7 @@ export default async function SearchPage({
     specialty?: string | string[];
     minPrice?: string | string[];
     maxPrice?: string | string[];
+    radius?: string | string[];
     duration?: string | string[];
     amenity?: string | string[];
     mat?: string | string[];
@@ -241,6 +243,7 @@ export default async function SearchPage({
   );
   const minPrice = numberFromQuery(query.minPrice);
   const maxPrice = numberFromQuery(query.maxPrice);
+  const radiusMiles = numberFromQuery(query.radius);
   const duration = firstFromQuery(query.duration) || "";
   const amenities = valuesFromQuery(query.amenity).filter((value) =>
     amenityOptions.includes(value as never)
@@ -346,10 +349,10 @@ export default async function SearchPage({
     AND: andFilters
   };
 
-  const profiles = await prisma.aftercareProfile.findMany({
+  const rawProfiles = await prisma.aftercareProfile.findMany({
     where,
     orderBy: [{ verificationTier: "desc" }, { updatedAt: "desc" }],
-    take: 50,
+    take: radiusMiles ? 200 : 50,
     select: {
       id: true,
       slug: true,
@@ -378,6 +381,28 @@ export default async function SearchPage({
       roomTypes: true
     }
   });
+  const radiusCenter = radiusMiles ? searchCenterFromQuery(q) : null;
+  const profiles = radiusMiles && radiusCenter
+    ? rawProfiles
+        .map((profile) => {
+          const point = approximatePublicPoint({
+            id: profile.id,
+            publicCity: profile.publicCity,
+            publicState: profile.publicState,
+            latitude: profile.latitude ? Number(profile.latitude) : null,
+            longitude: profile.longitude ? Number(profile.longitude) : null
+          });
+
+          return {
+            distanceMiles: point ? milesBetween(radiusCenter, point) : Number.POSITIVE_INFINITY,
+            profile
+          };
+        })
+        .filter((item) => item.distanceMiles <= radiusMiles)
+        .sort((first, second) => first.distanceMiles - second.distanceMiles)
+        .slice(0, 50)
+        .map((item) => item.profile)
+    : rawProfiles;
 
   return (
     <>
@@ -394,6 +419,7 @@ export default async function SearchPage({
         maxPrice={maxPrice}
         minPrice={minPrice}
         population={population}
+        radiusMiles={radiusMiles}
         showFilters={showFilters}
         specialty={specialty}
         verified={verified}

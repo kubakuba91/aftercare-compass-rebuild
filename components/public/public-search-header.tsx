@@ -21,6 +21,7 @@ type PublicSearchHeaderProps = {
   specialty?: string[];
   minPrice?: number;
   maxPrice?: number;
+  radiusMiles?: number;
   duration?: string;
   amenities?: string[];
   mat?: string[];
@@ -39,6 +40,7 @@ export function PublicSearchHeader({
   specialty = [],
   minPrice,
   maxPrice,
+  radiusMiles,
   duration = "",
   amenities = [],
   mat = [],
@@ -48,6 +50,7 @@ export function PublicSearchHeader({
     population.length,
     specialty.length,
     minPrice !== undefined || maxPrice !== undefined ? 1 : 0,
+    radiusMiles !== undefined ? 1 : 0,
     duration ? 1 : 0,
     amenities.length,
     mat.length,
@@ -160,6 +163,24 @@ export function PublicSearchHeader({
                   />
                 </div>
               </div>
+              <label className="grid gap-2 text-sm font-medium">
+                Distance from search location
+                <select
+                  className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm"
+                  defaultValue={radiusMiles ?? ""}
+                  name="radius"
+                >
+                  <option value="">Any distance</option>
+                  <option value="5">Within 5 miles</option>
+                  <option value="10">Within 10 miles</option>
+                  <option value="25">Within 25 miles</option>
+                  <option value="50">Within 50 miles</option>
+                  <option value="100">Within 100 miles</option>
+                </select>
+                <span className="text-xs leading-5 text-muted-foreground">
+                  Uses public city-level locations. Enter a city and state for best results.
+                </span>
+              </label>
               <label className="grid gap-2 text-sm font-medium">
                 Average Program Duration
                 <select className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm" defaultValue={duration} name="duration">

@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { richTextToPlainText } from "@/lib/rich-text";
 import { amenityOptions, matOptions, populationOptions, specialtyPopulationOptions } from "@/lib/sober-living-onboarding";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -208,6 +209,7 @@ export default async function SearchPage({
     verified?: string | string[];
     availability?: string | string[];
     filters?: string | string[];
+    selected?: string | string[];
   }>;
 }) {
   const [query, session] = await Promise.all([searchParams, auth()]);
@@ -231,6 +233,7 @@ export default async function SearchPage({
   const verified = firstFromQuery(query.verified) === "yes";
   const availability = firstFromQuery(query.availability) === "available" ? "available" : "";
   const showFilters = firstFromQuery(query.filters) === "1";
+  const selectedListingId = firstFromQuery(query.selected);
   const filterParams = new URLSearchParams();
 
   for (const [key, value] of Object.entries(query)) {
@@ -244,6 +247,24 @@ export default async function SearchPage({
   }
 
   filterParams.set("filters", showFilters ? "0" : "1");
+
+  function selectedListingHref(profileId: string) {
+    const params = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(query)) {
+      if (key === "selected") {
+        continue;
+      }
+
+      for (const item of valuesFromQuery(value)) {
+        params.append(key, item);
+      }
+    }
+
+    params.set("selected", profileId);
+
+    return `/search?${params.toString()}#listing-${profileId}`;
+  }
 
   const andFilters: Prisma.AftercareProfileWhereInput[] = [{ status: "published" }];
 
@@ -407,7 +428,13 @@ export default async function SearchPage({
               );
 
               return (
-                <Card key={profile.id} className="overflow-hidden p-0">
+                <div key={profile.id} className="scroll-mt-24" id={`listing-${profile.id}`}>
+                <Card
+                  className={cn(
+                    "overflow-hidden p-0 transition-shadow",
+                    selectedListingId === profile.id ? "ring-2 ring-primary ring-offset-2" : null
+                  )}
+                >
                   <Link className="focus-ring grid gap-0 md:grid-cols-[190px_1fr]" href={`/profiles/${profile.slug}`}>
                     <div className="relative min-h-40 bg-muted md:min-h-0">
                       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(20,184,166,0.18),rgba(30,64,175,0.12)),linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:100%_100%,34px_34px,34px_34px]" />
@@ -475,6 +502,7 @@ export default async function SearchPage({
                     </div>
                   </Link>
                 </Card>
+                </div>
               );
             })
           ) : (
@@ -496,8 +524,10 @@ export default async function SearchPage({
             publicState: profile.publicState,
             latitude: profile.latitude ? Number(profile.latitude) : null,
             longitude: profile.longitude ? Number(profile.longitude) : null,
-            isAvailable: Boolean(profile.bedsAvailable || profile.acceptingNewPatients)
+            isAvailable: Boolean(profile.bedsAvailable || profile.acceptingNewPatients),
+            selectionHref: selectedListingHref(profile.id)
           }))}
+          selectedListingId={selectedListingId}
         />
       </div>
       </main>

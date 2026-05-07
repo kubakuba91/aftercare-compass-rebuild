@@ -13,6 +13,7 @@ type ApproximateMapListing = {
   latitude: number | null;
   longitude: number | null;
   isAvailable: boolean;
+  selectionHref: string;
 };
 
 type MapPinPoint = ApproximateMapListing & {
@@ -103,11 +104,13 @@ function pinPosition(point: MapPinPoint, bounds: { minLat: number; maxLat: numbe
   };
 }
 
-function typeLabel(type: ApproximateMapListing["type"]) {
-  return type === "sober_living" ? "Sober Living" : "Continued Care";
-}
-
-export function ApproximateLocationMap({ listings }: { listings: ApproximateMapListing[] }) {
+export function ApproximateLocationMap({
+  listings,
+  selectedListingId
+}: {
+  listings: ApproximateMapListing[];
+  selectedListingId?: string;
+}) {
   const points = listings.map(approximatePoint).filter((point): point is MapPinPoint => Boolean(point));
   const latitudes = points.map((point) => point.lat);
   const longitudes = points.map((point) => point.lng);
@@ -138,12 +141,16 @@ export function ApproximateLocationMap({ listings }: { listings: ApproximateMapL
           points.map((point, index) => (
             <Link
               key={point.id}
-              aria-label={`View ${point.programName}`}
+              aria-label={`Highlight ${point.programName}`}
               className={cn(
                 "focus-ring absolute flex size-9 -translate-x-1/2 -translate-y-full items-center justify-center rounded-full border-2 border-white text-white shadow-md",
-                point.isAvailable ? "bg-emerald-600" : "bg-accent"
+                point.id === selectedListingId
+                  ? "bg-primary ring-4 ring-primary/25"
+                  : point.isAvailable
+                    ? "bg-emerald-600"
+                    : "bg-accent"
               )}
-              href={`/profiles/${point.slug}`}
+              href={point.selectionHref}
               style={pinPosition(point, bounds)}
               title={`${point.programName} - ${point.publicCity}, ${point.publicState}`}
             >
@@ -159,29 +166,6 @@ export function ApproximateLocationMap({ listings }: { listings: ApproximateMapL
           </div>
         )}
       </div>
-
-      {points.length ? (
-        <div className="mt-4 grid gap-2">
-          {points.slice(0, 8).map((point, index) => (
-            <Link
-              key={point.id}
-              className="focus-ring grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-md border border-border p-2 text-sm hover:bg-muted"
-              href={`/profiles/${point.slug}`}
-            >
-              <span className="flex size-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                {index + 1}
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate font-semibold">{point.programName}</span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  {point.publicCity}, {point.publicState}
-                </span>
-              </span>
-              <span className="text-xs text-muted-foreground">{typeLabel(point.type)}</span>
-            </Link>
-          ))}
-        </div>
-      ) : null}
     </aside>
   );
 }

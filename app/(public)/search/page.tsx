@@ -408,44 +408,41 @@ export default async function SearchPage({
 
               return (
                 <Card key={profile.id} className="overflow-hidden p-0">
-                  <div className="grid gap-0 md:grid-cols-[190px_1fr]">
-                    <Link
-                      className="focus-ring relative min-h-40 bg-muted md:min-h-0"
-                      href={`/profiles/${profile.slug}`}
-                    >
+                  <Link className="focus-ring grid gap-0 md:grid-cols-[190px_1fr]" href={`/profiles/${profile.slug}`}>
+                    <div className="relative min-h-40 bg-muted md:min-h-0">
                       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(20,184,166,0.18),rgba(30,64,175,0.12)),linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:100%_100%,34px_34px,34px_34px]" />
                       <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-1 text-xs font-semibold">
                         {index + 1}
                       </div>
-                    </Link>
+                    </div>
 
                     <div className="grid gap-3 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="text-lg font-semibold leading-tight">{profile.programName}</h2>
-                            <Badge tone={profile.verificationTier > 1 ? "verified" : "neutral"}>
-                              {profile.verificationTier > 1 ? "Verified" : "Self-reported"}
-                            </Badge>
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {offerings.visible.map((item) => (
-                              <Badge key={item}>{item}</Badge>
-                            ))}
-                            {offerings.hiddenCount ? <Badge>+{offerings.hiddenCount} more</Badge> : null}
-                          </div>
-                          <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin size={16} />
-                            {[profile.publicCity, profile.publicState].filter(Boolean).join(", ") || "Location not listed"}
-                          </p>
-                        </div>
-                        <button
+                      <div className="flex flex-wrap items-start gap-2 md:flex-nowrap md:items-center">
+                        <h2 className="min-w-0 flex-1 text-lg font-semibold leading-tight">{profile.programName}</h2>
+                        <Badge tone={profile.verificationTier > 1 ? "verified" : "neutral"}>
+                          {profile.verificationTier > 1 ? "Verified" : "Self-reported"}
+                        </Badge>
+                        <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
+                          {availabilityText(profile)}
+                        </Badge>
+                        <span
                           aria-label="Save listing"
                           className="focus-ring flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-white"
-                          type="button"
                         >
                           <Heart size={18} />
-                        </button>
+                        </span>
+                      </div>
+
+                      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin size={16} />
+                        {[profile.publicCity, profile.publicState].filter(Boolean).join(", ") || "Location not listed"}
+                      </p>
+
+                      <div className="flex flex-wrap gap-2">
+                        {offerings.visible.map((item) => (
+                          <Badge key={item}>{item}</Badge>
+                        ))}
+                        {offerings.hiddenCount ? <Badge>+{offerings.hiddenCount} more</Badge> : null}
                       </div>
 
                       <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
@@ -454,9 +451,8 @@ export default async function SearchPage({
 
                       <div className="flex flex-col justify-between gap-3 border-t border-border pt-3 md:flex-row md:items-end">
                         <div>
-                          <p className="text-xs font-semibold uppercase text-muted-foreground">Amenities & support</p>
                           {amenitySummary.visible.length ? (
-                            <div className="mt-2 flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2">
                               {amenitySummary.visible.map((item) => (
                                 <span key={item} className="inline-flex items-center gap-1 text-sm">
                                   <span className="size-2 rounded-full border border-foreground" />
@@ -473,17 +469,11 @@ export default async function SearchPage({
                         </div>
 
                         <div className="grid shrink-0 gap-2 md:justify-items-end">
-                          <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
-                            {availabilityText(profile)}
-                          </Badge>
                           <p className="text-base font-semibold">{formatPricePerWeek(profile.pricePerWeek)}</p>
-                          <ButtonLink href={`/profiles/${profile.slug}`} variant="secondary">
-                            View profile
-                          </ButtonLink>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 </Card>
               );
             })

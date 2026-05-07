@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BedDouble, CheckCircle2, Mail, MapPin, Send, ShieldCheck, Video } from "lucide-react";
+import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -232,6 +233,17 @@ export default async function PublicProfilePage({
   const isReferent = appUser?.role.startsWith("referent") ?? false;
   const isAftercareUser = appUser?.role.startsWith("aftercare") ?? false;
   const userName = [appUser?.firstName, appUser?.lastName].filter(Boolean).join(" ") || "";
+  const favorite = isReferent && appUser?.orgId
+    ? await prisma.favorite.findUnique({
+        where: {
+          orgId_profileId: {
+            orgId: appUser.orgId,
+            profileId: profile.id
+          }
+        },
+        select: { id: true }
+      })
+    : null;
 
   return (
     <>
@@ -260,7 +272,16 @@ export default async function PublicProfilePage({
                 {availabilityText(profile)}
               </Badge>
             </div>
-            <h1 className="mt-4 text-3xl font-semibold">{profile.programName}</h1>
+            <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
+              <h1 className="text-3xl font-semibold">{profile.programName}</h1>
+              <FavoriteListingButton
+                canFavorite={isReferent}
+                initialFavorited={Boolean(favorite)}
+                isSignedIn={Boolean(appUser)}
+                profileId={profile.id}
+                programName={profile.programName}
+              />
+            </div>
             <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin size={16} />
               {publicLocation || "Location not listed"} · Exact address is private

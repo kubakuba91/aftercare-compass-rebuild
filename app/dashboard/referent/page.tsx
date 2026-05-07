@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Heart, MessageSquare, Search, Send } from "lucide-react";
+import { Heart, MapPin, MessageSquare, Search, Send } from "lucide-react";
 import { redirect } from "next/navigation";
-import { Role } from "@prisma/client";
+import { ProfileType, Role } from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -16,6 +16,22 @@ function formatReferralValue(value: string) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function formatAvailability(profile: {
+  type: ProfileType;
+  bedsAvailable: number | null;
+  acceptingNewPatients: boolean | null;
+}) {
+  if (profile.type === ProfileType.sober_living) {
+    return `${profile.bedsAvailable ?? 0} beds available`;
+  }
+
+  return profile.acceptingNewPatients ? "Accepting new patients" : "Not accepting patients";
+}
+
+function formatPricePerWeek(value: number | null) {
+  return value ? `$${value}/week` : "Price not listed";
 }
 
 export default async function ReferentDashboardPage() {
@@ -42,7 +58,7 @@ export default async function ReferentDashboardPage() {
     redirect(`/onboarding/referent/${resumeStep}`);
   }
 
-  const [referrals, thisMonthReferralCount] = await Promise.all([
+  const [referrals, favorites, thisMonthReferralCount] = await Promise.all([
     prisma.referral.findMany({
       where: { referentOrgId: appUser.orgId },
       orderBy: { createdAt: "desc" },
@@ -64,6 +80,29 @@ export default async function ReferentDashboardPage() {
             slug: true,
             publicCity: true,
             publicState: true
+          }
+        }
+      }
+    }),
+    prisma.favorite.findMany({
+      where: { orgId: appUser.orgId },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+      select: {
+        id: true,
+        createdAt: true,
+        profile: {
+          select: {
+            id: true,
+            slug: true,
+            programName: true,
+            type: true,
+            publicCity: true,
+            publicState: true,
+            bedsAvailable: true,
+            acceptingNewPatients: true,
+            pricePerWeek: true,
+            verificationTier: true
           }
         }
       }
@@ -93,7 +132,7 @@ export default async function ReferentDashboardPage() {
         {[
           ["Active referrals", activeReferralCount.toString()],
           ["This month", thisMonthReferralCount.toString()],
-          ["Favorites", "0"],
+          ["Favorites", favorites.length.toString()],
           ["Placed", placedReferralCount.toString()]
         ].map(([label, value]) => (
           <Card key={label}>
@@ -164,9 +203,48 @@ export default async function ReferentDashboardPage() {
         <Card>
           <Heart className="text-primary" size={24} />
           <h2 className="mt-3 font-semibold">Favorites</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Keep a working shortlist of aftercare providers.
-          </p>
+          {favorites.length ? (
+            <div className="mt-4 grid gap-3">
+              {favorites.map((favorite) => (
+                <div key={favorite.id} className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+                  <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+                    <div>
+                      <Link
+                        className="font-semibold underline-offset-4 hover:underline"
+                        href={`/profiles/${favorite.profile.slug}`}
+                      >
+                        {favorite.profile.programName}
+                      </Link>
+                      <p className="mt-1 flex items-center gap-1 text-muted-foreground">
+                        <MapPin size={14} />
+                        {[favorite.profile.publicCity, favorite.profile.publicState].filter(Boolean).join(", ")}
+                      </p>
+                    </div>
+                    <Badge tone={favorite.profile.verificationTier > 1 ? "verified" : "neutral"}>
+                      {favorite.profile.verificationTier > 1 ? "Verified" : "Self-reported"}
+                    </Badge>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge>{favorite.profile.type === ProfileType.sober_living ? "Sober Living" : "Continued Care"}</Badge>
+                    <Badge tone={favorite.profile.bedsAvailable || favorite.profile.acceptingNewPatients ? "success" : "warning"}>
+                      {formatAvailability(favorite.profile)}
+                    </Badge>
+                    <Badge>{formatPricePerWeek(favorite.profile.pricePerWeek)}</Badge>
+                  </div>
+                  <Link
+                    className="mt-3 inline-flex text-sm font-semibold text-primary"
+                    href={`/profiles/${favorite.profile.slug}`}
+                  >
+                    View profile
+                  </Link>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Keep a working shortlist of aftercare providers from search results.
+            </p>
+          )}
         </Card>
         <Card>
           <MessageSquare className="text-primary" size={24} />

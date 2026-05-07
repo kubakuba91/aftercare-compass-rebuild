@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
-import { Prisma, ProfileType } from "@prisma/client";
+import { Prisma, ProfileType, Role } from "@prisma/client";
 import { MapPin } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
@@ -213,7 +213,23 @@ export default async function SearchPage({
   }>;
 }) {
   const [query, session] = await Promise.all([searchParams, auth()]);
+  const appUser = session.userId
+    ? await prisma.user.findUnique({
+        where: { clerkUserId: session.userId },
+        select: {
+          id: true,
+          orgId: true,
+          role: true,
+          favorites: {
+            select: { profileId: true }
+          }
+        }
+      })
+    : null;
   const isSignedIn = Boolean(session.userId);
+  const canFavorite =
+    appUser?.role === Role.referent_admin || appUser?.role === Role.referent_manager;
+  const favoriteProfileIds = new Set(appUser?.favorites.map((favorite) => favorite.profileId) ?? []);
   const q = firstFromQuery(query.q)?.trim() || "";
   const rawType = firstFromQuery(query.type);
   const type = rawType === "sober_living" || rawType === "continued_care" ? rawType : "";
@@ -432,7 +448,13 @@ export default async function SearchPage({
                   )}
                 >
                   <div className="absolute right-4 top-4 z-10">
-                    <FavoriteListingButton isSignedIn={isSignedIn} programName={profile.programName} />
+                    <FavoriteListingButton
+                      canFavorite={canFavorite}
+                      initialFavorited={favoriteProfileIds.has(profile.id)}
+                      isSignedIn={isSignedIn}
+                      profileId={profile.id}
+                      programName={profile.programName}
+                    />
                   </div>
                   <Link className="focus-ring grid gap-0 md:grid-cols-[190px_1fr]" href={`/profiles/${profile.slug}`}>
                     <div className="relative min-h-40 bg-muted md:min-h-0">

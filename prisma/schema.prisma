@@ -90,6 +90,7 @@ model User {
 
   sentMessages Message[]
   referrals    Referral[] @relation("ReferentUserReferrals")
+  favorites    Favorite[]
   flagsReported Flag[]    @relation("FlagReporter")
   flagsResolved Flag[]    @relation("FlagResolver")
   notifications Notification[]
@@ -135,6 +136,7 @@ model Organization {
   leads              Lead[]
   referentReferrals  Referral[] @relation("ReferentOrgReferrals")
   aftercareReferrals Referral[] @relation("AftercareOrgReferrals")
+  favorites          Favorite[]
 
   @@index([type])
   @@index([subscriptionStatus])
@@ -244,11 +246,28 @@ model AftercareProfile {
   referrals      Referral[]
   leads          Lead[]
   flags          Flag[]
+  favorites      Favorite[]
 
   @@index([orgId])
   @@index([type, status])
   @@index([publicCity, publicState])
   @@index([verificationTier])
+}
+
+model Favorite {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orgId     String
+  org       Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  profileId String
+  profile   AftercareProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@unique([orgId, profileId])
+  @@index([userId])
+  @@index([orgId, createdAt])
+  @@index([profileId])
 }
 
 model VerificationDocument {

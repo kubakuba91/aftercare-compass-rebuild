@@ -1,26 +1,59 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Heart, X } from "lucide-react";
+import { toggleFavorite } from "@/app/(public)/search/actions";
+import { cn } from "@/lib/utils";
 
 export function FavoriteListingButton({
+  canFavorite = true,
+  initialFavorited = false,
   isSignedIn,
+  profileId,
   programName
 }: {
+  canFavorite?: boolean;
+  initialFavorited?: boolean;
   isSignedIn: boolean;
+  profileId: string;
   programName: string;
 }) {
   const [showPrompt, setShowPrompt] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(initialFavorited);
+  const [isPending, startTransition] = useTransition();
+
+  if (isSignedIn && !canFavorite) {
+    return null;
+  }
 
   if (isSignedIn) {
     return (
       <button
-        aria-label={`Save ${programName}`}
-        className="focus-ring flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-white"
+        aria-label={isFavorited ? `Remove ${programName} from favorites` : `Save ${programName}`}
+        aria-pressed={isFavorited}
+        className={cn(
+          "focus-ring flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-white disabled:cursor-not-allowed disabled:opacity-60",
+          isFavorited ? "text-primary" : null
+        )}
+        disabled={isPending}
+        onClick={() => {
+          startTransition(async () => {
+            const result = await toggleFavorite(profileId);
+
+            if (result.reason === "signin") {
+              setShowPrompt(true);
+              return;
+            }
+
+            if (typeof result.favorited === "boolean") {
+              setIsFavorited(result.favorited);
+            }
+          });
+        }}
         type="button"
       >
-        <Heart size={18} />
+        <Heart fill={isFavorited ? "currentColor" : "none"} size={18} />
       </button>
     );
   }

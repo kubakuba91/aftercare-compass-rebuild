@@ -29,7 +29,7 @@ a {
 }
 
 .shell {
-  width: min(1180px, calc(100% - 32px));
+  width: min(1440px, calc(100% - 32px));
   margin: 0 auto;
 }
 
@@ -41,4 +41,3 @@ a {
 .focus-ring:focus-visible {
   outline-color: hsl(var(--accent));
 }
-

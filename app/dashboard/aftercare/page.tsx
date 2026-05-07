@@ -4,11 +4,13 @@ import {
   Building2,
   CreditCard,
   Home,
+  MailPlus,
   Pencil,
   Settings,
   ShieldCheck,
   UserCircle,
-  Users
+  Users,
+  X
 } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { AftercareOverviewSelector } from "@/components/dashboard/aftercare-overview-selector";
@@ -22,7 +24,13 @@ import {
   redirectIncompleteAftercareOnboarding
 } from "@/lib/protected-routing";
 import { cn } from "@/lib/utils";
-import { updateAftercareAvailability, updateReferralStatus, updateUserDisplayName } from "./actions";
+import {
+  inviteAftercareManagers,
+  removeAftercareManagerInvite,
+  updateAftercareAvailability,
+  updateReferralStatus,
+  updateUserDisplayName
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -185,6 +193,8 @@ export default async function AftercareDashboardPage({
     profileId?: string;
     referralError?: string;
     referralId?: string;
+    invite?: string;
+    managerMessage?: string;
   }>;
 }) {
   const appUser = await getAftercareDashboardUser();
@@ -194,8 +204,9 @@ export default async function AftercareDashboardPage({
   const { tab } = query;
   const activeTab = isDashboardTab(tab) ? tab : "overview";
   const isEditingDisplayName = activeTab === "account" && query.edit === "displayName";
+  const isInviteManagersOpen = activeTab === "managers" && query.invite === "1";
 
-  const [profiles, leads, referrals, pendingDocumentCount, managers] = await Promise.all([
+  const [profiles, leads, referrals, pendingDocumentCount, managers, pendingManagerInvites] = await Promise.all([
     prisma.aftercareProfile.findMany({
       where: { orgId: appUser.orgId },
       orderBy: { updatedAt: "desc" },
@@ -295,6 +306,19 @@ export default async function AftercareDashboardPage({
         role: true,
         isActive: true,
         updatedAt: true
+      }
+    }),
+    prisma.organizationInvite.findMany({
+      where: {
+        orgId: appUser.orgId,
+        status: "pending",
+        role: "aftercare_manager"
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        email: true,
+        createdAt: true
       }
     })
   ]);
@@ -867,10 +891,26 @@ export default async function AftercareDashboardPage({
 
           {activeTab === "managers" ? (
             <Card>
-              <h2 className="text-xl font-semibold">Managers</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Users associated with this account and their current roles.
-              </p>
+              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                <div>
+                  <h2 className="text-xl font-semibold">Managers</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Users associated with this account and their current roles.
+                  </p>
+                  {query.managerMessage ? (
+                    <p className="mt-2 text-sm font-semibold text-primary">{query.managerMessage}</p>
+                  ) : null}
+                </div>
+                {appUser.role === "aftercare_admin" ? (
+                  <Link
+                    className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                    href="/dashboard/aftercare?tab=managers&invite=1"
+                  >
+                    <MailPlus size={16} />
+                    Invite managers
+                  </Link>
+                ) : null}
+              </div>
               <div className="mt-5 grid gap-3">
                 {managers.map((manager) => (
                   <div key={manager.id} className="flex flex-col justify-between gap-3 rounded-md border border-border p-4 md:flex-row md:items-center">
@@ -885,6 +925,27 @@ export default async function AftercareDashboardPage({
                       <Badge tone={manager.isActive ? "success" : "warning"}>
                         {manager.isActive ? "Active" : "Inactive"}
                       </Badge>
+                    </div>
+                  </div>
+                ))}
+                {pendingManagerInvites.map((invite) => (
+                  <div key={invite.id} className="flex flex-col justify-between gap-3 rounded-md border border-border bg-muted/40 p-4 md:flex-row md:items-center">
+                    <div>
+                      <p className="font-semibold">{invite.email}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Invited {formatDate(invite.createdAt)}. They will be added as a manager when they create an account with this email.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone="warning">Pending invite</Badge>
+                      {appUser.role === "aftercare_admin" ? (
+                        <form action={removeAftercareManagerInvite}>
+                          <input name="inviteId" type="hidden" value={invite.id} />
+                          <button className="focus-ring min-h-9 rounded-md border border-border bg-white px-3 text-sm font-semibold">
+                            Remove
+                          </button>
+                        </form>
+                      ) : null}
                     </div>
                   </div>
                 ))}
@@ -1010,6 +1071,52 @@ export default async function AftercareDashboardPage({
           ) : null}
         </section>
       </div>
+      {isInviteManagersOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/25 p-4">
+          <div className="w-full max-w-xl rounded-lg border border-border bg-white p-5 shadow-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">Invite managers</h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Add one or more emails. Managers will join this aftercare account when they sign up with an invited email.
+                </p>
+              </div>
+              <Link
+                aria-label="Close invite managers"
+                className="focus-ring inline-flex size-9 items-center justify-center rounded-md border border-border bg-white text-muted-foreground hover:text-foreground"
+                href="/dashboard/aftercare?tab=managers"
+              >
+                <X size={16} />
+              </Link>
+            </div>
+            <form action={inviteAftercareManagers} className="mt-5 grid gap-4">
+              <label className="grid gap-2 text-sm font-medium">
+                Email addresses
+                <textarea
+                  className="min-h-36 rounded-md border border-border bg-white px-3 py-2 text-sm"
+                  name="emails"
+                  placeholder={"manager@example.com\noperations@example.com"}
+                  required
+                />
+              </label>
+              <p className="text-xs leading-5 text-muted-foreground">
+                Separate emails with commas, spaces, or new lines. Paid plan limits are checked before invites are saved.
+              </p>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Link
+                  className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-semibold"
+                  href="/dashboard/aftercare?tab=managers"
+                >
+                  Cancel
+                </Link>
+                <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                  Invite to Aftercare Compass
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

@@ -96,6 +96,8 @@ model User {
   notifications Notification[]
   handledLeads Lead[]     @relation("LeadHandler")
   onboardingDraft OnboardingDraft?
+  sentOrganizationInvites OrganizationInvite[] @relation("OrganizationInviteSender")
+  acceptedOrganizationInvites OrganizationInvite[] @relation("OrganizationInviteAcceptedUser")
 
   @@index([orgId])
 }
@@ -137,9 +139,30 @@ model Organization {
   referentReferrals  Referral[] @relation("ReferentOrgReferrals")
   aftercareReferrals Referral[] @relation("AftercareOrgReferrals")
   favorites          Favorite[]
+  invites            OrganizationInvite[]
 
   @@index([type])
   @@index([subscriptionStatus])
+}
+
+model OrganizationInvite {
+  id               String       @id @default(cuid())
+  orgId            String
+  organization     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  email            String
+  role             Role
+  status           String       @default("pending")
+  invitedByUserId  String?
+  invitedByUser    User?        @relation("OrganizationInviteSender", fields: [invitedByUserId], references: [id])
+  acceptedByUserId String?
+  acceptedByUser   User?        @relation("OrganizationInviteAcceptedUser", fields: [acceptedByUserId], references: [id])
+  acceptedAt       DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([orgId, email])
+  @@index([email, status])
+  @@index([orgId, status])
 }
 
 model ReferentOrganization {

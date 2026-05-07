@@ -1,5 +1,5 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { Role } from "@prisma/client";
+import { OrganizationType, Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export async function getClerkSessionUserId() {
@@ -78,9 +78,37 @@ export async function getCurrentAppUser() {
     }
   });
 
-  if (!invitedReferentOrg) {
+  const organizationInvite = await prisma.organizationInvite.findFirst({
+    where: {
+      email: identity.email.toLowerCase(),
+      status: "pending"
+    },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      orgId: true,
+      role: true,
+      organization: {
+        select: { type: true }
+      }
+    }
+  });
+
+  if (!invitedReferentOrg && !organizationInvite) {
     return appUser;
   }
+
+  const invitedOrgId = organizationInvite?.orgId ?? invitedReferentOrg?.orgId;
+
+  if (!invitedOrgId) {
+    return appUser;
+  }
+
+  const invitedRole =
+    organizationInvite?.role ??
+    (invitedReferentOrg || organizationInvite?.organization.type === OrganizationType.referent
+      ? Role.referent_manager
+      : Role.aftercare_manager);
 
   const user = appUser
     ? await prisma.user.update({
@@ -90,8 +118,8 @@ export async function getCurrentAppUser() {
           email: identity.email,
           firstName: identity.firstName,
           lastName: identity.lastName,
-          role: Role.referent_manager,
-          orgId: invitedReferentOrg.orgId,
+          role: invitedRole,
+          orgId: invitedOrgId,
           emailVerified: identity.emailVerified,
           emailVerifiedAt: identity.emailVerified ? new Date() : null
         },
@@ -103,22 +131,35 @@ export async function getCurrentAppUser() {
           email: identity.email,
           firstName: identity.firstName,
           lastName: identity.lastName,
-          role: Role.referent_manager,
-          orgId: invitedReferentOrg.orgId,
+          role: invitedRole,
+          orgId: invitedOrgId,
           emailVerified: identity.emailVerified,
           emailVerifiedAt: identity.emailVerified ? new Date() : null
         },
         include: { organization: true }
       });
 
-  await prisma.referentOrganization.update({
-    where: { orgId: invitedReferentOrg.orgId },
-    data: {
-      invitedTeamEmails: invitedReferentOrg.invitedTeamEmails.filter(
-        (email) => email.toLowerCase() !== identity.email.toLowerCase()
-      )
-    }
-  });
+  if (organizationInvite) {
+    await prisma.organizationInvite.update({
+      where: { id: organizationInvite.id },
+      data: {
+        status: "accepted",
+        acceptedByUserId: user.id,
+        acceptedAt: new Date()
+      }
+    });
+  }
+
+  if (invitedReferentOrg) {
+    await prisma.referentOrganization.update({
+      where: { orgId: invitedReferentOrg.orgId },
+      data: {
+        invitedTeamEmails: invitedReferentOrg.invitedTeamEmails.filter(
+          (email) => email.toLowerCase() !== identity.email.toLowerCase()
+        )
+      }
+    });
+  }
 
   return user;
 }

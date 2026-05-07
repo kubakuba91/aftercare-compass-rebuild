@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma, ProfileType } from "@prisma/client";
-import { Heart, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
+import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -426,10 +427,13 @@ export default async function SearchPage({
                 <div key={profile.id} className="scroll-mt-24" id={`listing-${profile.id}`}>
                 <Card
                   className={cn(
-                    "overflow-hidden p-0 transition-shadow",
+                    "relative overflow-hidden p-0 transition-shadow",
                     selectedListingId === profile.id ? "ring-2 ring-primary ring-offset-2" : null
                   )}
                 >
+                  <div className="absolute right-4 top-4 z-10">
+                    <FavoriteListingButton isSignedIn={isSignedIn} programName={profile.programName} />
+                  </div>
                   <Link className="focus-ring grid gap-0 md:grid-cols-[190px_1fr]" href={`/profiles/${profile.slug}`}>
                     <div className="relative min-h-40 bg-muted md:min-h-0">
                       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(20,184,166,0.18),rgba(30,64,175,0.12)),linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:100%_100%,34px_34px,34px_34px]" />
@@ -439,7 +443,7 @@ export default async function SearchPage({
                     </div>
 
                     <div className="grid gap-3 p-4">
-                      <div className="flex flex-wrap items-start gap-2 md:flex-nowrap md:items-center">
+                      <div className="flex flex-wrap items-start gap-2 pr-12 md:flex-nowrap md:items-center">
                         <h2 className="min-w-0 flex-1 text-lg font-semibold leading-tight">{profile.programName}</h2>
                         <Badge tone={profile.verificationTier > 1 ? "verified" : "neutral"}>
                           {profile.verificationTier > 1 ? "Verified" : "Self-reported"}
@@ -447,12 +451,6 @@ export default async function SearchPage({
                         <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
                           {availabilityText(profile)}
                         </Badge>
-                        <span
-                          aria-label="Save listing"
-                          className="focus-ring flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-white"
-                        >
-                          <Heart size={18} />
-                        </span>
                       </div>
 
                       <p className="flex items-center gap-2 text-sm text-muted-foreground">

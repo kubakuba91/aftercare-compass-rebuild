@@ -1,6 +1,7 @@
-import Link from "next/link";
-import { MapPin } from "lucide-react";
-import { cn } from "@/lib/utils";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Script from "next/script";
 
 type ApproximateMapListing = {
   id: string;
@@ -19,6 +20,52 @@ type MapPinPoint = ApproximateMapListing & {
   lat: number;
   lng: number;
 };
+
+declare global {
+  interface Window {
+    google?: {
+      maps: {
+        LatLngBounds: new () => {
+          extend: (latLng: { lat: number; lng: number }) => void;
+        };
+        Map: new (
+          element: HTMLElement,
+          options: {
+            center: { lat: number; lng: number };
+            clickableIcons?: boolean;
+            disableDefaultUI?: boolean;
+            fullscreenControl?: boolean;
+            mapTypeControl?: boolean;
+            streetViewControl?: boolean;
+            styles?: Array<Record<string, unknown>>;
+            zoom: number;
+            zoomControl?: boolean;
+          }
+        ) => {
+          fitBounds: (bounds: unknown) => void;
+        };
+        Marker: new (options: {
+          icon?: unknown;
+          label?: {
+            color: string;
+            fontSize: string;
+            fontWeight: string;
+            text: string;
+          };
+          map: unknown;
+          position: { lat: number; lng: number };
+          title: string;
+        }) => {
+          addListener: (eventName: string, callback: () => void) => void;
+          setMap: (map: null) => void;
+        };
+        SymbolPath: {
+          CIRCLE: unknown;
+        };
+      };
+    };
+  }
+}
 
 const cityCenters: Record<string, [number, number]> = {
   "harrisburg,pa": [40.2732, -76.8867],
@@ -93,16 +140,6 @@ function approximatePoint(listing: ApproximateMapListing): MapPinPoint | null {
   return null;
 }
 
-function pinPosition(point: MapPinPoint, bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number }) {
-  const latRange = bounds.maxLat - bounds.minLat || 1;
-  const lngRange = bounds.maxLng - bounds.minLng || 1;
-
-  return {
-    left: `${((point.lng - bounds.minLng) / lngRange) * 88 + 6}%`,
-    top: `${(1 - (point.lat - bounds.minLat) / latRange) * 78 + 11}%`
-  };
-}
-
 export function ApproximateLocationMap({
   listings,
   selectedListingId
@@ -110,50 +147,98 @@ export function ApproximateLocationMap({
   listings: ApproximateMapListing[];
   selectedListingId?: string;
 }) {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const mapRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<Array<{ setMap: (map: null) => void }>>([]);
+  const [scriptReady, setScriptReady] = useState(
+    typeof window !== "undefined" && Boolean(window.google?.maps)
+  );
   const points = listings.map(approximatePoint).filter((point): point is MapPinPoint => Boolean(point));
-  const latitudes = points.map((point) => point.lat);
-  const longitudes = points.map((point) => point.lng);
-  const bounds = {
-    minLat: Math.min(...latitudes) - 0.02,
-    maxLat: Math.max(...latitudes) + 0.02,
-    minLng: Math.min(...longitudes) - 0.02,
-    maxLng: Math.max(...longitudes) + 0.02
-  };
+
+  useEffect(() => {
+    if (!scriptReady || !window.google?.maps || !mapRef.current || !points.length) {
+      return;
+    }
+
+    markersRef.current.forEach((marker) => marker.setMap(null));
+    markersRef.current = [];
+
+    const selectedPoint = points.find((point) => point.id === selectedListingId);
+    const centerPoint = selectedPoint || points[0];
+    const map = new window.google.maps.Map(mapRef.current, {
+      center: { lat: centerPoint.lat, lng: centerPoint.lng },
+      clickableIcons: false,
+      disableDefaultUI: true,
+      fullscreenControl: false,
+      mapTypeControl: false,
+      streetViewControl: false,
+      styles: [
+        {
+          featureType: "poi",
+          stylers: [{ visibility: "off" }]
+        }
+      ],
+      zoom: 11,
+      zoomControl: true
+    });
+    const bounds = new window.google.maps.LatLngBounds();
+
+    points.forEach((point, index) => {
+      const isSelected = point.id === selectedListingId;
+      const marker = new window.google!.maps.Marker({
+        icon: {
+          fillColor: isSelected ? "#0f766e" : point.isAvailable ? "#059669" : "#d97706",
+          fillOpacity: 1,
+          path: window.google!.maps.SymbolPath.CIRCLE,
+          scale: isSelected ? 14 : 11,
+          strokeColor: "#ffffff",
+          strokeWeight: 3
+        },
+        label: {
+          color: "#ffffff",
+          fontSize: "11px",
+          fontWeight: "700",
+          text: String(index + 1)
+        },
+        map,
+        position: { lat: point.lat, lng: point.lng },
+        title: `${point.programName} - ${point.publicCity}, ${point.publicState}`
+      });
+
+      marker.addListener("click", () => {
+        window.location.href = point.selectionHref;
+      });
+      markersRef.current.push(marker);
+      bounds.extend({ lat: point.lat, lng: point.lng });
+    });
+
+    if (points.length > 1) {
+      map.fitBounds(bounds);
+    }
+  }, [points, scriptReady, selectedListingId]);
 
   return (
     <aside className="h-fit rounded-lg border border-border bg-white p-3 shadow-sm lg:sticky lg:top-24">
       <div className="relative min-h-[360px] overflow-hidden rounded-md border border-border bg-[linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:44px_44px] lg:min-h-[520px]">
-        <div className="absolute inset-x-[-12%] top-[18%] h-10 rotate-[-10deg] bg-primary/10" />
-        <div className="absolute bottom-[18%] left-[-10%] h-12 w-[125%] rotate-[16deg] bg-emerald-400/10" />
-        <div className="absolute left-[18%] top-0 h-full w-12 rotate-[8deg] bg-muted/80" />
-        {points.length ? (
-          points.map((point, index) => (
-            <Link
-              key={point.id}
-              aria-label={`Highlight ${point.programName}`}
-              className={cn(
-                "focus-ring absolute flex size-9 -translate-x-1/2 -translate-y-full items-center justify-center rounded-full border-2 border-white text-white shadow-md",
-                point.id === selectedListingId
-                  ? "bg-primary ring-4 ring-primary/25"
-                  : point.isAvailable
-                    ? "bg-emerald-600"
-                    : "bg-accent"
-              )}
-              href={point.selectionHref}
-              style={pinPosition(point, bounds)}
-              title={`${point.programName} - ${point.publicCity}, ${point.publicState}`}
-            >
-              <MapPin size={19} />
-              <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full border border-white bg-foreground text-[10px] font-semibold text-background">
-                {index + 1}
-              </span>
-            </Link>
-          ))
-        ) : (
+        {apiKey ? (
+          <Script
+            id="google-maps-script"
+            onReady={() => setScriptReady(true)}
+            src={`https://maps.googleapis.com/maps/api/js?key=${apiKey}`}
+            strategy="afterInteractive"
+          />
+        ) : null}
+        {apiKey && points.length ? <div ref={mapRef} className="absolute inset-0" /> : null}
+        {!apiKey ? (
+          <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm leading-6 text-muted-foreground">
+            Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to show the map.
+          </div>
+        ) : null}
+        {apiKey && !points.length ? (
           <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm leading-6 text-muted-foreground">
             Location pins will appear once listings have public city and state data.
           </div>
-        )}
+        ) : null}
       </div>
     </aside>
   );

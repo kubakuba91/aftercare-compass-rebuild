@@ -395,7 +395,7 @@ export default async function SearchPage({
                   ...profile.insuranceAccepted,
                   ...profile.certificationsHeld
                 ],
-                5
+                4
               );
               const amenitySummary = compactItems(
                 [
@@ -408,25 +408,31 @@ export default async function SearchPage({
 
               return (
                 <Card key={profile.id} className="overflow-hidden p-0">
-                  <div className="grid gap-0 md:grid-cols-[240px_1fr]">
+                  <div className="grid gap-0 md:grid-cols-[190px_1fr]">
                     <Link
-                      className="focus-ring relative min-h-48 bg-muted md:min-h-full"
+                      className="focus-ring relative min-h-40 bg-muted md:min-h-0"
                       href={`/profiles/${profile.slug}`}
                     >
                       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(20,184,166,0.18),rgba(30,64,175,0.12)),linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:100%_100%,34px_34px,34px_34px]" />
-                      <div className="absolute left-4 top-4 rounded-full bg-white/90 px-2 py-1 text-xs font-semibold">
+                      <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-1 text-xs font-semibold">
                         {index + 1}
                       </div>
                     </Link>
 
-                    <div className="grid gap-4 p-4">
-                      <div className="flex items-start justify-between gap-4">
+                    <div className="grid gap-3 p-4">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="text-xl font-semibold">{profile.programName}</h2>
+                            <h2 className="text-lg font-semibold leading-tight">{profile.programName}</h2>
                             <Badge tone={profile.verificationTier > 1 ? "verified" : "neutral"}>
                               {profile.verificationTier > 1 ? "Verified" : "Self-reported"}
                             </Badge>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {offerings.visible.map((item) => (
+                              <Badge key={item}>{item}</Badge>
+                            ))}
+                            {offerings.hiddenCount ? <Badge>+{offerings.hiddenCount} more</Badge> : null}
                           </div>
                           <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                             <MapPin size={16} />
@@ -435,27 +441,20 @@ export default async function SearchPage({
                         </div>
                         <button
                           aria-label="Save listing"
-                          className="focus-ring flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-white"
+                          className="focus-ring flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-white"
                           type="button"
                         >
-                          <Heart size={20} />
+                          <Heart size={18} />
                         </button>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        {offerings.visible.map((item) => (
-                          <Badge key={item}>{item}</Badge>
-                        ))}
-                        {offerings.hiddenCount ? <Badge>+{offerings.hiddenCount} more</Badge> : null}
                       </div>
 
                       <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
                         {richTextToPlainText(profile.description) || "No description added yet."}
                       </p>
 
-                      <div className="flex flex-col justify-between gap-4 border-t border-border pt-3 md:flex-row md:items-end">
+                      <div className="flex flex-col justify-between gap-3 border-t border-border pt-3 md:flex-row md:items-end">
                         <div>
-                          <p className="text-xs font-semibold uppercase text-muted-foreground">Amenities</p>
+                          <p className="text-xs font-semibold uppercase text-muted-foreground">Amenities & support</p>
                           {amenitySummary.visible.length ? (
                             <div className="mt-2 flex flex-wrap gap-2">
                               {amenitySummary.visible.map((item) => (
@@ -473,11 +472,11 @@ export default async function SearchPage({
                           )}
                         </div>
 
-                        <div className="grid gap-2 md:justify-items-end">
+                        <div className="grid shrink-0 gap-2 md:justify-items-end">
                           <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
                             {availabilityText(profile)}
                           </Badge>
-                          <p className="text-sm font-semibold">{formatPricePerWeek(profile.pricePerWeek)}</p>
+                          <p className="text-base font-semibold">{formatPricePerWeek(profile.pricePerWeek)}</p>
                           <ButtonLink href={`/profiles/${profile.slug}`} variant="secondary">
                             View profile
                           </ButtonLink>

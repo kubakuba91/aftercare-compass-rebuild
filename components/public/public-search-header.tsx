@@ -10,6 +10,7 @@ import {
 } from "@/lib/sober-living-onboarding";
 
 type PublicSearchHeaderProps = {
+  isSignedIn?: boolean;
   defaultType?: string;
   defaultLocation?: string;
   defaultAvailability?: string;
@@ -27,6 +28,7 @@ type PublicSearchHeaderProps = {
 };
 
 export function PublicSearchHeader({
+  isSignedIn = false,
   defaultType = "",
   defaultLocation = "",
   defaultAvailability = "",
@@ -210,11 +212,17 @@ export function PublicSearchHeader({
           ) : null}
         </form>
         <Link
-          className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-border px-3"
-          href="/auth/complete"
+          className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-border px-3 text-sm font-semibold"
+          href={isSignedIn ? "/auth/complete" : "/sign-in"}
         >
-          <UserCircle size={22} />
-          <span className="sr-only">Account</span>
+          {isSignedIn ? (
+            <>
+              <UserCircle size={22} />
+              <span className="sr-only">Account</span>
+            </>
+          ) : (
+            "Join or Login"
+          )}
         </Link>
       </div>
     </header>

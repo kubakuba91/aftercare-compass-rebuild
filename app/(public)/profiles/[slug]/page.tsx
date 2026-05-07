@@ -239,6 +239,7 @@ export default async function PublicProfilePage({
         defaultLocation={publicLocation}
         defaultType={profile.type}
         defaultAvailability={profile.bedsAvailable || profile.acceptingNewPatients ? "available" : ""}
+        isSignedIn={Boolean(appUser)}
       />
       <main className="shell py-8">
         <div className="mb-5">

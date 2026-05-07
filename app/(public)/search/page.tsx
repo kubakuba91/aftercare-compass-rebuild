@@ -5,7 +5,6 @@ import { Heart, MapPin } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { Badge } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { richTextToPlainText } from "@/lib/rich-text";
@@ -373,6 +372,7 @@ export default async function SearchPage({
         defaultType={type}
         duration={duration}
         filtersHref={`/search?${filterParams.toString()}`}
+        isSignedIn={isSignedIn}
         mat={mat}
         maxPrice={maxPrice}
         minPrice={minPrice}
@@ -390,11 +390,6 @@ export default async function SearchPage({
               Find sober living homes and continued care programs. Public listings show city and state only.
             </p>
           </div>
-          {!isSignedIn ? (
-            <ButtonLink href="/onboarding/account-type" variant="secondary">
-              Join marketplace
-            </ButtonLink>
-          ) : null}
         </div>
 
       <div className="grid gap-5 py-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">

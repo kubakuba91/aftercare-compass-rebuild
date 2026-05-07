@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Heart, MapPin, MessageSquare, Search, Send } from "lucide-react";
+import { Heart, MapPin, Search, Send } from "lucide-react";
 import { redirect } from "next/navigation";
 import { ProfileType, Role } from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
@@ -124,31 +124,45 @@ export default async function ReferentDashboardPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
           <Badge tone="warning">Referent workspace</Badge>
-          <h1 className="mt-3 text-3xl font-semibold">Referral activity</h1>
+          <h1 className="mt-3 text-3xl font-semibold">Referral workspace</h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Track active referrals and keep a shortlist of providers for placement decisions.
+          </p>
         </div>
-        <SignOutButton />
+        <div className="flex flex-wrap gap-3">
+          <Link
+            className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+            href="/search"
+          >
+            <Search size={16} />
+            Search providers
+          </Link>
+          <SignOutButton />
+        </div>
       </div>
-      <div className="mt-6 grid gap-4 md:grid-cols-4">
+
+      <div className="mt-6 grid gap-3 md:grid-cols-4">
         {[
           ["Active referrals", activeReferralCount.toString()],
           ["This month", thisMonthReferralCount.toString()],
           ["Favorites", favorites.length.toString()],
           ["Placed", placedReferralCount.toString()]
         ].map(([label, value]) => (
-          <Card key={label}>
-            <p className="text-sm text-muted-foreground">{label}</p>
-            <p className="mt-2 text-3xl font-semibold">{value}</p>
-          </Card>
+          <div key={label} className="rounded-lg border border-border bg-white px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+            <p className="mt-1 text-2xl font-semibold">{value}</p>
+          </div>
         ))}
       </div>
-      <div className="mt-6 grid gap-4">
+
+      <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
         <Card>
           <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
             <div>
               <Send className="text-primary" size={24} />
-              <h2 className="mt-3 text-xl font-semibold">Referrals</h2>
+              <h2 className="mt-3 text-xl font-semibold">Recent referrals</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Track referrals submitted by your organization. Referrals are de-identified by design.
+                Submitted referrals from your organization.
               </p>
             </div>
             <Link
@@ -159,29 +173,32 @@ export default async function ReferentDashboardPage() {
             </Link>
           </div>
           {referrals.length ? (
-            <div className="mt-5 grid gap-3">
+            <div className="mt-5 overflow-hidden rounded-md border border-border">
               {referrals.map((referral) => (
-                <div key={referral.id} className="rounded-md border border-border bg-muted/40 p-3 text-sm">
-                  <div className="flex flex-col justify-between gap-2 md:flex-row md:items-start">
-                    <div>
-                      <Link className="font-semibold underline-offset-4 hover:underline" href={`/profiles/${referral.aftercareProfile.slug}`}>
+                <div
+                  key={referral.id}
+                  className="grid gap-3 border-b border-border p-3 text-sm last:border-b-0 md:grid-cols-[minmax(0,1.2fr)_160px_minmax(0,1fr)_110px] md:items-center"
+                >
+                  <div>
+                    <Link className="font-semibold underline-offset-4 hover:underline" href={`/profiles/${referral.aftercareProfile.slug}`}>
                         {referral.aftercareProfile.programName}
-                      </Link>
-                      <p className="mt-1 text-muted-foreground">
-                        {[referral.aftercareProfile.publicCity, referral.aftercareProfile.publicState].filter(Boolean).join(", ")}
-                      </p>
-                    </div>
+                    </Link>
+                    <p className="mt-1 text-muted-foreground">
+                      {[referral.aftercareProfile.publicCity, referral.aftercareProfile.publicState].filter(Boolean).join(", ")}
+                    </p>
+                  </div>
+                  <div>
                     <Badge tone={["accepted", "placed"].includes(referral.status) ? "success" : "warning"}>
                       {formatReferralValue(referral.status)}
                     </Badge>
                   </div>
-                  <p className="mt-2 text-muted-foreground">
+                  <div className="text-muted-foreground">
                     {formatReferralValue(referral.clientAgeRange)} · {formatReferralValue(referral.supportCategory)} · {formatReferralValue(referral.preferredStartWindow)}
-                  </p>
-                  <p className="mt-2 line-clamp-2 text-muted-foreground">{referral.reasonForReferral}</p>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Submitted {referral.createdAt.toLocaleDateString()} · Last updated {referral.statusUpdatedAt.toLocaleDateString()}
-                  </p>
+                    <p className="mt-1 line-clamp-1">{referral.reasonForReferral}</p>
+                  </div>
+                  <div className="text-xs text-muted-foreground md:text-right">
+                    {referral.statusUpdatedAt.toLocaleDateString()}
+                  </div>
                 </div>
               ))}
             </div>
@@ -191,22 +208,17 @@ export default async function ReferentDashboardPage() {
             </p>
           )}
         </Card>
-      </div>
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
-        <Card>
-          <Search className="text-primary" size={24} />
-          <h2 className="mt-3 font-semibold">Search</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Find privacy-safe provider profiles by city, state, zip, availability, and program fit.
-          </p>
-        </Card>
+
         <Card>
           <Heart className="text-primary" size={24} />
-          <h2 className="mt-3 font-semibold">Favorites</h2>
+          <h2 className="mt-3 text-xl font-semibold">Favorites</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Your saved provider shortlist.
+          </p>
           {favorites.length ? (
             <div className="mt-4 grid gap-3">
               {favorites.map((favorite) => (
-                <div key={favorite.id} className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+                <div key={favorite.id} className="rounded-md border border-border p-3 text-sm">
                   <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
                     <div>
                       <Link
@@ -245,13 +257,6 @@ export default async function ReferentDashboardPage() {
               Keep a working shortlist of aftercare providers from search results.
             </p>
           )}
-        </Card>
-        <Card>
-          <MessageSquare className="text-primary" size={24} />
-          <h2 className="mt-3 font-semibold">Messaging</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Professional and Enterprise referent plans can message inside referral threads.
-          </p>
         </Card>
       </div>
     </main>

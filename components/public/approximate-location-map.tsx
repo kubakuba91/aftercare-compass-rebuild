@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { MapPin } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 type ApproximateMapListing = {
@@ -122,18 +121,8 @@ export function ApproximateLocationMap({
   };
 
   return (
-    <aside className="h-fit rounded-lg border border-border bg-white p-4 shadow-sm lg:sticky lg:top-24">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="font-semibold">Approximate locations</h2>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Pins show generalized city or area locations. Exact addresses stay private.
-          </p>
-        </div>
-        <Badge>{points.length}</Badge>
-      </div>
-
-      <div className="relative mt-4 min-h-[320px] overflow-hidden rounded-md border border-border bg-[linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:44px_44px]">
+    <aside className="h-fit rounded-lg border border-border bg-white p-3 shadow-sm lg:sticky lg:top-24">
+      <div className="relative min-h-[360px] overflow-hidden rounded-md border border-border bg-[linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:44px_44px] lg:min-h-[520px]">
         <div className="absolute inset-x-[-12%] top-[18%] h-10 rotate-[-10deg] bg-primary/10" />
         <div className="absolute bottom-[18%] left-[-10%] h-12 w-[125%] rotate-[16deg] bg-emerald-400/10" />
         <div className="absolute left-[18%] top-0 h-full w-12 rotate-[8deg] bg-muted/80" />

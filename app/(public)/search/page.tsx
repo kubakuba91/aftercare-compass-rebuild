@@ -392,7 +392,7 @@ export default async function SearchPage({
           </div>
         </div>
 
-      <div className="grid gap-5 py-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+      <div className="grid gap-5 py-6 lg:grid-cols-[minmax(0,2fr)_minmax(360px,1fr)] lg:items-start">
         <div className="grid gap-4">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-semibold">{profiles.length} listings</p>

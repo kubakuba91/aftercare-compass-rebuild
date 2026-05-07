@@ -58,12 +58,12 @@ export function PublicSearchHeader({
   ].reduce((sum, value) => sum + (typeof value === "number" ? value : 0), 0);
 
   return (
-    <header className="border-b border-border bg-white">
+    <header className="relative z-30 border-b border-border bg-white">
       <div className="shell relative flex flex-col gap-3 py-4 lg:flex-row lg:items-start">
         <Link className="text-lg font-semibold text-primary" href="/">
           Aftercare Compass
         </Link>
-        <form action="/search" className="grid flex-1 gap-2 md:grid-cols-[260px_1fr_180px_160px]">
+        <form action="/search" className="relative grid flex-1 gap-2 md:grid-cols-[260px_1fr_180px_160px]">
           <div className="grid rounded-md border border-border bg-white p-1 sm:grid-cols-2">
             <label className="focus-within:ring-ring flex min-h-10 cursor-pointer items-center justify-center rounded px-3 text-center text-sm font-semibold transition has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:ring-2">
               <input
@@ -109,7 +109,7 @@ export function PublicSearchHeader({
             <input name="availability" type="hidden" value="available" />
           ) : null}
           {showFilters ? (
-            <div className="z-10 grid w-full min-w-0 gap-4 rounded-lg border border-border bg-white p-5 shadow-sm md:col-start-3 md:col-end-5 md:w-[min(100vw-2rem,420px)]">
+            <div className="absolute left-0 top-[calc(100%+0.75rem)] z-50 grid w-full min-w-0 gap-4 rounded-lg border border-border bg-white p-5 shadow-lg md:left-auto md:right-[168px] md:w-[min(100vw-2rem,420px)]">
               <h2 className="text-lg font-semibold">Filter Options</h2>
               <label className="grid gap-2 text-sm font-medium">
                 Population Served

@@ -481,17 +481,17 @@ export default async function SearchPage({
                           {amenitySummary.visible.length ? (
                             <div className="flex flex-wrap gap-2">
                               {amenitySummary.visible.map((item) => (
-                                <span key={item} className="inline-flex items-center gap-1 text-sm">
-                                  <span className="size-2 rounded-full border border-foreground" />
+                                <span key={item} className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                  <span className="size-1.5 rounded-full border border-muted-foreground" />
                                   {item}
                                 </span>
                               ))}
                               {amenitySummary.hiddenCount ? (
-                                <span className="text-sm text-muted-foreground">+{amenitySummary.hiddenCount} more</span>
+                                <span className="text-xs text-muted-foreground">+{amenitySummary.hiddenCount} more</span>
                               ) : null}
                             </div>
                           ) : (
-                            <p className="mt-2 text-sm text-muted-foreground">Amenities not listed</p>
+                            <p className="mt-2 text-xs text-muted-foreground">Amenities not listed</p>
                           )}
                         </div>
 

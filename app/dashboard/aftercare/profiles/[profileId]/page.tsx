@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, BedDouble, Building2, CheckCircle2, CircleAlert, Eye, ImagePlus, Save, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
+import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
 import {
   amenityOptions,
@@ -350,20 +351,7 @@ export default async function AftercareProfileDetailPage({
 
             <form action={uploadAftercareProfileImages} className="mt-5 grid gap-3 rounded-md border border-dashed border-border bg-muted/30 p-4">
               <input name="profileId" type="hidden" value={profile.id} />
-              <label className={labelClassName()}>
-                Add images
-                <input
-                  accept="image/*"
-                  className="min-h-11 rounded-md border border-border bg-white px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground"
-                  multiple
-                  name="images"
-                  type="file"
-                />
-              </label>
-              <button className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground md:w-fit">
-                <ImagePlus size={16} />
-                Upload images
-              </button>
+              <ProfileImageUploader />
             </form>
 
             {profile.images.length ? (

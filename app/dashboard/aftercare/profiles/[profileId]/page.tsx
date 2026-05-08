@@ -1,6 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft, BedDouble, Building2, CheckCircle2, CircleAlert, Eye, Save, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BedDouble, Building2, CheckCircle2, CircleAlert, Eye, ImagePlus, Save, ShieldCheck, Star, Trash2 } from "lucide-react";
+import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
 import {
   amenityOptions,
@@ -33,7 +35,10 @@ import {
   updateAftercareProfileAvailability,
   updateAftercareProfileBasics,
   updateAftercareProfileContent,
-  updateAftercareProfileStatus
+  updateAftercareProfileStatus,
+  uploadAftercareProfileImages,
+  removeAftercareProfileImage,
+  setAftercareProfileCoverImage
 } from "./actions";
 
 const photoReadinessOptions = [
@@ -138,7 +143,8 @@ export default async function AftercareProfileDetailPage({
     include: {
       leads: { select: { id: true }, take: 1 },
       referrals: { select: { id: true }, take: 1 },
-      certifications: { select: { id: true, status: true } }
+      certifications: { select: { id: true, status: true } },
+      images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }] }
     }
   });
 
@@ -329,6 +335,87 @@ export default async function AftercareProfileDetailPage({
                 Save availability
               </button>
             </form>
+          </Card>
+
+          <Card>
+            <div className="flex items-start gap-3">
+              <ImagePlus className="mt-1 text-primary" size={24} />
+              <div>
+                <h2 className="text-xl font-semibold">Profile images</h2>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  Upload up to 6 images. The cover image appears on search cards and at the top of the public profile.
+                </p>
+              </div>
+            </div>
+
+            <form action={uploadAftercareProfileImages} className="mt-5 grid gap-3 rounded-md border border-dashed border-border bg-muted/30 p-4">
+              <input name="profileId" type="hidden" value={profile.id} />
+              <label className={labelClassName()}>
+                Add images
+                <input
+                  accept="image/*"
+                  className="min-h-11 rounded-md border border-border bg-white px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground"
+                  multiple
+                  name="images"
+                  type="file"
+                />
+              </label>
+              <button className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground md:w-fit">
+                <ImagePlus size={16} />
+                Upload images
+              </button>
+            </form>
+
+            {profile.images.length ? (
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                {profile.images.map((image) => (
+                  <div key={image.id} className="overflow-hidden rounded-md border border-border bg-white">
+                    <div className="relative aspect-[4/3] bg-muted">
+                      <Image
+                        alt={image.altText || profile.programName}
+                        className="object-cover"
+                        fill
+                        sizes="(min-width: 1024px) 320px, 100vw"
+                        src={image.url}
+                        unoptimized
+                      />
+                      {image.isCover ? (
+                        <Badge className="absolute left-3 top-3" tone="verified">
+                          Cover
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-wrap gap-2 p-3">
+                      {!image.isCover ? (
+                        <form action={setAftercareProfileCoverImage}>
+                          <input name="profileId" type="hidden" value={profile.id} />
+                          <input name="imageId" type="hidden" value={image.id} />
+                          <button className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold">
+                            <Star size={15} />
+                            Make cover
+                          </button>
+                        </form>
+                      ) : null}
+                      <form action={removeAftercareProfileImage}>
+                        <input name="profileId" type="hidden" value={profile.id} />
+                        <input name="imageId" type="hidden" value={image.id} />
+                        <ConfirmSubmitButton
+                          className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold text-destructive"
+                          message="Remove this image from the profile?"
+                        >
+                          <Trash2 size={15} />
+                          Remove
+                        </ConfirmSubmitButton>
+                      </form>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-5 rounded-md border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                No images uploaded yet.
+              </div>
+            )}
           </Card>
 
           <Card>

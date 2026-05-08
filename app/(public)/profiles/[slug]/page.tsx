@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { BedDouble, CheckCircle2, Mail, MapPin, Send, ShieldCheck, Video } from "lucide-react";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
@@ -211,6 +212,9 @@ export default async function PublicProfilePage({
   const profile = await prisma.aftercareProfile.findUnique({
     where: {
       slug
+    },
+    include: {
+      images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }] }
     }
   });
 
@@ -286,13 +290,42 @@ export default async function PublicProfilePage({
               <MapPin size={16} />
               {publicLocation || "Location not listed"} · Exact address is private
             </p>
-            <div className="mt-6 rounded-lg border border-dashed border-border bg-muted/40 p-6">
-              <p className="text-sm font-semibold">Photos coming soon</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Providers can mark photos as ready in the dashboard. Uploaded photo hosting is planned
-                after the v1 profile workflow.
-              </p>
-            </div>
+            {profile.images.length ? (
+              <div className="mt-6 grid gap-3 md:grid-cols-[1.4fr_1fr]">
+                <div className="relative min-h-72 overflow-hidden rounded-lg border border-border bg-muted">
+                  <Image
+                    alt={profile.images[0]?.altText || profile.programName}
+                    className="object-cover"
+                    fill
+                    priority
+                    sizes="(min-width: 1024px) 680px, 100vw"
+                    src={profile.images[0].url}
+                    unoptimized
+                  />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
+                  {profile.images.slice(1, 4).map((image) => (
+                    <div key={image.id} className="relative min-h-32 overflow-hidden rounded-lg border border-border bg-muted">
+                      <Image
+                        alt={image.altText || profile.programName}
+                        className="object-cover"
+                        fill
+                        sizes="(min-width: 1024px) 280px, 50vw"
+                        src={image.url}
+                        unoptimized
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-6 rounded-lg border border-dashed border-border bg-muted/40 p-6">
+                <p className="text-sm font-semibold">Photos not added yet</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  This provider has not uploaded profile images yet.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="mt-5 grid gap-4">

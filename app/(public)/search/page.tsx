@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma, ProfileType, Role } from "@prisma/client";
 import { MapPin } from "lucide-react";
@@ -378,7 +379,16 @@ export default async function SearchPage({
       supportServices: true,
       insuranceAccepted: true,
       matAccepted: true,
-      roomTypes: true
+      roomTypes: true,
+      images: {
+        orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
+        take: 1,
+        select: {
+          id: true,
+          url: true,
+          altText: true
+        }
+      }
     }
   });
   const radiusCenter = radiusMiles ? searchCenterFromQuery(q) : null;
@@ -484,7 +494,18 @@ export default async function SearchPage({
                   </div>
                   <Link className="focus-ring grid gap-0 md:grid-cols-[190px_1fr]" href={`/profiles/${profile.slug}`}>
                     <div className="relative min-h-40 bg-muted md:min-h-0">
-                      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(20,184,166,0.18),rgba(30,64,175,0.12)),linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:100%_100%,34px_34px,34px_34px]" />
+                      {profile.images[0] ? (
+                        <Image
+                          alt={profile.images[0].altText || profile.programName}
+                          className="object-cover"
+                          fill
+                          sizes="190px"
+                          src={profile.images[0].url}
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(20,184,166,0.18),rgba(30,64,175,0.12)),linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:100%_100%,34px_34px,34px_34px]" />
+                      )}
                       <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-1 text-xs font-semibold">
                         {index + 1}
                       </div>

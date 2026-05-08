@@ -269,6 +269,7 @@ model AftercareProfile {
   updatedAt                       DateTime      @updatedAt
 
   certifications VerificationDocument[]
+  images         ProfileImage[]
   referrals      Referral[]
   leads          Lead[]
   flags          Flag[]
@@ -279,6 +280,22 @@ model AftercareProfile {
   @@index([type, status])
   @@index([publicCity, publicState])
   @@index([verificationTier])
+}
+
+model ProfileImage {
+  id          String           @id @default(cuid())
+  profileId   String
+  profile     AftercareProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  url         String
+  storagePath String
+  altText     String?
+  sortOrder   Int              @default(0)
+  isCover     Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([profileId, sortOrder])
+  @@index([profileId, isCover])
 }
 
 model Favorite {

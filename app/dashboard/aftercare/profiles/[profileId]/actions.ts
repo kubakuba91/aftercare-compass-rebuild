@@ -2,12 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { randomUUID } from "crypto";
 import { ProfileStatus, ProfileType } from "@prisma/client";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { getAftercareDashboardUser } from "@/lib/protected-routing";
 import { valuesFromForm } from "@/lib/sober-living-onboarding";
+import { ensureProfileMediaBucket, profileMediaBucket } from "@/lib/supabase-storage";
 
 function nullableText(value: FormDataEntryValue | null) {
   const text = String(value || "").trim();
@@ -47,6 +49,11 @@ function profileHref(profileId: string, message?: string) {
   }
 
   return `/dashboard/aftercare/profiles/${profileId}${params.size ? `?${params.toString()}` : ""}`;
+}
+
+function safeFileName(value: string) {
+  const extension = value.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  return `${randomUUID()}.${extension}`;
 }
 
 export async function updateAftercareProfileBasics(formData: FormData) {
@@ -179,6 +186,149 @@ export async function updateAftercareProfileContent(formData: FormData) {
   revalidatePath("/dashboard/aftercare");
   revalidatePath(profileHref(profile.id));
   redirect(profileHref(profile.id, "Profile content saved."));
+}
+
+export async function uploadAftercareProfileImages(formData: FormData) {
+  const profileId = String(formData.get("profileId") || "");
+  const profile = await getOwnedProfile(profileId);
+  const files = formData
+    .getAll("images")
+    .filter((item): item is File => item instanceof File && item.size > 0);
+
+  if (!files.length) {
+    redirect(profileHref(profile.id, "Choose at least one image to upload."));
+  }
+
+  const currentImageCount = await prisma.profileImage.count({
+    where: { profileId: profile.id }
+  });
+
+  if (currentImageCount + files.length > 6) {
+    redirect(profileHref(profile.id, "Each profile can have up to 6 images for now."));
+  }
+
+  const invalidFile = files.find((file) => !file.type.startsWith("image/") || file.size > 10 * 1024 * 1024);
+
+  if (invalidFile) {
+    redirect(profileHref(profile.id, "Upload image files only, up to 10 MB each."));
+  }
+
+  const supabase = await ensureProfileMediaBucket();
+  const createdImages = [];
+
+  for (const [index, file] of files.entries()) {
+    const storagePath = `${profile.orgId}/${profile.id}/${Date.now()}-${index}-${safeFileName(file.name)}`;
+    const bytes = await file.arrayBuffer();
+    const { error } = await supabase.storage
+      .from(profileMediaBucket)
+      .upload(storagePath, bytes, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (error) {
+      redirect(profileHref(profile.id, `Image upload failed: ${error.message}`));
+    }
+
+    const { data } = supabase.storage.from(profileMediaBucket).getPublicUrl(storagePath);
+
+    createdImages.push({
+      profileId: profile.id,
+      url: data.publicUrl,
+      storagePath,
+      altText: profile.programName,
+      sortOrder: currentImageCount + index,
+      isCover: currentImageCount === 0 && index === 0
+    });
+  }
+
+  await prisma.profileImage.createMany({ data: createdImages });
+
+  revalidatePath("/dashboard/aftercare");
+  revalidatePath(profileHref(profile.id));
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+  redirect(profileHref(profile.id, `${createdImages.length} image${createdImages.length === 1 ? "" : "s"} uploaded.`));
+}
+
+export async function setAftercareProfileCoverImage(formData: FormData) {
+  const profileId = String(formData.get("profileId") || "");
+  const imageId = String(formData.get("imageId") || "");
+  const profile = await getOwnedProfile(profileId);
+  const image = await prisma.profileImage.findFirst({
+    where: {
+      id: imageId,
+      profileId: profile.id
+    },
+    select: { id: true }
+  });
+
+  if (!image) {
+    redirect(profileHref(profile.id, "Image not found."));
+  }
+
+  await prisma.$transaction([
+    prisma.profileImage.updateMany({
+      where: { profileId: profile.id },
+      data: { isCover: false }
+    }),
+    prisma.profileImage.update({
+      where: { id: image.id },
+      data: { isCover: true }
+    })
+  ]);
+
+  revalidatePath("/dashboard/aftercare");
+  revalidatePath(profileHref(profile.id));
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+  redirect(profileHref(profile.id, "Cover image updated."));
+}
+
+export async function removeAftercareProfileImage(formData: FormData) {
+  const profileId = String(formData.get("profileId") || "");
+  const imageId = String(formData.get("imageId") || "");
+  const profile = await getOwnedProfile(profileId);
+  const image = await prisma.profileImage.findFirst({
+    where: {
+      id: imageId,
+      profileId: profile.id
+    },
+    select: {
+      id: true,
+      storagePath: true,
+      isCover: true
+    }
+  });
+
+  if (!image) {
+    redirect(profileHref(profile.id, "Image not found."));
+  }
+
+  const supabase = await ensureProfileMediaBucket();
+  await supabase.storage.from(profileMediaBucket).remove([image.storagePath]);
+  await prisma.profileImage.delete({ where: { id: image.id } });
+
+  if (image.isCover) {
+    const nextImage = await prisma.profileImage.findFirst({
+      where: { profileId: profile.id },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      select: { id: true }
+    });
+
+    if (nextImage) {
+      await prisma.profileImage.update({
+        where: { id: nextImage.id },
+        data: { isCover: true }
+      });
+    }
+  }
+
+  revalidatePath("/dashboard/aftercare");
+  revalidatePath(profileHref(profile.id));
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+  redirect(profileHref(profile.id, "Image removed."));
 }
 
 export async function updateAftercareProfileStatus(formData: FormData) {

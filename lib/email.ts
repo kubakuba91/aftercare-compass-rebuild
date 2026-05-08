@@ -1,5 +1,3 @@
-import { Resend } from "resend";
-
 type EmailInput = {
   to: string | string[];
   subject: string;
@@ -8,9 +6,10 @@ type EmailInput = {
 };
 
 const resendApiKey = process.env.RESEND_API_KEY;
-const emailFrom = process.env.EMAIL_FROM;
-
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
+const mailgunApiKey = process.env.MAILGUN_API_KEY;
+const mailgunDomain = process.env.MAILGUN_DOMAIN;
+const mailgunBaseUrl = process.env.MAILGUN_BASE_URL || "https://api.mailgun.net/v3";
+const emailFrom = process.env.MAILGUN_FROM_EMAIL || process.env.EMAIL_FROM;
 
 export function appUrl(path = "/") {
   const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
@@ -93,23 +92,90 @@ export async function sendTransactionalEmail(input: EmailInput) {
     return { status: "skipped", reason: "missing_recipient" };
   }
 
-  if (!resend || !emailFrom) {
-    console.warn("Email skipped because RESEND_API_KEY or EMAIL_FROM is not configured.");
+  if (mailgunApiKey && mailgunDomain && emailFrom) {
+    return sendMailgunEmail({
+      ...input,
+      to: recipients
+    });
+  }
+
+  if (resendApiKey && emailFrom) {
+    return sendResendEmail({
+      ...input,
+      to: recipients
+    });
+  }
+
+  console.warn(
+    "Email skipped because Mailgun or Resend environment variables are not configured."
+  );
+  return { status: "skipped", reason: "missing_email_config" };
+}
+
+async function sendMailgunEmail(input: EmailInput & { to: string[] }) {
+  if (!mailgunApiKey || !mailgunDomain || !emailFrom) {
+    return { status: "skipped", reason: "missing_email_config" };
+  }
+
+  const formData = new FormData();
+  formData.set("from", emailFrom);
+  input.to.forEach((recipient) => formData.append("to", recipient));
+  formData.set("subject", input.subject);
+  formData.set("text", input.text);
+  formData.set("html", input.html);
+
+  try {
+    const response = await fetch(`${mailgunBaseUrl}/${mailgunDomain}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${Buffer.from(`api:${mailgunApiKey}`).toString("base64")}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error("Mailgun email failed", response.status, errorBody);
+      return { status: "failed" };
+    }
+
+    return { status: "sent" };
+  } catch (error) {
+    console.error("Mailgun email failed", error);
+    return { status: "failed" };
+  }
+}
+
+async function sendResendEmail(input: EmailInput & { to: string[] }) {
+  if (!resendApiKey || !emailFrom) {
     return { status: "skipped", reason: "missing_email_config" };
   }
 
   try {
-    await resend.emails.send({
-      from: emailFrom,
-      to: recipients,
-      subject: input.subject,
-      html: input.html,
-      text: input.text
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from: emailFrom,
+        to: input.to,
+        subject: input.subject,
+        html: input.html,
+        text: input.text
+      })
     });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error("Resend email failed", response.status, errorBody);
+      return { status: "failed" };
+    }
 
     return { status: "sent" };
   } catch (error) {
-    console.error("Transactional email failed", error);
+    console.error("Resend email failed", error);
     return { status: "failed" };
   }
 }

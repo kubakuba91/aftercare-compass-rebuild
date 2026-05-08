@@ -309,7 +309,7 @@ export default async function PublicProfilePage({
             </p>
             {profile.images.length ? (
               <div className="mt-6 grid gap-3 md:grid-cols-[1.4fr_1fr]">
-                <div className="relative min-h-72 overflow-hidden rounded-lg border border-border bg-muted">
+                <div className="relative min-h-[28rem] overflow-hidden rounded-lg border border-border bg-muted">
                   <Image
                     alt={profile.images[0]?.altText || profile.programName}
                     className="object-cover"
@@ -322,7 +322,7 @@ export default async function PublicProfilePage({
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
                   {profile.images.slice(1, 4).map((image) => (
-                    <div key={image.id} className="relative min-h-32 overflow-hidden rounded-lg border border-border bg-muted">
+                    <div key={image.id} className="relative min-h-40 overflow-hidden rounded-lg border border-border bg-muted">
                       <Image
                         alt={image.altText || profile.programName}
                         className="object-cover"

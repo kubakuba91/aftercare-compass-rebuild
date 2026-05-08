@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { Building2, Search, ShieldCheck } from "lucide-react";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -27,7 +28,13 @@ export default async function HomePage() {
 
         <div className="shell relative py-8">
           <div className="flex items-center justify-between gap-4">
-            <div className="text-lg font-semibold text-foreground">Aftercare Compass</div>
+            <Image
+              alt="Aftercare Compass"
+              className="h-14 w-14 object-contain"
+              height={56}
+              src="/brand/ac-favicon.png"
+              width={56}
+            />
             <ButtonLink href="/sign-in" variant="secondary">
               Join or Login
             </ButtonLink>

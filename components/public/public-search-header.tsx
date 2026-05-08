@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { SlidersHorizontal, UserCircle } from "lucide-react";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import {
@@ -60,8 +61,14 @@ export function PublicSearchHeader({
   return (
     <header className="relative z-30 border-b border-border bg-white">
       <div className="shell relative flex flex-col gap-3 py-4 lg:flex-row lg:items-start">
-        <Link className="text-lg font-semibold text-primary" href="/">
-          Aftercare Compass
+        <Link className="focus-ring inline-flex shrink-0 items-center rounded-md" href="/" aria-label="Aftercare Compass home">
+          <Image
+            alt="Aftercare Compass"
+            className="h-12 w-12 object-contain"
+            height={48}
+            src="/brand/ac-favicon.png"
+            width={48}
+          />
         </Link>
         <form action="/search" className="relative grid flex-1 gap-2 md:grid-cols-[260px_1fr_180px_160px]">
           <div className="grid rounded-md border border-border bg-white p-1 sm:grid-cols-2">

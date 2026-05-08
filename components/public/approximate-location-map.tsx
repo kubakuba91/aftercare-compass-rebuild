@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { approximatePublicPoint } from "@/lib/public-location";
+import { cn } from "@/lib/utils";
 
 type ApproximateMapListing = {
   id: string;
@@ -74,10 +75,14 @@ function approximatePoint(listing: ApproximateMapListing): MapPinPoint | null {
 }
 
 export function ApproximateLocationMap({
+  className,
   listings,
+  mapClassName,
   selectedListingId
 }: {
+  className?: string;
   listings: ApproximateMapListing[];
+  mapClassName?: string;
   selectedListingId?: string;
 }) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -151,8 +156,8 @@ export function ApproximateLocationMap({
   }, [points, scriptReady, selectedListingId]);
 
   return (
-    <aside className="h-fit rounded-lg border border-border bg-white p-3 shadow-sm lg:sticky lg:top-24">
-      <div className="relative min-h-[360px] overflow-hidden rounded-md border border-border bg-[linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:44px_44px] lg:min-h-[520px]">
+    <aside className={cn("h-fit rounded-lg border border-border bg-white p-3 shadow-sm lg:sticky lg:top-24", className)}>
+      <div className={cn("relative min-h-[360px] overflow-hidden rounded-md border border-border bg-[linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:44px_44px] lg:min-h-[520px]", mapClassName)}>
         {apiKey ? (
           <Script
             id="google-maps-script"

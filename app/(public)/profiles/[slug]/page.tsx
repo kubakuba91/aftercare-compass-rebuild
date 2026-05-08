@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { BedDouble, CheckCircle2, Mail, MapPin, Send, ShieldCheck, Video } from "lucide-react";
+import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { Badge } from "@/components/ui/badge";
@@ -457,9 +458,25 @@ export default async function PublicProfilePage({
                 {publicLocation || "Location not listed"}. Exact addresses are private and are never
                 shown on public or referent-facing pages.
               </p>
-              <div className="mt-4 rounded-md border border-dashed border-border bg-muted/40 p-6 text-sm text-muted-foreground">
-                Generalized map area placeholder
-              </div>
+              <ApproximateLocationMap
+                className="mt-4 border-0 p-0 shadow-none lg:static"
+                listings={[
+                  {
+                    id: profile.id,
+                    slug: profile.slug,
+                    programName: profile.programName,
+                    type: profile.type,
+                    publicCity: profile.publicCity,
+                    publicState: profile.publicState,
+                    latitude: profile.latitude ? Number(profile.latitude) : null,
+                    longitude: profile.longitude ? Number(profile.longitude) : null,
+                    isAvailable: Boolean(profile.bedsAvailable || profile.acceptingNewPatients),
+                    selectionHref: `/profiles/${profile.slug}`
+                  }
+                ]}
+                mapClassName="min-h-[280px] lg:min-h-[320px]"
+                selectedListingId={profile.id}
+              />
             </Card>
           </div>
         </section>

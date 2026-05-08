@@ -218,7 +218,7 @@ export async function sendOrganizationInviteEmail(input: {
     `
   );
 
-  await sendTransactionalEmail({
+  return sendTransactionalEmail({
     to: input.email,
     subject: `Join ${input.organizationName} on Aftercare Compass`,
     html: body,

@@ -1165,6 +1165,11 @@ export default async function AftercareDashboardPage({
               </Link>
             </div>
             <form action={inviteAftercareManagers} className="mt-5 grid gap-4">
+              {query.managerMessage ? (
+                <p className="rounded-md border border-border bg-muted/40 p-3 text-sm font-semibold text-foreground">
+                  {query.managerMessage}
+                </p>
+              ) : null}
               <label className="grid gap-2 text-sm font-medium">
                 Email addresses
                 <textarea

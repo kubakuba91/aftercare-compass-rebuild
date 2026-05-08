@@ -31,6 +31,22 @@ function teamHref(message?: string) {
   return `/dashboard/referent${params.size ? `?${params.toString()}` : ""}`;
 }
 
+function teamInviteMessage(email: string, result: { status: string }, attachedExistingUser = false) {
+  if (result.status === "sent") {
+    return attachedExistingUser ? `Team member added and invite email sent to ${email}.` : `Invite email sent to ${email}.`;
+  }
+
+  if (result.status === "skipped") {
+    return attachedExistingUser
+      ? `Team member added, but email is not configured or could not be sent.`
+      : `Invite saved, but email is not configured or could not be sent.`;
+  }
+
+  return attachedExistingUser
+    ? `Team member added, but the invite email could not be sent.`
+    : `Invite saved, but the email could not be sent.`;
+}
+
 export async function addReferentTeamMember(formData: FormData) {
   const appUser = await getProtectedAppUser("/dashboard/referent");
 
@@ -111,7 +127,7 @@ export async function addReferentTeamMember(formData: FormData) {
       }
     });
 
-    await sendOrganizationInviteEmail({
+    const emailResult = await sendOrganizationInviteEmail({
       email,
       organizationName: organization.name,
       role: Role.referent_manager,
@@ -119,7 +135,7 @@ export async function addReferentTeamMember(formData: FormData) {
     });
 
     revalidatePath("/dashboard/referent");
-    redirect(teamHref("Team member added."));
+    redirect(teamHref(teamInviteMessage(email, emailResult, true)));
   }
 
   await prisma.referentOrganization.update({
@@ -129,7 +145,7 @@ export async function addReferentTeamMember(formData: FormData) {
     }
   });
 
-  await sendOrganizationInviteEmail({
+  const emailResult = await sendOrganizationInviteEmail({
     email,
     organizationName: organization.name,
     role: Role.referent_manager,
@@ -137,7 +153,7 @@ export async function addReferentTeamMember(formData: FormData) {
   });
 
   revalidatePath("/dashboard/referent");
-  redirect(teamHref("Invite saved. They can join by signing up with that email."));
+  redirect(teamHref(teamInviteMessage(email, emailResult)));
 }
 
 export async function removePendingReferentInvite(formData: FormData) {

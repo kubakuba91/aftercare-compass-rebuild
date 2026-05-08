@@ -49,6 +49,30 @@ function managersHref(message?: string, invite = false) {
   return `/dashboard/aftercare?${params.toString()}`;
 }
 
+function inviteDeliveryMessage(count: number, results: Array<{ status: string }>) {
+  if (!count) {
+    return "No new manager invites were needed.";
+  }
+
+  const sentCount = results.filter((result) => result.status === "sent").length;
+  const skippedCount = results.filter((result) => result.status === "skipped").length;
+  const failedCount = results.filter((result) => result.status === "failed").length;
+
+  if (sentCount === count) {
+    return `${count} manager invite${count === 1 ? "" : "s"} sent.`;
+  }
+
+  if (skippedCount === count) {
+    return `${count} manager invite${count === 1 ? "" : "s"} saved, but email is not configured or could not be sent.`;
+  }
+
+  if (failedCount > 0 || skippedCount > 0) {
+    return `${count} manager invite${count === 1 ? "" : "s"} saved. ${sentCount} email${sentCount === 1 ? "" : "s"} sent, ${failedCount + skippedCount} need${failedCount + skippedCount === 1 ? "s" : ""} a resend.`;
+  }
+
+  return `${count} manager invite${count === 1 ? "" : "s"} saved.`;
+}
+
 function smsHref(profileId: string, message: string) {
   const params = new URLSearchParams({
     tab: "overview",
@@ -171,7 +195,7 @@ export async function inviteAftercareManagers(formData: FormData) {
   const appUser = await getAftercareDashboardUser("/dashboard/aftercare?tab=managers");
 
   if (appUser.role !== Role.aftercare_admin) {
-    redirect(managersHref("Only aftercare admins can invite managers."));
+    redirect(managersHref("Only aftercare admins can invite managers.", true));
   }
 
   const emails = emailsFromText(String(formData.get("emails") || ""));
@@ -204,19 +228,26 @@ export async function inviteAftercareManagers(formData: FormData) {
   });
 
   if (!organization) {
-    redirect(managersHref("Aftercare organization not found."));
+    redirect(managersHref("Aftercare organization not found.", true));
   }
 
   const managerLimit = aftercareManagerLimit(organization.subscriptionPlan);
   const activeUserCount = organization.users.filter((user) => user.isActive).length;
   const pendingInviteEmails = new Set(organization.invites.map((invite) => invite.email.toLowerCase()));
   const existingOrgEmails = new Set(organization.users.map((user) => user.email.toLowerCase()));
+  const alreadyActiveEmails = parsedEmails.data.filter((email) => existingOrgEmails.has(email));
+  const alreadyPendingEmails = parsedEmails.data.filter((email) => pendingInviteEmails.has(email));
   const newEmails = parsedEmails.data.filter(
     (email) => !existingOrgEmails.has(email) && !pendingInviteEmails.has(email)
   );
 
   if (!newEmails.length) {
-    redirect(managersHref("Those emails are already active or pending."));
+    const details = [
+      alreadyActiveEmails.length ? `Already on this account: ${alreadyActiveEmails.join(", ")}` : "",
+      alreadyPendingEmails.length ? `Already pending: ${alreadyPendingEmails.join(", ")}` : ""
+    ].filter(Boolean).join(". ");
+
+    redirect(managersHref(details || "Those emails are already active or pending.", true));
   }
 
   if (
@@ -270,7 +301,7 @@ export async function inviteAftercareManagers(formData: FormData) {
   }
 
   const inviterName = [appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email;
-  await Promise.all(
+  const emailResults = await Promise.all(
     [...newEmails].map((email) =>
       sendOrganizationInviteEmail({
         email,
@@ -282,7 +313,7 @@ export async function inviteAftercareManagers(formData: FormData) {
   );
 
   revalidatePath("/dashboard/aftercare");
-  redirect(managersHref(`${newEmails.length} manager${newEmails.length === 1 ? "" : "s"} invited.`));
+  redirect(managersHref(inviteDeliveryMessage(newEmails.length, emailResults), emailResults.some((result) => result.status !== "sent")));
 }
 
 export async function removeAftercareManagerInvite(formData: FormData) {

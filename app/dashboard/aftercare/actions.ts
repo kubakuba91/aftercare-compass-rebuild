@@ -339,6 +339,61 @@ export async function removeAftercareManagerInvite(formData: FormData) {
   redirect(managersHref("Pending invite removed."));
 }
 
+export async function removeAftercareManager(formData: FormData) {
+  const appUser = await getAftercareDashboardUser("/dashboard/aftercare?tab=managers");
+
+  if (appUser.role !== Role.aftercare_admin) {
+    redirect(managersHref("Only aftercare admins can remove managers."));
+  }
+
+  const managerId = String(formData.get("managerId") || "");
+
+  if (!managerId) {
+    redirect(managersHref("Manager not found."));
+  }
+
+  if (managerId === appUser.id) {
+    redirect(managersHref("You cannot remove your own account."));
+  }
+
+  const manager = await prisma.user.findFirst({
+    where: {
+      id: managerId,
+      orgId: appUser.orgId
+    },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true
+    }
+  });
+
+  if (!manager) {
+    redirect(managersHref("Manager not found."));
+  }
+
+  if (manager.role !== Role.aftercare_manager) {
+    redirect(managersHref("Only manager accounts can be removed from this screen."));
+  }
+
+  await prisma.user.update({
+    where: { id: manager.id },
+    data: {
+      orgId: null,
+      isActive: false,
+      phone: null,
+      smsOptIn: false
+    }
+  });
+
+  const managerName = [manager.firstName, manager.lastName].filter(Boolean).join(" ") || manager.email;
+
+  revalidatePath("/dashboard/aftercare");
+  redirect(managersHref(`${managerName} was removed from this account.`));
+}
+
 export async function updateManagerSmsSettings(formData: FormData) {
   const appUser = await getAftercareDashboardUser("/dashboard/aftercare?tab=managers");
   const managerId = String(formData.get("managerId") || "");

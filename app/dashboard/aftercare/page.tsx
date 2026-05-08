@@ -15,6 +15,7 @@ import {
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { AftercareOverviewSelector } from "@/components/dashboard/aftercare-overview-selector";
 import { AftercareQuickAvailability } from "@/components/dashboard/aftercare-quick-availability";
+import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
@@ -27,6 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   inviteAftercareManagers,
+  removeAftercareManager,
   removeAftercareManagerInvite,
   sendBedAvailabilityTextCheck,
   updateAftercareAvailability,
@@ -971,6 +973,19 @@ export default async function AftercareDashboardPage({
                       <Badge tone={manager.smsOptIn && manager.phone ? "success" : "neutral"}>
                         {manager.smsOptIn && manager.phone ? "SMS enabled" : "SMS off"}
                       </Badge>
+                      {appUser.role === "aftercare_admin" &&
+                      manager.role === "aftercare_manager" &&
+                      manager.id !== appUser.id ? (
+                        <form action={removeAftercareManager}>
+                          <input name="managerId" type="hidden" value={manager.id} />
+                          <ConfirmSubmitButton
+                            className="focus-ring min-h-9 rounded-md border border-border bg-white px-3 text-sm font-semibold text-destructive"
+                            message={`Remove ${[manager.firstName, manager.lastName].filter(Boolean).join(" ") || manager.email} from this account? They will lose access to this organization's dashboard.`}
+                          >
+                            Remove manager
+                          </ConfirmSubmitButton>
+                        </form>
+                      ) : null}
                     </div>
                     <form action={updateManagerSmsSettings} className="grid gap-3 rounded-md border border-border bg-muted/40 p-3 md:col-span-2">
                       <input name="managerId" type="hidden" value={manager.id} />

@@ -6,6 +6,7 @@ import { MapPin } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
+import { TrustBadge } from "@/components/public/trust-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
@@ -514,9 +515,7 @@ export default async function SearchPage({
                     <div className="grid gap-3 p-4">
                       <div className="flex flex-wrap items-start gap-2 pr-12 md:flex-nowrap md:items-center">
                         <h2 className="min-w-0 flex-1 text-lg font-semibold leading-tight">{profile.programName}</h2>
-                        <Badge tone={profile.verificationTier > 1 ? "verified" : "neutral"}>
-                          {profile.verificationTier > 1 ? "Verified" : "Self-reported"}
-                        </Badge>
+                        <TrustBadge verificationTier={profile.verificationTier} />
                         <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
                           {availabilityText(profile)}
                         </Badge>

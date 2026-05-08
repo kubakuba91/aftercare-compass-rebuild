@@ -5,6 +5,7 @@ import { BedDouble, CheckCircle2, Mail, MapPin, Send, ShieldCheck, Video } from 
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
+import { TrustBadge } from "@/components/public/trust-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
@@ -269,9 +270,7 @@ export default async function PublicProfilePage({
         <section>
           <div className="rounded-lg border border-border bg-white p-6">
             <div className="flex flex-wrap gap-2">
-              <Badge tone={profile.verificationTier > 1 ? "verified" : "neutral"}>
-                {profile.verificationTier > 1 ? "Verified" : "Self-reported"}
-              </Badge>
+              <TrustBadge verificationTier={profile.verificationTier} />
               <Badge>{isSoberLiving ? "Sober Living" : "Continued Care"}</Badge>
               <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
                 {availabilityText(profile)}

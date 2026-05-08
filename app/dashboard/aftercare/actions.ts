@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { ProfileType, ReferralStatus, Role } from "@prisma/client";
 import { z } from "zod";
 import { availabilityReplyExample } from "@/lib/availability-sms";
+import { notifyReferralStatusChanged, sendOrganizationInviteEmail } from "@/lib/email-notifications";
 import { aftercarePlans } from "@/lib/plans";
 import { normalizePhoneNumber } from "@/lib/phone";
 import { canTransitionReferral, referralStatuses } from "@/lib/product-rules";
@@ -183,6 +184,7 @@ export async function inviteAftercareManagers(formData: FormData) {
   const organization = await prisma.organization.findUnique({
     where: { id: appUser.orgId },
     select: {
+      name: true,
       subscriptionPlan: true,
       users: {
         select: {
@@ -266,6 +268,18 @@ export async function inviteAftercareManagers(formData: FormData) {
       skipDuplicates: true
     });
   }
+
+  const inviterName = [appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email;
+  await Promise.all(
+    [...newEmails].map((email) =>
+      sendOrganizationInviteEmail({
+        email,
+        organizationName: organization.name,
+        role: Role.aftercare_manager,
+        invitedByName: inviterName
+      })
+    )
+  );
 
   revalidatePath("/dashboard/aftercare");
   redirect(managersHref(`${newEmails.length} manager${newEmails.length === 1 ? "" : "s"} invited.`));
@@ -454,6 +468,8 @@ export async function updateReferralStatus(formData: FormData) {
       statusUpdatedAt: new Date()
     }
   });
+
+  await notifyReferralStatusChanged(referral.id);
 
   revalidatePath("/dashboard/aftercare");
   revalidatePath("/dashboard/referent");

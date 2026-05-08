@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getCurrentAppUser } from "@/lib/current-user";
+import { notifyNewPublicLead, notifyNewReferral } from "@/lib/email-notifications";
 import { prisma } from "@/lib/prisma";
 import { publicLeadSchema } from "@/lib/validations/lead";
 import { forbiddenDirectIdentifierFields, referralSchema } from "@/lib/validations/referral";
@@ -40,7 +41,7 @@ export async function createPublicProfileLead(formData: FormData) {
     redirect("/search");
   }
 
-  await prisma.lead.create({
+  const lead = await prisma.lead.create({
     data: {
       profileId: profile.id,
       aftercareOrgId: profile.orgId,
@@ -50,6 +51,8 @@ export async function createPublicProfileLead(formData: FormData) {
       message: parsed.data.message
     }
   });
+
+  await notifyNewPublicLead(lead.id);
 
   redirect(`/profiles/${slug}?lead=sent`);
 }
@@ -102,7 +105,7 @@ export async function createProfileReferral(formData: FormData) {
     redirect("/search");
   }
 
-  await prisma.referral.create({
+  const referral = await prisma.referral.create({
     data: {
       referentUserId: appUser.id,
       referentOrgId: appUser.orgId,
@@ -120,6 +123,8 @@ export async function createProfileReferral(formData: FormData) {
       reasonForReferral: parsed.data.reasonForReferral
     }
   });
+
+  await notifyNewReferral(referral.id);
 
   redirect(`/profiles/${slug}?referral=sent`);
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { hasDatabaseConfig, missingDatabaseResponse } from "@/lib/database-status";
+import { notifyNewReferral } from "@/lib/email-notifications";
 import { prisma } from "@/lib/prisma";
 import { forbiddenDirectIdentifierFields, referralSchema } from "@/lib/validations/referral";
 
@@ -69,10 +70,10 @@ export async function POST(request: Request) {
     }
   });
 
-  // TODO: Send Resend referral notification.
+  await notifyNewReferral(referral.id);
+
   return NextResponse.json({
     status: referral.status,
-    referralId: referral.id,
-    next: "Send referral notification"
+    referralId: referral.id
   });
 }

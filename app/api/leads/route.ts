@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { hasDatabaseConfig, missingDatabaseResponse } from "@/lib/database-status";
+import { notifyNewPublicLead } from "@/lib/email-notifications";
 import { prisma } from "@/lib/prisma";
 import { publicLeadSchema } from "@/lib/validations/lead";
 
@@ -35,10 +36,10 @@ export async function POST(request: Request) {
     }
   });
 
-  // TODO: Send Resend notification to admissions contact.
+  await notifyNewPublicLead(lead.id);
+
   return NextResponse.json({
     status: lead.status,
-    leadId: lead.id,
-    next: "Send Resend lead notification"
+    leadId: lead.id
   });
 }

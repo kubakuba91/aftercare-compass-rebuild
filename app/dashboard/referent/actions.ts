@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Role } from "@prisma/client";
 import { z } from "zod";
+import { sendOrganizationInviteEmail } from "@/lib/email-notifications";
 import { referentPlans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { getProtectedAppUser } from "@/lib/protected-routing";
@@ -49,6 +50,7 @@ export async function addReferentTeamMember(formData: FormData) {
   const organization = await prisma.organization.findUnique({
     where: { id: appUser.orgId },
     select: {
+      name: true,
       subscriptionPlan: true,
       users: {
         select: {
@@ -109,6 +111,13 @@ export async function addReferentTeamMember(formData: FormData) {
       }
     });
 
+    await sendOrganizationInviteEmail({
+      email,
+      organizationName: organization.name,
+      role: Role.referent_manager,
+      invitedByName: [appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email
+    });
+
     revalidatePath("/dashboard/referent");
     redirect(teamHref("Team member added."));
   }
@@ -118,6 +127,13 @@ export async function addReferentTeamMember(formData: FormData) {
     data: {
       invitedTeamEmails: [...pendingEmails, email]
     }
+  });
+
+  await sendOrganizationInviteEmail({
+    email,
+    organizationName: organization.name,
+    role: Role.referent_manager,
+    invitedByName: [appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email
   });
 
   revalidatePath("/dashboard/referent");

@@ -382,12 +382,6 @@ export default async function PublicProfilePage({
                 <h2 className="mt-3 font-semibold">Services and amenities</h2>
                 <dl className="mt-4 grid gap-3 text-sm">
                   <div>
-                    <dt className="text-muted-foreground">Population served</dt>
-                    <dd className="font-medium">
-                      {listOrFallback(profile.populationServedOptions, profile.populationServed || "Not listed")}
-                    </dd>
-                  </div>
-                  <div>
                     <dt className="text-muted-foreground">Specialty populations</dt>
                     <dd className="font-medium">{listOrFallback(profile.specialtyPopulations)}</dd>
                   </div>

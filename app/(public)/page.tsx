@@ -104,7 +104,7 @@ export default async function HomePage() {
           <Search className="text-primary" size={24} />
           <h2 className="mt-4 text-xl font-semibold">Public discovery</h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Search profiles by location and filters while showing only privacy-safe city/state data.
+            Search profiles by location, availability, and fit.
           </p>
         </Card>
         <Card>

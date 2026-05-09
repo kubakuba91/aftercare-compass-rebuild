@@ -1067,10 +1067,6 @@ export default async function AftercareDashboardPage({
                   <dd className="mt-1 font-semibold">{appUser.organization?.subscriptionBillingCycle || "Not selected"}</dd>
                 </div>
               </dl>
-              <p className="mt-5 text-sm leading-6 text-muted-foreground">
-                Stripe management will be connected in a billing pass. For now, onboarding and
-                dashboard access are not blocked by payment setup.
-              </p>
             </Card>
           ) : null}
 
@@ -1116,10 +1112,6 @@ export default async function AftercareDashboardPage({
                   <dd className="mt-1 font-semibold">{appUser.organization?.name || "Not set"}</dd>
                 </div>
               </dl>
-              <p className="mt-5 text-sm leading-6 text-muted-foreground">
-                Profile picture, password settings, and notification preferences will be added in a
-                follow-up pass.
-              </p>
               {isEditingDisplayName ? (
                 <form action={updateUserDisplayName} className="mt-6 grid gap-4 rounded-md border border-border bg-muted/40 p-4">
                   <h3 className="font-semibold">Update display name</h3>

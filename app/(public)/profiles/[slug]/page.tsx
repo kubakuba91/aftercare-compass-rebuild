@@ -477,8 +477,7 @@ export default async function PublicProfilePage({
               <MapPin className="text-primary" size={22} />
               <h2 className="mt-3 text-xl font-semibold">Location area</h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                {publicLocation || "Location not listed"}. Exact addresses are private and are never
-                shown on public or referent-facing pages.
+                {publicLocation || "Location not listed"}
               </p>
               <ApproximateLocationMap
                 className="mt-4 border-0 p-0 shadow-none lg:static"

@@ -438,10 +438,9 @@ export default async function SearchPage({
       <main className="shell py-8">
         <div className="flex flex-col justify-between gap-4 border-b border-border pb-6 md:flex-row md:items-end">
           <div>
-            <Badge tone="warning">No exact addresses shown</Badge>
             <h1 className="mt-3 text-3xl font-semibold">Search aftercare programs</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Find sober living homes and continued care programs. Public listings show city and state only.
+              Find sober living homes and continued care programs.
             </p>
           </div>
         </div>
@@ -450,7 +449,6 @@ export default async function SearchPage({
         <div className="grid gap-4">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-semibold">{profiles.length} listings</p>
-            <p className="text-xs text-muted-foreground">Reviews and rating sort are intentionally excluded from v1.</p>
           </div>
           {profiles.length ? (
             profiles.map((profile, index) => {

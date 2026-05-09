@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { BedDouble, CheckCircle2, Mail, MapPin, Send, ShieldCheck, Video } from "lucide-react";
+import { BadgeCheck, BedDouble, CheckCircle2, HandHeart, Mail, MapPin, PillBottle, Send, ShieldCheck, Users, Video } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
@@ -378,20 +378,28 @@ export default async function PublicProfilePage({
 
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
-                <ShieldCheck className="text-primary" size={22} />
-                <h2 className="mt-3 font-semibold">Services and amenities</h2>
+                <h2 className="font-semibold">Services and amenities</h2>
                 <dl className="mt-4 grid gap-3 text-sm">
                   <div>
-                    <dt className="font-semibold text-foreground">Specialty populations</dt>
+                    <dt className="flex items-center gap-2 font-semibold text-foreground">
+                      <Users className="text-primary" size={16} />
+                      Specialty populations
+                    </dt>
                     <dd className="font-medium">{listOrFallback(profile.specialtyPopulations)}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold text-foreground">Support services</dt>
+                    <dt className="flex items-center gap-2 font-semibold text-foreground">
+                      <HandHeart className="text-primary" size={16} />
+                      Support services
+                    </dt>
                     <dd className="font-medium">{listOrFallback(profile.supportServices)}</dd>
                   </div>
                   {isSoberLiving ? (
                     <div>
-                      <dt className="font-semibold text-foreground">Amenities</dt>
+                      <dt className="flex items-center gap-2 font-semibold text-foreground">
+                        <CheckCircle2 className="text-primary" size={16} />
+                        Amenities
+                      </dt>
                       <dd className="font-medium">{listOrFallback(profile.amenities)}</dd>
                     </div>
                   ) : null}
@@ -402,15 +410,24 @@ export default async function PublicProfilePage({
                 <h2 className="font-semibold">Payment and clinical fit</h2>
                 <dl className="mt-4 grid gap-3 text-sm">
                   <div>
-                    <dt className="font-semibold text-foreground">Insurance/payment</dt>
+                    <dt className="flex items-center gap-2 font-semibold text-foreground">
+                      <ShieldCheck className="text-primary" size={16} />
+                      Insurance/payment
+                    </dt>
                     <dd className="font-medium">{listOrFallback(profile.insuranceAccepted)}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold text-foreground">MAT accepted</dt>
+                    <dt className="flex items-center gap-2 font-semibold text-foreground">
+                      <PillBottle className="text-primary" size={16} />
+                      MAT accepted
+                    </dt>
                     <dd className="font-medium">{listOrFallback(profile.matAccepted)}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold text-foreground">Certifications</dt>
+                    <dt className="flex items-center gap-2 font-semibold text-foreground">
+                      <BadgeCheck className="text-primary" size={16} />
+                      Certifications
+                    </dt>
                     <dd className="font-medium">{listOrFallback(profile.certificationsHeld)}</dd>
                   </div>
                 </dl>

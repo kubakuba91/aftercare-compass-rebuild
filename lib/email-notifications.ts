@@ -25,6 +25,32 @@ function aftercareTeamRecipients(users: Array<{ email: string }>, admissionsEmai
   return uniqueEmailRecipients([admissionsEmail, ...users.map((user) => user.email)]);
 }
 
+async function createUserNotifications(input: {
+  users: Array<{ id: string }>;
+  type: string;
+  title: string;
+  body: string;
+}) {
+  const userIds = Array.from(new Set(input.users.map((user) => user.id).filter(Boolean)));
+
+  if (!userIds.length) {
+    return;
+  }
+
+  try {
+    await prisma.notification.createMany({
+      data: userIds.map((userId) => ({
+        userId,
+        type: input.type,
+        title: input.title,
+        body: input.body
+      }))
+    });
+  } catch (error) {
+    console.error("In-app notification creation failed", error);
+  }
+}
+
 export async function notifyNewPublicLead(leadId: string) {
   const lead = await prisma.lead.findUnique({
     where: { id: leadId },
@@ -44,7 +70,7 @@ export async function notifyNewPublicLead(leadId: string) {
               isActive: true,
               role: { in: [Role.aftercare_admin, Role.aftercare_manager] }
             },
-            select: { email: true }
+            select: { id: true, email: true }
           }
         }
       }
@@ -57,6 +83,13 @@ export async function notifyNewPublicLead(leadId: string) {
 
   const dashboardLink = appUrl(`/dashboard/aftercare?tab=overview&profileId=${lead.profileId}`);
   const profileLink = appUrl(`/profiles/${lead.profile.slug}`);
+  await createUserNotifications({
+    users: lead.aftercareOrg.users,
+    type: "lead.created",
+    title: `New public lead for ${lead.profile.programName}`,
+    body: `${lead.name} requested contact from this profile.`
+  });
+
   const body = emailShell(
     "New public lead",
     `
@@ -70,7 +103,7 @@ export async function notifyNewPublicLead(leadId: string) {
     `
   );
 
-  await sendTransactionalEmail({
+  return sendTransactionalEmail({
     to: aftercareTeamRecipients(lead.aftercareOrg.users, lead.profile.admissionsContactEmail),
     subject: `New lead for ${lead.profile.programName}`,
     html: body,
@@ -103,7 +136,7 @@ export async function notifyNewReferral(referralId: string) {
               isActive: true,
               role: { in: [Role.aftercare_admin, Role.aftercare_manager] }
             },
-            select: { email: true }
+            select: { id: true, email: true }
           }
         }
       },
@@ -118,6 +151,13 @@ export async function notifyNewReferral(referralId: string) {
   }
 
   const dashboardLink = appUrl(`/dashboard/aftercare?tab=overview&profileId=${referral.aftercareProfileId}&referralId=${referral.id}`);
+  await createUserNotifications({
+    users: referral.aftercareOrg.users,
+    type: "referral.created",
+    title: `New referral for ${referral.aftercareProfile.programName}`,
+    body: `${referral.caseManagerOrganization} sent a referral for ${formatValue(referral.clientAgeRange)}.`
+  });
+
   const body = emailShell(
     "New referral received",
     `
@@ -134,7 +174,7 @@ export async function notifyNewReferral(referralId: string) {
     `
   );
 
-  await sendTransactionalEmail({
+  return sendTransactionalEmail({
     to: aftercareTeamRecipients(referral.aftercareOrg.users, referral.aftercareProfile.admissionsContactEmail),
     subject: `New referral for ${referral.aftercareProfile.programName}`,
     html: body,
@@ -159,12 +199,13 @@ export async function notifyReferralStatusChanged(referralId: string) {
       },
       referentOrg: {
         select: {
+          name: true,
           users: {
             where: {
               isActive: true,
               role: { in: [Role.referent_admin, Role.referent_manager] }
             },
-            select: { email: true }
+            select: { id: true, email: true }
           }
         }
       }
@@ -177,6 +218,13 @@ export async function notifyReferralStatusChanged(referralId: string) {
 
   const dashboardLink = appUrl("/dashboard/referent");
   const status = formatValue(referral.status);
+  await createUserNotifications({
+    users: referral.referentOrg.users,
+    type: "referral.status_changed",
+    title: `Referral status updated: ${status}`,
+    body: `${referral.aftercareProfile.programName} updated the referral status.`
+  });
+
   const body = emailShell(
     "Referral status updated",
     `
@@ -188,9 +236,9 @@ export async function notifyReferralStatusChanged(referralId: string) {
     `
   );
 
-  await sendTransactionalEmail({
+  return sendTransactionalEmail({
     to: uniqueEmailRecipients([referral.caseManagerEmail, ...referral.referentOrg.users.map((user) => user.email)]),
-    subject: `Referral status updated: ${status}`,
+    subject: `Referral status updated: ${status} for ${referral.aftercareProfile.programName}`,
     html: body,
     text: [
       `Referral status updated to ${status}`,

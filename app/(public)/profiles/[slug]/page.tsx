@@ -382,16 +382,16 @@ export default async function PublicProfilePage({
                 <h2 className="mt-3 font-semibold">Services and amenities</h2>
                 <dl className="mt-4 grid gap-3 text-sm">
                   <div>
-                    <dt className="text-muted-foreground">Specialty populations</dt>
+                    <dt className="font-semibold text-foreground">Specialty populations</dt>
                     <dd className="font-medium">{listOrFallback(profile.specialtyPopulations)}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Support services</dt>
+                    <dt className="font-semibold text-foreground">Support services</dt>
                     <dd className="font-medium">{listOrFallback(profile.supportServices)}</dd>
                   </div>
                   {isSoberLiving ? (
                     <div>
-                      <dt className="text-muted-foreground">Amenities</dt>
+                      <dt className="font-semibold text-foreground">Amenities</dt>
                       <dd className="font-medium">{listOrFallback(profile.amenities)}</dd>
                     </div>
                   ) : null}
@@ -402,15 +402,15 @@ export default async function PublicProfilePage({
                 <h2 className="font-semibold">Payment and clinical fit</h2>
                 <dl className="mt-4 grid gap-3 text-sm">
                   <div>
-                    <dt className="text-muted-foreground">Insurance/payment</dt>
+                    <dt className="font-semibold text-foreground">Insurance/payment</dt>
                     <dd className="font-medium">{listOrFallback(profile.insuranceAccepted)}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">MAT accepted</dt>
+                    <dt className="font-semibold text-foreground">MAT accepted</dt>
                     <dd className="font-medium">{listOrFallback(profile.matAccepted)}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Certifications</dt>
+                    <dt className="font-semibold text-foreground">Certifications</dt>
                     <dd className="font-medium">{listOrFallback(profile.certificationsHeld)}</dd>
                   </div>
                 </dl>

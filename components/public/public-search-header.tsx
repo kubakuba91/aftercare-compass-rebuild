@@ -72,7 +72,7 @@ export function PublicSearchHeader({
         </Link>
         <form action="/search" className="relative grid flex-1 gap-2 md:grid-cols-[340px_1fr_180px_160px]">
           <div className="grid rounded-md border border-primary bg-primary p-1 shadow-sm sm:grid-cols-2">
-            <label className="focus-within:ring-ring flex min-h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded border border-transparent px-4 text-center text-sm font-semibold text-primary-foreground transition has-[:checked]:border-white has-[:checked]:bg-white has-[:checked]:text-foreground has-[:checked]:shadow-sm has-[:focus-visible]:ring-2">
+            <label className="focus-within:ring-ring flex min-h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded border border-transparent bg-primary px-4 text-center text-sm font-semibold text-primary-foreground transition has-[:checked]:border-white has-[:checked]:bg-white has-[:checked]:text-foreground has-[:checked]:shadow-sm has-[:focus-visible]:ring-2">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "sober_living" || !defaultType}
@@ -82,7 +82,7 @@ export function PublicSearchHeader({
               />
               Sober Living
             </label>
-            <label className="focus-within:ring-ring flex min-h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded border border-transparent px-4 text-center text-sm font-semibold text-primary-foreground transition has-[:checked]:border-white has-[:checked]:bg-white has-[:checked]:text-foreground has-[:checked]:shadow-sm has-[:focus-visible]:ring-2">
+            <label className="focus-within:ring-ring flex min-h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded border border-transparent bg-primary px-4 text-center text-sm font-semibold text-primary-foreground transition has-[:checked]:border-white has-[:checked]:bg-white has-[:checked]:text-foreground has-[:checked]:shadow-sm has-[:focus-visible]:ring-2">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "continued_care"}

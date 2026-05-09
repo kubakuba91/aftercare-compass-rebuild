@@ -278,14 +278,7 @@ export default async function PublicProfilePage({
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <section>
           <div className="rounded-lg border border-border bg-white p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex flex-wrap gap-2">
-                <TrustBadge verificationTier={profile.verificationTier} />
-                <Badge>{isSoberLiving ? "Sober Living" : "Continued Care"}</Badge>
-                <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
-                  {availabilityText(profile)}
-                </Badge>
-              </div>
+            <div className="flex justify-end">
               {priceLabel ? (
                 <div className="text-right">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">Price</p>
@@ -294,7 +287,16 @@ export default async function PublicProfilePage({
               ) : null}
             </div>
             <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
-              <h1 className="text-3xl font-semibold">{profile.programName}</h1>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-3xl font-semibold">{profile.programName}</h1>
+                <div className="flex flex-wrap gap-2">
+                  <TrustBadge verificationTier={profile.verificationTier} />
+                  <Badge>{isSoberLiving ? "Sober Living" : "Continued Care"}</Badge>
+                  <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
+                    {availabilityText(profile)}
+                  </Badge>
+                </div>
+              </div>
               <FavoriteListingButton
                 canFavorite={isReferent}
                 initialFavorited={Boolean(favorite)}

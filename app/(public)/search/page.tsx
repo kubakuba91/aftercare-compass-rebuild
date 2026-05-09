@@ -236,7 +236,7 @@ export default async function SearchPage({
   const favoriteProfileIds = new Set(appUser?.favorites.map((favorite) => favorite.profileId) ?? []);
   const q = firstFromQuery(query.q)?.trim() || "";
   const rawType = firstFromQuery(query.type);
-  const type = rawType === "sober_living" || rawType === "continued_care" ? rawType : "";
+  const type = rawType === "continued_care" ? "continued_care" : "sober_living";
   const population = valuesFromQuery(query.population).filter((value) =>
     populationOptions.includes(value as never)
   );

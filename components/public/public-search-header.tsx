@@ -71,8 +71,8 @@ export function PublicSearchHeader({
           />
         </Link>
         <form action="/search" className="relative grid flex-1 gap-2 md:grid-cols-[260px_1fr_180px_160px]">
-          <div className="grid rounded-md border border-border bg-white p-1 sm:grid-cols-2">
-            <label className="focus-within:ring-ring flex min-h-10 cursor-pointer items-center justify-center rounded px-3 text-center text-sm font-semibold transition has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:ring-2">
+          <div className="grid rounded-md border border-border bg-white p-1 shadow-sm sm:grid-cols-2">
+            <label className="focus-within:ring-ring flex min-h-10 cursor-pointer items-center justify-center rounded border border-transparent px-3 text-center text-sm font-semibold text-muted-foreground transition has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:shadow-sm has-[:focus-visible]:ring-2">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "sober_living" || !defaultType}
@@ -82,7 +82,7 @@ export function PublicSearchHeader({
               />
               Sober Living
             </label>
-            <label className="focus-within:ring-ring flex min-h-10 cursor-pointer items-center justify-center rounded px-3 text-center text-sm font-semibold transition has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:ring-2">
+            <label className="focus-within:ring-ring flex min-h-10 cursor-pointer items-center justify-center rounded border border-transparent px-3 text-center text-sm font-semibold text-muted-foreground transition has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:shadow-sm has-[:focus-visible]:ring-2">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "continued_care"}

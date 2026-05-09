@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { BadgeCheck, BedDouble, CheckCircle2, HandHeart, Mail, MapPin, PillBottle, Send, ShieldCheck, Users, Video } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
+import { ExpandableRichText } from "@/components/public/expandable-rich-text";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
@@ -437,10 +438,7 @@ export default async function PublicProfilePage({
             <Card>
               <h2 className="text-xl font-semibold">About</h2>
               {profile.description ? (
-                <div
-                  className="mt-3 text-sm leading-6 text-muted-foreground [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc"
-                  dangerouslySetInnerHTML={{ __html: richTextHtml(profile.description) }}
-                />
+                <ExpandableRichText html={richTextHtml(profile.description)} />
               ) : (
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">
                   No description has been added yet.
@@ -451,10 +449,7 @@ export default async function PublicProfilePage({
             {isSoberLiving && profile.houseRulesText ? (
               <Card>
                 <h2 className="text-xl font-semibold">House rules</h2>
-                <div
-                  className="mt-3 text-sm leading-6 text-muted-foreground [&_ol]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc"
-                  dangerouslySetInnerHTML={{ __html: richTextHtml(profile.houseRulesText) }}
-                />
+                <ExpandableRichText html={richTextHtml(profile.houseRulesText)} />
               </Card>
             ) : null}
 

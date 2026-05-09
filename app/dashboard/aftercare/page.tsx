@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   BedDouble,
   Building2,
@@ -7,7 +8,6 @@ import {
   MailPlus,
   Pencil,
   Settings,
-  ShieldCheck,
   UserCircle,
   Users,
   X
@@ -465,9 +465,15 @@ export default async function AftercareDashboardPage({
       ) : null}
       <div className="border-b border-border pb-6">
         <div className="flex items-center gap-4">
-          <div className="flex size-12 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <ShieldCheck size={24} />
-          </div>
+          <Link className="focus-ring inline-flex shrink-0 items-center rounded-md" href="/" aria-label="Aftercare Compass home">
+            <Image
+              alt="Aftercare Compass"
+              className="h-12 w-12 object-contain"
+              height={48}
+              src="/brand/ac-favicon.png"
+              width={48}
+            />
+          </Link>
           <div>
             <h1 className="text-3xl font-semibold">Welcome back</h1>
             <p className="mt-1 text-sm text-muted-foreground">{appUser.organization?.name}</p>

@@ -1,12 +1,22 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Building2, ClipboardCheck, FileCheck2, Flag, Home, Inbox, Users } from "lucide-react";
-import { LeadStatus, OrganizationType, ProfileStatus, ProfileType, ReferralStatus, Role } from "@prisma/client";
+import {
+  AdminReviewStatus,
+  AdminReviewSubjectType,
+  LeadStatus,
+  OrganizationType,
+  ProfileStatus,
+  ProfileType,
+  ReferralStatus,
+  Role
+} from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
+import { reviewOnboardingSubmission } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +67,10 @@ function profileLabel(type: ProfileType) {
   return type === ProfileType.sober_living ? "Sober Living" : "Continued Care";
 }
 
+function reviewSubjectLabel(type: AdminReviewSubjectType) {
+  return type === AdminReviewSubjectType.referent_org ? "Referent" : "Home / Program";
+}
+
 function statusTone(status: string): "neutral" | "verified" | "warning" | "success" {
   if (["active", "published", "accepted", "placed", "approved"].includes(status)) {
     return "success";
@@ -88,13 +102,14 @@ function availabilityText(profile: {
 export default async function AdminDashboardPage({
   searchParams
 }: {
-  searchParams: Promise<{ tab?: string | string[] }>;
+  searchParams: Promise<{ tab?: string | string[]; reviewMessage?: string | string[] }>;
 }) {
   const [query, appUser] = await Promise.all([
     searchParams,
     getProtectedAppUser("/dashboard/admin")
   ]);
   const activeTab = asAdminTab(query.tab);
+  const reviewMessage = Array.isArray(query.reviewMessage) ? query.reviewMessage[0] : query.reviewMessage;
 
   if (appUser.role !== Role.system_admin) {
     redirect("/dashboard");
@@ -110,6 +125,7 @@ export default async function AdminDashboardPage({
     profiles,
     referrals,
     leads,
+    applicationReviews,
     verificationDocuments,
     flags
   ] = await Promise.all([
@@ -250,6 +266,41 @@ export default async function AdminDashboardPage({
         }
       }
     }),
+    prisma.adminReview.findMany({
+      orderBy: [{ status: "asc" }, { submittedAt: "desc" }],
+      take: 75,
+      select: {
+        id: true,
+        subjectType: true,
+        status: true,
+        submittedByEmail: true,
+        reviewerNotes: true,
+        submittedAt: true,
+        reviewedAt: true,
+        organization: {
+          select: {
+            name: true,
+            type: true,
+            email: true
+          }
+        },
+        profile: {
+          select: {
+            programName: true,
+            slug: true,
+            type: true,
+            publicCity: true,
+            publicState: true,
+            verificationTier: true
+          }
+        },
+        reviewedByUser: {
+          select: {
+            email: true
+          }
+        }
+      }
+    }),
     prisma.verificationDocument.findMany({
       orderBy: { submittedAt: "desc" },
       take: 50,
@@ -306,6 +357,7 @@ export default async function AdminDashboardPage({
       .filter((item) => status ? item.status === status : true)
       .reduce((sum, item) => sum + item._count._all, 0);
   const pendingVerificationCount = verificationDocuments.filter((document) => document.status === "pending").length;
+  const pendingApplicationCount = applicationReviews.filter((review) => review.status === AdminReviewStatus.pending).length;
   const openFlagCount = flags.filter((flag) => flag.status === "open").length;
 
   return (
@@ -347,6 +399,7 @@ export default async function AdminDashboardPage({
               ["Aftercare orgs", (countOrganizations(OrganizationType.aftercare_sober_living) + countOrganizations(OrganizationType.aftercare_continued_care)).toString()],
               ["Referent orgs", countOrganizations(OrganizationType.referent).toString()],
               ["Published profiles", countProfiles(ProfileStatus.published).toString()],
+              ["Pending applications", pendingApplicationCount.toString()],
               ["Open referrals", countReferrals(ReferralStatus.pending).toString()],
               ["New public leads", countLeads(LeadStatus.new).toString()],
               ["Verification queue", pendingVerificationCount.toString()],
@@ -383,6 +436,10 @@ export default async function AdminDashboardPage({
             <Card>
               <h2 className="text-xl font-semibold">Operational queue</h2>
               <div className="mt-4 grid gap-3">
+                <div className="rounded-md border border-border p-4">
+                  <p className="font-semibold">Application review</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{pendingApplicationCount} onboarding submissions need approval.</p>
+                </div>
                 <div className="rounded-md border border-border p-4">
                   <p className="font-semibold">Verification review</p>
                   <p className="mt-1 text-sm text-muted-foreground">{pendingVerificationCount} pending document reviews.</p>
@@ -550,6 +607,118 @@ export default async function AdminDashboardPage({
 
       {activeTab === "verification" ? (
         <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
+          <Card className="xl:col-span-2">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-3">
+                  <FileCheck2 className="text-primary" size={24} />
+                  <h2 className="text-xl font-semibold">Onboarding applications</h2>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Review submitted referent, home, and program applications. Approving homes and programs gives them the verified badge.
+                </p>
+              </div>
+              <Badge tone="warning">{pendingApplicationCount} pending</Badge>
+            </div>
+            {reviewMessage ? (
+              <p className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-sm font-semibold text-primary">
+                {reviewMessage}
+              </p>
+            ) : null}
+            <div className="mt-5 overflow-x-auto">
+              <table className="w-full min-w-[980px] text-left text-sm">
+                <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="py-3 pr-4">Application</th>
+                    <th className="py-3 pr-4">Organization</th>
+                    <th className="py-3 pr-4">Submitted by</th>
+                    <th className="py-3 pr-4">Status</th>
+                    <th className="py-3 pr-4">Submitted</th>
+                    <th className="py-3 pr-4">Review</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {applicationReviews.map((review) => {
+                    const subjectName = review.profile?.programName || review.organization.name;
+
+                    return (
+                      <tr className="border-b border-border align-top last:border-0" key={review.id}>
+                        <td className="py-4 pr-4">
+                          {review.profile ? (
+                            <Link className="font-semibold underline-offset-4 hover:underline" href={`/profiles/${review.profile.slug}?preview=1`}>
+                              {subjectName}
+                            </Link>
+                          ) : (
+                            <p className="font-semibold">{subjectName}</p>
+                          )}
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {reviewSubjectLabel(review.subjectType)}
+                            {review.profile ? ` · ${profileLabel(review.profile.type)} · Tier ${review.profile.verificationTier}` : ""}
+                          </p>
+                          {review.profile ? (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {[review.profile.publicCity, review.profile.publicState].filter(Boolean).join(", ")}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="py-4 pr-4">
+                          <p className="font-medium">{review.organization.name}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{organizationLabel(review.organization.type)}</p>
+                        </td>
+                        <td className="py-4 pr-4 text-muted-foreground">{review.submittedByEmail || review.organization.email || "Not set"}</td>
+                        <td className="py-4 pr-4">
+                          <Badge tone={statusTone(review.status)}>{formatValue(review.status)}</Badge>
+                          {review.reviewedByUser ? (
+                            <p className="mt-2 text-xs text-muted-foreground">By {review.reviewedByUser.email}</p>
+                          ) : null}
+                        </td>
+                        <td className="py-4 pr-4 text-muted-foreground">
+                          {formatDate(review.submittedAt)}
+                          {review.reviewedAt ? <p className="mt-1 text-xs">Reviewed {formatDate(review.reviewedAt)}</p> : null}
+                        </td>
+                        <td className="py-4 pr-4">
+                          {review.status === AdminReviewStatus.pending ? (
+                            <form action={reviewOnboardingSubmission} className="grid gap-2">
+                              <input name="reviewId" type="hidden" value={review.id} />
+                              <textarea
+                                className="min-h-16 rounded-md border border-border p-2 text-sm"
+                                name="reviewerNotes"
+                                placeholder="Optional notes"
+                              />
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  className="focus-ring min-h-9 rounded-md border border-border bg-white px-3 text-sm font-semibold"
+                                  name="decision"
+                                  value="rejected"
+                                >
+                                  Reject
+                                </button>
+                                <button
+                                  className="focus-ring min-h-9 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"
+                                  name="decision"
+                                  value="approved"
+                                >
+                                  Approve
+                                </button>
+                              </div>
+                            </form>
+                          ) : (
+                            <p className="max-w-xs text-sm text-muted-foreground">{review.reviewerNotes || "No notes added."}</p>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {!applicationReviews.length ? (
+                <p className="mt-4 rounded-md border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                  No onboarding applications have been submitted yet.
+                </p>
+              ) : null}
+            </div>
+          </Card>
+
           <Card>
             <div className="flex items-center gap-3">
               <FileCheck2 className="text-primary" size={24} />

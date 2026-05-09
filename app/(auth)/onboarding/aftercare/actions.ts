@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { Prisma, ProfileStatus, ProfileType } from "@prisma/client";
+import { Prisma, ProfileStatus, ProfileType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
@@ -92,6 +92,26 @@ async function getOrCreateAftercareOrganization(tx: Prisma.TransactionClient, dr
   return organization.id;
 }
 
+async function createProfileAdminReview(tx: Prisma.TransactionClient, input: {
+  orgId: string;
+  profileId: string;
+  submittedByEmail: string;
+  submittedByRole: Role;
+}) {
+  if (input.submittedByRole === Role.system_admin) {
+    return;
+  }
+
+  await tx.adminReview.create({
+    data: {
+      subjectType: "aftercare_profile",
+      orgId: input.orgId,
+      profileId: input.profileId,
+      submittedByEmail: input.submittedByEmail
+    }
+  });
+}
+
 export async function createAftercareProfileDraft(formData: FormData) {
   if (!hasDatabaseConfig()) {
     redirect("/setup?missing=database");
@@ -139,7 +159,7 @@ export async function createAftercareProfileDraft(formData: FormData) {
         }
       });
 
-      await tx.aftercareProfile.create({
+      const profile = await tx.aftercareProfile.create({
         data: {
           orgId: organization.id,
           type: profileType,
@@ -165,6 +185,13 @@ export async function createAftercareProfileDraft(formData: FormData) {
             profileType === ProfileType.continued_care ? new Date() : null,
           onboardingCompletedAt: new Date()
         }
+      });
+
+      await createProfileAdminReview(tx, {
+        orgId: organization.id,
+        profileId: profile.id,
+        submittedByEmail: draft.user.email,
+        submittedByRole: draft.user.role
       });
 
       await tx.onboardingDraft.update({
@@ -366,7 +393,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
           programName
         });
 
-        await tx.aftercareProfile.create({
+        const profile = await tx.aftercareProfile.create({
           data: {
             orgId,
             type: ProfileType.sober_living,
@@ -421,6 +448,13 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             onboardingStep: maxSoberLivingStep,
             onboardingCompletedAt: new Date()
           }
+        });
+
+        await createProfileAdminReview(tx, {
+          orgId,
+          profileId: profile.id,
+          submittedByEmail: draft.user.email,
+          submittedByRole: draft.user.role
         });
 
         await tx.onboardingDraft.update({
@@ -592,7 +626,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
           programName
         });
 
-        await tx.aftercareProfile.create({
+        const profile = await tx.aftercareProfile.create({
           data: {
             orgId,
             type: ProfileType.continued_care,
@@ -640,6 +674,13 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
             onboardingStep: maxContinuedCareStep,
             onboardingCompletedAt: new Date()
           }
+        });
+
+        await createProfileAdminReview(tx, {
+          orgId,
+          profileId: profile.id,
+          submittedByEmail: draft.user.email,
+          submittedByRole: draft.user.role
         });
 
         await tx.onboardingDraft.update({

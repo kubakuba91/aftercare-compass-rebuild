@@ -181,6 +181,16 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
           }
         });
 
+        if (draft.user.role !== Role.system_admin) {
+          await tx.adminReview.create({
+            data: {
+              subjectType: "referent_org",
+              orgId: organization.id,
+              submittedByEmail: draft.user.email
+            }
+          });
+        }
+
         await tx.onboardingDraft.update({
           where: { id: draft.id },
           data: {

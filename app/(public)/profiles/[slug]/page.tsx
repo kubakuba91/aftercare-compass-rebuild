@@ -278,15 +278,7 @@ export default async function PublicProfilePage({
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <section>
           <div className="rounded-lg border border-border bg-white p-6">
-            <div className="flex justify-end">
-              {priceLabel ? (
-                <div className="text-right">
-                  <p className="text-xs font-semibold uppercase text-muted-foreground">Price</p>
-                  <p className="text-lg font-semibold">{priceLabel}</p>
-                </div>
-              ) : null}
-            </div>
-            <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-3xl font-semibold">{profile.programName}</h1>
                 <div className="flex flex-wrap gap-2">
@@ -296,14 +288,20 @@ export default async function PublicProfilePage({
                     {availabilityText(profile)}
                   </Badge>
                 </div>
+                <FavoriteListingButton
+                  canFavorite={isReferent}
+                  initialFavorited={Boolean(favorite)}
+                  isSignedIn={Boolean(appUser)}
+                  profileId={profile.id}
+                  programName={profile.programName}
+                />
               </div>
-              <FavoriteListingButton
-                canFavorite={isReferent}
-                initialFavorited={Boolean(favorite)}
-                isSignedIn={Boolean(appUser)}
-                profileId={profile.id}
-                programName={profile.programName}
-              />
+              {priceLabel ? (
+                <div className="shrink-0 text-right">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">Price</p>
+                  <p className="text-lg font-semibold">{priceLabel}</p>
+                </div>
+              ) : null}
             </div>
             <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin size={16} />

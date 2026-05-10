@@ -55,8 +55,8 @@ export default async function HomePage() {
               </p>
 
               <form action="/search" className="mt-8 grid max-w-4xl gap-3">
-                <div className="grid w-fit overflow-hidden rounded-md border border-primary bg-primary p-1 shadow-sm sm:grid-cols-2">
-                  <label className="focus-within:ring-ring flex min-h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded px-5 text-sm font-semibold text-primary-foreground transition has-[:checked]:bg-white has-[:checked]:text-foreground has-[:focus-visible]:ring-2 md:px-7">
+                <div className="grid w-fit overflow-hidden rounded-md border border-[#12185f] bg-[#12185f] p-1 shadow-sm sm:grid-cols-2">
+                  <label className="focus-within:ring-ring flex min-h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded px-5 text-sm font-semibold text-white transition has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2 md:px-7">
                     <input
                       className="sr-only"
                       type="radio"
@@ -66,7 +66,7 @@ export default async function HomePage() {
                     />
                     Sober Living
                   </label>
-                  <label className="focus-within:ring-ring flex min-h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded px-5 text-sm font-semibold text-primary-foreground transition has-[:checked]:bg-white has-[:checked]:text-foreground has-[:focus-visible]:ring-2 md:px-7">
+                  <label className="focus-within:ring-ring flex min-h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded px-5 text-sm font-semibold text-white transition has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2 md:px-7">
                     <input className="sr-only" type="radio" name="type" value="continued_care" />
                     Continued Care
                   </label>
@@ -85,7 +85,7 @@ export default async function HomePage() {
 
                   <button
                     type="submit"
-                    className="focus-ring min-h-16 rounded-md bg-primary px-8 text-lg font-semibold text-primary-foreground shadow-sm"
+                    className="focus-ring min-h-16 rounded-md bg-[#12185f] px-8 text-lg font-semibold text-white shadow-sm hover:bg-[#0d1249]"
                   >
                     Search
                   </button>

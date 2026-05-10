@@ -22,10 +22,10 @@ export default async function HomePage() {
           <div className="flex items-center justify-between gap-4">
             <Image
               alt="Aftercare Compass"
-              className="h-14 w-14 object-contain"
-              height={56}
-              src="/brand/ac-favicon.png"
-              width={56}
+              className="h-12 w-auto object-contain sm:h-14"
+              height={80}
+              src="/brand/logo-aftercare.png"
+              width={280}
             />
             <ButtonLink href="/sign-in" variant="secondary">
               Join or Login

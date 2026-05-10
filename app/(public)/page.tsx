@@ -39,7 +39,7 @@ export default async function HomePage() {
               className="object-cover"
               fill
               priority
-              src="/images/hero-bg-opt.png"
+              src="/images/hero-bg-opt.jpg"
               sizes="100vw"
             />
             <div className="absolute inset-0 bg-black/35" aria-hidden="true" />
@@ -58,8 +58,8 @@ export default async function HomePage() {
                 action="/search"
                 className="mt-8 grid gap-3 rounded-lg bg-white p-3 shadow-sm lg:grid-cols-[auto_1fr_auto]"
               >
-                <div className="grid rounded-md border border-border p-1 sm:grid-cols-2">
-                  <label className="cursor-pointer rounded px-4 py-3 text-sm font-semibold has-[:checked]:bg-primary has-[:checked]:text-primary-foreground">
+                <div className="grid rounded-md border border-border p-1 sm:grid-cols-2 lg:min-w-[310px]">
+                  <label className="cursor-pointer whitespace-nowrap rounded px-4 py-3 text-sm font-semibold has-[:checked]:bg-primary has-[:checked]:text-primary-foreground">
                     <input
                       className="sr-only"
                       type="radio"
@@ -69,7 +69,7 @@ export default async function HomePage() {
                     />
                     Sober Living
                   </label>
-                  <label className="cursor-pointer rounded px-4 py-3 text-sm font-semibold has-[:checked]:bg-primary has-[:checked]:text-primary-foreground">
+                  <label className="cursor-pointer whitespace-nowrap rounded px-4 py-3 text-sm font-semibold has-[:checked]:bg-primary has-[:checked]:text-primary-foreground">
                     <input className="sr-only" type="radio" name="type" value="continued_care" />
                     Continued Care
                   </label>

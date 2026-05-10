@@ -120,18 +120,12 @@ export function PublicSearchHeader({
               <h2 className="text-lg font-semibold">Filter Options</h2>
               <label className="grid gap-2 text-sm font-medium">
                 Population Served
-                <select
-                  className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm"
-                  defaultValue={population[0] || ""}
+                <MultiSelectDropdown
                   name="population"
-                >
-                  <option value="">Select population...</option>
-                  {populationOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+                  options={populationOptions}
+                  placeholder="Select population..."
+                  selected={population}
+                />
               </label>
               <label className="grid gap-2 text-sm font-medium">
                 Specialty Populations Served

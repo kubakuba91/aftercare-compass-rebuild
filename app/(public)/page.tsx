@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { Building2, Search, ShieldCheck } from "lucide-react";
+import { Search } from "lucide-react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -97,26 +97,56 @@ export default async function HomePage() {
       </section>
 
       <section className="shell grid gap-4 py-10 md:grid-cols-3">
-        <Card>
-          <Search className="text-primary" size={24} />
-          <h2 className="mt-4 text-xl font-semibold">Public discovery</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Search profiles by location, availability, and fit.
-          </p>
+        <Card className="overflow-hidden p-0">
+          <div className="relative aspect-[4/3] bg-muted">
+            <Image
+              alt="Illustration of searching aftercare listings"
+              className="object-cover"
+              fill
+              src="/images/home-search-listings.jpg"
+              sizes="(min-width: 768px) 33vw, 100vw"
+            />
+          </div>
+          <div className="p-5">
+            <h2 className="text-xl font-semibold">Public discovery</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Search profiles by location, availability, and fit.
+            </p>
+          </div>
         </Card>
-        <Card>
-          <Building2 className="text-primary" size={24} />
-          <h2 className="mt-4 text-xl font-semibold">Provider supply</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Aftercare teams can publish profiles, manage documents, and update availability.
-          </p>
+        <Card className="overflow-hidden p-0">
+          <div className="relative aspect-[4/3] bg-muted">
+            <Image
+              alt="Illustration of managing aftercare documents"
+              className="object-cover"
+              fill
+              src="/images/home-manage-documents.jpg"
+              sizes="(min-width: 768px) 33vw, 100vw"
+            />
+          </div>
+          <div className="p-5">
+            <h2 className="text-xl font-semibold">Provider supply</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Aftercare teams can publish profiles, manage documents, and update availability.
+            </p>
+          </div>
         </Card>
-        <Card>
-          <ShieldCheck className="text-primary" size={24} />
-          <h2 className="mt-4 text-xl font-semibold">Referral-ready</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Referents submit de-identified referrals, and aftercare teams manage the status lifecycle.
-          </p>
+        <Card className="overflow-hidden p-0">
+          <div className="relative aspect-[4/3] bg-muted">
+            <Image
+              alt="Illustration of referral-ready aftercare coordination"
+              className="object-cover"
+              fill
+              src="/images/home-refer-ready.jpg"
+              sizes="(min-width: 768px) 33vw, 100vw"
+            />
+          </div>
+          <div className="p-5">
+            <h2 className="text-xl font-semibold">Referral-ready</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Referents submit de-identified referrals, and aftercare teams manage the status lifecycle.
+            </p>
+          </div>
         </Card>
       </section>
     </main>

@@ -54,12 +54,9 @@ export default async function HomePage() {
                 availability, privacy-safe profiles, and simple next steps for connection.
               </p>
 
-              <form
-                action="/search"
-                className="mt-8 grid gap-3 rounded-lg bg-white p-3 shadow-sm lg:grid-cols-[auto_1fr_auto]"
-              >
-                <div className="grid rounded-md border border-border p-1 sm:grid-cols-2 lg:min-w-[310px]">
-                  <label className="cursor-pointer whitespace-nowrap rounded px-4 py-3 text-sm font-semibold has-[:checked]:bg-primary has-[:checked]:text-primary-foreground">
+              <form action="/search" className="mt-8 grid max-w-4xl gap-3">
+                <div className="grid w-fit overflow-hidden rounded-md border border-primary bg-primary p-1 shadow-sm sm:grid-cols-2">
+                  <label className="focus-within:ring-ring flex min-h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded px-5 text-sm font-semibold text-primary-foreground transition has-[:checked]:bg-white has-[:checked]:text-foreground has-[:focus-visible]:ring-2 md:px-7">
                     <input
                       className="sr-only"
                       type="radio"
@@ -69,36 +66,31 @@ export default async function HomePage() {
                     />
                     Sober Living
                   </label>
-                  <label className="cursor-pointer whitespace-nowrap rounded px-4 py-3 text-sm font-semibold has-[:checked]:bg-primary has-[:checked]:text-primary-foreground">
+                  <label className="focus-within:ring-ring flex min-h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded px-5 text-sm font-semibold text-primary-foreground transition has-[:checked]:bg-white has-[:checked]:text-foreground has-[:focus-visible]:ring-2 md:px-7">
                     <input className="sr-only" type="radio" name="type" value="continued_care" />
                     Continued Care
                   </label>
                 </div>
 
-                <label className="flex min-h-12 items-center gap-3 rounded-md border border-border bg-white px-4">
-                  <span className="sr-only">Search by city, state, or program name</span>
-                  <input
-                    name="q"
-                    className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-                    placeholder="City, state, or program name"
-                  />
-                  <Search className="shrink-0 text-primary" size={22} />
-                </label>
+                <div className="grid gap-3 md:grid-cols-[minmax(0,520px)_250px]">
+                  <label className="flex min-h-16 items-center gap-3 rounded-md bg-white px-5 shadow-sm">
+                    <span className="sr-only">Search by city, state, or program name</span>
+                    <input
+                      name="q"
+                      className="min-w-0 flex-1 bg-transparent text-base outline-none"
+                      placeholder="City, state, or program name"
+                    />
+                    <Search className="shrink-0 text-primary" size={32} />
+                  </label>
 
-                <button
-                  type="submit"
-                  className="focus-ring min-h-12 rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground"
-                >
-                  Search
-                </button>
+                  <button
+                    type="submit"
+                    className="focus-ring min-h-16 rounded-md bg-primary px-8 text-lg font-semibold text-primary-foreground shadow-sm"
+                  >
+                    Search
+                  </button>
+                </div>
               </form>
-
-              <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-white">
-                <span>Explore trusted aftercare options by location, population served, and fit.</span>
-                <ButtonLink href="/sign-up" variant="secondary">
-                  Create account
-                </ButtonLink>
-              </div>
             </div>
           </div>
         </div>

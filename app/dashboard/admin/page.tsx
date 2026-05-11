@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Building2, ClipboardCheck, FileCheck2, Flag, Home, Inbox, Users } from "lucide-react";
+import { Building2, ClipboardCheck, FileCheck2, Flag, Handshake, Home, Inbox } from "lucide-react";
 import {
   AdminReviewStatus,
   AdminReviewSubjectType,
@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
-import { reviewOnboardingSubmission } from "./actions";
+import { reviewOnboardingSubmission, reviewProfileClaimRequest } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +25,7 @@ const adminTabs = [
   { key: "organizations", label: "Organizations", icon: Building2 },
   { key: "profiles", label: "Homes & Programs", icon: Home },
   { key: "requests", label: "Referrals & Leads", icon: Inbox },
+  { key: "claims", label: "Claims", icon: Handshake },
   { key: "verification", label: "Verification", icon: FileCheck2 }
 ] as const;
 
@@ -125,6 +126,7 @@ export default async function AdminDashboardPage({
     profiles,
     referrals,
     leads,
+    profileClaims,
     applicationReviews,
     verificationDocuments,
     flags
@@ -266,6 +268,56 @@ export default async function AdminDashboardPage({
         }
       }
     }),
+    prisma.profileClaimRequest.findMany({
+      orderBy: [{ status: "asc" }, { submittedAt: "desc" }],
+      take: 75,
+      select: {
+        id: true,
+        status: true,
+        claimantName: true,
+        claimantEmail: true,
+        claimantPhone: true,
+        claimantRole: true,
+        claimantOrganization: true,
+        relationshipToProgram: true,
+        notes: true,
+        reviewerNotes: true,
+        submittedAt: true,
+        reviewedAt: true,
+        profile: {
+          select: {
+            id: true,
+            slug: true,
+            programName: true,
+            type: true,
+            publicCity: true,
+            publicState: true,
+            ownershipStatus: true,
+            organization: {
+              select: {
+                name: true
+              }
+            }
+          }
+        },
+        claimantUser: {
+          select: {
+            email: true,
+            organization: {
+              select: {
+                name: true,
+                type: true
+              }
+            }
+          }
+        },
+        reviewedByUser: {
+          select: {
+            email: true
+          }
+        }
+      }
+    }),
     prisma.adminReview.findMany({
       orderBy: [{ status: "asc" }, { submittedAt: "desc" }],
       take: 75,
@@ -358,6 +410,7 @@ export default async function AdminDashboardPage({
       .reduce((sum, item) => sum + item._count._all, 0);
   const pendingVerificationCount = verificationDocuments.filter((document) => document.status === "pending").length;
   const pendingApplicationCount = applicationReviews.filter((review) => review.status === AdminReviewStatus.pending).length;
+  const pendingClaimCount = profileClaims.filter((claim) => claim.status === "pending").length;
   const openFlagCount = flags.filter((flag) => flag.status === "open").length;
 
   return (
@@ -403,6 +456,7 @@ export default async function AdminDashboardPage({
               ["Open referrals", countReferrals(ReferralStatus.pending).toString()],
               ["New public leads", countLeads(LeadStatus.new).toString()],
               ["Verification queue", pendingVerificationCount.toString()],
+              ["Claim requests", pendingClaimCount.toString()],
               ["Open flags", openFlagCount.toString()],
               ["Draft profiles", countProfiles(ProfileStatus.draft).toString()]
             ].map(([label, value]) => (
@@ -451,6 +505,10 @@ export default async function AdminDashboardPage({
                 <div className="rounded-md border border-border p-4">
                   <p className="font-semibold">Public lead follow-up</p>
                   <p className="mt-1 text-sm text-muted-foreground">{countLeads(LeadStatus.new)} new public leads in provider inboxes.</p>
+                </div>
+                <div className="rounded-md border border-border p-4">
+                  <p className="font-semibold">Profile claims</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{pendingClaimCount} ownership claims need review.</p>
                 </div>
                 <div className="rounded-md border border-border p-4">
                   <p className="font-semibold">Marketplace quality</p>
@@ -603,6 +661,117 @@ export default async function AdminDashboardPage({
             </div>
           </Card>
         </div>
+      ) : null}
+
+      {activeTab === "claims" ? (
+        <Card className="mt-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-3">
+                <Handshake className="text-primary" size={24} />
+                <h2 className="text-xl font-semibold">Profile claims</h2>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Review ownership requests for unclaimed homes and programs before transferring dashboard access.
+              </p>
+            </div>
+            <Badge tone="warning">{pendingClaimCount} pending</Badge>
+          </div>
+          {reviewMessage ? (
+            <p className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-sm font-semibold text-primary">
+              {reviewMessage}
+            </p>
+          ) : null}
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full min-w-[1080px] text-left text-sm">
+              <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="py-3 pr-4">Profile</th>
+                  <th className="py-3 pr-4">Claimant</th>
+                  <th className="py-3 pr-4">Relationship</th>
+                  <th className="py-3 pr-4">Status</th>
+                  <th className="py-3 pr-4">Submitted</th>
+                  <th className="py-3 pr-4">Review</th>
+                </tr>
+              </thead>
+              <tbody>
+                {profileClaims.map((claim) => (
+                  <tr className="border-b border-border align-top last:border-0" key={claim.id}>
+                    <td className="py-4 pr-4">
+                      <Link className="font-semibold underline-offset-4 hover:underline" href={`/profiles/${claim.profile.slug}?preview=1`}>
+                        {claim.profile.programName}
+                      </Link>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {profileLabel(claim.profile.type)} · {[claim.profile.publicCity, claim.profile.publicState].filter(Boolean).join(", ")}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Current org: {claim.profile.organization.name}
+                      </p>
+                    </td>
+                    <td className="py-4 pr-4">
+                      <p className="font-semibold">{claim.claimantName}</p>
+                      <p className="mt-1 text-muted-foreground">{claim.claimantEmail}</p>
+                      {claim.claimantPhone ? <p className="mt-1 text-muted-foreground">{claim.claimantPhone}</p> : null}
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Account org: {claim.claimantUser?.organization?.name || "Not connected"}
+                      </p>
+                    </td>
+                    <td className="max-w-sm py-4 pr-4">
+                      <p className="font-medium">{claim.claimantRole || "Role not listed"} · {claim.claimantOrganization || "Organization not listed"}</p>
+                      <p className="mt-2 leading-6 text-muted-foreground">{claim.relationshipToProgram || "No relationship details provided."}</p>
+                      {claim.notes ? <p className="mt-2 text-xs leading-5 text-muted-foreground">Notes: {claim.notes}</p> : null}
+                    </td>
+                    <td className="py-4 pr-4">
+                      <Badge tone={statusTone(claim.status)}>{formatValue(claim.status)}</Badge>
+                      {claim.reviewedByUser ? (
+                        <p className="mt-2 text-xs text-muted-foreground">By {claim.reviewedByUser.email}</p>
+                      ) : null}
+                    </td>
+                    <td className="py-4 pr-4 text-muted-foreground">
+                      {formatDate(claim.submittedAt)}
+                      {claim.reviewedAt ? <p className="mt-1 text-xs">Reviewed {formatDate(claim.reviewedAt)}</p> : null}
+                    </td>
+                    <td className="py-4 pr-4">
+                      {claim.status === "pending" ? (
+                        <form action={reviewProfileClaimRequest} className="grid gap-2">
+                          <input name="claimRequestId" type="hidden" value={claim.id} />
+                          <textarea
+                            className="min-h-16 rounded-md border border-border p-2 text-sm"
+                            name="reviewerNotes"
+                            placeholder="Optional notes"
+                          />
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              className="focus-ring min-h-9 rounded-md border border-border bg-white px-3 text-sm font-semibold"
+                              name="decision"
+                              value="rejected"
+                            >
+                              Reject
+                            </button>
+                            <button
+                              className="focus-ring min-h-9 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"
+                              name="decision"
+                              value="approved"
+                            >
+                              Approve claim
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <p className="max-w-xs text-sm text-muted-foreground">{claim.reviewerNotes || "No notes added."}</p>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!profileClaims.length ? (
+              <p className="mt-4 rounded-md border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                No profile claims have been submitted yet.
+              </p>
+            ) : null}
+          </div>
+        </Card>
       ) : null}
 
       {activeTab === "verification" ? (

@@ -84,6 +84,19 @@ enum AdminReviewStatus {
   rejected
 }
 
+enum ProfileOwnershipStatus {
+  claimed
+  unclaimed
+  claim_pending
+}
+
+enum ProfileClaimStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
 model User {
   id              String        @id @default(cuid())
   clerkUserId     String        @unique
@@ -113,6 +126,9 @@ model User {
   acceptedOrganizationInvites OrganizationInvite[] @relation("OrganizationInviteAcceptedUser")
   availabilitySmsChecks AvailabilitySmsCheck[]
   reviewedAdminReviews AdminReview[] @relation("AdminReviewReviewer")
+  submittedProfileClaimRequests ProfileClaimRequest[] @relation("ProfileClaimRequester")
+  reviewedProfileClaimRequests ProfileClaimRequest[] @relation("ProfileClaimReviewer")
+  adminAuditLogs AdminAuditLog[] @relation("AdminAuditLogActor")
 
   @@index([orgId])
 }
@@ -213,6 +229,10 @@ model AftercareProfile {
   slug                            String        @unique
   status                          ProfileStatus @default(draft)
   verificationTier                Int           @default(1)
+  ownershipStatus                 ProfileOwnershipStatus @default(claimed)
+  claimedAt                       DateTime?
+  claimedByUserId                 String?
+  seededByUserId                  String?
   streetAddress                   String?
   city                            String
   state                           String
@@ -289,11 +309,56 @@ model AftercareProfile {
   favorites      Favorite[]
   availabilitySmsChecks AvailabilitySmsCheck[]
   adminReviews   AdminReview[]
+  claimRequests  ProfileClaimRequest[]
 
   @@index([orgId])
   @@index([type, status])
   @@index([publicCity, publicState])
   @@index([verificationTier])
+  @@index([ownershipStatus])
+}
+
+model ProfileClaimRequest {
+  id                    String             @id @default(cuid())
+  profileId             String
+  profile               AftercareProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  claimantUserId         String?
+  claimantUser           User?              @relation("ProfileClaimRequester", fields: [claimantUserId], references: [id], onDelete: SetNull)
+  claimantName           String
+  claimantEmail          String
+  claimantPhone          String?
+  claimantRole           String?
+  claimantOrganization   String?
+  relationshipToProgram  String?
+  notes                  String?
+  status                 ProfileClaimStatus @default(pending)
+  reviewedByUserId       String?
+  reviewedByUser         User?              @relation("ProfileClaimReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  reviewerNotes          String?
+  submittedAt            DateTime           @default(now())
+  reviewedAt             DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  @@index([profileId, status])
+  @@index([claimantUserId])
+  @@index([claimantEmail])
+  @@index([status, submittedAt])
+}
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  actorUser   User?    @relation("AdminAuditLogActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId])
+  @@index([action, createdAt])
 }
 
 model ProfileImage {

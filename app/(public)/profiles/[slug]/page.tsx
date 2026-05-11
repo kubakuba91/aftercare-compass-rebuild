@@ -1,10 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { OrganizationType, ProfileOwnershipStatus } from "@prisma/client";
 import { BadgeCheck, BedDouble, CheckCircle2, HandHeart, Mail, MapPin, PillBottle, Send, ShieldCheck, Users, Video } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { ExpandableRichText } from "@/components/public/expandable-rich-text";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
+import { ProfileOwnershipBadge } from "@/components/public/profile-ownership-badge";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +15,7 @@ import { getVisiblePopulationBeds } from "@/lib/bed-display";
 import { getCurrentAppUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { richTextHtml } from "@/lib/rich-text";
-import { createProfileReferral, createPublicProfileLead } from "./actions";
+import { createProfileClaimRequest, createProfileReferral, createPublicProfileLead } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -208,12 +210,117 @@ function PlaceClientForm({
   );
 }
 
+function ClaimProfileCard({
+  profile,
+  claimStatus,
+  isSignedIn,
+  canClaim,
+  userName,
+  userEmail,
+  organizationName
+}: {
+  profile: { id: string; slug: string; programName: string; ownershipStatus: ProfileOwnershipStatus };
+  claimStatus?: string;
+  isSignedIn: boolean;
+  canClaim: boolean;
+  userName: string;
+  userEmail: string;
+  organizationName: string;
+}) {
+  const claimMessages: Record<string, { tone: string; message: string }> = {
+    submitted: { tone: "border-emerald-200 bg-emerald-50 text-emerald-800", message: "Claim request submitted. Our team will review it before transferring access." },
+    pending: { tone: "border-emerald-200 bg-emerald-50 text-emerald-800", message: "Your claim is already in review." },
+    under_review: { tone: "border-accent/30 bg-accent/10", message: "A claim is already under review for this profile." },
+    invalid: { tone: "border-accent/30 bg-accent/10", message: "Please complete the required claim fields." },
+    provider_required: { tone: "border-accent/30 bg-accent/10", message: "Use an aftercare provider account to claim this profile." },
+    provider_type: { tone: "border-accent/30 bg-accent/10", message: "This profile type does not match your provider account." },
+    unavailable: { tone: "border-accent/30 bg-accent/10", message: "This profile has already been claimed." }
+  };
+  const statusMessage = claimStatus ? claimMessages[claimStatus] : null;
+
+  return (
+    <Card className="h-fit">
+      <div className="flex items-center gap-2">
+        <ShieldCheck size={18} />
+        <h2 className="font-semibold">Claim this profile</h2>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        Request access if you manage this home or program. A system admin will verify the relationship before transferring the listing.
+      </p>
+      {statusMessage ? (
+        <div className={`mt-4 rounded-md border p-3 text-sm font-semibold ${statusMessage.tone}`}>
+          {statusMessage.message}
+        </div>
+      ) : null}
+
+      {profile.ownershipStatus === ProfileOwnershipStatus.claim_pending ? (
+        <p className="mt-4 text-sm font-semibold text-muted-foreground">This claim is currently being reviewed.</p>
+      ) : !isSignedIn ? (
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link
+            className="focus-ring inline-flex min-h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+            href={`/sign-in?redirect_url=${encodeURIComponent(`/profiles/${profile.slug}`)}`}
+          >
+            Sign in to claim
+          </Link>
+          <Link
+            className="focus-ring inline-flex min-h-10 items-center rounded-md border border-border bg-white px-4 text-sm font-semibold"
+            href={`/sign-up?redirect_url=${encodeURIComponent(`/profiles/${profile.slug}`)}`}
+          >
+            Create account
+          </Link>
+        </div>
+      ) : canClaim ? (
+        <form action={createProfileClaimRequest} className="mt-5 grid gap-3">
+          <input name="profileId" type="hidden" value={profile.id} />
+          <input name="slug" type="hidden" value={profile.slug} />
+          <label className="grid gap-2 text-sm font-medium">
+            Your name
+            <input className="min-h-10 rounded-md border border-border px-3" defaultValue={userName} name="claimantName" required />
+          </label>
+          <label className="grid gap-2 text-sm font-medium">
+            Work email
+            <input className="min-h-10 rounded-md border border-border px-3" defaultValue={userEmail} name="claimantEmail" required type="email" />
+          </label>
+          <label className="grid gap-2 text-sm font-medium">
+            Phone
+            <input className="min-h-10 rounded-md border border-border px-3" name="claimantPhone" />
+          </label>
+          <label className="grid gap-2 text-sm font-medium">
+            Your role
+            <input className="min-h-10 rounded-md border border-border px-3" name="claimantRole" placeholder="Owner, director, manager..." required />
+          </label>
+          <label className="grid gap-2 text-sm font-medium">
+            Organization
+            <input className="min-h-10 rounded-md border border-border px-3" defaultValue={organizationName} name="claimantOrganization" required />
+          </label>
+          <label className="grid gap-2 text-sm font-medium">
+            Relationship to this program
+            <textarea className="min-h-24 rounded-md border border-border p-3" name="relationshipToProgram" required />
+          </label>
+          <label className="grid gap-2 text-sm font-medium">
+            Notes
+            <textarea className="min-h-24 rounded-md border border-border p-3" name="notes" />
+          </label>
+          <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+            Submit claim
+          </button>
+        </form>
+      ) : (
+        <p className="mt-4 text-sm font-semibold text-muted-foreground">
+          Claiming is available from an aftercare provider account that matches this profile type.
+        </p>
+      )}
+    </Card>
+  );
+}
+
 export default async function PublicProfilePage({
   params,
   searchParams
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ lead?: string; referral?: string; preview?: string }>;
+  searchParams: Promise<{ lead?: string; referral?: string; preview?: string; claim?: string }>;
 }) {
   const [{ slug }, query, appUser] = await Promise.all([
     params,
@@ -249,6 +356,11 @@ export default async function PublicProfilePage({
   const isReferent = appUser?.role.startsWith("referent") ?? false;
   const isAftercareUser = appUser?.role.startsWith("aftercare") ?? false;
   const userName = [appUser?.firstName, appUser?.lastName].filter(Boolean).join(" ") || "";
+  const canClaimProfile =
+    Boolean(appUser?.orgId) &&
+    isAftercareUser &&
+    ((profile.type === "sober_living" && appUser?.organization?.type === OrganizationType.aftercare_sober_living) ||
+      (profile.type === "continued_care" && appUser?.organization?.type === OrganizationType.aftercare_continued_care));
   const favorite = isReferent && appUser?.orgId
     ? await prisma.favorite.findUnique({
         where: {
@@ -284,6 +396,7 @@ export default async function PublicProfilePage({
                 <h1 className="text-3xl font-semibold">{profile.programName}</h1>
                 <div className="flex flex-wrap gap-2">
                   <TrustBadge verificationTier={profile.verificationTier} />
+                  <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
                   <Badge>{isSoberLiving ? "Sober Living" : "Continued Care"}</Badge>
                   <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
                     {availabilityText(profile)}
@@ -502,7 +615,17 @@ export default async function PublicProfilePage({
           </div>
         </section>
 
-        {isReferent ? (
+        {profile.ownershipStatus !== ProfileOwnershipStatus.claimed ? (
+          <ClaimProfileCard
+            canClaim={canClaimProfile}
+            claimStatus={query.claim}
+            isSignedIn={Boolean(appUser)}
+            organizationName={appUser?.organization?.name || ""}
+            profile={profile}
+            userEmail={appUser?.email || ""}
+            userName={userName}
+          />
+        ) : isReferent ? (
           <PlaceClientForm
             organizationName={appUser?.organization?.name || ""}
             profile={profile}

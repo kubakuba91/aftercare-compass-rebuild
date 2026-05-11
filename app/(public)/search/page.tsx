@@ -5,6 +5,7 @@ import { Prisma, ProfileType, Role } from "@prisma/client";
 import { MapPin } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
+import { ProfileOwnershipBadge } from "@/components/public/profile-ownership-badge";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
 import { Badge } from "@/components/ui/badge";
@@ -361,6 +362,7 @@ export default async function SearchPage({
       programName: true,
       type: true,
       verificationTier: true,
+      ownershipStatus: true,
       publicCity: true,
       publicState: true,
       latitude: true,
@@ -514,6 +516,7 @@ export default async function SearchPage({
                       <div className="flex flex-wrap items-start gap-2 pr-12 md:flex-nowrap md:items-center">
                         <h2 className="min-w-0 flex-1 text-lg font-semibold leading-tight">{profile.programName}</h2>
                         <TrustBadge verificationTier={profile.verificationTier} />
+                        <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
                         <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
                           {availabilityText(profile)}
                         </Badge>

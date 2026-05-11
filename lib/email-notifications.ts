@@ -51,6 +51,19 @@ async function createUserNotifications(input: {
   }
 }
 
+async function systemAdminUsers() {
+  return prisma.user.findMany({
+    where: {
+      isActive: true,
+      role: Role.system_admin
+    },
+    select: {
+      id: true,
+      email: true
+    }
+  });
+}
+
 export async function notifyNewPublicLead(leadId: string) {
   const lead = await prisma.lead.findUnique({
     where: { id: leadId },
@@ -114,6 +127,160 @@ export async function notifyNewPublicLead(leadId: string) {
       lead.phone ? `Phone: ${lead.phone}` : "",
       `Message: ${lead.message}`,
       `Open dashboard: ${dashboardLink}`
+    ].filter(Boolean).join("\n")
+  });
+}
+
+export async function notifyProfileClaimSubmitted(claimRequestId: string) {
+  const [claim, admins] = await Promise.all([
+    prisma.profileClaimRequest.findUnique({
+      where: { id: claimRequestId },
+      include: {
+        profile: {
+          select: {
+            programName: true,
+            slug: true,
+            publicCity: true,
+            publicState: true
+          }
+        }
+      }
+    }),
+    systemAdminUsers()
+  ]);
+
+  if (!claim) {
+    return;
+  }
+
+  const adminLink = appUrl("/dashboard/admin?tab=claims");
+  const profileLink = appUrl(`/profiles/${claim.profile.slug}?preview=1`);
+
+  await createUserNotifications({
+    users: admins,
+    type: "profile_claim.submitted",
+    title: `Claim submitted for ${claim.profile.programName}`,
+    body: `${claim.claimantName} requested ownership review.`
+  });
+
+  const adminEmail = sendTransactionalEmail({
+    to: admins.map((admin) => admin.email),
+    subject: `Profile claim submitted: ${claim.profile.programName}`,
+    html: emailShell(
+      "Profile claim submitted",
+      `
+        <p style="margin:0 0 18px;font-size:16px;line-height:1.6;">${escapeHtml(claim.claimantName)} requested to claim ${escapeHtml(claim.profile.programName)}.</p>
+        ${emailField("Claimant email", claim.claimantEmail)}
+        ${emailField("Claimant phone", claim.claimantPhone)}
+        ${emailField("Role", claim.claimantRole)}
+        ${emailField("Organization", claim.claimantOrganization)}
+        ${emailField("Relationship", claim.relationshipToProgram)}
+        ${emailField("Notes", claim.notes)}
+        ${emailField("Profile", profileLink)}
+        ${emailButton("Review claim", adminLink)}
+      `
+    ),
+    text: [
+      `Profile claim submitted: ${claim.profile.programName}`,
+      `Claimant: ${claim.claimantName}`,
+      `Email: ${claim.claimantEmail}`,
+      claim.claimantPhone ? `Phone: ${claim.claimantPhone}` : "",
+      claim.claimantRole ? `Role: ${claim.claimantRole}` : "",
+      claim.claimantOrganization ? `Organization: ${claim.claimantOrganization}` : "",
+      `Relationship: ${claim.relationshipToProgram || "Not provided"}`,
+      `Review: ${adminLink}`
+    ].filter(Boolean).join("\n")
+  });
+
+  const claimantEmail = sendTransactionalEmail({
+    to: claim.claimantEmail,
+    subject: `We received your claim for ${claim.profile.programName}`,
+    html: emailShell(
+      "Claim request received",
+      `
+        <p style="margin:0 0 18px;font-size:16px;line-height:1.6;">Thanks for requesting ownership of ${escapeHtml(claim.profile.programName)}. Our team will review your relationship to the program before transferring management access.</p>
+        ${emailField("Profile", `${claim.profile.programName} in ${[claim.profile.publicCity, claim.profile.publicState].filter(Boolean).join(", ")}`)}
+        ${emailButton("View profile", profileLink)}
+      `
+    ),
+    text: [
+      `We received your claim for ${claim.profile.programName}.`,
+      "Our team will review it before transferring management access.",
+      `Profile: ${profileLink}`
+    ].join("\n")
+  });
+
+  return Promise.all([adminEmail, claimantEmail]);
+}
+
+export async function notifyProfileClaimApproved(claimRequestId: string) {
+  const claim = await prisma.profileClaimRequest.findUnique({
+    where: { id: claimRequestId },
+    include: {
+      profile: {
+        select: {
+          programName: true,
+          slug: true
+        }
+      }
+    }
+  });
+
+  if (!claim) {
+    return;
+  }
+
+  const dashboardLink = appUrl("/dashboard/aftercare?tab=homes");
+  return sendTransactionalEmail({
+    to: claim.claimantEmail,
+    subject: `Claim approved: ${claim.profile.programName}`,
+    html: emailShell(
+      "Profile claim approved",
+      `
+        <p style="margin:0 0 18px;font-size:16px;line-height:1.6;">Your claim for ${escapeHtml(claim.profile.programName)} was approved. You can now manage this listing from your dashboard.</p>
+        ${emailButton("Open dashboard", dashboardLink)}
+      `
+    ),
+    text: [
+      `Your claim for ${claim.profile.programName} was approved.`,
+      `Open dashboard: ${dashboardLink}`
+    ].join("\n")
+  });
+}
+
+export async function notifyProfileClaimRejected(claimRequestId: string) {
+  const claim = await prisma.profileClaimRequest.findUnique({
+    where: { id: claimRequestId },
+    include: {
+      profile: {
+        select: {
+          programName: true,
+          slug: true
+        }
+      }
+    }
+  });
+
+  if (!claim) {
+    return;
+  }
+
+  const profileLink = appUrl(`/profiles/${claim.profile.slug}`);
+  return sendTransactionalEmail({
+    to: claim.claimantEmail,
+    subject: `Claim request update: ${claim.profile.programName}`,
+    html: emailShell(
+      "Claim request update",
+      `
+        <p style="margin:0 0 18px;font-size:16px;line-height:1.6;">We could not approve your claim for ${escapeHtml(claim.profile.programName)} at this time.</p>
+        ${emailField("Admin notes", claim.reviewerNotes)}
+        ${emailButton("View profile", profileLink)}
+      `
+    ),
+    text: [
+      `We could not approve your claim for ${claim.profile.programName} at this time.`,
+      claim.reviewerNotes ? `Notes: ${claim.reviewerNotes}` : "",
+      `Profile: ${profileLink}`
     ].filter(Boolean).join("\n")
   });
 }

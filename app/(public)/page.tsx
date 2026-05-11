@@ -1,7 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { Search } from "lucide-react";
 import Image from "next/image";
-import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
@@ -10,10 +9,6 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const { userId } = await auth();
-
-  if (userId) {
-    redirect("/auth/complete");
-  }
 
   return (
     <main>
@@ -27,8 +22,8 @@ export default async function HomePage() {
               src="/brand/logo-aftercare.png"
               width={280}
             />
-            <ButtonLink href="/sign-in" variant="secondary">
-              Join or Login
+            <ButtonLink href={userId ? "/auth/complete" : "/sign-in"} variant="secondary">
+              {userId ? "Dashboard" : "Join or Login"}
             </ButtonLink>
           </div>
 

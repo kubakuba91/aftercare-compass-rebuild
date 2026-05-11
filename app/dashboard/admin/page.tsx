@@ -100,6 +100,19 @@ function availabilityText(profile: {
   return profile.acceptingNewPatients ? "Accepting" : "Not accepting";
 }
 
+function SummaryCards({ items }: { items: Array<[string, string]> }) {
+  return (
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      {items.map(([label, value]) => (
+        <Card className="p-4" key={label}>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+          <p className="mt-2 text-3xl font-semibold">{value}</p>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export default async function AdminDashboardPage({
   searchParams
 }: {
@@ -447,25 +460,14 @@ export default async function AdminDashboardPage({
 
       {activeTab === "overview" ? (
         <div className="mt-6 grid gap-6">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {[
+          <SummaryCards
+            items={[
               ["Aftercare orgs", (countOrganizations(OrganizationType.aftercare_sober_living) + countOrganizations(OrganizationType.aftercare_continued_care)).toString()],
               ["Referent orgs", countOrganizations(OrganizationType.referent).toString()],
               ["Published profiles", countProfiles(ProfileStatus.published).toString()],
-              ["Pending applications", pendingApplicationCount.toString()],
-              ["Open referrals", countReferrals(ReferralStatus.pending).toString()],
-              ["New public leads", countLeads(LeadStatus.new).toString()],
-              ["Verification queue", pendingVerificationCount.toString()],
-              ["Claim requests", pendingClaimCount.toString()],
-              ["Open flags", openFlagCount.toString()],
-              ["Draft profiles", countProfiles(ProfileStatus.draft).toString()]
-            ].map(([label, value]) => (
-              <Card className="p-4" key={label}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-                <p className="mt-2 text-3xl font-semibold">{value}</p>
-              </Card>
-            ))}
-          </div>
+              ["Total requests", (countReferrals() + countLeads()).toString()]
+            ]}
+          />
 
           <div className="grid gap-4 xl:grid-cols-2">
             <Card>
@@ -521,13 +523,22 @@ export default async function AdminDashboardPage({
       ) : null}
 
       {activeTab === "organizations" ? (
-        <Card className="mt-6">
-          <div className="flex items-center gap-3">
-            <Building2 className="text-primary" size={24} />
-            <h2 className="text-xl font-semibold">Organizations</h2>
-          </div>
-          <div className="mt-5 overflow-x-auto">
-            <table className="w-full min-w-[920px] text-left text-sm">
+        <div className="mt-6 grid gap-4">
+          <SummaryCards
+            items={[
+              ["Aftercare orgs", (countOrganizations(OrganizationType.aftercare_sober_living) + countOrganizations(OrganizationType.aftercare_continued_care)).toString()],
+              ["Referent orgs", countOrganizations(OrganizationType.referent).toString()],
+              ["Sober living orgs", countOrganizations(OrganizationType.aftercare_sober_living).toString()],
+              ["Continued care orgs", countOrganizations(OrganizationType.aftercare_continued_care).toString()]
+            ]}
+          />
+          <Card>
+            <div className="flex items-center gap-3">
+              <Building2 className="text-primary" size={24} />
+              <h2 className="text-xl font-semibold">Organizations</h2>
+            </div>
+            <div className="mt-5 overflow-x-auto">
+              <table className="w-full min-w-[920px] text-left text-sm">
               <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="py-3 pr-4">Organization</th>
@@ -564,18 +575,28 @@ export default async function AdminDashboardPage({
                 })}
               </tbody>
             </table>
-          </div>
-        </Card>
+            </div>
+          </Card>
+        </div>
       ) : null}
 
       {activeTab === "profiles" ? (
-        <Card className="mt-6">
-          <div className="flex items-center gap-3">
-            <Home className="text-primary" size={24} />
-            <h2 className="text-xl font-semibold">Homes & programs</h2>
-          </div>
-          <div className="mt-5 overflow-x-auto">
-            <table className="w-full min-w-[980px] text-left text-sm">
+        <div className="mt-6 grid gap-4">
+          <SummaryCards
+            items={[
+              ["Published profiles", countProfiles(ProfileStatus.published).toString()],
+              ["Draft profiles", countProfiles(ProfileStatus.draft).toString()],
+              ["Sober living profiles", countProfiles(undefined, ProfileType.sober_living).toString()],
+              ["Continued care profiles", countProfiles(undefined, ProfileType.continued_care).toString()]
+            ]}
+          />
+          <Card>
+            <div className="flex items-center gap-3">
+              <Home className="text-primary" size={24} />
+              <h2 className="text-xl font-semibold">Homes & programs</h2>
+            </div>
+            <div className="mt-5 overflow-x-auto">
+              <table className="w-full min-w-[980px] text-left text-sm">
               <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="py-3 pr-4">Profile</th>
@@ -613,12 +634,22 @@ export default async function AdminDashboardPage({
                 ))}
               </tbody>
             </table>
-          </div>
-        </Card>
+            </div>
+          </Card>
+        </div>
       ) : null}
 
       {activeTab === "requests" ? (
-        <div className="mt-6 grid gap-4 xl:grid-cols-2">
+        <div className="mt-6 grid gap-4">
+          <SummaryCards
+            items={[
+              ["Open referrals", countReferrals(ReferralStatus.pending).toString()],
+              ["New public leads", countLeads(LeadStatus.new).toString()],
+              ["Total referrals", countReferrals().toString()],
+              ["Total public leads", countLeads().toString()]
+            ]}
+          />
+          <div className="grid gap-4 xl:grid-cols-2">
           <Card>
             <h2 className="text-xl font-semibold">Recent referrals</h2>
             <div className="mt-4 grid gap-3">
@@ -660,11 +691,21 @@ export default async function AdminDashboardPage({
               {!leads.length ? <p className="text-sm text-muted-foreground">No public leads yet.</p> : null}
             </div>
           </Card>
+          </div>
         </div>
       ) : null}
 
       {activeTab === "claims" ? (
-        <Card className="mt-6">
+        <div className="mt-6 grid gap-4">
+          <SummaryCards
+            items={[
+              ["Pending claims", pendingClaimCount.toString()],
+              ["Total claims", profileClaims.length.toString()],
+              ["Approved claims", profileClaims.filter((claim) => claim.status === "approved").length.toString()],
+              ["Rejected claims", profileClaims.filter((claim) => claim.status === "rejected").length.toString()]
+            ]}
+          />
+        <Card>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-3">
@@ -772,10 +813,20 @@ export default async function AdminDashboardPage({
             ) : null}
           </div>
         </Card>
+        </div>
       ) : null}
 
       {activeTab === "verification" ? (
-        <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
+        <div className="mt-6 grid gap-4">
+          <SummaryCards
+            items={[
+              ["Pending applications", pendingApplicationCount.toString()],
+              ["Verification queue", pendingVerificationCount.toString()],
+              ["Open flags", openFlagCount.toString()],
+              ["Total reviews", applicationReviews.length.toString()]
+            ]}
+          />
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
           <Card className="xl:col-span-2">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -956,6 +1007,7 @@ export default async function AdminDashboardPage({
               {!flags.length ? <p className="text-sm text-muted-foreground">No flags yet.</p> : null}
             </div>
           </Card>
+          </div>
         </div>
       ) : null}
     </main>

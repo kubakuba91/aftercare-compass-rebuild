@@ -9,8 +9,11 @@ import { referentPlans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 
-const addTeamMemberSchema = z.object({
-  email: z.string().trim().email()
+const emailListSchema = z.array(z.string().email()).min(1);
+
+const displayNameSchema = z.object({
+  firstName: z.string().trim().max(80).optional(),
+  lastName: z.string().trim().max(80).optional()
 });
 
 function referentTeamLimit(planKey: string | null | undefined) {
@@ -21,48 +24,72 @@ function referentTeamLimit(planKey: string | null | undefined) {
   return plan.teamMembers;
 }
 
-function teamHref(message?: string) {
-  const params = new URLSearchParams();
+function teamHref(message?: string, invite = false) {
+  const params = new URLSearchParams({ tab: "managers" });
 
   if (message) {
     params.set("teamMessage", message);
   }
 
+  if (invite) {
+    params.set("invite", "1");
+  }
+
   return `/dashboard/referent${params.size ? `?${params.toString()}` : ""}`;
 }
 
-function teamInviteMessage(email: string, result: { status: string }, attachedExistingUser = false) {
-  if (result.status === "sent") {
-    return attachedExistingUser ? `Team member added and invite email sent to ${email}.` : `Invite email sent to ${email}.`;
-  }
-
-  if (result.status === "skipped") {
-    return attachedExistingUser
-      ? `Team member added, but email is not configured or could not be sent.`
-      : `Invite saved, but email is not configured or could not be sent.`;
-  }
-
-  return attachedExistingUser
-    ? `Team member added, but the invite email could not be sent.`
-    : `Invite saved, but the email could not be sent.`;
+function emailsFromText(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(/[\s,;]+/)
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean)
+    )
+  );
 }
 
-export async function addReferentTeamMember(formData: FormData) {
+function inviteDeliveryMessage(count: number, results: Array<{ status: string }>, attachedCount = 0) {
+  if (!count && !attachedCount) {
+    return "No new manager invites were needed.";
+  }
+
+  const sentCount = results.filter((result) => result.status === "sent").length;
+  const skippedCount = results.filter((result) => result.status === "skipped").length;
+  const failedCount = results.filter((result) => result.status === "failed").length;
+  const inviteLabel = count === 1 ? "manager invite" : "manager invites";
+  const attachedMessage = attachedCount
+    ? `${attachedCount} existing user${attachedCount === 1 ? "" : "s"} added. `
+    : "";
+
+  if (sentCount === count) {
+    return `${attachedMessage}${count} ${inviteLabel} sent.`;
+  }
+
+  if (skippedCount === count) {
+    return `${attachedMessage}${count} ${inviteLabel} saved, but email is not configured or could not be sent.`;
+  }
+
+  if (failedCount > 0 || skippedCount > 0) {
+    return `${attachedMessage}${count} ${inviteLabel} saved. ${sentCount} email${sentCount === 1 ? "" : "s"} sent, ${failedCount + skippedCount} need${failedCount + skippedCount === 1 ? "s" : ""} a resend.`;
+  }
+
+  return `${attachedMessage}${count} ${inviteLabel} saved.`;
+}
+
+export async function inviteReferentManagers(formData: FormData) {
   const appUser = await getProtectedAppUser("/dashboard/referent");
 
   if (appUser.role !== Role.referent_admin || !appUser.orgId) {
-    redirect(teamHref("Only referent admins can add team members."));
+    redirect(teamHref("Only referent admins can invite managers.", true));
   }
 
-  const parsed = addTeamMemberSchema.safeParse({
-    email: formData.get("email")
-  });
+  const parsedEmails = emailListSchema.safeParse(emailsFromText(String(formData.get("emails") || "")));
 
-  if (!parsed.success) {
-    redirect(teamHref("Enter a valid email address."));
+  if (!parsedEmails.success) {
+    redirect(teamHref("Enter at least one valid email address.", true));
   }
 
-  const email = parsed.data.email.toLowerCase();
   const organization = await prisma.organization.findUnique({
     where: { id: appUser.orgId },
     select: {
@@ -84,76 +111,80 @@ export async function addReferentTeamMember(formData: FormData) {
   });
 
   if (!organization?.referentDetails) {
-    redirect(teamHref("Referent organization setup is incomplete."));
+    redirect(teamHref("Referent organization setup is incomplete.", true));
   }
 
   const activeUsers = organization.users.filter((user) => user.isActive);
   const pendingEmails = organization.referentDetails.invitedTeamEmails.map((item) => item.toLowerCase());
   const teamLimit = referentTeamLimit(organization.subscriptionPlan);
-  const existingOrgUser = organization.users.find((user) => user.email.toLowerCase() === email);
+  const existingOrgEmails = new Set(organization.users.map((user) => user.email.toLowerCase()));
+  const pendingEmailSet = new Set(pendingEmails);
+  const newEmails = parsedEmails.data.filter(
+    (email) => !existingOrgEmails.has(email) && !pendingEmailSet.has(email)
+  );
+  const alreadyActiveEmails = parsedEmails.data.filter((email) => existingOrgEmails.has(email));
+  const alreadyPendingEmails = parsedEmails.data.filter((email) => pendingEmailSet.has(email));
 
-  if (existingOrgUser?.isActive) {
-    redirect(teamHref("That person is already on this account."));
+  if (!newEmails.length) {
+    const details = [
+      alreadyActiveEmails.length ? `${alreadyActiveEmails.length} already on account` : "",
+      alreadyPendingEmails.length ? `${alreadyPendingEmails.length} already pending` : ""
+    ].filter(Boolean).join(", ");
+    redirect(teamHref(details || "Those emails are already active or pending.", true));
   }
 
-  if (pendingEmails.includes(email)) {
-    redirect(teamHref("That invite is already pending."));
+  if (
+    teamLimit !== "unlimited" &&
+    activeUsers.length + pendingEmails.length + newEmails.length > teamLimit
+  ) {
+    redirect(teamHref(`Your current plan allows ${teamLimit} team members.`, true));
   }
 
-  if (teamLimit !== "unlimited" && activeUsers.length + pendingEmails.length >= teamLimit) {
-    redirect(teamHref(`Your current plan allows ${teamLimit} team members.`));
-  }
-
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-    select: {
-      id: true,
-      orgId: true,
-      isActive: true
-    }
+  const existingUsers = await prisma.user.findMany({
+    where: { email: { in: newEmails } },
+    select: { id: true, email: true, orgId: true }
   });
 
-  if (existingUser?.orgId && existingUser.orgId !== appUser.orgId) {
-    redirect(teamHref("That email already belongs to another organization."));
+  const externalUser = existingUsers.find((user) => user.orgId && user.orgId !== appUser.orgId);
+
+  if (externalUser) {
+    redirect(teamHref(`${externalUser.email} already belongs to another organization.`, true));
   }
 
-  if (existingUser && !existingUser.orgId) {
-    await prisma.user.update({
-      where: { id: existingUser.id },
+  const attachableUsers = existingUsers.filter((user) => !user.orgId);
+  const attachedEmails = new Set(attachableUsers.map((user) => user.email.toLowerCase()));
+  const inviteEmails = newEmails.filter((email) => !attachedEmails.has(email));
+
+  if (attachableUsers.length) {
+    await prisma.user.updateMany({
+      where: { id: { in: attachableUsers.map((user) => user.id) } },
       data: {
         orgId: appUser.orgId,
         role: Role.referent_manager,
         isActive: true
       }
     });
-
-    const emailResult = await sendOrganizationInviteEmail({
-      email,
-      organizationName: organization.name,
-      role: Role.referent_manager,
-      invitedByName: [appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email
-    });
-
-    revalidatePath("/dashboard/referent");
-    redirect(teamHref(teamInviteMessage(email, emailResult, true)));
   }
 
-  await prisma.referentOrganization.update({
-    where: { orgId: appUser.orgId },
-    data: {
-      invitedTeamEmails: [...pendingEmails, email]
-    }
-  });
+  if (inviteEmails.length) {
+    await prisma.referentOrganization.update({
+      where: { orgId: appUser.orgId },
+      data: {
+        invitedTeamEmails: [...pendingEmails, ...inviteEmails]
+      }
+    });
+  }
 
-  const emailResult = await sendOrganizationInviteEmail({
+  const inviterName = [appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email;
+  const emailResults = await Promise.all(newEmails.map((email) => sendOrganizationInviteEmail({
     email,
     organizationName: organization.name,
     role: Role.referent_manager,
-    invitedByName: [appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email
-  });
+    invitedByName: inviterName
+  })));
 
   revalidatePath("/dashboard/referent");
-  redirect(teamHref(teamInviteMessage(email, emailResult)));
+  redirect(teamHref(inviteDeliveryMessage(newEmails.length, emailResults, attachableUsers.length), emailResults.some((result) => result.status !== "sent")));
 }
 
 export async function removePendingReferentInvite(formData: FormData) {
@@ -189,4 +220,79 @@ export async function removePendingReferentInvite(formData: FormData) {
 
   revalidatePath("/dashboard/referent");
   redirect(teamHref("Pending invite removed."));
+}
+
+export async function removeReferentManager(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/referent");
+
+  if (appUser.role !== Role.referent_admin || !appUser.orgId) {
+    redirect(teamHref("Only referent admins can remove managers."));
+  }
+
+  const managerId = String(formData.get("managerId") || "");
+
+  if (!managerId) {
+    redirect(teamHref("Manager not found."));
+  }
+
+  if (managerId === appUser.id) {
+    redirect(teamHref("You cannot remove your own account."));
+  }
+
+  const manager = await prisma.user.findFirst({
+    where: {
+      id: managerId,
+      orgId: appUser.orgId
+    },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true
+    }
+  });
+
+  if (!manager) {
+    redirect(teamHref("Manager not found."));
+  }
+
+  if (manager.role !== Role.referent_manager) {
+    redirect(teamHref("Only manager accounts can be removed from this screen."));
+  }
+
+  await prisma.user.update({
+    where: { id: manager.id },
+    data: {
+      orgId: null,
+      isActive: false
+    }
+  });
+
+  revalidatePath("/dashboard/referent");
+  const managerName = [manager.firstName, manager.lastName].filter(Boolean).join(" ") || manager.email;
+  redirect(teamHref(`${managerName} was removed from this account.`));
+}
+
+export async function updateReferentDisplayName(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/referent?tab=account");
+  const parsed = displayNameSchema.safeParse({
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName")
+  });
+
+  if (!parsed.success) {
+    redirect("/dashboard/referent?tab=account&edit=displayName");
+  }
+
+  await prisma.user.update({
+    where: { id: appUser.id },
+    data: {
+      firstName: parsed.data.firstName || null,
+      lastName: parsed.data.lastName || null
+    }
+  });
+
+  revalidatePath("/dashboard/referent");
+  redirect("/dashboard/referent?tab=account");
 }

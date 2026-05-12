@@ -1,17 +1,53 @@
 import Link from "next/link";
-import { Heart, MapPin, Search, Send, Users } from "lucide-react";
+import {
+  CreditCard,
+  Heart,
+  MailPlus,
+  MapPin,
+  Pencil,
+  Search,
+  Send,
+  Settings,
+  UserCircle,
+  Users,
+  X
+} from "lucide-react";
 import { redirect } from "next/navigation";
 import { ProfileType, Role } from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { billingPlans, formatBillingStatus, formatPlanPrice } from "@/lib/billing";
 import { referentPlans } from "@/lib/plans";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
 import { maxReferentStep } from "@/lib/referent-onboarding";
-import { addReferentTeamMember, removePendingReferentInvite } from "./actions";
+import { cn } from "@/lib/utils";
+import { createBillingCheckoutSession, createBillingPortalSession } from "../billing/actions";
+import {
+  inviteReferentManagers,
+  removePendingReferentInvite,
+  removeReferentManager,
+  updateReferentDisplayName
+} from "./actions";
 
 export const dynamic = "force-dynamic";
+
+const dashboardTabs = [
+  { key: "overview", label: "Overview", icon: Send },
+  { key: "referrals", label: "Referrals", icon: Send },
+  { key: "favorites", label: "Favorites", icon: Heart },
+  { key: "managers", label: "Managers", icon: Users },
+  { key: "subscription", label: "Subscription", icon: CreditCard },
+  { key: "account", label: "Account", icon: Settings }
+] as const;
+
+type DashboardTab = (typeof dashboardTabs)[number]["key"];
+
+function isDashboardTab(value: string | undefined): value is DashboardTab {
+  return dashboardTabs.some((tab) => tab.key === value);
+}
 
 function formatReferralValue(value: string) {
   return value
@@ -36,6 +72,18 @@ function formatPricePerWeek(value: number | null) {
   return value ? `$${value}/week` : "Price not listed";
 }
 
+function formatDate(value: Date | null | undefined) {
+  if (!value) {
+    return "Not set";
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  }).format(value);
+}
+
 function planTeamLimit(planKey: string | null | undefined) {
   const plan = planKey && planKey in referentPlans
     ? referentPlans[planKey as keyof typeof referentPlans]
@@ -47,10 +95,23 @@ function planTeamLimit(planKey: string | null | undefined) {
 export default async function ReferentDashboardPage({
   searchParams
 }: {
-  searchParams: Promise<{ teamMessage?: string | string[] }>;
+  searchParams: Promise<{
+    tab?: string | string[];
+    invite?: string | string[];
+    edit?: string | string[];
+    teamMessage?: string | string[];
+    billingMessage?: string | string[];
+  }>;
 }) {
   const query = await searchParams;
+  const tab = Array.isArray(query.tab) ? query.tab[0] : query.tab;
+  const activeTab = isDashboardTab(tab) ? tab : "overview";
+  const invite = Array.isArray(query.invite) ? query.invite[0] : query.invite;
+  const isInviteManagersOpen = activeTab === "managers" && invite === "1";
+  const edit = Array.isArray(query.edit) ? query.edit[0] : query.edit;
+  const isEditingDisplayName = activeTab === "account" && edit === "displayName";
   const teamMessage = Array.isArray(query.teamMessage) ? query.teamMessage[0] : query.teamMessage;
+  const billingMessage = Array.isArray(query.billingMessage) ? query.billingMessage[0] : query.billingMessage;
   const appUser = await getProtectedAppUser("/dashboard/referent");
 
   if (appUser.role !== Role.referent_admin && appUser.role !== Role.referent_manager) {
@@ -137,6 +198,10 @@ export default async function ReferentDashboardPage({
       select: {
         name: true,
         subscriptionPlan: true,
+        subscriptionStatus: true,
+        subscriptionBillingCycle: true,
+        subscriptionRenewsAt: true,
+        stripeCustomerId: true,
         users: {
           orderBy: [{ role: "asc" }, { createdAt: "asc" }],
           select: {
@@ -184,22 +249,121 @@ export default async function ReferentDashboardPage({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3 md:grid-cols-4">
-        {[
-          ["Active referrals", activeReferralCount.toString()],
-          ["This month", thisMonthReferralCount.toString()],
-          ["Favorites", favorites.length.toString()],
-          ["Team members", teamUsage.toString()]
-        ].map(([label, value]) => (
-          <div key={label} className="rounded-lg border border-border bg-white px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-            <p className="mt-1 text-2xl font-semibold">{value}</p>
-          </div>
-        ))}
-      </div>
+      <nav className="mt-6 flex flex-wrap gap-2">
+        {dashboardTabs.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.key;
 
-      <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
-        <Card>
+          return (
+            <Link
+              key={item.key}
+              className={cn(
+                "focus-ring inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-4 text-sm font-semibold",
+                isActive ? "bg-primary text-primary-foreground" : "bg-white text-foreground"
+              )}
+              href={`/dashboard/referent?tab=${item.key}`}
+            >
+              <Icon size={16} />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {activeTab === "overview" ? (
+        <div className="mt-6 grid gap-3 md:grid-cols-4">
+          {[
+            ["Active referrals", activeReferralCount.toString()],
+            ["This month", thisMonthReferralCount.toString()],
+            ["Favorites", favorites.length.toString()],
+            ["Team members", teamUsage.toString()]
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-lg border border-border bg-white px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+              <p className="mt-1 text-2xl font-semibold">{value}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {activeTab === "subscription" && appUser.role === Role.referent_admin ? (
+        <Card className="mt-6">
+          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+            <div>
+              <h2 className="text-xl font-semibold">Subscription</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Manage referent billing, plan limits, and invoices through Stripe.
+              </p>
+            </div>
+            {billingMessage ? <Badge tone="success">{billingMessage}</Badge> : null}
+          </div>
+          <dl className="mt-5 grid gap-4 text-sm md:grid-cols-4">
+            <div>
+              <dt className="text-muted-foreground">Plan</dt>
+              <dd className="mt-1 font-semibold">{organization?.subscriptionPlan || "Trial / setup"}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Status</dt>
+              <dd className="mt-1 font-semibold">{formatBillingStatus(organization?.subscriptionStatus)}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Billing cycle</dt>
+              <dd className="mt-1 font-semibold">{organization?.subscriptionBillingCycle || "Not selected"}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Renews</dt>
+              <dd className="mt-1 font-semibold">{formatDate(organization?.subscriptionRenewsAt)}</dd>
+            </div>
+          </dl>
+          {organization?.stripeCustomerId ? (
+            <form action={createBillingPortalSession} className="mt-5">
+              <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
+              <button className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                Manage billing
+              </button>
+            </form>
+          ) : null}
+          <div className="mt-6 grid gap-3 lg:grid-cols-3">
+            {billingPlans.referent.map((plan) => (
+              <div key={plan.key} className="grid gap-4 rounded-md border border-border bg-muted/30 p-4">
+                <div>
+                  <h3 className="font-semibold">{plan.label}</h3>
+                  <p className="mt-1 text-2xl font-semibold">{formatPlanPrice(plan.monthlyPrice, "monthly")}</p>
+                </div>
+                <ul className="grid gap-2 text-sm text-muted-foreground">
+                  {plan.features.map((feature) => (
+                    <li key={feature}>{feature}</li>
+                  ))}
+                </ul>
+                <form action={createBillingCheckoutSession} className="mt-auto grid gap-2">
+                  <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
+                  <input name="plan" type="hidden" value={plan.key} />
+                  <select
+                    aria-label={`${plan.label} billing cycle`}
+                    className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                    name="billingCycle"
+                    defaultValue={organization?.subscriptionBillingCycle || "monthly"}
+                  >
+                    <option value="monthly">Monthly</option>
+                    <option value="annual">Annual</option>
+                  </select>
+                  <button className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold">
+                    {organization?.subscriptionPlan === plan.key ? "Change billing cycle" : `Choose ${plan.label}`}
+                  </button>
+                </form>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
+
+      {activeTab === "overview" || activeTab === "referrals" || activeTab === "favorites" ? (
+        <div className={cn(
+          "mt-6 grid gap-4",
+          activeTab === "overview" ? "xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]" : "xl:grid-cols-1"
+        )}>
+        {activeTab === "overview" || activeTab === "referrals" ? (
+          <Card>
           <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
             <div>
               <Send className="text-primary" size={24} />
@@ -250,9 +414,11 @@ export default async function ReferentDashboardPage({
               No referrals yet. Search published profiles and use Place Client to submit the first one.
             </p>
           )}
-        </Card>
+          </Card>
+        ) : null}
 
-        <Card>
+        {activeTab === "overview" || activeTab === "favorites" ? (
+          <Card>
           <Heart className="text-primary" size={24} />
           <h2 className="mt-3 text-xl font-semibold">Favorites</h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -300,9 +466,12 @@ export default async function ReferentDashboardPage({
               Keep a working shortlist of aftercare providers from search results.
             </p>
           )}
-        </Card>
-      </div>
+          </Card>
+        ) : null}
+        </div>
+      ) : null}
 
+      {activeTab === "managers" ? (
       <Card className="mt-6">
         <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
           <div>
@@ -315,15 +484,26 @@ export default async function ReferentDashboardPage({
               Plan limit: {teamLimit === "unlimited" ? "Unlimited" : `${teamLimit} team members`} · Current usage: {teamUsage}
             </p>
           </div>
-          {teamMessage ? <Badge tone="success">{teamMessage}</Badge> : null}
+          <div className="flex flex-wrap items-center gap-2">
+            {teamMessage ? <Badge tone="success">{teamMessage}</Badge> : null}
+            {canManageTeam ? (
+              <Link
+                className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                href="/dashboard/referent?tab=managers&invite=1"
+              >
+                <MailPlus size={16} />
+                Invite managers
+              </Link>
+            ) : null}
+          </div>
         </div>
 
-        <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.65fr)]">
+        <div className="mt-5 grid gap-4">
           <div className="overflow-hidden rounded-md border border-border">
             {activeTeamMembers.map((member) => (
               <div
                 key={member.id}
-                className="grid gap-3 border-b border-border p-3 text-sm last:border-b-0 md:grid-cols-[minmax(0,1fr)_160px_120px] md:items-center"
+                className="grid gap-3 border-b border-border p-3 text-sm last:border-b-0 md:grid-cols-[minmax(0,1fr)_160px_120px_auto] md:items-center"
               >
                 <div>
                   <p className="font-semibold">
@@ -335,6 +515,17 @@ export default async function ReferentDashboardPage({
                 <Badge tone={member.emailVerified ? "success" : "warning"}>
                   {member.emailVerified ? "Verified" : "Unverified"}
                 </Badge>
+                {canManageTeam && member.role === Role.referent_manager && member.id !== appUser.id ? (
+                  <form action={removeReferentManager}>
+                    <input name="managerId" type="hidden" value={member.id} />
+                    <ConfirmSubmitButton
+                      className="focus-ring min-h-9 rounded-md border border-border bg-white px-3 text-sm font-semibold text-destructive"
+                      message={`Remove ${[member.firstName, member.lastName].filter(Boolean).join(" ") || member.email} from this account? They will lose access to this organization's dashboard.`}
+                    >
+                      Remove
+                    </ConfirmSubmitButton>
+                  </form>
+                ) : <span />}
               </div>
             ))}
             {pendingInviteEmails.map((email) => (
@@ -358,40 +549,158 @@ export default async function ReferentDashboardPage({
               </div>
             ))}
           </div>
-
-          <form action={addReferentTeamMember} className="grid content-start gap-3 rounded-md border border-border bg-muted/40 p-4">
-            <h3 className="font-semibold">Add referent</h3>
-            <p className="text-sm leading-6 text-muted-foreground">
-              This is plan-gated server-side. Stripe enforcement can connect to the same limit later.
-            </p>
-            <label className="grid gap-2 text-sm font-medium">
-              Email address
-              <input
-                className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
-                disabled={!canManageTeam || !canInviteMore}
-                name="email"
-                placeholder="teammate@example.com"
-                required
-                type="email"
-              />
-            </label>
-            <button
-              className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={!canManageTeam || !canInviteMore}
-            >
-              Add to account
-            </button>
-            {!canManageTeam ? (
-              <p className="text-xs leading-5 text-muted-foreground">Only referent admins can add team members.</p>
-            ) : null}
-            {!canInviteMore ? (
-              <p className="text-xs leading-5 text-muted-foreground">
-                Upgrade the referent plan to add more team members.
-              </p>
-            ) : null}
-          </form>
         </div>
       </Card>
+      ) : null}
+
+      {activeTab === "account" ? (
+        <Card className="mt-6">
+          <UserCircle className="text-primary" size={24} />
+          <h2 className="mt-3 text-xl font-semibold">Account</h2>
+          <dl className="mt-5 grid gap-4 text-sm md:grid-cols-2">
+            <div>
+              <dt className="text-muted-foreground">Display name</dt>
+              <dd className="mt-1 flex items-center gap-2 font-semibold">
+                <span>{[appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email}</span>
+                <Link
+                  aria-label="Edit display name"
+                  className="focus-ring inline-flex size-8 items-center justify-center rounded-md border border-border bg-white text-muted-foreground hover:text-foreground"
+                  href="/dashboard/referent?tab=account&edit=displayName"
+                  title="Edit display name"
+                >
+                  <Pencil size={14} />
+                </Link>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Primary email</dt>
+              <dd className="mt-1 font-semibold">{appUser.email}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Role</dt>
+              <dd className="mt-1 font-semibold">{appUser.role.replaceAll("_", " ")}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Email status</dt>
+              <dd className="mt-1 font-semibold">{appUser.emailVerified ? "Verified" : "Not verified"}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Account status</dt>
+              <dd className="mt-1 font-semibold">{appUser.isActive ? "Active" : "Inactive"}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Organization</dt>
+              <dd className="mt-1 font-semibold">{organization?.name || "Not set"}</dd>
+            </div>
+          </dl>
+
+          {isEditingDisplayName ? (
+            <form action={updateReferentDisplayName} className="mt-6 grid gap-4 rounded-md border border-border bg-muted/40 p-4">
+              <h3 className="font-semibold">Update display name</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-2 text-sm font-medium">
+                  First name
+                  <input
+                    className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                    defaultValue={appUser.firstName ?? ""}
+                    name="firstName"
+                  />
+                </label>
+                <label className="grid gap-2 text-sm font-medium">
+                  Last name
+                  <input
+                    className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                    defaultValue={appUser.lastName ?? ""}
+                    name="lastName"
+                  />
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                  Save display name
+                </button>
+                <Link
+                  className="focus-ring inline-flex min-h-10 items-center rounded-md border border-border bg-white px-4 text-sm font-semibold"
+                  href="/dashboard/referent?tab=account"
+                >
+                  Cancel
+                </Link>
+              </div>
+            </form>
+          ) : null}
+
+          <div className="mt-6 rounded-md border border-border bg-muted/40 p-4">
+            <h3 className="font-semibold">Session</h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Sign out of this account on the current device.
+            </p>
+            <div className="mt-4">
+              <SignOutButton />
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
+      {isInviteManagersOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/25 p-4">
+          <div className="w-full max-w-xl rounded-lg border border-border bg-white p-5 shadow-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">Invite managers</h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Add one or more emails. Managers will join this referent account when they sign up with an invited email.
+                </p>
+              </div>
+              <Link
+                aria-label="Close invite managers"
+                className="focus-ring inline-flex size-9 items-center justify-center rounded-md border border-border bg-white text-muted-foreground hover:text-foreground"
+                href="/dashboard/referent?tab=managers"
+              >
+                <X size={16} />
+              </Link>
+            </div>
+            <form action={inviteReferentManagers} className="mt-5 grid gap-4">
+              {teamMessage ? (
+                <p className="rounded-md border border-border bg-muted/40 p-3 text-sm font-semibold text-foreground">
+                  {teamMessage}
+                </p>
+              ) : null}
+              <label className="grid gap-2 text-sm font-medium">
+                Email addresses
+                <textarea
+                  className="min-h-36 rounded-md border border-border bg-white px-3 py-2 text-sm"
+                  disabled={!canManageTeam || !canInviteMore}
+                  name="emails"
+                  placeholder={"teammate@example.com\ncase.manager@example.com"}
+                  required
+                />
+              </label>
+              <p className="text-xs leading-5 text-muted-foreground">
+                Separate emails with commas, spaces, or new lines. Paid plan limits are checked before invites are saved.
+              </p>
+              {!canInviteMore ? (
+                <p className="rounded-md border border-border bg-muted/40 p-3 text-sm font-semibold">
+                  Upgrade the referent plan to add more team members.
+                </p>
+              ) : null}
+              <div className="flex flex-wrap justify-end gap-2">
+                <Link
+                  className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-semibold"
+                  href="/dashboard/referent?tab=managers"
+                >
+                  Cancel
+                </Link>
+                <button
+                  className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!canManageTeam || !canInviteMore}
+                >
+                  Invite to Aftercare Compass
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { clerkEnvRequirements } from "@/lib/clerk-config";
 import { databaseEnvRequirements } from "@/lib/database-status";
+import { stripeEnvRequirements } from "@/lib/stripe";
 
 export default function SetupPage() {
   return (
@@ -34,6 +35,22 @@ export default function SetupPage() {
           <h2 className="font-semibold">Check database settings too</h2>
           <ul className="mt-3 grid gap-3 text-sm text-muted-foreground">
             {databaseEnvRequirements.map((item) => (
+              <li key={item.key} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  <code>{item.key}</code>
+                  <span className="ml-2">{item.valueHint}</span>
+                </span>
+                <Badge tone={item.valid ? "success" : "warning"}>
+                  {item.valid ? "Detected" : "Missing or invalid"}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="mt-6 rounded-md border border-border bg-muted/60 p-4">
+          <h2 className="font-semibold">Check billing settings too</h2>
+          <ul className="mt-3 grid gap-3 text-sm text-muted-foreground">
+            {stripeEnvRequirements.map((item) => (
               <li key={item.key} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <span>
                   <code>{item.key}</code>

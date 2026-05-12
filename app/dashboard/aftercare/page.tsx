@@ -18,6 +18,7 @@ import { AftercareQuickAvailability } from "@/components/dashboard/aftercare-qui
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { billingPlans, formatBillingStatus, formatPlanPrice } from "@/lib/billing";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
@@ -36,6 +37,7 @@ import {
   updateReferralStatus,
   updateUserDisplayName
 } from "./actions";
+import { createBillingCheckoutSession, createBillingPortalSession } from "../billing/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -200,6 +202,7 @@ export default async function AftercareDashboardPage({
     referralId?: string;
     invite?: string;
     managerMessage?: string;
+    billingMessage?: string;
   }>;
 }) {
   const appUser = await getAftercareDashboardUser();
@@ -210,6 +213,7 @@ export default async function AftercareDashboardPage({
   const activeTab = isDashboardTab(tab) ? tab : "overview";
   const isEditingDisplayName = activeTab === "account" && query.edit === "displayName";
   const isInviteManagersOpen = activeTab === "managers" && query.invite === "1";
+  const billingMessage = Array.isArray(query.billingMessage) ? query.billingMessage[0] : query.billingMessage;
 
   const [profiles, leads, referrals, pendingDocumentCount, managers, pendingManagerInvites] = await Promise.all([
     prisma.aftercareProfile.findMany({
@@ -1052,21 +1056,72 @@ export default async function AftercareDashboardPage({
           {activeTab === "subscription" ? (
             <Card>
               <CreditCard className="text-primary" size={24} />
-              <h2 className="mt-3 text-xl font-semibold">Subscription</h2>
-              <dl className="mt-5 grid gap-4 text-sm md:grid-cols-3">
+              <div className="mt-3 flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                <div>
+                  <h2 className="text-xl font-semibold">Subscription</h2>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    Manage provider billing, plan limits, and invoices through Stripe.
+                  </p>
+                </div>
+                {billingMessage ? <Badge tone="success">{billingMessage}</Badge> : null}
+              </div>
+              <dl className="mt-5 grid gap-4 text-sm md:grid-cols-4">
                 <div>
                   <dt className="text-muted-foreground">Plan</dt>
                   <dd className="mt-1 font-semibold">{appUser.organization?.subscriptionPlan || "Trial / setup"}</dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Status</dt>
-                  <dd className="mt-1 font-semibold">{appUser.organization?.subscriptionStatus || "Not connected"}</dd>
+                  <dd className="mt-1 font-semibold">{formatBillingStatus(appUser.organization?.subscriptionStatus)}</dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Billing cycle</dt>
                   <dd className="mt-1 font-semibold">{appUser.organization?.subscriptionBillingCycle || "Not selected"}</dd>
                 </div>
+                <div>
+                  <dt className="text-muted-foreground">Renews</dt>
+                  <dd className="mt-1 font-semibold">{formatDate(appUser.organization?.subscriptionRenewsAt)}</dd>
+                </div>
               </dl>
+              {appUser.organization?.stripeCustomerId ? (
+                <form action={createBillingPortalSession} className="mt-5">
+                  <input name="returnTo" type="hidden" value="/dashboard/aftercare?tab=subscription" />
+                  <button className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                    Manage billing
+                  </button>
+                </form>
+              ) : null}
+              <div className="mt-6 grid gap-3 lg:grid-cols-3">
+                {billingPlans.aftercare.map((plan) => (
+                  <div key={plan.key} className="grid gap-4 rounded-md border border-border bg-muted/30 p-4">
+                    <div>
+                      <h3 className="font-semibold">{plan.label}</h3>
+                      <p className="mt-1 text-2xl font-semibold">{formatPlanPrice(plan.monthlyPrice, "monthly")}</p>
+                    </div>
+                    <ul className="grid gap-2 text-sm text-muted-foreground">
+                      {plan.features.map((feature) => (
+                        <li key={feature}>{feature}</li>
+                      ))}
+                    </ul>
+                    <form action={createBillingCheckoutSession} className="mt-auto grid gap-2">
+                      <input name="returnTo" type="hidden" value="/dashboard/aftercare?tab=subscription" />
+                      <input name="plan" type="hidden" value={plan.key} />
+                      <select
+                        aria-label={`${plan.label} billing cycle`}
+                        className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                        name="billingCycle"
+                        defaultValue={appUser.organization?.subscriptionBillingCycle || "monthly"}
+                      >
+                        <option value="monthly">Monthly</option>
+                        <option value="annual">Annual</option>
+                      </select>
+                      <button className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold">
+                        {appUser.organization?.subscriptionPlan === plan.key ? "Change billing cycle" : `Choose ${plan.label}`}
+                      </button>
+                    </form>
+                  </div>
+                ))}
+              </div>
             </Card>
           ) : null}
 

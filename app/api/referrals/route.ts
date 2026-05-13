@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { hasDatabaseConfig, missingDatabaseResponse } from "@/lib/database-status";
 import { notifyNewReferral } from "@/lib/email-notifications";
+import { canReceiveDirectReferrals, canSubmitReferrals } from "@/lib/feature-gates";
 import { prisma } from "@/lib/prisma";
 import { forbiddenDirectIdentifierFields, referralSchema } from "@/lib/validations/referral";
 
@@ -35,11 +36,32 @@ export async function POST(request: Request) {
   const [referentUser, profile] = await Promise.all([
     prisma.user.findUnique({
       where: { clerkUserId: userId },
-      select: { id: true, orgId: true }
+      select: {
+        id: true,
+        orgId: true,
+        organization: {
+          select: {
+            type: true,
+            subscriptionPlan: true,
+            subscriptionStatus: true
+          }
+        }
+      }
     }),
     prisma.aftercareProfile.findUnique({
       where: { id: parsed.data.aftercareProfileId },
-      select: { id: true, orgId: true }
+      select: {
+        id: true,
+        orgId: true,
+        ownershipStatus: true,
+        organization: {
+          select: {
+            type: true,
+            subscriptionPlan: true,
+            subscriptionStatus: true
+          }
+        }
+      }
     })
   ]);
 
@@ -49,6 +71,20 @@ export async function POST(request: Request) {
 
   if (!profile) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+  }
+
+  if (!canSubmitReferrals(referentUser.organization)) {
+    return NextResponse.json(
+      { error: "Your current plan does not allow direct referrals." },
+      { status: 403 }
+    );
+  }
+
+  if (!canReceiveDirectReferrals(profile.organization, profile)) {
+    return NextResponse.json(
+      { error: "This profile is not accepting direct referrals on its current plan." },
+      { status: 403 }
+    );
   }
 
   const referral = await prisma.referral.create({

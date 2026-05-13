@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { Prisma, ProfileStatus, ProfileType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
+import { getAftercareProfileLimit, isWithinPlanLimit } from "@/lib/feature-gates";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
@@ -60,6 +61,41 @@ function continuedCareStepRedirect(step: number, error?: string) {
   }
 
   return `/onboarding/aftercare/continued-care/${step}${params.size ? `?${params.toString()}` : ""}`;
+}
+
+function aftercareSubscriptionRedirect(message: string) {
+  const params = new URLSearchParams({
+    tab: "subscription",
+    billingMessage: message
+  });
+
+  return `/dashboard/aftercare?${params.toString()}`;
+}
+
+async function profileLimitMessageForExistingOrg(orgId: string | null) {
+  if (!orgId) {
+    return null;
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: {
+      subscriptionPlan: true,
+      _count: { select: { profiles: true } }
+    }
+  });
+
+  if (!organization) {
+    return null;
+  }
+
+  const limit = getAftercareProfileLimit(organization.subscriptionPlan);
+
+  if (!isWithinPlanLimit(limit, organization._count.profiles)) {
+    return "Your current plan has reached its profile limit. Upgrade to add another home or program.";
+  }
+
+  return null;
 }
 
 async function getOrCreateAftercareOrganization(tx: Prisma.TransactionClient, draft: Awaited<ReturnType<typeof getOrCreateOnboardingDraft>>, data: {
@@ -135,6 +171,12 @@ export async function createAftercareProfileDraft(formData: FormData) {
 
   const accountType = parsed.profileType === "continued_care" ? "continued_care" : "sober_living";
   const draft = await getOrCreateOnboardingDraft(accountType, false);
+  const profileLimitMessage = await profileLimitMessageForExistingOrg(draft.user.orgId);
+
+  if (profileLimitMessage) {
+    redirect(aftercareSubscriptionRedirect(profileLimitMessage));
+  }
+
   const profileType =
     parsed.profileType === "sober_living" ? ProfileType.sober_living : ProfileType.continued_care;
   const programName = parsed.programName;
@@ -386,7 +428,12 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
       const programName = String(finalDraft.programName || "Sober Living Home");
       const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
 
-      await prisma.$transaction(async (tx) => {
+      const profileLimitMessage = await profileLimitMessageForExistingOrg(draft.user.orgId);
+
+      if (profileLimitMessage) {
+        destination = aftercareSubscriptionRedirect(profileLimitMessage);
+      } else {
+        await prisma.$transaction(async (tx) => {
         const orgId = await getOrCreateAftercareOrganization(tx, draft, {
           accountType: "sober_living",
           admissionsContactPhone: String(finalDraft.admissionsContactPhone || ""),
@@ -466,9 +513,10 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             completedAt: new Date()
           }
         });
-      });
+        });
 
-      destination = "/dashboard/aftercare";
+        destination = "/dashboard/aftercare";
+      }
     }
   } catch (error) {
     console.error("Sober living onboarding step save failed", error);
@@ -619,7 +667,12 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
       const programName = String(finalDraft.programName || "Continued Care Program");
       const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
 
-      await prisma.$transaction(async (tx) => {
+      const profileLimitMessage = await profileLimitMessageForExistingOrg(draft.user.orgId);
+
+      if (profileLimitMessage) {
+        destination = aftercareSubscriptionRedirect(profileLimitMessage);
+      } else {
+        await prisma.$transaction(async (tx) => {
         const orgId = await getOrCreateAftercareOrganization(tx, draft, {
           accountType: "continued_care",
           admissionsContactPhone: String(finalDraft.admissionsContactPhone || ""),
@@ -692,9 +745,10 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
             completedAt: new Date()
           }
         });
-      });
+        });
 
-      destination = "/dashboard/aftercare";
+        destination = "/dashboard/aftercare";
+      }
     }
   } catch (error) {
     console.error("Continued care onboarding step save failed", error);

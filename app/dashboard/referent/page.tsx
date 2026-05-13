@@ -19,7 +19,7 @@ import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-butto
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { billingPlans, formatBillingStatus, formatPlanPrice, getBillingPlan } from "@/lib/billing";
-import { referentPlans } from "@/lib/plans";
+import { getReferentTeamLimit } from "@/lib/feature-gates";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
 import { maxReferentStep } from "@/lib/referent-onboarding";
@@ -101,11 +101,7 @@ function formatPlanLimit(value: number | "unlimited") {
 }
 
 function planTeamLimit(planKey: string | null | undefined) {
-  const plan = planKey && planKey in referentPlans
-    ? referentPlans[planKey as keyof typeof referentPlans]
-    : referentPlans.starter;
-
-  return plan.teamMembers;
+  return getReferentTeamLimit(planKey);
 }
 
 export default async function ReferentDashboardPage({

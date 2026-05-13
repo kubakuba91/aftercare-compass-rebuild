@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
 import { getCurrentAppUser } from "@/lib/current-user";
+import { canReceiveDirectReferrals, canSubmitReferrals } from "@/lib/feature-gates";
 import { prisma } from "@/lib/prisma";
 import { richTextHtml } from "@/lib/rich-text";
 import { createProfileClaimRequest, createProfileReferral, createPublicProfileLead } from "./actions";
@@ -46,10 +47,12 @@ function formatPricePerWeek(value: number | null) {
 
 function ContactForm({
   profile,
-  leadStatus
+  leadStatus,
+  notice
 }: {
   profile: { id: string; slug: string };
   leadStatus?: string;
+  notice?: string;
 }) {
   return (
     <Card className="h-fit">
@@ -60,6 +63,11 @@ function ContactForm({
       <p className="mt-3 text-sm leading-6 text-muted-foreground">
         Send a contact request to the provider. This creates an internal lead for their team.
       </p>
+      {notice ? (
+        <div className="mt-4 rounded-md border border-border bg-muted/50 p-3 text-sm font-semibold">
+          {notice}
+        </div>
+      ) : null}
       {leadStatus === "sent" ? (
         <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">
           Contact request sent.
@@ -332,6 +340,13 @@ export default async function PublicProfilePage({
       slug
     },
     include: {
+      organization: {
+        select: {
+          type: true,
+          subscriptionPlan: true,
+          subscriptionStatus: true
+        }
+      },
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }] }
     }
   });
@@ -355,6 +370,8 @@ export default async function PublicProfilePage({
   const priceLabel = formatPricePerWeek(profile.pricePerWeek);
   const isReferent = appUser?.role.startsWith("referent") ?? false;
   const isAftercareUser = appUser?.role.startsWith("aftercare") ?? false;
+  const profileAcceptsDirectReferrals = canReceiveDirectReferrals(profile.organization, profile);
+  const referentCanSubmitReferrals = canSubmitReferrals(appUser?.organization);
   const userName = [appUser?.firstName, appUser?.lastName].filter(Boolean).join(" ") || "";
   const canClaimProfile =
     Boolean(appUser?.orgId) &&
@@ -625,13 +642,23 @@ export default async function PublicProfilePage({
             userEmail={appUser?.email || ""}
             userName={userName}
           />
-        ) : isReferent ? (
+        ) : isReferent && profileAcceptsDirectReferrals && referentCanSubmitReferrals ? (
           <PlaceClientForm
             organizationName={appUser?.organization?.name || ""}
             profile={profile}
             referralStatus={query.referral}
             userEmail={appUser?.email || ""}
             userName={userName}
+          />
+        ) : isReferent ? (
+          <ContactForm
+            leadStatus={query.lead}
+            notice={
+              profileAcceptsDirectReferrals
+                ? "Your current plan can use contact requests. Direct referral tools unlock when referral access is enabled."
+                : "This provider is accepting general contact requests on their current listing."
+            }
+            profile={profile}
           />
         ) : isAftercareUser ? (
           <Card className="h-fit">

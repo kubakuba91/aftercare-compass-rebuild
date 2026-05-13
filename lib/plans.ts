@@ -3,55 +3,88 @@ export const referentPlans = {
     label: "Starter",
     monthlyPrice: 99,
     teamMembers: 3,
+    submitReferrals: true,
     messaging: false,
     savedSearches: false,
-    referralStatusTracking: false
+    bedAlerts: false,
+    referralStatusTracking: false,
+    placementNotes: false
   },
   professional: {
     label: "Professional",
     monthlyPrice: 299,
     teamMembers: 15,
+    submitReferrals: true,
     messaging: true,
     savedSearches: true,
-    referralStatusTracking: true
+    bedAlerts: true,
+    referralStatusTracking: true,
+    placementNotes: true
   },
   enterprise: {
     label: "Enterprise",
     monthlyPrice: null,
     teamMembers: "unlimited",
+    submitReferrals: true,
     messaging: true,
     savedSearches: true,
-    referralStatusTracking: true
+    bedAlerts: true,
+    referralStatusTracking: true,
+    placementNotes: true
   }
 } as const;
 
 export const aftercarePlans = {
-  basic: {
-    label: "Basic",
-    monthlyPrice: 149,
+  claimed_listing: {
+    label: "Claimed Listing",
+    monthlyPrice: 0,
     profiles: 1,
-    managers: 2,
+    managers: 1,
+    directReferralIntake: false,
+    generalInquiryForm: true,
     messaging: false,
     liveAvailability: false,
-    verificationTierEligible: 1
+    verificationEligible: false,
+    placementTracking: false,
+    badge: "Self-Reported"
+  },
+  professional: {
+    label: "Professional",
+    monthlyPrice: 149,
+    profiles: 1,
+    managers: 3,
+    directReferralIntake: true,
+    generalInquiryForm: true,
+    messaging: false,
+    liveAvailability: true,
+    verificationEligible: true,
+    placementTracking: false,
+    badge: "Self-Reported"
   },
   verified: {
     label: "Verified",
-    monthlyPrice: 349,
+    monthlyPrice: 499,
     profiles: 5,
     managers: 10,
+    directReferralIntake: true,
+    generalInquiryForm: true,
     messaging: true,
     liveAvailability: true,
-    verificationTierEligible: 2
+    verificationEligible: true,
+    placementTracking: true,
+    badge: "Aftercare Compass Verified"
   },
   network: {
     label: "Network",
-    monthlyPrice: 699,
+    monthlyPrice: 999,
     profiles: "unlimited",
     managers: "unlimited",
+    directReferralIntake: true,
+    generalInquiryForm: true,
     messaging: true,
     liveAvailability: true,
-    verificationTierEligible: 3
+    verificationEligible: true,
+    placementTracking: true,
+    badge: "Enterprise Verified Network"
   }
 } as const;
-

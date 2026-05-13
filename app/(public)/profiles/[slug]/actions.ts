@@ -5,6 +5,7 @@ import { OrganizationType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getCurrentAppUser } from "@/lib/current-user";
 import { notifyNewPublicLead, notifyNewReferral, notifyProfileClaimSubmitted } from "@/lib/email-notifications";
+import { canReceiveDirectReferrals, canSubmitReferrals } from "@/lib/feature-gates";
 import { prisma } from "@/lib/prisma";
 import { publicLeadSchema } from "@/lib/validations/lead";
 import { profileClaimRequestSchema } from "@/lib/validations/profile-claim";
@@ -35,7 +36,15 @@ export async function createPublicProfileLead(formData: FormData) {
     },
     select: {
       id: true,
-      orgId: true
+      orgId: true,
+      ownershipStatus: true,
+      organization: {
+        select: {
+          type: true,
+          subscriptionPlan: true,
+          subscriptionStatus: true
+        }
+      }
     }
   });
 
@@ -99,12 +108,28 @@ export async function createProfileReferral(formData: FormData) {
     },
     select: {
       id: true,
-      orgId: true
+      orgId: true,
+      ownershipStatus: true,
+      organization: {
+        select: {
+          type: true,
+          subscriptionPlan: true,
+          subscriptionStatus: true
+        }
+      }
     }
   });
 
   if (!profile) {
     redirect("/search");
+  }
+
+  if (!canSubmitReferrals(appUser.organization)) {
+    redirect(`/profiles/${slug}?referral=plan_required`);
+  }
+
+  if (!canReceiveDirectReferrals(profile.organization, profile)) {
+    redirect(`/profiles/${slug}?referral=contact_only`);
   }
 
   const referral = await prisma.referral.create({

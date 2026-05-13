@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { Role } from "@prisma/client";
 import { z } from "zod";
 import { sendOrganizationInviteEmail } from "@/lib/email-notifications";
-import { referentPlans } from "@/lib/plans";
+import { getReferentTeamLimit, isWithinPlanLimit } from "@/lib/feature-gates";
 import { prisma } from "@/lib/prisma";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 
@@ -15,14 +15,6 @@ const displayNameSchema = z.object({
   firstName: z.string().trim().max(80).optional(),
   lastName: z.string().trim().max(80).optional()
 });
-
-function referentTeamLimit(planKey: string | null | undefined) {
-  const plan = planKey && planKey in referentPlans
-    ? referentPlans[planKey as keyof typeof referentPlans]
-    : referentPlans.starter;
-
-  return plan.teamMembers;
-}
 
 function teamHref(message?: string, invite = false) {
   const params = new URLSearchParams({ tab: "managers" });
@@ -116,7 +108,7 @@ export async function inviteReferentManagers(formData: FormData) {
 
   const activeUsers = organization.users.filter((user) => user.isActive);
   const pendingEmails = organization.referentDetails.invitedTeamEmails.map((item) => item.toLowerCase());
-  const teamLimit = referentTeamLimit(organization.subscriptionPlan);
+  const teamLimit = getReferentTeamLimit(organization.subscriptionPlan);
   const existingOrgEmails = new Set(organization.users.map((user) => user.email.toLowerCase()));
   const pendingEmailSet = new Set(pendingEmails);
   const newEmails = parsedEmails.data.filter(
@@ -133,10 +125,7 @@ export async function inviteReferentManagers(formData: FormData) {
     redirect(teamHref(details || "Those emails are already active or pending.", true));
   }
 
-  if (
-    teamLimit !== "unlimited" &&
-    activeUsers.length + pendingEmails.length + newEmails.length > teamLimit
-  ) {
+  if (!isWithinPlanLimit(teamLimit, activeUsers.length + pendingEmails.length, newEmails.length)) {
     redirect(teamHref(`Your current plan allows ${teamLimit} team members.`, true));
   }
 

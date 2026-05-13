@@ -1,4 +1,5 @@
 import { OrganizationType, SubscriptionStatus } from "@prisma/client";
+import { normalizeAftercarePlanKey, normalizeReferentPlanKey } from "@/lib/feature-gates";
 import { aftercarePlans, referentPlans } from "@/lib/plans";
 
 export const billingCycleOptions = ["monthly", "annual"] as const;
@@ -16,10 +17,12 @@ type BillingPlan = {
   audience: BillingPlanAudience;
   monthlyEnv: string;
   annualEnv: string;
+  fallbackMonthlyEnv?: string;
+  fallbackAnnualEnv?: string;
   features: string[];
 };
 
-export const billingPlans = {
+export const billingPlans: Record<BillingPlanAudience, BillingPlan[]> = {
   referent: [
     {
       key: "starter",
@@ -59,16 +62,28 @@ export const billingPlans = {
   ],
   aftercare: [
     {
-      key: "basic",
-      label: aftercarePlans.basic.label,
-      monthlyPrice: aftercarePlans.basic.monthlyPrice,
+      key: "claimed_listing",
+      label: aftercarePlans.claimed_listing.label,
+      monthlyPrice: aftercarePlans.claimed_listing.monthlyPrice,
       audience: "aftercare",
-      monthlyEnv: "STRIPE_AFTERCARE_BASIC_MONTHLY_PRICE_ID",
-      annualEnv: "STRIPE_AFTERCARE_BASIC_ANNUAL_PRICE_ID",
+      monthlyEnv: "STRIPE_AFTERCARE_CLAIMED_LISTING_MONTHLY_PRICE_ID",
+      annualEnv: "STRIPE_AFTERCARE_CLAIMED_LISTING_ANNUAL_PRICE_ID",
+      features: ["Public listing", "General inquiry form", "Self-reported badge"]
+    },
+    {
+      key: "professional",
+      label: aftercarePlans.professional.label,
+      monthlyPrice: aftercarePlans.professional.monthlyPrice,
+      audience: "aftercare",
+      monthlyEnv: "STRIPE_AFTERCARE_PROFESSIONAL_MONTHLY_PRICE_ID",
+      annualEnv: "STRIPE_AFTERCARE_PROFESSIONAL_ANNUAL_PRICE_ID",
+      fallbackMonthlyEnv: "STRIPE_AFTERCARE_BASIC_MONTHLY_PRICE_ID",
+      fallbackAnnualEnv: "STRIPE_AFTERCARE_BASIC_ANNUAL_PRICE_ID",
       features: [
-        `${aftercarePlans.basic.profiles} profile`,
-        `${aftercarePlans.basic.managers} managers`,
-        "Basic profile publishing"
+        `${aftercarePlans.professional.profiles} profile`,
+        `${aftercarePlans.professional.managers} managers`,
+        "Direct referral intake",
+        "Live availability updates"
       ]
     },
     {
@@ -81,7 +96,8 @@ export const billingPlans = {
       features: [
         `${aftercarePlans.verified.profiles} profiles`,
         `${aftercarePlans.verified.managers} managers`,
-        "Live availability and messaging"
+        "Verified badge eligibility",
+        "Messaging and referral status tracking"
       ]
     },
     {
@@ -91,30 +107,39 @@ export const billingPlans = {
       audience: "aftercare",
       monthlyEnv: "STRIPE_AFTERCARE_NETWORK_MONTHLY_PRICE_ID",
       annualEnv: "STRIPE_AFTERCARE_NETWORK_ANNUAL_PRICE_ID",
-      features: ["Unlimited profiles", "Unlimited managers", "Network-level availability"]
+      features: ["Unlimited profiles", "Unlimited managers", "Enterprise analytics and routing"]
     }
   ]
-} as const satisfies Record<BillingPlanAudience, BillingPlan[]>;
+};
 
 export function billingAudienceForOrganization(type: OrganizationType): BillingPlanAudience {
   return type === OrganizationType.referent ? "referent" : "aftercare";
 }
 
 export function planBelongsToAudience(planKey: string, audience: BillingPlanAudience) {
-  return billingPlans[audience].some((plan) => plan.key === planKey);
+  const normalizedPlanKey = audience === "aftercare"
+    ? normalizeAftercarePlanKey(planKey)
+    : normalizeReferentPlanKey(planKey);
+
+  return billingPlans[audience].some((plan) => plan.key === normalizedPlanKey);
 }
 
 export function getBillingPlan(audience: BillingPlanAudience, planKey: string | null | undefined) {
-  return billingPlans[audience].find((plan) => plan.key === planKey) ?? billingPlans[audience][0];
+  const normalizedPlanKey = audience === "aftercare"
+    ? normalizeAftercarePlanKey(planKey)
+    : normalizeReferentPlanKey(planKey);
+
+  return billingPlans[audience].find((plan) => plan.key === normalizedPlanKey) ?? billingPlans[audience][0];
 }
 
 export function getStripePriceId(audience: BillingPlanAudience, planKey: string, cycle: string) {
   const plan = getBillingPlan(audience, planKey);
   const envKey = cycle === "annual" ? plan.annualEnv : plan.monthlyEnv;
+  const fallbackEnvKey = cycle === "annual" ? plan.fallbackAnnualEnv : plan.fallbackMonthlyEnv;
 
   return {
     envKey,
-    priceId: process.env[envKey]
+    priceId: process.env[envKey] || (fallbackEnvKey ? process.env[fallbackEnvKey] : undefined)
   };
 }
 
@@ -125,7 +150,12 @@ export function planKeyFromPriceId(priceId: string | null | undefined) {
 
   for (const plans of Object.values(billingPlans)) {
     for (const plan of plans) {
-      if (process.env[plan.monthlyEnv] === priceId || process.env[plan.annualEnv] === priceId) {
+      if (
+        process.env[plan.monthlyEnv] === priceId ||
+        process.env[plan.annualEnv] === priceId ||
+        (plan.fallbackMonthlyEnv && process.env[plan.fallbackMonthlyEnv] === priceId) ||
+        (plan.fallbackAnnualEnv && process.env[plan.fallbackAnnualEnv] === priceId)
+      ) {
         return plan.key;
       }
     }
@@ -141,11 +171,17 @@ export function billingCycleFromPriceId(priceId: string | null | undefined): Bil
 
   for (const plans of Object.values(billingPlans)) {
     for (const plan of plans) {
-      if (process.env[plan.monthlyEnv] === priceId) {
+      if (
+        process.env[plan.monthlyEnv] === priceId ||
+        (plan.fallbackMonthlyEnv && process.env[plan.fallbackMonthlyEnv] === priceId)
+      ) {
         return "monthly";
       }
 
-      if (process.env[plan.annualEnv] === priceId) {
+      if (
+        process.env[plan.annualEnv] === priceId ||
+        (plan.fallbackAnnualEnv && process.env[plan.fallbackAnnualEnv] === priceId)
+      ) {
         return "annual";
       }
     }

@@ -6,7 +6,11 @@ import { ProfileType, ReferralStatus, Role } from "@prisma/client";
 import { z } from "zod";
 import { availabilityReplyExample } from "@/lib/availability-sms";
 import { notifyReferralStatusChanged, sendOrganizationInviteEmail } from "@/lib/email-notifications";
-import { aftercarePlans } from "@/lib/plans";
+import {
+  canUseLiveAvailability,
+  getAftercareManagerLimit,
+  isWithinPlanLimit
+} from "@/lib/feature-gates";
 import { normalizePhoneNumber } from "@/lib/phone";
 import { canTransitionReferral, referralStatuses } from "@/lib/product-rules";
 import { prisma } from "@/lib/prisma";
@@ -83,14 +87,6 @@ function smsHref(profileId: string, message: string) {
   return `/dashboard/aftercare?${params.toString()}`;
 }
 
-function aftercareManagerLimit(planKey: string | null | undefined) {
-  const plan = planKey && planKey in aftercarePlans
-    ? aftercarePlans[planKey as keyof typeof aftercarePlans]
-    : aftercarePlans.basic;
-
-  return plan.managers;
-}
-
 function emailsFromText(value: string) {
   return Array.from(
     new Set(
@@ -120,6 +116,7 @@ export async function updateAftercareAvailability(formData: FormData) {
     select: {
       id: true,
       type: true,
+      ownershipStatus: true,
       totalBeds: true,
       bedsMen: true,
       bedsWomen: true,
@@ -129,6 +126,10 @@ export async function updateAftercareAvailability(formData: FormData) {
 
   if (!profile) {
     redirect("/dashboard/aftercare");
+  }
+
+  if (!canUseLiveAvailability(appUser.organization, profile)) {
+    redirect(overviewHref(profile.id, "Live availability updates are available on Professional, Verified, and Network plans."));
   }
 
   if (profile.type === ProfileType.sober_living) {
@@ -210,6 +211,7 @@ export async function inviteAftercareManagers(formData: FormData) {
     select: {
       name: true,
       subscriptionPlan: true,
+      subscriptionStatus: true,
       users: {
         select: {
           id: true,
@@ -231,7 +233,7 @@ export async function inviteAftercareManagers(formData: FormData) {
     redirect(managersHref("Aftercare organization not found.", true));
   }
 
-  const managerLimit = aftercareManagerLimit(organization.subscriptionPlan);
+  const managerLimit = getAftercareManagerLimit(organization.subscriptionPlan);
   const activeUserCount = organization.users.filter((user) => user.isActive).length;
   const pendingInviteEmails = new Set(organization.invites.map((invite) => invite.email.toLowerCase()));
   const existingOrgEmails = new Set(organization.users.map((user) => user.email.toLowerCase()));
@@ -250,10 +252,7 @@ export async function inviteAftercareManagers(formData: FormData) {
     redirect(managersHref(details || "Those emails are already active or pending.", true));
   }
 
-  if (
-    managerLimit !== "unlimited" &&
-    activeUserCount + pendingInviteEmails.size + newEmails.length > managerLimit
-  ) {
+  if (!isWithinPlanLimit(managerLimit, activeUserCount + pendingInviteEmails.size, newEmails.length)) {
     redirect(managersHref(`Your current plan allows ${managerLimit} managers.`, true));
   }
 

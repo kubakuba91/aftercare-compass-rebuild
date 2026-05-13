@@ -70,6 +70,20 @@ export async function createBillingCheckoutSession(formData: FormData) {
   }
 
   const plan = getBillingPlan(audience, planKey);
+
+  if (plan.monthlyPrice === 0) {
+    await prisma.organization.update({
+      where: { id: organization.id },
+      data: {
+        subscriptionPlan: plan.key,
+        subscriptionBillingCycle: null,
+        subscriptionStatus: "active"
+      }
+    });
+
+    redirect(billingReturnPath(audience, `${plan.label} selected.`));
+  }
+
   const { envKey, priceId } = getStripePriceId(audience, plan.key, cycle);
 
   if (!priceId) {
@@ -159,6 +173,11 @@ export async function changeBillingPlan(formData: FormData) {
   }
 
   const plan = getBillingPlan(audience, planKey);
+
+  if (plan.monthlyPrice === 0) {
+    redirect(billingReturnPath(audience, "Cancel the paid plan before switching to Claimed Listing."));
+  }
+
   const { envKey, priceId } = getStripePriceId(audience, plan.key, cycle);
 
   if (!priceId) {

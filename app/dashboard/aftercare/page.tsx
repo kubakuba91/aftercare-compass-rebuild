@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { billingPlans, formatBillingStatus, formatPlanPrice, getBillingPlan } from "@/lib/billing";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
-import { aftercarePlans } from "@/lib/plans";
+import { getAftercarePlan } from "@/lib/feature-gates";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 import {
@@ -86,9 +86,7 @@ function formatPlanLimit(value: number | "unlimited") {
 }
 
 function currentAftercarePlan(planKey: string | null | undefined) {
-  return planKey && planKey in aftercarePlans
-    ? aftercarePlans[planKey as keyof typeof aftercarePlans]
-    : aftercarePlans.basic;
+  return getAftercarePlan(planKey);
 }
 
 function profileReadiness(profile: {

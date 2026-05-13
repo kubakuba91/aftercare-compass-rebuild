@@ -7,7 +7,8 @@ import {
   billingCycleOptions,
   getBillingPlan,
   getStripePriceId,
-  planBelongsToAudience
+  planBelongsToAudience,
+  subscriptionStatusFromStripe
 } from "@/lib/billing";
 import { prisma } from "@/lib/prisma";
 import { getProtectedAppUser } from "@/lib/protected-routing";
@@ -262,7 +263,7 @@ export async function cancelBillingSubscription(formData: FormData) {
   await prisma.organization.update({
     where: { id: organization.id },
     data: {
-      subscriptionStatus: "canceled",
+      subscriptionStatus: subscriptionStatusFromStripe(subscription.status),
       subscriptionRenewsAt: periodEnd ? new Date(periodEnd * 1000) : organization.subscriptionRenewsAt
     }
   });

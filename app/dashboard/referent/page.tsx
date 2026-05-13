@@ -25,7 +25,7 @@ import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
 import { maxReferentStep } from "@/lib/referent-onboarding";
 import { cn } from "@/lib/utils";
-import { cancelBillingSubscription, changeBillingPlan } from "../billing/actions";
+import { cancelBillingSubscription, changeBillingPlan, createBillingPortalSession } from "../billing/actions";
 import {
   inviteReferentManagers,
   removePendingReferentInvite,
@@ -356,15 +356,23 @@ export default async function ReferentDashboardPage({
                 </div>
               </dl>
               {organization?.stripeSubscriptionId ? (
-                <form action={cancelBillingSubscription} className="mt-5">
-                  <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
-                  <ConfirmSubmitButton
-                    className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold text-destructive"
-                    message={`Are you sure? Plan will end on ${formatBillingDate(organization.subscriptionRenewsAt)}.`}
-                  >
-                    Cancel plan
-                  </ConfirmSubmitButton>
-                </form>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <form action={createBillingPortalSession}>
+                    <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
+                    <button className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold">
+                      Manage payment method
+                    </button>
+                  </form>
+                  <form action={cancelBillingSubscription}>
+                    <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
+                    <ConfirmSubmitButton
+                      className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold text-destructive"
+                      message={`Are you sure? Plan will end on ${formatBillingDate(organization.subscriptionRenewsAt)}.`}
+                    >
+                      Cancel plan
+                    </ConfirmSubmitButton>
+                  </form>
+                </div>
               ) : null}
             </div>
 

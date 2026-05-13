@@ -38,7 +38,7 @@ import {
   updateReferralStatus,
   updateUserDisplayName
 } from "./actions";
-import { cancelBillingSubscription, changeBillingPlan } from "../billing/actions";
+import { cancelBillingSubscription, changeBillingPlan, createBillingPortalSession } from "../billing/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -384,6 +384,9 @@ export default async function AftercareDashboardPage({
     return Date.now() - lastUpdated.getTime() > 1000 * 60 * 60 * 24 * 7;
   }).length;
   const smsEnabledManagers = managers.filter((manager) => manager.isActive && manager.smsOptIn && manager.phone);
+  const aftercareManagerLimit = currentAftercarePlan(appUser.organization?.subscriptionPlan).managers;
+  const aftercareManagerUsage = managers.filter((manager) => manager.isActive).length + pendingManagerInvites.length;
+  const canInviteMoreManagers = aftercareManagerLimit === "unlimited" || aftercareManagerUsage < aftercareManagerLimit;
 
   return (
     <main className="shell py-8">
@@ -1126,15 +1129,23 @@ export default async function AftercareDashboardPage({
                     </div>
                   </dl>
                   {appUser.organization?.stripeSubscriptionId ? (
-                    <form action={cancelBillingSubscription} className="mt-5">
-                      <input name="returnTo" type="hidden" value="/dashboard/aftercare?tab=subscription" />
-                      <ConfirmSubmitButton
-                        className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold text-destructive"
-                        message={`Are you sure? Plan will end on ${formatBillingDate(appUser.organization.subscriptionRenewsAt)}.`}
-                      >
-                        Cancel plan
-                      </ConfirmSubmitButton>
-                    </form>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      <form action={createBillingPortalSession}>
+                        <input name="returnTo" type="hidden" value="/dashboard/aftercare?tab=subscription" />
+                        <button className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold">
+                          Manage payment method
+                        </button>
+                      </form>
+                      <form action={cancelBillingSubscription}>
+                        <input name="returnTo" type="hidden" value="/dashboard/aftercare?tab=subscription" />
+                        <ConfirmSubmitButton
+                          className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold text-destructive"
+                          message={`Are you sure? Plan will end on ${formatBillingDate(appUser.organization.subscriptionRenewsAt)}.`}
+                        >
+                          Cancel plan
+                        </ConfirmSubmitButton>
+                      </form>
+                    </div>
                   ) : null}
                 </div>
 
@@ -1296,6 +1307,7 @@ export default async function AftercareDashboardPage({
                 Email addresses
                 <textarea
                   className="min-h-36 rounded-md border border-border bg-white px-3 py-2 text-sm"
+                  disabled={!canInviteMoreManagers}
                   name="emails"
                   placeholder={"manager@example.com\noperations@example.com"}
                   required
@@ -1304,6 +1316,11 @@ export default async function AftercareDashboardPage({
               <p className="text-xs leading-5 text-muted-foreground">
                 Separate emails with commas, spaces, or new lines. Paid plan limits are checked before invites are saved.
               </p>
+              {!canInviteMoreManagers ? (
+                <p className="rounded-md border border-border bg-muted/40 p-3 text-sm font-semibold">
+                  Upgrade the aftercare plan to add more managers.
+                </p>
+              ) : null}
               <div className="flex flex-wrap justify-end gap-2">
                 <Link
                   className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-semibold"
@@ -1311,7 +1328,10 @@ export default async function AftercareDashboardPage({
                 >
                   Cancel
                 </Link>
-                <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                <button
+                  className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!canInviteMoreManagers}
+                >
                   Invite to Aftercare Compass
                 </button>
               </div>

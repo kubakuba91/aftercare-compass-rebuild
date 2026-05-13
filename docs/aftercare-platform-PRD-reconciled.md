@@ -395,7 +395,230 @@ Cancel plan flow:
 
 Plan enforcement must happen server-side.
 
-Freemium/paywall rules will be added as a separate plan matrix update.
+### Aftercare Program Plans
+
+#### Claimed Listing
+
+Price: Free for 30 days.
+
+Intended for programs establishing an initial presence on the network.
+
+Included:
+
+- Public program listing.
+- Basic searchable profile.
+- 1 program manager.
+- Self-reported program status.
+- Limited photo gallery.
+- General inquiry form.
+- Marketplace search visibility.
+- Profile and data preservation after expiration.
+
+Restricted:
+
+- No direct referral workflow.
+- No live availability updates.
+- No verification eligibility.
+- No placement tracking.
+- Limited profile editing after expiration.
+
+Badge:
+
+- `Self-Reported`
+
+Post-trial state:
+
+- If the organization does not select a paid plan after the free trial, the listing remains preserved.
+- The profile moves to `Unclaimed`.
+- Public visibility follows the normal Unclaimed profile rules.
+- General contact form remains available.
+- Direct referral workflow remains disabled.
+- Profile editing becomes limited.
+- Dashboard shows an upgrade prompt: `To claim this program/home, please select a plan.`
+
+#### Professional
+
+Price: $149/month.
+
+Intended for independent operators actively receiving referrals.
+
+Included:
+
+- Everything in Claimed Listing.
+- Direct referral intake.
+- Custom referral forms.
+- Referral inbox.
+- Live bed availability updates.
+- Enhanced profile visibility.
+- Multi-manager access.
+- Expanded media gallery.
+- Priority support.
+- Eligibility to apply for verification.
+
+Badge:
+
+- `Self-Reported`
+
+Positioning:
+
+- Operationally active on the network.
+
+#### Verified
+
+Price: $499/month.
+
+Intended for programs that want referral confidence, increased visibility, and verified operational status.
+
+Included:
+
+- Everything in Professional.
+- Aftercare Compass document review and verification process.
+- Aftercare Compass Verified badge after admin approval.
+- Verified placement status.
+- Priority placement visibility.
+- Referral status tracking.
+- In-app messaging.
+- Linked IOP/PHP program profiles.
+- Advanced referral workflow tools.
+- Placement coordination features.
+- Higher manager/profile limits.
+- Expanded listing customization.
+- Faster support response times.
+
+Badge:
+
+- `Aftercare Compass Verified`
+
+Positioning:
+
+- Trusted and verified for active placement coordination.
+
+Verification rule:
+
+- A paid Verified plan alone does not automatically grant the verified badge.
+- The profile must also pass system admin review.
+
+#### Network
+
+Price: $999+/month.
+
+Intended for multi-location organizations and enterprise recovery networks.
+
+Included:
+
+- Everything in Verified.
+- Unlimited program locations.
+- Organization-wide management.
+- Cross-location referral routing.
+- Enterprise analytics dashboard.
+- Referral conversion reporting.
+- Occupancy trend insights.
+- Featured marketplace placement.
+- API/EHR integration options.
+- Team permissions and hierarchy.
+- Dedicated success manager.
+- SLA/priority support.
+
+Badge:
+
+- `Enterprise Verified Network`
+
+Positioning:
+
+- Recovery placement infrastructure for scaled organizations.
+
+### Referent Organization Plans
+
+#### Starter
+
+Price: $99/month.
+
+Intended for solo case managers and small placement teams.
+
+Included:
+
+- Search and browse verified programs.
+- Save favorite programs.
+- Submit referrals.
+- Referral history.
+- Basic placement workflow.
+- Up to 3 team members.
+
+#### Professional
+
+Price: $299/month.
+
+Intended for active placement teams coordinating multiple referrals weekly.
+
+Included:
+
+- Everything in Starter.
+- Referral status tracking.
+- In-app messaging.
+- Saved searches and bed alerts.
+- Full referral workflow history.
+- Placement collaboration tools.
+- Placement notes and internal placement history.
+- Up to 15 team members.
+
+Positioning:
+
+- Designed for teams actively managing placement operations.
+
+#### Enterprise
+
+Price: Custom pricing.
+
+Intended for health systems, treatment networks, and enterprise referral organizations.
+
+Included:
+
+- Everything in Professional.
+- EHR/case management integrations.
+- SSO/SAML.
+- Advanced reporting.
+- Multi-location coordination.
+- Enterprise permissions.
+- Dedicated account management.
+- SLA support.
+- Custom onboarding and implementation.
+
+### Feature Gating Matrix
+
+| Feature | Claimed Listing | Aftercare Professional | Aftercare Verified | Aftercare Network | Referent Starter | Referent Professional | Referent Enterprise |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Public searchable profile | Yes | Yes | Yes | Yes | N/A | N/A | N/A |
+| General inquiry form | Yes | Yes | Yes | Yes | N/A | N/A | N/A |
+| Direct referral intake | No | Yes | Yes | Yes | N/A | N/A | N/A |
+| Referral submission | N/A | N/A | N/A | N/A | Yes | Yes | Yes |
+| Referral inbox | No | Yes | Yes | Yes | N/A | N/A | N/A |
+| Referral status tracking | No | Basic | Advanced | Advanced | History only | Yes | Yes |
+| In-app messaging | No | No | Yes | Yes | No | Yes | Yes |
+| Live bed/program availability | No | Yes | Yes | Yes | View only | View + alerts | View + alerts |
+| Saved searches / bed alerts | N/A | N/A | N/A | N/A | No | Yes | Yes |
+| Verification eligibility | No | Yes | Included after review | Included after review | N/A | N/A | N/A |
+| Verified badge | No | No | After admin approval | After admin approval | N/A | N/A | N/A |
+| Enhanced search visibility | Limited | Yes | Priority | Featured | N/A | N/A | N/A |
+| Manager/team seats | 1 | Multiple | Higher limit | Unlimited/custom | Up to 3 | Up to 15 | Custom |
+| Multiple locations/profiles | No | Limited | Higher limit | Unlimited | N/A | N/A | N/A |
+| Expanded media gallery | Limited | Yes | Yes | Yes | N/A | N/A | N/A |
+| Placement notes/history | No | No | Yes | Yes | Basic history | Yes | Yes |
+| Analytics | No | Basic | Advanced | Enterprise | No | Basic | Advanced |
+| API/EHR integrations | No | No | No | Optional | No | No | Optional |
+| SSO/SAML | No | No | No | Optional | No | No | Optional |
+| Priority support | No | Yes | Faster response | SLA/dedicated | No | Priority | SLA/dedicated |
+
+### Server-Side Enforcement Rules
+
+- Plan checks must happen server-side for every paid workflow.
+- UI can show locked states, but it must not be the only enforcement layer.
+- Team invite limits must be checked before invitations are sent.
+- Profile creation limits must be checked before new homes/programs are created.
+- Referral submission must check both sides:
+  - The referent organization must be allowed to submit referrals.
+  - The aftercare profile must be allowed to receive direct referrals.
+- If a provider is on Claimed Listing or Unclaimed status, public users and referents should see general inquiry/contact behavior rather than direct referral intake.
+- Search ranking can use plan and verification status, but filters must still respect privacy, location, and user-selected criteria.
 
 ## 9. Notifications
 

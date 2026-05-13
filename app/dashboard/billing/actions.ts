@@ -19,11 +19,7 @@ function appUrl() {
 
 function billingReturnPath(audience: "referent" | "aftercare", message?: string) {
   const path = audience === "referent" ? "/dashboard/referent" : "/dashboard/aftercare";
-  const params = new URLSearchParams();
-
-  if (audience === "aftercare") {
-    params.set("tab", "subscription");
-  }
+  const params = new URLSearchParams({ tab: "subscription" });
 
   if (message) {
     params.set("billingMessage", message);
@@ -138,6 +134,75 @@ export async function createBillingCheckoutSession(formData: FormData) {
   redirect(session.url);
 }
 
+export async function changeBillingPlan(formData: FormData) {
+  const returnTo = String(formData.get("returnTo") || "/dashboard");
+  const planKey = String(formData.get("plan") || "");
+  const cycle = String(formData.get("billingCycle") || "monthly");
+  const { organization, audience } = await getBillingContext(returnTo);
+
+  if (!hasStripeConfig()) {
+    redirect(billingReturnPath(audience, "Stripe is not configured yet."));
+  }
+
+  const subscriptionId = organization.stripeSubscriptionId;
+
+  if (!subscriptionId) {
+    return createBillingCheckoutSession(formData);
+  }
+
+  if (!planBelongsToAudience(planKey, audience)) {
+    redirect(billingReturnPath(audience, "Choose a valid plan."));
+  }
+
+  if (!billingCycleOptions.includes(cycle as (typeof billingCycleOptions)[number])) {
+    redirect(billingReturnPath(audience, "Choose a valid billing cycle."));
+  }
+
+  const plan = getBillingPlan(audience, planKey);
+  const { envKey, priceId } = getStripePriceId(audience, plan.key, cycle);
+
+  if (!priceId) {
+    redirect(
+      billingReturnPath(
+        audience,
+        plan.monthlyPrice ? `Stripe price is missing for ${plan.label}. Add ${envKey} in Vercel.` : "Enterprise pricing is handled manually."
+      )
+    );
+  }
+
+  const stripe = getStripe();
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const subscriptionItemId = subscription.items.data[0]?.id;
+
+  if (!subscriptionItemId) {
+    redirect(billingReturnPath(audience, "Stripe subscription item could not be found."));
+  }
+
+  await stripe.subscriptions.update(subscription.id, {
+    cancel_at_period_end: false,
+    items: [{ id: subscriptionItemId, price: priceId }],
+    metadata: {
+      ...subscription.metadata,
+      organizationId: organization.id,
+      audience,
+      plan: plan.key,
+      billingCycle: cycle
+    },
+    proration_behavior: "create_prorations"
+  });
+
+  await prisma.organization.update({
+    where: { id: organization.id },
+    data: {
+      subscriptionPlan: plan.key,
+      subscriptionBillingCycle: cycle,
+      subscriptionStatus: "active"
+    }
+  });
+
+  redirect(billingReturnPath(audience, "Plan updated."));
+}
+
 export async function createBillingPortalSession(formData: FormData) {
   const returnTo = String(formData.get("returnTo") || "/dashboard");
   const { organization, audience } = await getBillingContext(returnTo);
@@ -156,4 +221,32 @@ export async function createBillingPortalSession(formData: FormData) {
   });
 
   redirect(session.url);
+}
+
+export async function cancelBillingSubscription(formData: FormData) {
+  const returnTo = String(formData.get("returnTo") || "/dashboard");
+  const { organization, audience } = await getBillingContext(returnTo);
+
+  if (!hasStripeConfig()) {
+    redirect(billingReturnPath(audience, "Stripe is not configured yet."));
+  }
+
+  if (!organization.stripeSubscriptionId) {
+    redirect(billingReturnPath(audience, "No active Stripe subscription was found."));
+  }
+
+  const subscription = await getStripe().subscriptions.update(organization.stripeSubscriptionId, {
+    cancel_at_period_end: true
+  });
+  const periodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end;
+
+  await prisma.organization.update({
+    where: { id: organization.id },
+    data: {
+      subscriptionStatus: "canceled",
+      subscriptionRenewsAt: periodEnd ? new Date(periodEnd * 1000) : organization.subscriptionRenewsAt
+    }
+  });
+
+  redirect(billingReturnPath(audience, "Plan cancellation scheduled."));
 }

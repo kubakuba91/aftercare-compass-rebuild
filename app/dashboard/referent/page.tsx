@@ -18,13 +18,13 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { billingPlans, formatBillingStatus, formatPlanPrice } from "@/lib/billing";
+import { billingPlans, formatBillingStatus, formatPlanPrice, getBillingPlan } from "@/lib/billing";
 import { referentPlans } from "@/lib/plans";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
 import { maxReferentStep } from "@/lib/referent-onboarding";
 import { cn } from "@/lib/utils";
-import { createBillingCheckoutSession, createBillingPortalSession } from "../billing/actions";
+import { cancelBillingSubscription, changeBillingPlan } from "../billing/actions";
 import {
   inviteReferentManagers,
   removePendingReferentInvite,
@@ -82,6 +82,22 @@ function formatDate(value: Date | null | undefined) {
     day: "numeric",
     year: "numeric"
   }).format(value);
+}
+
+function formatBillingDate(value: Date | null | undefined) {
+  if (!value) {
+    return "Not set";
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  }).format(value);
+}
+
+function formatPlanLimit(value: number | "unlimited") {
+  return value === "unlimited" ? "Unlimited" : value.toString();
 }
 
 function planTeamLimit(planKey: string | null | undefined) {
@@ -202,6 +218,7 @@ export default async function ReferentDashboardPage({
         subscriptionBillingCycle: true,
         subscriptionRenewsAt: true,
         stripeCustomerId: true,
+        stripeSubscriptionId: true,
         users: {
           orderBy: [{ role: "asc" }, { createdAt: "asc" }],
           select: {
@@ -292,67 +309,94 @@ export default async function ReferentDashboardPage({
             <div>
               <h2 className="text-xl font-semibold">Subscription</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Manage referent billing, plan limits, and invoices through Stripe.
+                Review your current plan, team usage, and upgrade options.
               </p>
             </div>
             {billingMessage ? <Badge tone="success">{billingMessage}</Badge> : null}
           </div>
-          <dl className="mt-5 grid gap-4 text-sm md:grid-cols-4">
-            <div>
-              <dt className="text-muted-foreground">Plan</dt>
-              <dd className="mt-1 font-semibold">{organization?.subscriptionPlan || "Trial / setup"}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Status</dt>
-              <dd className="mt-1 font-semibold">{formatBillingStatus(organization?.subscriptionStatus)}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Billing cycle</dt>
-              <dd className="mt-1 font-semibold">{organization?.subscriptionBillingCycle || "Not selected"}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Renews</dt>
-              <dd className="mt-1 font-semibold">{formatDate(organization?.subscriptionRenewsAt)}</dd>
-            </div>
-          </dl>
-          {organization?.stripeCustomerId ? (
-            <form action={createBillingPortalSession} className="mt-5">
-              <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
-              <button className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
-                Manage billing
-              </button>
-            </form>
-          ) : null}
-          <div className="mt-6 grid gap-3 lg:grid-cols-3">
-            {billingPlans.referent.map((plan) => (
-              <div key={plan.key} className="grid gap-4 rounded-md border border-border bg-muted/30 p-4">
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+            <div className="rounded-md border border-border bg-muted/30 p-4">
+              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
                 <div>
-                  <h3 className="font-semibold">{plan.label}</h3>
-                  <p className="mt-1 text-2xl font-semibold">{formatPlanPrice(plan.monthlyPrice, "monthly")}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Current plan</p>
+                  <h3 className="mt-1 text-2xl font-semibold">
+                    {getBillingPlan("referent", organization?.subscriptionPlan).label}
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {formatPlanPrice(getBillingPlan("referent", organization?.subscriptionPlan).monthlyPrice, organization?.subscriptionBillingCycle === "annual" ? "annual" : "monthly")}
+                  </p>
                 </div>
-                <ul className="grid gap-2 text-sm text-muted-foreground">
-                  {plan.features.map((feature) => (
-                    <li key={feature}>{feature}</li>
-                  ))}
-                </ul>
-                <form action={createBillingCheckoutSession} className="mt-auto grid gap-2">
-                  <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
-                  <input name="plan" type="hidden" value={plan.key} />
-                  <select
-                    aria-label={`${plan.label} billing cycle`}
-                    className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
-                    name="billingCycle"
-                    defaultValue={organization?.subscriptionBillingCycle || "monthly"}
-                  >
-                    <option value="monthly">Monthly</option>
-                    <option value="annual">Annual</option>
-                  </select>
-                  <button className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold">
-                    {organization?.subscriptionPlan === plan.key ? "Change billing cycle" : `Choose ${plan.label}`}
-                  </button>
-                </form>
+                <Badge tone={organization?.subscriptionStatus === "active" ? "success" : "warning"}>
+                  {formatBillingStatus(organization?.subscriptionStatus)}
+                </Badge>
               </div>
-            ))}
+              <dl className="mt-5 grid gap-4 text-sm md:grid-cols-3">
+                <div>
+                  <dt className="text-muted-foreground">Seats used</dt>
+                  <dd className="mt-1 font-semibold">
+                    {teamUsage} / {formatPlanLimit(planTeamLimit(organization?.subscriptionPlan))}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Billing cycle</dt>
+                  <dd className="mt-1 font-semibold">{organization?.subscriptionBillingCycle || "Not selected"}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Renews / ends</dt>
+                  <dd className="mt-1 font-semibold">{formatBillingDate(organization?.subscriptionRenewsAt)}</dd>
+                </div>
+              </dl>
+              {organization?.stripeSubscriptionId ? (
+                <form action={cancelBillingSubscription} className="mt-5">
+                  <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
+                  <ConfirmSubmitButton
+                    className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold text-destructive"
+                    message={`Are you sure? Plan will end on ${formatBillingDate(organization.subscriptionRenewsAt)}.`}
+                  >
+                    Cancel plan
+                  </ConfirmSubmitButton>
+                </form>
+              ) : null}
+            </div>
+
+            <div className="rounded-md border border-border bg-white p-4">
+              <h3 className="font-semibold">What upgrading unlocks</h3>
+              <div className="mt-4 grid gap-3">
+                {billingPlans.referent.map((plan) => (
+                  <form key={plan.key} action={changeBillingPlan} className="rounded-md border border-border bg-muted/30 p-4">
+                    <div className="flex flex-col justify-between gap-2 md:flex-row md:items-start">
+                      <div>
+                        <h4 className="font-semibold">{plan.label}</h4>
+                        <p className="mt-1 text-sm font-semibold">{formatPlanPrice(plan.monthlyPrice, "monthly")}</p>
+                      </div>
+                      {organization?.subscriptionPlan === plan.key ? <Badge tone="success">Current</Badge> : null}
+                    </div>
+                    <ul className="mt-3 grid gap-1 text-sm text-muted-foreground">
+                      {plan.features.map((feature) => (
+                        <li key={feature}>{feature}</li>
+                      ))}
+                    </ul>
+                    <div className="mt-4 grid gap-2 md:grid-cols-[1fr_auto]">
+                      <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
+                      <input name="plan" type="hidden" value={plan.key} />
+                      <select
+                        aria-label={`${plan.label} billing cycle`}
+                        className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
+                        name="billingCycle"
+                        defaultValue={organization?.subscriptionBillingCycle || "monthly"}
+                      >
+                        <option value="monthly">Monthly</option>
+                        <option value="annual">Annual</option>
+                      </select>
+                      <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                        {organization?.subscriptionPlan === plan.key ? "Update cycle" : "Change plan"}
+                      </button>
+                    </div>
+                  </form>
+                ))}
+              </div>
+            </div>
           </div>
         </Card>
       ) : null}

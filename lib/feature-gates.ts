@@ -99,6 +99,27 @@ export function canReceiveDirectReferrals(
   return plan.directReferralIntake && isSubscriptionUsable(organization.subscriptionStatus);
 }
 
+export function canManageAftercareProfile(
+  organization: OrganizationGateContext | null | undefined,
+  profile?: ProfileGateContext | null
+) {
+  if (
+    !organization ||
+    (
+      organization.type !== OrganizationType.aftercare_sober_living &&
+      organization.type !== OrganizationType.aftercare_continued_care
+    )
+  ) {
+    return false;
+  }
+
+  if (profile?.ownershipStatus && profile.ownershipStatus !== ProfileOwnershipStatus.claimed) {
+    return false;
+  }
+
+  return isSubscriptionUsable(organization.subscriptionStatus);
+}
+
 export function canUseLiveAvailability(
   organization: OrganizationGateContext | null | undefined,
   profile?: ProfileGateContext | null
@@ -114,6 +135,33 @@ export function canUseLiveAvailability(
   const plan = getAftercarePlan(organization.subscriptionPlan);
 
   return plan.liveAvailability && isSubscriptionUsable(organization.subscriptionStatus);
+}
+
+export function canRequestVerification(
+  organization: OrganizationGateContext | null | undefined,
+  profile?: ProfileGateContext | null
+) {
+  if (!organization || !canManageAftercareProfile(organization, profile)) {
+    return false;
+  }
+
+  return getAftercarePlan(organization.subscriptionPlan).verificationEligible &&
+    isSubscriptionUsable(organization.subscriptionStatus);
+}
+
+export function canUsePlacementTracking(organization: OrganizationGateContext | null | undefined) {
+  if (
+    !organization ||
+    (
+      organization.type !== OrganizationType.aftercare_sober_living &&
+      organization.type !== OrganizationType.aftercare_continued_care
+    )
+  ) {
+    return false;
+  }
+
+  return getAftercarePlan(organization.subscriptionPlan).placementTracking &&
+    isSubscriptionUsable(organization.subscriptionStatus);
 }
 
 export function canUseInAppMessaging(organization: OrganizationGateContext | null | undefined) {
@@ -133,4 +181,3 @@ export function canUseInAppMessaging(organization: OrganizationGateContext | nul
 export function isWithinPlanLimit(limit: PlanLimit, currentCount: number, addedCount = 1) {
   return limit === "unlimited" || currentCount + addedCount <= limit;
 }
-

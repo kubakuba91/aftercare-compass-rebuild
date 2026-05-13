@@ -7,6 +7,7 @@ import { z } from "zod";
 import { availabilityReplyExample } from "@/lib/availability-sms";
 import { notifyReferralStatusChanged, sendOrganizationInviteEmail } from "@/lib/email-notifications";
 import {
+  canUsePlacementTracking,
   canUseLiveAvailability,
   getAftercareManagerLimit,
   isWithinPlanLimit
@@ -544,6 +545,10 @@ export async function updateReferralStatus(formData: FormData) {
 
   if (!canTransitionReferral(referral.status, nextStatus)) {
     redirect("/dashboard/aftercare?referralError=That status change is not available");
+  }
+
+  if (nextStatus === ReferralStatus.placed && !canUsePlacementTracking(appUser.organization)) {
+    redirect("/dashboard/aftercare?referralError=Placement tracking is available on Verified and Network plans.");
   }
 
   await prisma.referral.update({

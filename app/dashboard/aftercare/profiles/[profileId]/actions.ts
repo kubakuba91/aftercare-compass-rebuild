@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 import { ProfileStatus, ProfileType } from "@prisma/client";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
+import { canManageAftercareProfile, canUseLiveAvailability } from "@/lib/feature-gates";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { getAftercareDashboardUser } from "@/lib/protected-routing";
@@ -31,6 +32,15 @@ async function getOwnedProfile(profileId: string) {
     where: {
       id: profileId,
       orgId: appUser.orgId ?? undefined
+    },
+    include: {
+      organization: {
+        select: {
+          type: true,
+          subscriptionPlan: true,
+          subscriptionStatus: true
+        }
+      }
     }
   });
 
@@ -39,6 +49,12 @@ async function getOwnedProfile(profileId: string) {
   }
 
   return profile;
+}
+
+function ensureProfileCanBeEdited(profile: Awaited<ReturnType<typeof getOwnedProfile>>) {
+  if (!canManageAftercareProfile(profile.organization, profile)) {
+    redirect(profileHref(profile.id, "Upgrade or claim this profile before editing it."));
+  }
 }
 
 function profileHref(profileId: string, message?: string) {
@@ -59,6 +75,7 @@ function safeFileName(value: string) {
 export async function updateAftercareProfileBasics(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
   const profile = await getOwnedProfile(profileId);
+  ensureProfileCanBeEdited(profile);
   const programName = String(formData.get("programName") || "").trim();
   const city = String(formData.get("city") || "").trim();
   const state = String(formData.get("state") || "").trim();
@@ -94,6 +111,10 @@ export async function updateAftercareProfileBasics(formData: FormData) {
 export async function updateAftercareProfileAvailability(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
   const profile = await getOwnedProfile(profileId);
+
+  if (!canUseLiveAvailability(profile.organization, profile)) {
+    redirect(profileHref(profile.id, "Live availability updates are available on Professional, Verified, and Network plans."));
+  }
 
   if (profile.type === ProfileType.sober_living) {
     const bedsMen = numberFromForm(formData.get("bedsMen")) ?? 0;
@@ -153,6 +174,7 @@ export async function updateAftercareProfileAvailability(formData: FormData) {
 export async function updateAftercareProfileContent(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
   const profile = await getOwnedProfile(profileId);
+  ensureProfileCanBeEdited(profile);
   const videoUrls = valuesFromForm(formData, "videoUrls").filter((url) => /^https?:\/\/.+\..+/.test(url));
 
   await prisma.aftercareProfile.update({
@@ -191,6 +213,7 @@ export async function updateAftercareProfileContent(formData: FormData) {
 export async function uploadAftercareProfileImages(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
   const profile = await getOwnedProfile(profileId);
+  ensureProfileCanBeEdited(profile);
   const files = formData
     .getAll("images")
     .filter((item): item is File => item instanceof File && item.size > 0);
@@ -255,6 +278,7 @@ export async function setAftercareProfileCoverImage(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
   const imageId = String(formData.get("imageId") || "");
   const profile = await getOwnedProfile(profileId);
+  ensureProfileCanBeEdited(profile);
   const image = await prisma.profileImage.findFirst({
     where: {
       id: imageId,
@@ -289,6 +313,7 @@ export async function removeAftercareProfileImage(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
   const imageId = String(formData.get("imageId") || "");
   const profile = await getOwnedProfile(profileId);
+  ensureProfileCanBeEdited(profile);
   const image = await prisma.profileImage.findFirst({
     where: {
       id: imageId,
@@ -335,6 +360,7 @@ export async function updateAftercareProfileStatus(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
   const nextStatus = String(formData.get("status") || "");
   const profile = await getOwnedProfile(profileId);
+  ensureProfileCanBeEdited(profile);
 
   if (nextStatus === ProfileStatus.published) {
     const readiness = getAftercareProfileReadiness(profile);

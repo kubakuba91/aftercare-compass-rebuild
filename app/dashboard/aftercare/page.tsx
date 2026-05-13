@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { billingPlans, formatBillingStatus, formatPlanPrice, getBillingPlan } from "@/lib/billing";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
-import { getAftercarePlan } from "@/lib/feature-gates";
+import { canUsePlacementTracking, getAftercarePlan } from "@/lib/feature-gates";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 import {
@@ -143,7 +143,7 @@ function formatReferralValue(value: string) {
     .join(" ");
 }
 
-function referralActionOptions(status: string) {
+function referralActionOptions(status: string, allowPlacementTracking: boolean) {
   if (status === "pending" || status === "viewed") {
     return [
       ["accepted", "Accept"],
@@ -155,7 +155,7 @@ function referralActionOptions(status: string) {
 
   if (status === "accepted") {
     return [
-      ["placed", "Mark placed"],
+      ...(allowPlacementTracking ? [["placed", "Mark placed"]] : []),
       ["closed", "Close"]
     ];
   }
@@ -171,7 +171,7 @@ function referralActionOptions(status: string) {
   return [];
 }
 
-function compactReferralActionOptions(status: string) {
+function compactReferralActionOptions(status: string, allowPlacementTracking: boolean) {
   if (status === "pending" || status === "viewed") {
     return [
       ["accepted", "Accept"],
@@ -180,7 +180,7 @@ function compactReferralActionOptions(status: string) {
   }
 
   if (status === "accepted") {
-    return [["placed", "Mark placed"]];
+    return allowPlacementTracking ? [["placed", "Mark placed"]] : [];
   }
 
   if (status === "waitlisted") {
@@ -387,6 +387,7 @@ export default async function AftercareDashboardPage({
   const aftercareManagerLimit = currentAftercarePlan(appUser.organization?.subscriptionPlan).managers;
   const aftercareManagerUsage = managers.filter((manager) => manager.isActive).length + pendingManagerInvites.length;
   const canInviteMoreManagers = aftercareManagerLimit === "unlimited" || aftercareManagerUsage < aftercareManagerLimit;
+  const allowPlacementTracking = canUsePlacementTracking(appUser.organization);
 
   return (
     <main className="shell py-8">
@@ -472,9 +473,9 @@ export default async function AftercareDashboardPage({
               </p>
             </div>
 
-            {referralActionOptions(selectedReferral.status).length ? (
+            {referralActionOptions(selectedReferral.status, allowPlacementTracking).length ? (
               <div className="mt-4 flex flex-wrap gap-2">
-                {referralActionOptions(selectedReferral.status).map(([status, label]) => (
+                {referralActionOptions(selectedReferral.status, allowPlacementTracking).map(([status, label]) => (
                   <form key={status} action={updateReferralStatus}>
                     <input name="referralId" type="hidden" value={selectedReferral.id} />
                     <button
@@ -717,7 +718,7 @@ export default async function AftercareDashboardPage({
                                   >
                                     View
                                   </Link>
-                                  {compactReferralActionOptions(referral.status).map(([status, label]) => (
+                                  {compactReferralActionOptions(referral.status, allowPlacementTracking).map(([status, label]) => (
                                     <form key={status} action={updateReferralStatus}>
                                       <input name="referralId" type="hidden" value={referral.id} />
                                       <button

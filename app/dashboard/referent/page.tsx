@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   CreditCard,
   Heart,
@@ -242,13 +243,24 @@ export default async function ReferentDashboardPage({
   return (
     <main className="shell py-8">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <div>
-          <Badge tone="warning">Referent workspace</Badge>
-          <h1 className="mt-3 text-3xl font-semibold">Referral workspace</h1>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Track active referrals and keep a shortlist of providers for placement decisions.
-          </p>
-          <p className="mt-1 text-sm font-semibold">{organization?.name}</p>
+        <div className="flex items-start gap-4">
+          <Link className="focus-ring inline-flex shrink-0 items-center rounded-md" href="/" aria-label="Aftercare Compass home">
+            <Image
+              alt="Aftercare Compass"
+              className="h-12 w-12 object-contain"
+              height={48}
+              src="/brand/ac-favicon.png"
+              width={48}
+            />
+          </Link>
+          <div>
+            <Badge tone="warning">Referent workspace</Badge>
+            <h1 className="mt-3 text-3xl font-semibold">Referral workspace</h1>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Track active referrals and keep a shortlist of providers for placement decisions.
+            </p>
+            <p className="mt-1 text-sm font-semibold">{organization?.name}</p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link

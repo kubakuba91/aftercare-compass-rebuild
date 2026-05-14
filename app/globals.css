@@ -68,12 +68,19 @@ a {
 }
 
 .focus-ring {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
+  box-shadow: none;
+  outline: none;
 }
 
 .focus-ring:focus-visible {
-  outline-color: var(--focus);
+  box-shadow: 0 0 0 3px rgb(from var(--focus) r g b / 0.24);
+  outline: 2px solid rgb(from var(--focus) r g b / 0.55);
+  outline-offset: 3px;
+}
+
+.focus-ring:focus:not(:focus-visible) {
+  box-shadow: none;
+  outline: none;
 }
 
 button,

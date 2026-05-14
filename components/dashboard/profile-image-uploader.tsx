@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, X } from "lucide-react";
 
 type PreparedImage = {
   id: string;
@@ -93,6 +93,21 @@ export function ProfileImageUploader({ showSubmitButton = true }: { showSubmitBu
   const [images, setImages] = useState<PreparedImage[]>([]);
   const [error, setError] = useState("");
 
+  function syncInputFiles(nextImages: PreparedImage[]) {
+    if (!inputRef.current) {
+      return;
+    }
+
+    if (!nextImages.length) {
+      inputRef.current.value = "";
+      return;
+    }
+
+    const transfer = new DataTransfer();
+    nextImages.forEach((image) => transfer.items.add(image.file));
+    inputRef.current.files = transfer.files;
+  }
+
   useEffect(() => {
     return () => {
       images.forEach((image) => URL.revokeObjectURL(image.previewUrl));
@@ -104,6 +119,7 @@ export function ProfileImageUploader({ showSubmitButton = true }: { showSubmitBu
 
     if (!files?.length) {
       setImages([]);
+      syncInputFiles([]);
       return;
     }
 
@@ -113,6 +129,7 @@ export function ProfileImageUploader({ showSubmitButton = true }: { showSubmitBu
     if (invalidFile) {
       setError("Upload image files only.");
       setImages([]);
+      syncInputFiles([]);
       return;
     }
 
@@ -132,12 +149,7 @@ export function ProfileImageUploader({ showSubmitButton = true }: { showSubmitBu
         })
       );
 
-      const transfer = new DataTransfer();
-      optimizedImages.forEach((image) => transfer.items.add(image.file));
-
-      if (inputRef.current) {
-        inputRef.current.files = transfer.files;
-      }
+      syncInputFiles(optimizedImages);
 
       setImages((previousImages) => {
         previousImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
@@ -146,9 +158,24 @@ export function ProfileImageUploader({ showSubmitButton = true }: { showSubmitBu
     } catch {
       setError("One of the images could not be optimized. Try a different file.");
       setImages([]);
+      syncInputFiles([]);
     } finally {
       setIsOptimizing(false);
     }
+  }
+
+  function removePreparedImage(imageId: string) {
+    setImages((currentImages) => {
+      const nextImages = currentImages.filter((image) => image.id !== imageId);
+      const removedImage = currentImages.find((image) => image.id === imageId);
+
+      if (removedImage) {
+        URL.revokeObjectURL(removedImage.previewUrl);
+      }
+
+      syncInputFiles(nextImages);
+      return nextImages;
+    });
   }
 
   return (
@@ -192,11 +219,21 @@ export function ProfileImageUploader({ showSubmitButton = true }: { showSubmitBu
                 className="aspect-[4/3] w-full object-cover"
                 src={image.previewUrl}
               />
-              <div className="p-2 text-xs leading-5 text-muted-foreground">
-                <p>{image.file.name}</p>
-                <p>
-                  {formatFileSize(image.originalSize)} to {formatFileSize(image.file.size)}
-                </p>
+              <div className="grid gap-2 p-2 text-xs leading-5 text-muted-foreground">
+                <div>
+                  <p>{image.file.name}</p>
+                  <p>
+                    {formatFileSize(image.originalSize)} to {formatFileSize(image.file.size)}
+                  </p>
+                </div>
+                <button
+                  className="focus-ring inline-flex min-h-8 w-fit items-center gap-1 rounded-md border border-border px-2 font-semibold text-destructive"
+                  onClick={() => removePreparedImage(image.id)}
+                  type="button"
+                >
+                  <X size={14} />
+                  Remove
+                </button>
               </div>
             </div>
           ))}

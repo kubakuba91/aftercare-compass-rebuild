@@ -1,6 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recovery-card";
@@ -27,7 +29,7 @@ import {
   specialtyPopulationOptions,
   supportServiceOptions
 } from "@/lib/sober-living-onboarding";
-import { saveSoberLivingOnboardingStep } from "../../actions";
+import { removeSoberLivingOnboardingImage, saveSoberLivingOnboardingStep } from "../../actions";
 
 const photoReadinessOptions = ["Exterior", "Common areas", "Bedrooms", "Kitchen"];
 
@@ -218,6 +220,22 @@ export default async function SoberLivingStepPage({
   const selected = (values?: string[] | null) => values ?? [];
   const servedPopulations = selectedPopulation(profile?.populationServedOptions, profile?.populationServed);
   const videoUrls = Array.isArray(profile?.videoUrls) ? profile.videoUrls : [];
+  const onboardingProfileId = typeof profile?.profileId === "string" ? profile.profileId : "";
+  const uploadedImages = onboardingProfileId
+    ? await prisma.profileImage.findMany({
+        where: {
+          profileId: onboardingProfileId,
+          profile: { orgId: draft.user.orgId ?? undefined }
+        },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true,
+          altText: true,
+          isCover: true,
+          url: true
+        }
+      })
+    : [];
 
   return (
     <main className="grid min-h-screen lg:grid-cols-[320px_1fr]">
@@ -423,6 +441,42 @@ export default async function SoberLivingStepPage({
                   </div>
                   <div className="grid gap-2 rounded-md border border-dashed border-border bg-muted/30 p-4 text-sm font-medium">
                     Profile photos
+                    {onboardingProfileId ? <input name="profileId" type="hidden" value={onboardingProfileId} /> : null}
+                    {uploadedImages.length ? (
+                      <div className="grid gap-3 md:grid-cols-3">
+                        {uploadedImages.map((image) => (
+                          <div key={image.id} className="overflow-hidden rounded-md border border-border bg-white">
+                            <div className="relative aspect-[4/3] bg-muted">
+                              <Image
+                                alt={image.altText || "Profile image"}
+                                className="object-cover"
+                                fill
+                                sizes="(min-width: 1024px) 220px, 100vw"
+                                src={image.url}
+                                unoptimized
+                              />
+                              {image.isCover ? (
+                                <span className="absolute left-2 top-2 rounded-full bg-white px-2 py-1 text-xs font-semibold">
+                                  Cover
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="p-2">
+                              <ConfirmSubmitButton
+                                className="focus-ring inline-flex min-h-8 items-center rounded-md border border-border px-2 text-xs font-semibold text-destructive"
+                                formAction={removeSoberLivingOnboardingImage}
+                                formNoValidate
+                                message="Remove this photo from onboarding?"
+                                name="imageId"
+                                value={image.id}
+                              >
+                                Remove
+                              </ConfirmSubmitButton>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                     <ProfileImageUploader showSubmitButton={false} />
                   </div>
                   {[0, 1, 2].map((index) => (

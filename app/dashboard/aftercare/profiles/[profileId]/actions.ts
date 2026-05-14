@@ -5,12 +5,11 @@ import { redirect } from "next/navigation";
 import { ProfileStatus, ProfileType } from "@prisma/client";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
 import { canManageAftercareProfile, canUseLiveAvailability } from "@/lib/feature-gates";
-import { imagesFromFormData, uploadProfileImagesForProfile } from "@/lib/profile-images";
+import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { getAftercareDashboardUser } from "@/lib/protected-routing";
 import { valuesFromForm } from "@/lib/sober-living-onboarding";
-import { ensureProfileMediaBucket, profileMediaBucket } from "@/lib/supabase-storage";
 
 function nullableText(value: FormDataEntryValue | null) {
   const text = String(value || "").trim();
@@ -270,39 +269,10 @@ export async function removeAftercareProfileImage(formData: FormData) {
   const imageId = String(formData.get("imageId") || "");
   const profile = await getOwnedProfile(profileId);
   ensureProfileCanBeEdited(profile);
-  const image = await prisma.profileImage.findFirst({
-    where: {
-      id: imageId,
-      profileId: profile.id
-    },
-    select: {
-      id: true,
-      storagePath: true,
-      isCover: true
-    }
-  });
+  const removed = await removeProfileImageForProfile(profile.id, imageId);
 
-  if (!image) {
+  if (!removed) {
     redirect(profileHref(profile.id, "Image not found."));
-  }
-
-  const supabase = await ensureProfileMediaBucket();
-  await supabase.storage.from(profileMediaBucket).remove([image.storagePath]);
-  await prisma.profileImage.delete({ where: { id: image.id } });
-
-  if (image.isCover) {
-    const nextImage = await prisma.profileImage.findFirst({
-      where: { profileId: profile.id },
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      select: { id: true }
-    });
-
-    if (nextImage) {
-      await prisma.profileImage.update({
-        where: { id: nextImage.id },
-        data: { isCover: true }
-      });
-    }
   }
 
   revalidatePath("/dashboard/aftercare");

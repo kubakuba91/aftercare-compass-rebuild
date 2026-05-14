@@ -1,10 +1,11 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma, ProfileStatus, ProfileType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getAftercareProfileLimit, isWithinPlanLimit } from "@/lib/feature-gates";
-import { imagesFromFormData, uploadProfileImagesForProfile } from "@/lib/profile-images";
+import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
@@ -667,6 +668,46 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
   }
 
   redirect(destination);
+}
+
+export async function removeSoberLivingOnboardingImage(formData: FormData) {
+  const profileId = String(formData.get("profileId") || "");
+  const imageId = String(formData.get("imageId") || "");
+
+  if (!profileId || !imageId) {
+    redirect(stepRedirect(4, "Image not found."));
+  }
+
+  let draft: Awaited<ReturnType<typeof getOrCreateOnboardingDraft>>;
+
+  try {
+    draft = await getOrCreateOnboardingDraft("sober_living", false);
+  } catch {
+    redirect("/sign-in");
+  }
+
+  const profile = await prisma.aftercareProfile.findFirst({
+    where: {
+      id: profileId,
+      orgId: draft.user.orgId ?? undefined
+    },
+    select: {
+      id: true
+    }
+  });
+
+  if (!profile) {
+    redirect(stepRedirect(4, "Image not found."));
+  }
+
+  const removed = await removeProfileImageForProfile(profile.id, imageId);
+
+  if (!removed) {
+    redirect(stepRedirect(4, "Image not found."));
+  }
+
+  revalidatePath("/onboarding/aftercare/sober-living/4");
+  redirect(stepRedirect(4));
 }
 
 export async function saveContinuedCareOnboardingStep(step: number, formData: FormData) {

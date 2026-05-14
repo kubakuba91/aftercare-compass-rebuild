@@ -71,3 +71,42 @@ export async function uploadProfileImagesForProfile(profile: ProfileImageUploadT
 
   return createdImages.length;
 }
+
+export async function removeProfileImageForProfile(profileId: string, imageId: string) {
+  const image = await prisma.profileImage.findFirst({
+    where: {
+      id: imageId,
+      profileId
+    },
+    select: {
+      id: true,
+      storagePath: true,
+      isCover: true
+    }
+  });
+
+  if (!image) {
+    return false;
+  }
+
+  const supabase = await ensureProfileMediaBucket();
+  await supabase.storage.from(profileMediaBucket).remove([image.storagePath]);
+  await prisma.profileImage.delete({ where: { id: image.id } });
+
+  if (image.isCover) {
+    const nextImage = await prisma.profileImage.findFirst({
+      where: { profileId },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      select: { id: true }
+    });
+
+    if (nextImage) {
+      await prisma.profileImage.update({
+        where: { id: nextImage.id },
+        data: { isCover: true }
+      });
+    }
+  }
+
+  return true;
+}

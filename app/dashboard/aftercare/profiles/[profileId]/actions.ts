@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { randomUUID } from "crypto";
 import { ProfileStatus, ProfileType } from "@prisma/client";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
 import { canManageAftercareProfile, canUseLiveAvailability } from "@/lib/feature-gates";
+import { imagesFromFormData, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { getAftercareDashboardUser } from "@/lib/protected-routing";
@@ -65,11 +65,6 @@ function profileHref(profileId: string, message?: string) {
   }
 
   return `/dashboard/aftercare/profiles/${profileId}${params.size ? `?${params.toString()}` : ""}`;
-}
-
-function safeFileName(value: string) {
-  const extension = value.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-  return `${randomUUID()}.${extension}`;
 }
 
 export async function updateAftercareProfileBasics(formData: FormData) {
@@ -214,64 +209,25 @@ export async function uploadAftercareProfileImages(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
   const profile = await getOwnedProfile(profileId);
   ensureProfileCanBeEdited(profile);
-  const files = formData
-    .getAll("images")
-    .filter((item): item is File => item instanceof File && item.size > 0);
+  const files = imagesFromFormData(formData);
 
   if (!files.length) {
     redirect(profileHref(profile.id, "Choose at least one image to upload."));
   }
 
-  const currentImageCount = await prisma.profileImage.count({
-    where: { profileId: profile.id }
-  });
+  let uploadedCount = 0;
 
-  if (currentImageCount + files.length > 6) {
-    redirect(profileHref(profile.id, "Each profile can have up to 6 images for now."));
+  try {
+    uploadedCount = await uploadProfileImagesForProfile(profile, files);
+  } catch (error) {
+    redirect(profileHref(profile.id, error instanceof Error ? error.message : "Image upload failed."));
   }
-
-  const invalidFile = files.find((file) => !file.type.startsWith("image/") || file.size > 10 * 1024 * 1024);
-
-  if (invalidFile) {
-    redirect(profileHref(profile.id, "Upload image files only, up to 10 MB each."));
-  }
-
-  const supabase = await ensureProfileMediaBucket();
-  const createdImages = [];
-
-  for (const [index, file] of files.entries()) {
-    const storagePath = `${profile.orgId}/${profile.id}/${Date.now()}-${index}-${safeFileName(file.name)}`;
-    const bytes = await file.arrayBuffer();
-    const { error } = await supabase.storage
-      .from(profileMediaBucket)
-      .upload(storagePath, bytes, {
-        contentType: file.type,
-        upsert: false
-      });
-
-    if (error) {
-      redirect(profileHref(profile.id, `Image upload failed: ${error.message}`));
-    }
-
-    const { data } = supabase.storage.from(profileMediaBucket).getPublicUrl(storagePath);
-
-    createdImages.push({
-      profileId: profile.id,
-      url: data.publicUrl,
-      storagePath,
-      altText: profile.programName,
-      sortOrder: currentImageCount + index,
-      isCover: currentImageCount === 0 && index === 0
-    });
-  }
-
-  await prisma.profileImage.createMany({ data: createdImages });
 
   revalidatePath("/dashboard/aftercare");
   revalidatePath(profileHref(profile.id));
   revalidatePath("/search");
   revalidatePath(`/profiles/${profile.slug}`);
-  redirect(profileHref(profile.id, `${createdImages.length} image${createdImages.length === 1 ? "" : "s"} uploaded.`));
+  redirect(profileHref(profile.id, `${uploadedCount} image${uploadedCount === 1 ? "" : "s"} uploaded.`));
 }
 
 export async function setAftercareProfileCoverImage(formData: FormData) {

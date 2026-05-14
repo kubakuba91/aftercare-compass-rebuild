@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Prisma, ProfileStatus, ProfileType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getAftercareProfileLimit, isWithinPlanLimit } from "@/lib/feature-gates";
+import { imagesFromFormData, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
@@ -393,24 +394,148 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         videoUrls: valuesFromForm(formData, "videoUrls"),
         preferredContactMethod: formData.get("preferredContactMethod")
       });
+      const files = imagesFromFormData(formData);
+      const nextDraft = mergeDraft(currentDraft, {
+        description: sanitizeRichText(parsed.description),
+        houseRulesText: sanitizeRichText(nullableText(parsed.houseRulesText)),
+        photoReadiness: parsed.photoReadiness,
+        videoUrls: parsed.videoUrls,
+        preferredContactMethod: parsed.preferredContactMethod
+      }) as Record<string, unknown>;
+      let uploadTarget: { id: string; orgId: string; programName: string; slug: string } | null = null;
 
       await prisma.onboardingDraft.update({
         where: { id: draft.id },
         data: {
-          soberLivingDraft: jsonDraft(mergeDraft(currentDraft, {
-            description: sanitizeRichText(parsed.description),
-            houseRulesText: sanitizeRichText(nullableText(parsed.houseRulesText)),
-            photoReadiness: parsed.photoReadiness,
-            videoUrls: parsed.videoUrls,
-            preferredContactMethod: parsed.preferredContactMethod
-          })),
+          soberLivingDraft: jsonDraft(nextDraft),
           selectedAccountType: "sober_living",
           activeStep: 5,
           completedAt: null
         }
       });
 
-      destination = stepRedirect(5);
+      if (files.length) {
+        const programName = String(nextDraft.programName || "Sober Living Home");
+        const existingProfileId = typeof nextDraft.profileId === "string" ? nextDraft.profileId : "";
+
+        await prisma.$transaction(async (tx) => {
+          if (existingProfileId) {
+            const existingProfile = await tx.aftercareProfile.findFirst({
+              where: {
+                id: existingProfileId,
+                orgId: draft.user.orgId ?? undefined
+              },
+              select: { id: true, orgId: true, programName: true, slug: true }
+            });
+
+            if (!existingProfile) {
+              throw new Error("Profile could not be found.");
+            }
+
+            await tx.aftercareProfile.update({
+              where: { id: existingProfile.id },
+              data: {
+                description: sanitizeRichText(String(nextDraft.description || "")) || "",
+                houseRulesText: sanitizeRichText(nullableText(String(nextDraft.houseRulesText || ""))),
+                photoReadiness: arrayFromDraft(nextDraft.photoReadiness),
+                videoUrls: arrayFromDraft(nextDraft.videoUrls),
+                preferredContactMethod: String(nextDraft.preferredContactMethod || ""),
+                onboardingStep: 5
+              }
+            });
+
+            uploadTarget = existingProfile;
+            return;
+          }
+
+          const profileLimitMessage = await profileLimitMessageForExistingOrg(draft.user.orgId);
+
+          if (profileLimitMessage) {
+            throw new Error(profileLimitMessage);
+          }
+
+          const orgId = await getOrCreateAftercareOrganization(tx, draft, {
+            accountType: "sober_living",
+            admissionsContactPhone: String(nextDraft.admissionsContactPhone || ""),
+            programName
+          });
+          const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
+          const profile = await tx.aftercareProfile.create({
+            data: {
+              orgId,
+              type: ProfileType.sober_living,
+              programName,
+              slug,
+              status: ProfileStatus.draft,
+              streetAddress: String(nextDraft.streetAddress || ""),
+              city: String(nextDraft.city || ""),
+              state: String(nextDraft.state || ""),
+              zip: String(nextDraft.zip || ""),
+              publicCity: String(nextDraft.city || ""),
+              publicState: String(nextDraft.state || ""),
+              admissionsContactPhone: String(nextDraft.admissionsContactPhone || ""),
+              admissionsContactEmail: String(nextDraft.admissionsContactEmail || ""),
+              websiteUrl: nullableText(String(nextDraft.websiteUrl || "")),
+              populationServed: String(nextDraft.populationServed || ""),
+              populationServedOptions: arrayFromDraft(nextDraft.populationServedOptions),
+              specialtyPopulations: arrayFromDraft(nextDraft.specialtyPopulations),
+              certificationsHeld: arrayFromDraft(nextDraft.certificationsHeld),
+              averageLengthOfStay: String(nextDraft.averageLengthOfStay || ""),
+              totalBeds: Number(nextDraft.totalBeds || 0),
+              bedsAvailable: Number(nextDraft.bedsAvailable || 0),
+              bedsAvailableUpdatedAt: new Date(),
+              bedsMen: Number(nextDraft.bedsMen || 0),
+              bedsMenAvailable: Number(nextDraft.bedsMenAvailable || 0),
+              bedsWomen: Number(nextDraft.bedsWomen || 0),
+              bedsWomenAvailable: Number(nextDraft.bedsWomenAvailable || 0),
+              bedsLgbtq: Number(nextDraft.bedsLgbtq || 0),
+              bedsLgbtqAvailable: Number(nextDraft.bedsLgbtqAvailable || 0),
+              roomTypes: arrayFromDraft(nextDraft.roomTypes),
+              bedsReservedNotes: nullableText(String(nextDraft.bedsReservedNotes || "")),
+              wheelchairAccessibleBeds:
+                nextDraft.wheelchairAccessibleBeds === null ? null : Number(nextDraft.wheelchairAccessibleBeds || 0),
+              pricePerWeek: nextDraft.pricePerWeek === undefined ? null : Number(nextDraft.pricePerWeek || 0),
+              supportServices: arrayFromDraft(nextDraft.supportServices),
+              amenities: arrayFromDraft(nextDraft.amenities),
+              insuranceAccepted: arrayFromDraft(nextDraft.insuranceAccepted),
+              fundingAvailable: Boolean(nextDraft.fundingAvailable),
+              fundingNotes: nullableText(String(nextDraft.fundingNotes || "")),
+              medicationAdministration: String(nextDraft.medicationAdministration || ""),
+              matAccepted: arrayFromDraft(nextDraft.matAccepted),
+              medicationRestrictions: nullableText(String(nextDraft.medicationRestrictions || "")),
+              drugTestingPolicy: String(nextDraft.drugTestingPolicy || ""),
+              description: sanitizeRichText(String(nextDraft.description || "")) || "",
+              houseRulesText: sanitizeRichText(nullableText(String(nextDraft.houseRulesText || ""))),
+              photoReadiness: arrayFromDraft(nextDraft.photoReadiness),
+              videoUrls: arrayFromDraft(nextDraft.videoUrls),
+              preferredContactMethod: String(nextDraft.preferredContactMethod || ""),
+              onboardingStep: 5
+            },
+            select: { id: true, orgId: true, programName: true, slug: true }
+          });
+
+          await tx.onboardingDraft.update({
+            where: { id: draft.id },
+            data: {
+              soberLivingDraft: jsonDraft({ ...nextDraft, profileId: profile.id })
+            }
+          });
+
+          uploadTarget = profile;
+        });
+
+        if (uploadTarget) {
+          try {
+            await uploadProfileImagesForProfile(uploadTarget, files);
+          } catch (error) {
+            destination = stepRedirect(4, error instanceof Error ? error.message : "Image upload failed.");
+          }
+        }
+      }
+
+      if (destination === stepRedirect(step)) {
+        destination = stepRedirect(5);
+      }
     }
 
     if (step === 5) {
@@ -427,26 +552,22 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
       }) as Record<string, unknown>;
       const programName = String(finalDraft.programName || "Sober Living Home");
       const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
+      const existingProfileId = typeof finalDraft.profileId === "string" ? finalDraft.profileId : "";
 
-      const profileLimitMessage = await profileLimitMessageForExistingOrg(draft.user.orgId);
+      const profileLimitMessage = existingProfileId ? null : await profileLimitMessageForExistingOrg(draft.user.orgId);
 
       if (profileLimitMessage) {
         destination = aftercareSubscriptionRedirect(profileLimitMessage);
       } else {
         await prisma.$transaction(async (tx) => {
-        const orgId = await getOrCreateAftercareOrganization(tx, draft, {
-          accountType: "sober_living",
-          admissionsContactPhone: String(finalDraft.admissionsContactPhone || ""),
-          programName
-        });
+          const orgId = await getOrCreateAftercareOrganization(tx, draft, {
+            accountType: "sober_living",
+            admissionsContactPhone: String(finalDraft.admissionsContactPhone || ""),
+            programName
+          });
 
-        const profile = await tx.aftercareProfile.create({
-          data: {
-            orgId,
-            type: ProfileType.sober_living,
+          const profileData = {
             programName,
-            slug,
-            status: ProfileStatus.draft,
             streetAddress: String(finalDraft.streetAddress || ""),
             city: String(finalDraft.city || ""),
             state: String(finalDraft.state || ""),
@@ -494,25 +615,47 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             goodNeighborPolicyAcknowledged: true,
             onboardingStep: maxSoberLivingStep,
             onboardingCompletedAt: new Date()
-          }
-        });
+          };
+          const profile = existingProfileId
+            ? await tx.aftercareProfile.update({
+              where: {
+                id: (
+                  await tx.aftercareProfile.findFirstOrThrow({
+                    where: { id: existingProfileId, orgId },
+                    select: { id: true }
+                  })
+                ).id
+              },
+              data: profileData,
+              select: { id: true }
+            })
+            : await tx.aftercareProfile.create({
+              data: {
+                orgId,
+                type: ProfileType.sober_living,
+                slug,
+                status: ProfileStatus.draft,
+                ...profileData
+              },
+              select: { id: true }
+            });
 
-        await createProfileAdminReview(tx, {
-          orgId,
-          profileId: profile.id,
-          submittedByEmail: draft.user.email,
-          submittedByRole: draft.user.role
-        });
+          await createProfileAdminReview(tx, {
+            orgId,
+            profileId: profile.id,
+            submittedByEmail: draft.user.email,
+            submittedByRole: draft.user.role
+          });
 
-        await tx.onboardingDraft.update({
-          where: { id: draft.id },
-          data: {
-            soberLivingDraft: jsonDraft(finalDraft),
-            selectedAccountType: "sober_living",
-            activeStep: maxSoberLivingStep,
-            completedAt: new Date()
-          }
-        });
+          await tx.onboardingDraft.update({
+            where: { id: draft.id },
+            data: {
+              soberLivingDraft: jsonDraft({ ...finalDraft, profileId: profile.id }),
+              selectedAccountType: "sober_living",
+              activeStep: maxSoberLivingStep,
+              completedAt: new Date()
+            }
+          });
         });
 
         destination = "/dashboard/aftercare";
@@ -658,6 +801,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
         photoReadiness: valuesFromForm(formData, "photoReadiness"),
         videoUrls: valuesFromForm(formData, "videoUrls")
       });
+      const files = imagesFromFormData(formData);
       const finalDraft = mergeDraft(currentDraft, {
         acceptingNewPatients: parsed.acceptingNewPatients === "yes",
         availabilityNotes: nullableText(parsed.availabilityNotes),
@@ -666,6 +810,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
       }) as Record<string, unknown>;
       const programName = String(finalDraft.programName || "Continued Care Program");
       const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
+      let uploadTarget: { id: string; orgId: string; programName: string } | null = null;
 
       const profileLimitMessage = await profileLimitMessageForExistingOrg(draft.user.orgId);
 
@@ -726,8 +871,10 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
             videoUrls: arrayFromDraft(finalDraft.videoUrls),
             onboardingStep: maxContinuedCareStep,
             onboardingCompletedAt: new Date()
-          }
+          },
+          select: { id: true, orgId: true, programName: true }
         });
+        uploadTarget = profile;
 
         await createProfileAdminReview(tx, {
           orgId,
@@ -747,7 +894,17 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
         });
         });
 
-        destination = "/dashboard/aftercare";
+        if (uploadTarget && files.length) {
+          try {
+            await uploadProfileImagesForProfile(uploadTarget, files);
+          } catch (error) {
+            destination = continuedCareStepRedirect(5, error instanceof Error ? error.message : "Image upload failed.");
+          }
+        }
+
+        if (destination === continuedCareStepRedirect(step)) {
+          destination = "/dashboard/aftercare";
+        }
       }
     }
   } catch (error) {

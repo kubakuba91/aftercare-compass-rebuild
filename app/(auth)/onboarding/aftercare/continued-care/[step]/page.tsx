@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recovery-card";
 import { Card } from "@/components/ui/card";
@@ -344,6 +345,10 @@ export default async function ContinuedCareStepPage({
                   <div className="grid gap-2 text-sm font-medium">
                     Photo checklist
                     {checkboxGroup("photoReadiness", photoReadinessOptions, selected(profile?.photoReadiness))}
+                  </div>
+                  <div className="grid gap-2 rounded-md border border-dashed border-border bg-muted/30 p-4 text-sm font-medium">
+                    Profile photos
+                    <ProfileImageUploader showSubmitButton={false} />
                   </div>
                   {[0, 1, 2].map((index) => (
                     <label key={index} className="grid gap-2 text-sm font-medium">

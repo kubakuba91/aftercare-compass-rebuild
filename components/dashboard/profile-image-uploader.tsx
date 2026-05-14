@@ -87,7 +87,7 @@ async function optimizeImage(file: File) {
   return optimized.size < file.size ? optimized : file;
 }
 
-export function ProfileImageUploader() {
+export function ProfileImageUploader({ showSubmitButton = true }: { showSubmitButton?: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [images, setImages] = useState<PreparedImage[]>([]);
@@ -203,13 +203,15 @@ export function ProfileImageUploader() {
         </div>
       ) : null}
 
-      <button
-        className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 md:w-fit"
-        disabled={isOptimizing}
-      >
-        <ImagePlus size={16} />
-        Upload images
-      </button>
+      {showSubmitButton ? (
+        <button
+          className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 md:w-fit"
+          disabled={isOptimizing}
+        >
+          <ImagePlus size={16} />
+          Upload images
+        </button>
+      ) : null}
     </div>
   );
 }

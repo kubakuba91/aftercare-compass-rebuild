@@ -7,14 +7,17 @@ type MultiSelectDropdownProps = {
   options: readonly string[];
   placeholder?: string;
   selected?: string[];
+  closeOnSelect?: boolean;
 };
 
 export function MultiSelectDropdown({
   name,
   options,
   placeholder = "Select options",
-  selected = []
+  selected = [],
+  closeOnSelect = false
 }: MultiSelectDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [selectedValues, setSelectedValues] = useState(() => new Set(selected));
 
   const summary = useMemo(() => {
@@ -37,10 +40,18 @@ export function MultiSelectDropdown({
 
       return next;
     });
+
+    if (closeOnSelect) {
+      setIsOpen(false);
+    }
   }
 
   return (
-    <details className="rounded-md border border-border bg-white">
+    <details
+      className="rounded-md border border-border bg-white"
+      onToggle={(event) => setIsOpen(event.currentTarget.open)}
+      open={isOpen}
+    >
       <summary className="flex min-h-10 cursor-pointer list-none items-start justify-between gap-3 px-3 py-2 text-sm">
         <span className="text-muted-foreground">{summary}</span>
         <span aria-hidden="true" className="mt-0.5 shrink-0">

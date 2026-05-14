@@ -129,18 +129,13 @@ export function PublicSearchHeader({
               </label>
               <label className="grid gap-2 text-sm font-medium">
                 Specialty Populations Served
-                <select
-                  className="min-h-24 w-full min-w-0 rounded-md border border-border bg-white px-3 py-2 text-sm"
-                  defaultValue={specialty}
-                  multiple
+                <MultiSelectDropdown
+                  closeOnSelect
                   name="specialty"
-                >
-                  {specialtyPopulationOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+                  options={specialtyPopulationOptions}
+                  placeholder="Select specialty populations..."
+                  selected={specialty}
+                />
               </label>
               <div className="grid gap-2">
                 <span className="text-sm font-medium">Price per week</span>

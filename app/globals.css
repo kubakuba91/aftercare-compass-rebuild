@@ -10,6 +10,9 @@
   --primary-foreground: 0 0% 100%;
   --accent: 28 76% 56%;
   --accent-foreground: 205 28% 14%;
+  --control-radius: 0.875rem;
+  --control-shadow: 0 1px 2px hsl(205 28% 14% / 0.08);
+  --control-shadow-strong: 0 8px 20px hsl(177 69% 25% / 0.18);
 }
 
 * {
@@ -40,4 +43,149 @@ a {
 
 .focus-ring:focus-visible {
   outline-color: hsl(var(--accent));
+}
+
+button,
+[role="button"],
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button.focus-ring,
+a.focus-ring,
+[role="button"].focus-ring {
+  border-radius: var(--control-radius);
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease;
+}
+
+button.focus-ring:not(:disabled):hover,
+a.focus-ring:hover,
+[role="button"].focus-ring:hover {
+  transform: translateY(-1px);
+}
+
+button.focus-ring:active,
+a.focus-ring:active,
+[role="button"].focus-ring:active {
+  transform: translateY(0);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
+select,
+textarea {
+  border-radius: var(--control-radius);
+  box-shadow: var(--control-shadow);
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):focus,
+select:focus,
+textarea:focus {
+  border-color: hsl(var(--primary));
+  box-shadow:
+    var(--control-shadow),
+    0 0 0 3px hsl(var(--primary) / 0.16);
+  outline: none;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: hsl(var(--primary));
+}
+
+.ac-button {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--control-radius);
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease;
+}
+
+.ac-button:hover {
+  transform: translateY(-1px);
+}
+
+.ac-button:active {
+  transform: translateY(0);
+}
+
+.ac-button--primary {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: var(--control-shadow-strong);
+}
+
+.ac-button--primary:hover {
+  background: hsl(177 69% 20%);
+}
+
+.ac-button--secondary {
+  border: 1px solid hsl(var(--border));
+  background: white;
+  color: hsl(var(--foreground));
+  box-shadow: var(--control-shadow);
+}
+
+.ac-button--secondary:hover {
+  border-color: hsl(var(--primary) / 0.45);
+  background: hsl(var(--muted) / 0.45);
+}
+
+.ac-chip {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ac-chip--neutral {
+  border-color: hsl(var(--border));
+  background: white;
+  color: hsl(var(--foreground));
+}
+
+.ac-chip--verified {
+  border-color: hsl(var(--primary) / 0.2);
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+}
+
+.ac-chip--warning {
+  border-color: hsl(var(--accent) / 0.3);
+  background: hsl(var(--accent) / 0.14);
+  color: hsl(var(--foreground));
+}
+
+.ac-chip--success {
+  border-color: rgb(167 243 208);
+  background: rgb(236 253 245);
+  color: rgb(6 95 70);
 }

@@ -14,10 +14,8 @@ export function ButtonLink({
     <Link
       href={href}
       className={cn(
-        "focus-ring inline-flex min-h-10 items-center justify-center rounded-md px-4 text-sm font-semibold",
-        variant === "primary"
-          ? "bg-primary text-primary-foreground"
-          : "border border-border bg-white text-foreground"
+        "focus-ring ac-button",
+        variant === "primary" ? "ac-button--primary" : "ac-button--secondary"
       )}
     >
       {children}

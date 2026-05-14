@@ -1,5 +1,7 @@
 import type { Config } from "tailwindcss";
 
+const cssColor = (name: string) => `rgb(from var(--${name}) r g b / <alpha-value>)`;
+
 const config: Config = {
   content: [
     "./app/**/*.{ts,tsx}",
@@ -9,15 +11,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        muted: "hsl(var(--muted))",
-        "muted-foreground": "hsl(var(--muted-foreground))",
-        border: "hsl(var(--border))",
-        primary: "hsl(var(--primary))",
-        "primary-foreground": "hsl(var(--primary-foreground))",
-        accent: "hsl(var(--accent))",
-        "accent-foreground": "hsl(var(--accent-foreground))"
+        background: cssColor("background"),
+        foreground: cssColor("foreground"),
+        muted: cssColor("surface-secondary"),
+        "muted-foreground": cssColor("muted-foreground"),
+        border: cssColor("border"),
+        primary: cssColor("primary"),
+        "primary-foreground": cssColor("primary-foreground"),
+        accent: cssColor("accent"),
+        "accent-foreground": cssColor("accent-foreground"),
+        destructive: cssColor("danger")
       }
     }
   },
@@ -25,4 +28,3 @@ const config: Config = {
 };
 
 export default config;
-

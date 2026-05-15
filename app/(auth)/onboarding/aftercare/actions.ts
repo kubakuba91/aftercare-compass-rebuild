@@ -150,6 +150,126 @@ async function createProfileAdminReview(tx: Prisma.TransactionClient, input: {
   });
 }
 
+type SoberLivingDraftProfile = {
+  id: string;
+  orgId: string;
+  programName: string;
+  slug: string;
+};
+
+async function upsertSoberLivingDraftProfile(
+  tx: Prisma.TransactionClient,
+  draft: Awaited<ReturnType<typeof getOrCreateOnboardingDraft>>,
+  draftData: Record<string, unknown>,
+  onboardingStep: number
+): Promise<SoberLivingDraftProfile> {
+  const programName = String(draftData.programName || "Sober Living Home");
+  const existingProfileId = typeof draftData.profileId === "string" ? draftData.profileId : "";
+
+  if (existingProfileId) {
+    const existingProfile = await tx.aftercareProfile.findFirst({
+      where: {
+        id: existingProfileId,
+        orgId: draft.user.orgId ?? undefined
+      },
+      select: { id: true, orgId: true, programName: true, slug: true }
+    });
+
+    if (!existingProfile) {
+      throw new Error("Profile could not be found.");
+    }
+
+    await tx.aftercareProfile.update({
+      where: { id: existingProfile.id },
+      data: {
+        description: sanitizeRichText(String(draftData.description || "")) || "",
+        houseRulesText: sanitizeRichText(nullableText(String(draftData.houseRulesText || ""))),
+        photoReadiness: arrayFromDraft(draftData.photoReadiness),
+        videoUrls: arrayFromDraft(draftData.videoUrls),
+        preferredContactMethod: String(draftData.preferredContactMethod || ""),
+        onboardingStep
+      }
+    });
+
+    return existingProfile;
+  }
+
+  const profileLimitMessage = await profileLimitMessageForExistingOrg(draft.user.orgId);
+
+  if (profileLimitMessage) {
+    throw new Error(profileLimitMessage);
+  }
+
+  const orgId = await getOrCreateAftercareOrganization(tx, draft, {
+    accountType: "sober_living",
+    admissionsContactPhone: String(draftData.admissionsContactPhone || ""),
+    programName
+  });
+  const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
+  const profile = await tx.aftercareProfile.create({
+    data: {
+      orgId,
+      type: ProfileType.sober_living,
+      programName,
+      slug,
+      status: ProfileStatus.draft,
+      streetAddress: String(draftData.streetAddress || ""),
+      city: String(draftData.city || ""),
+      state: String(draftData.state || ""),
+      zip: String(draftData.zip || ""),
+      publicCity: String(draftData.city || ""),
+      publicState: String(draftData.state || ""),
+      admissionsContactPhone: String(draftData.admissionsContactPhone || ""),
+      admissionsContactEmail: String(draftData.admissionsContactEmail || ""),
+      websiteUrl: nullableText(String(draftData.websiteUrl || "")),
+      populationServed: String(draftData.populationServed || ""),
+      populationServedOptions: arrayFromDraft(draftData.populationServedOptions),
+      specialtyPopulations: arrayFromDraft(draftData.specialtyPopulations),
+      certificationsHeld: arrayFromDraft(draftData.certificationsHeld),
+      averageLengthOfStay: String(draftData.averageLengthOfStay || ""),
+      totalBeds: Number(draftData.totalBeds || 0),
+      bedsAvailable: Number(draftData.bedsAvailable || 0),
+      bedsAvailableUpdatedAt: new Date(),
+      bedsMen: Number(draftData.bedsMen || 0),
+      bedsMenAvailable: Number(draftData.bedsMenAvailable || 0),
+      bedsWomen: Number(draftData.bedsWomen || 0),
+      bedsWomenAvailable: Number(draftData.bedsWomenAvailable || 0),
+      bedsLgbtq: Number(draftData.bedsLgbtq || 0),
+      bedsLgbtqAvailable: Number(draftData.bedsLgbtqAvailable || 0),
+      roomTypes: arrayFromDraft(draftData.roomTypes),
+      bedsReservedNotes: nullableText(String(draftData.bedsReservedNotes || "")),
+      wheelchairAccessibleBeds:
+        draftData.wheelchairAccessibleBeds === null ? null : Number(draftData.wheelchairAccessibleBeds || 0),
+      pricePerWeek: draftData.pricePerWeek === undefined ? null : Number(draftData.pricePerWeek || 0),
+      supportServices: arrayFromDraft(draftData.supportServices),
+      amenities: arrayFromDraft(draftData.amenities),
+      insuranceAccepted: arrayFromDraft(draftData.insuranceAccepted),
+      fundingAvailable: Boolean(draftData.fundingAvailable),
+      fundingNotes: nullableText(String(draftData.fundingNotes || "")),
+      medicationAdministration: String(draftData.medicationAdministration || ""),
+      matAccepted: arrayFromDraft(draftData.matAccepted),
+      medicationRestrictions: nullableText(String(draftData.medicationRestrictions || "")),
+      drugTestingPolicy: String(draftData.drugTestingPolicy || ""),
+      description: sanitizeRichText(String(draftData.description || "")) || "",
+      houseRulesText: sanitizeRichText(nullableText(String(draftData.houseRulesText || ""))),
+      photoReadiness: arrayFromDraft(draftData.photoReadiness),
+      videoUrls: arrayFromDraft(draftData.videoUrls),
+      preferredContactMethod: String(draftData.preferredContactMethod || ""),
+      onboardingStep
+    },
+    select: { id: true, orgId: true, programName: true, slug: true }
+  });
+
+  await tx.onboardingDraft.update({
+    where: { id: draft.id },
+    data: {
+      soberLivingDraft: jsonDraft({ ...draftData, profileId: profile.id })
+    }
+  });
+
+  return profile;
+}
+
 export async function createAftercareProfileDraft(formData: FormData) {
   if (!hasDatabaseConfig()) {
     redirect("/setup?missing=database");
@@ -395,7 +515,6 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         videoUrls: valuesFromForm(formData, "videoUrls"),
         preferredContactMethod: formData.get("preferredContactMethod")
       });
-      const files = imagesFromFormData(formData);
       const nextDraft = mergeDraft(currentDraft, {
         description: sanitizeRichText(nullableText(parsed.description)),
         houseRulesText: sanitizeRichText(nullableText(parsed.houseRulesText)),
@@ -403,7 +522,6 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         videoUrls: parsed.videoUrls,
         preferredContactMethod: parsed.preferredContactMethod
       }) as Record<string, unknown>;
-      let uploadTarget: { id: string; orgId: string; programName: string; slug: string } | null = null;
 
       await prisma.onboardingDraft.update({
         where: { id: draft.id },
@@ -414,126 +532,6 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
           completedAt: null
         }
       });
-
-      if (files.length) {
-        const programName = String(nextDraft.programName || "Sober Living Home");
-        const existingProfileId = typeof nextDraft.profileId === "string" ? nextDraft.profileId : "";
-
-        await prisma.$transaction(async (tx) => {
-          if (existingProfileId) {
-            const existingProfile = await tx.aftercareProfile.findFirst({
-              where: {
-                id: existingProfileId,
-                orgId: draft.user.orgId ?? undefined
-              },
-              select: { id: true, orgId: true, programName: true, slug: true }
-            });
-
-            if (!existingProfile) {
-              throw new Error("Profile could not be found.");
-            }
-
-            await tx.aftercareProfile.update({
-              where: { id: existingProfile.id },
-              data: {
-                description: sanitizeRichText(String(nextDraft.description || "")) || "",
-                houseRulesText: sanitizeRichText(nullableText(String(nextDraft.houseRulesText || ""))),
-                photoReadiness: arrayFromDraft(nextDraft.photoReadiness),
-                videoUrls: arrayFromDraft(nextDraft.videoUrls),
-                preferredContactMethod: String(nextDraft.preferredContactMethod || ""),
-                onboardingStep: 5
-              }
-            });
-
-            uploadTarget = existingProfile;
-            return;
-          }
-
-          const profileLimitMessage = await profileLimitMessageForExistingOrg(draft.user.orgId);
-
-          if (profileLimitMessage) {
-            throw new Error(profileLimitMessage);
-          }
-
-          const orgId = await getOrCreateAftercareOrganization(tx, draft, {
-            accountType: "sober_living",
-            admissionsContactPhone: String(nextDraft.admissionsContactPhone || ""),
-            programName
-          });
-          const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
-          const profile = await tx.aftercareProfile.create({
-            data: {
-              orgId,
-              type: ProfileType.sober_living,
-              programName,
-              slug,
-              status: ProfileStatus.draft,
-              streetAddress: String(nextDraft.streetAddress || ""),
-              city: String(nextDraft.city || ""),
-              state: String(nextDraft.state || ""),
-              zip: String(nextDraft.zip || ""),
-              publicCity: String(nextDraft.city || ""),
-              publicState: String(nextDraft.state || ""),
-              admissionsContactPhone: String(nextDraft.admissionsContactPhone || ""),
-              admissionsContactEmail: String(nextDraft.admissionsContactEmail || ""),
-              websiteUrl: nullableText(String(nextDraft.websiteUrl || "")),
-              populationServed: String(nextDraft.populationServed || ""),
-              populationServedOptions: arrayFromDraft(nextDraft.populationServedOptions),
-              specialtyPopulations: arrayFromDraft(nextDraft.specialtyPopulations),
-              certificationsHeld: arrayFromDraft(nextDraft.certificationsHeld),
-              averageLengthOfStay: String(nextDraft.averageLengthOfStay || ""),
-              totalBeds: Number(nextDraft.totalBeds || 0),
-              bedsAvailable: Number(nextDraft.bedsAvailable || 0),
-              bedsAvailableUpdatedAt: new Date(),
-              bedsMen: Number(nextDraft.bedsMen || 0),
-              bedsMenAvailable: Number(nextDraft.bedsMenAvailable || 0),
-              bedsWomen: Number(nextDraft.bedsWomen || 0),
-              bedsWomenAvailable: Number(nextDraft.bedsWomenAvailable || 0),
-              bedsLgbtq: Number(nextDraft.bedsLgbtq || 0),
-              bedsLgbtqAvailable: Number(nextDraft.bedsLgbtqAvailable || 0),
-              roomTypes: arrayFromDraft(nextDraft.roomTypes),
-              bedsReservedNotes: nullableText(String(nextDraft.bedsReservedNotes || "")),
-              wheelchairAccessibleBeds:
-                nextDraft.wheelchairAccessibleBeds === null ? null : Number(nextDraft.wheelchairAccessibleBeds || 0),
-              pricePerWeek: nextDraft.pricePerWeek === undefined ? null : Number(nextDraft.pricePerWeek || 0),
-              supportServices: arrayFromDraft(nextDraft.supportServices),
-              amenities: arrayFromDraft(nextDraft.amenities),
-              insuranceAccepted: arrayFromDraft(nextDraft.insuranceAccepted),
-              fundingAvailable: Boolean(nextDraft.fundingAvailable),
-              fundingNotes: nullableText(String(nextDraft.fundingNotes || "")),
-              medicationAdministration: String(nextDraft.medicationAdministration || ""),
-              matAccepted: arrayFromDraft(nextDraft.matAccepted),
-              medicationRestrictions: nullableText(String(nextDraft.medicationRestrictions || "")),
-              drugTestingPolicy: String(nextDraft.drugTestingPolicy || ""),
-              description: sanitizeRichText(String(nextDraft.description || "")) || "",
-              houseRulesText: sanitizeRichText(nullableText(String(nextDraft.houseRulesText || ""))),
-              photoReadiness: arrayFromDraft(nextDraft.photoReadiness),
-              videoUrls: arrayFromDraft(nextDraft.videoUrls),
-              preferredContactMethod: String(nextDraft.preferredContactMethod || ""),
-              onboardingStep: 5
-            },
-            select: { id: true, orgId: true, programName: true, slug: true }
-          });
-
-          await tx.onboardingDraft.update({
-            where: { id: draft.id },
-            data: {
-              soberLivingDraft: jsonDraft({ ...nextDraft, profileId: profile.id })
-            }
-          });
-
-          uploadTarget = profile;
-        });
-
-        if (uploadTarget) {
-          try {
-            await uploadProfileImagesForProfile(uploadTarget, files);
-          } catch (error) {
-            console.error("Sober living onboarding image upload failed", error);
-            destination = stepRedirect(5, "Your profile details were saved, but the photos did not upload. You can add photos later from the dashboard.");
-          }
-        }
-      }
 
       if (destination === stepRedirect(step)) {
         destination = stepRedirect(5);
@@ -666,6 +664,47 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
   } catch (error) {
     console.error("Sober living onboarding step save failed", error);
     destination = stepRedirect(step, "Please check the highlighted fields and try again.");
+  }
+
+  redirect(destination);
+}
+
+export async function uploadSoberLivingOnboardingImages(formData: FormData) {
+  if (!hasDatabaseConfig()) {
+    redirect("/setup?missing=database");
+  }
+
+  let destination = stepRedirect(4);
+
+  try {
+    const draft = await getOrCreateOnboardingDraft("sober_living", false);
+    const currentDraft =
+      draft.soberLivingDraft && typeof draft.soberLivingDraft === "object" && !Array.isArray(draft.soberLivingDraft)
+        ? (draft.soberLivingDraft as Record<string, unknown>)
+        : {};
+    const files = imagesFromFormData(formData);
+
+    if (!files.length) {
+      destination = stepRedirect(4, "Choose at least one image to upload.");
+    } else {
+      const uploadTarget = await prisma.$transaction((tx) =>
+        upsertSoberLivingDraftProfile(tx, draft, currentDraft, 4)
+      );
+      const uploadedCount = await uploadProfileImagesForProfile(uploadTarget, files);
+
+      revalidatePath("/onboarding/aftercare/sober-living/4");
+      revalidatePath("/dashboard/aftercare");
+      revalidatePath("/search");
+      revalidatePath(`/profiles/${uploadTarget.slug}`);
+
+      destination = stepRedirect(4, `${uploadedCount} image${uploadedCount === 1 ? "" : "s"} uploaded.`);
+    }
+  } catch (error) {
+    console.error("Sober living onboarding image upload failed", error);
+    destination = stepRedirect(
+      4,
+      error instanceof Error ? error.message : "Image upload failed. Please try again."
+    );
   }
 
   redirect(destination);

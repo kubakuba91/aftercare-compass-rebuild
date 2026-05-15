@@ -89,6 +89,24 @@ function currentAftercarePlan(planKey: string | null | undefined) {
   return getAftercarePlan(planKey);
 }
 
+function canAddAnotherProfile(planKey: string | null | undefined, currentProfileCount: number) {
+  const limit = currentAftercarePlan(planKey).profiles;
+
+  return limit === "unlimited" || currentProfileCount < limit;
+}
+
+function nextProfileCapacityPlan(planKey: string | null | undefined, currentProfileCount: number) {
+  const currentPlan = getBillingPlan("aftercare", planKey);
+  const currentPlanIndex = billingPlans.aftercare.findIndex((plan) => plan.key === currentPlan.key);
+  const candidatePlans = billingPlans.aftercare.slice(Math.max(currentPlanIndex + 1, 0));
+
+  return candidatePlans.find((plan) => {
+    const limit = currentAftercarePlan(plan.key).profiles;
+
+    return limit === "unlimited" || currentProfileCount < limit;
+  }) ?? null;
+}
+
 function profileReadiness(profile: {
   type: string;
   description: string | null;
@@ -388,6 +406,8 @@ export default async function AftercareDashboardPage({
   const aftercareManagerUsage = managers.filter((manager) => manager.isActive).length + pendingManagerInvites.length;
   const canInviteMoreManagers = aftercareManagerLimit === "unlimited" || aftercareManagerUsage < aftercareManagerLimit;
   const allowPlacementTracking = canUsePlacementTracking(appUser.organization);
+  const canAddProfiles = canAddAnotherProfile(appUser.organization?.subscriptionPlan, profiles.length);
+  const nextProfilePlan = nextProfileCapacityPlan(appUser.organization?.subscriptionPlan, profiles.length);
 
   return (
     <main className="shell py-8">
@@ -869,13 +889,33 @@ export default async function AftercareDashboardPage({
                     List view of every home/program under this account.
                   </p>
                 </div>
-                <Link
-                  className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-                  href={addProfileHref(appUser.organization?.type)}
-                >
-                  Add home
-                </Link>
+                {canAddProfiles ? (
+                  <Link
+                    className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                    href={addProfileHref(appUser.organization?.type)}
+                  >
+                    Add home
+                  </Link>
+                ) : (
+                  <Link
+                    className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                    href="/dashboard/aftercare?tab=subscription"
+                  >
+                    Upgrade to add home
+                  </Link>
+                )}
               </div>
+              {!canAddProfiles ? (
+                <div className="mt-4 rounded-md border border-warning/40 bg-warning/10 p-4 text-sm">
+                  <p className="font-semibold">You are at your current home/program limit.</p>
+                  <p className="mt-1 text-muted-foreground">
+                    This account has {profiles.length} of {formatPlanLimit(currentAftercarePlan(appUser.organization?.subscriptionPlan).profiles)} homes/programs.{" "}
+                    {nextProfilePlan
+                      ? `To add another, upgrade to ${nextProfilePlan.label}.`
+                      : "Contact support to add more homes or programs."}
+                  </p>
+                </div>
+              ) : null}
 
               {profiles.length ? (
                 <div className="mt-5 overflow-x-auto">

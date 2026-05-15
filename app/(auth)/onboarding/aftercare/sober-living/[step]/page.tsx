@@ -29,7 +29,11 @@ import {
   specialtyPopulationOptions,
   supportServiceOptions
 } from "@/lib/sober-living-onboarding";
-import { removeSoberLivingOnboardingImage, saveSoberLivingOnboardingStep } from "../../actions";
+import {
+  removeSoberLivingOnboardingImage,
+  saveSoberLivingOnboardingStep,
+  uploadSoberLivingOnboardingImages
+} from "../../actions";
 
 const photoReadinessOptions = ["Exterior", "Common areas", "Bedrooms", "Kitchen"];
 
@@ -221,6 +225,7 @@ export default async function SoberLivingStepPage({
   const servedPopulations = selectedPopulation(profile?.populationServedOptions, profile?.populationServed);
   const videoUrls = Array.isArray(profile?.videoUrls) ? profile.videoUrls : [];
   const onboardingProfileId = typeof profile?.profileId === "string" ? profile.profileId : "";
+  const photoUploadFormId = "sober-living-photo-upload-form";
   const uploadedImages = onboardingProfileId
     ? await prisma.profileImage.findMany({
         where: {
@@ -252,6 +257,13 @@ export default async function SoberLivingStepPage({
             </div>
           ) : null}
           <Card className="mt-8">
+            {currentStep === 4 ? (
+              <form
+                action={uploadSoberLivingOnboardingImages}
+                encType="multipart/form-data"
+                id={photoUploadFormId}
+              />
+            ) : null}
             <form action={action} className="grid gap-5" encType="multipart/form-data">
               {currentStep === 1 ? (
                 <>
@@ -477,7 +489,7 @@ export default async function SoberLivingStepPage({
                         ))}
                       </div>
                     ) : null}
-                    <ProfileImageUploader showSubmitButton={false} />
+                    <ProfileImageUploader inputFormId={photoUploadFormId} />
                   </div>
                   {[0, 1, 2].map((index) => (
                     <label key={index} className="grid gap-2 text-sm font-medium">

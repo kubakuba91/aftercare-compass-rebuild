@@ -428,8 +428,8 @@ export default async function SoberLivingStepPage({
               {currentStep === 4 ? (
                 <>
                   <label className="grid gap-2 text-sm font-medium">
-                    {requiredLabel("Home description")}
-                    <RichTextEditor initialValue={richTextHtml(profile?.description)} name="description" required />
+                    Home description
+                    <RichTextEditor initialValue={richTextHtml(profile?.description)} name="description" />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
                     House rules

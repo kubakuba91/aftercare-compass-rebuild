@@ -389,7 +389,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
     if (step === 4) {
       const parsed = stepFourSchema.parse({
         profileId: "draft",
-        description: formData.get("description"),
+        description: formData.get("description") || undefined,
         houseRulesText: formData.get("houseRulesText") || undefined,
         photoReadiness: valuesFromForm(formData, "photoReadiness"),
         videoUrls: valuesFromForm(formData, "videoUrls"),
@@ -397,7 +397,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
       });
       const files = imagesFromFormData(formData);
       const nextDraft = mergeDraft(currentDraft, {
-        description: sanitizeRichText(parsed.description),
+        description: sanitizeRichText(nullableText(parsed.description)),
         houseRulesText: sanitizeRichText(nullableText(parsed.houseRulesText)),
         photoReadiness: parsed.photoReadiness,
         videoUrls: parsed.videoUrls,

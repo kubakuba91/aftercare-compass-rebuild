@@ -115,6 +115,23 @@ const optionalUrl = z
   .trim()
   .optional()
   .refine((value) => !value || /^https?:\/\/.+\..+/.test(value), "Enter a valid URL starting with http:// or https://");
+const optionalVideoUrls = z
+  .array(z.string().trim())
+  .max(3)
+  .default([])
+  .transform((values) =>
+    values
+      .filter(Boolean)
+      .map((value) => (/^https?:\/\//i.test(value) ? value : `https://${value}`))
+      .filter((value) => {
+        try {
+          new URL(value);
+          return true;
+        } catch {
+          return false;
+        }
+      })
+  );
 
 export function valuesFromForm(formData: FormData, name: string) {
   return formData.getAll(name).map(String).filter(Boolean);
@@ -169,10 +186,10 @@ export const stepThreeSchema = z.object({
 
 export const stepFourSchema = z.object({
   profileId: requiredText,
-  description: requiredText.max(2000),
+  description: optionalText,
   houseRulesText: optionalText,
   photoReadiness: z.array(z.string()).default([]),
-  videoUrls: z.array(z.string().trim().url()).max(3).default([]),
+  videoUrls: optionalVideoUrls,
   preferredContactMethod: requiredText.max(80)
 });
 

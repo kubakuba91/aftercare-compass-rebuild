@@ -41,6 +41,8 @@
   --radius: 0.5rem;
   --field-radius: 0.75rem;
   --font-sans: var(--font-inter, Arial, Helvetica, sans-serif);
+  --control-height: 3rem;
+  --control-padding-x: 1rem;
   --control-radius: 0.875rem;
   --control-shadow: 0 1px 2px rgb(from var(--foreground) r g b / 0.08);
   --control-shadow-strong: 0 8px 20px rgb(from var(--primary) r g b / 0.18);
@@ -118,12 +120,44 @@ a.focus-ring:active,
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
 select,
 textarea {
-  border-radius: var(--control-radius);
+  border: 1px solid var(--border);
+  border-radius: var(--field-radius);
+  background: var(--field-background);
+  color: var(--field-foreground);
   box-shadow: var(--control-shadow);
+  font-size: 0.9375rem;
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
     box-shadow 150ms ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
+select {
+  min-height: var(--control-height);
+  padding-inline: var(--control-padding-x);
+}
+
+textarea {
+  padding: 0.875rem 1rem;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--field-placeholder);
+}
+
+select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--foreground) 50%),
+    linear-gradient(135deg, var(--foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.05rem) 52%,
+    calc(100% - 0.7rem) 52%;
+  background-repeat: no-repeat;
+  background-size: 0.35rem 0.35rem;
+  padding-right: 2.5rem;
 }
 
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):focus,
@@ -139,6 +173,63 @@ textarea:focus {
 input[type="checkbox"],
 input[type="radio"] {
   accent-color: var(--primary);
+}
+
+input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+}
+
+.ac-multiselect {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--field-radius);
+  background: var(--field-background);
+  color: var(--field-foreground);
+  box-shadow: var(--control-shadow);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.ac-multiselect[open],
+.ac-multiselect:focus-within {
+  border-color: var(--primary);
+  box-shadow:
+    var(--control-shadow),
+    0 0 0 3px rgb(from var(--primary) r g b / 0.16);
+}
+
+.ac-multiselect summary {
+  min-height: var(--control-height);
+  align-items: center;
+  padding: 0.75rem var(--control-padding-x);
+}
+
+.ac-multiselect summary::-webkit-details-marker {
+  display: none;
+}
+
+.ac-multiselect__summary {
+  color: var(--field-placeholder);
+}
+
+.ac-multiselect__summary[data-selected="true"] {
+  color: var(--field-foreground);
+}
+
+.ac-multiselect__menu {
+  border-top: 1px solid var(--separator);
+  background: var(--overlay);
+}
+
+.ac-multiselect__option {
+  border-radius: 0.625rem;
+  color: var(--field-foreground);
+}
+
+.ac-multiselect__option:hover {
+  background: var(--surface-secondary);
 }
 
 .ac-button {

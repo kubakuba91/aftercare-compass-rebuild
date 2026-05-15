@@ -48,19 +48,21 @@ export function MultiSelectDropdown({
 
   return (
     <details
-      className="rounded-md border border-border bg-white"
+      className="ac-multiselect"
       onToggle={(event) => setIsOpen(event.currentTarget.open)}
       open={isOpen}
     >
       <summary className="flex min-h-10 cursor-pointer list-none items-start justify-between gap-3 px-3 py-2 text-sm">
-        <span className="text-muted-foreground">{summary}</span>
+        <span className="ac-multiselect__summary" data-selected={selectedValues.size ? "true" : "false"}>
+          {summary}
+        </span>
         <span aria-hidden="true" className="mt-0.5 shrink-0">
           ▾
         </span>
       </summary>
-      <div className="grid max-h-72 gap-2 overflow-auto border-t border-border p-3">
+      <div className="ac-multiselect__menu grid max-h-72 gap-2 overflow-auto p-3">
         {options.map((option) => (
-          <label key={option} className="flex min-h-9 items-center gap-2 rounded-md px-2 text-sm hover:bg-muted">
+          <label key={option} className="ac-multiselect__option flex min-h-9 items-center gap-2 px-2 text-sm">
             <input
               type="checkbox"
               name={name}

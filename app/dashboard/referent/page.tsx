@@ -114,6 +114,7 @@ export default async function ReferentDashboardPage({
     edit?: string | string[];
     teamMessage?: string | string[];
     billingMessage?: string | string[];
+    billingView?: string | string[];
   }>;
 }) {
   const query = await searchParams;
@@ -125,6 +126,8 @@ export default async function ReferentDashboardPage({
   const isEditingDisplayName = activeTab === "account" && edit === "displayName";
   const teamMessage = Array.isArray(query.teamMessage) ? query.teamMessage[0] : query.teamMessage;
   const billingMessage = Array.isArray(query.billingMessage) ? query.billingMessage[0] : query.billingMessage;
+  const billingView = Array.isArray(query.billingView) ? query.billingView[0] : query.billingView;
+  const isPlanSelectionOpen = activeTab === "subscription" && billingView === "plans";
   const appUser = await getProtectedAppUser("/dashboard/referent");
 
   if (appUser.role !== Role.referent_admin && appUser.role !== Role.referent_manager) {
@@ -239,6 +242,7 @@ export default async function ReferentDashboardPage({
   const teamUsage = activeTeamMembers.length + pendingInviteEmails.length;
   const canInviteMore = teamLimit === "unlimited" || teamUsage < teamLimit;
   const canManageTeam = appUser.role === Role.referent_admin;
+  const referentBillingPlan = getBillingPlan("referent", organization?.subscriptionPlan);
 
   return (
     <main className="shell py-8">
@@ -317,103 +321,152 @@ export default async function ReferentDashboardPage({
             <div>
               <h2 className="text-xl font-semibold">Subscription</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Review your current plan, team usage, and upgrade options.
+                Review your current plan and usage.
               </p>
             </div>
             {billingMessage ? <Badge tone="success">{billingMessage}</Badge> : null}
           </div>
 
-          <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-            <div className="rounded-md border border-border bg-muted/30 p-4">
-              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+          {isPlanSelectionOpen ? (
+            <div className="mt-5">
+              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Current plan</p>
-                  <h3 className="mt-1 text-2xl font-semibold">
-                    {getBillingPlan("referent", organization?.subscriptionPlan).label}
-                  </h3>
+                  <h3 className="text-lg font-semibold">Compare referent plans</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {formatPlanPrice(getBillingPlan("referent", organization?.subscriptionPlan).monthlyPrice, organization?.subscriptionBillingCycle === "annual" ? "annual" : "monthly")}
+                    Your current plan is marked below. Choose a monthly or annual billing cycle before changing plans.
                   </p>
                 </div>
-                <Badge tone={organization?.subscriptionStatus === "active" ? "success" : "warning"}>
-                  {formatBillingStatus(organization?.subscriptionStatus)}
-                </Badge>
+                <Link className="focus-ring ac-button ac-button--secondary" href="/dashboard/referent?tab=subscription">
+                  Back to current plan
+                </Link>
               </div>
-              <dl className="mt-5 grid gap-4 text-sm md:grid-cols-3">
-                <div>
-                  <dt className="text-muted-foreground">Seats used</dt>
-                  <dd className="mt-1 font-semibold">
-                    {teamUsage} / {formatPlanLimit(planTeamLimit(organization?.subscriptionPlan))}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Billing cycle</dt>
-                  <dd className="mt-1 font-semibold">{organization?.subscriptionBillingCycle || "Not selected"}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Renews / ends</dt>
-                  <dd className="mt-1 font-semibold">{formatBillingDate(organization?.subscriptionRenewsAt)}</dd>
-                </div>
-              </dl>
-              {organization?.stripeSubscriptionId ? (
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <form action={createBillingPortalSession}>
-                    <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
-                    <button className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold">
-                      Manage payment method
-                    </button>
-                  </form>
-                  <form action={cancelBillingSubscription}>
-                    <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
-                    <ConfirmSubmitButton
-                      className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold text-destructive"
-                      message={`Are you sure? Plan will end on ${formatBillingDate(organization.subscriptionRenewsAt)}.`}
-                    >
-                      Cancel plan
-                    </ConfirmSubmitButton>
-                  </form>
-                </div>
-              ) : null}
-            </div>
 
-            <div className="rounded-md border border-border bg-white p-4">
-              <h3 className="font-semibold">What upgrading unlocks</h3>
-              <div className="mt-4 grid gap-3">
-                {billingPlans.referent.map((plan) => (
-                  <form key={plan.key} action={changeBillingPlan} className="rounded-md border border-border bg-muted/30 p-4">
-                    <div className="flex flex-col justify-between gap-2 md:flex-row md:items-start">
-                      <div>
-                        <h4 className="font-semibold">{plan.label}</h4>
-                        <p className="mt-1 text-sm font-semibold">{formatPlanPrice(plan.monthlyPrice, "monthly")}</p>
-                      </div>
-                      {organization?.subscriptionPlan === plan.key ? <Badge tone="success">Current</Badge> : null}
-                    </div>
-                    <ul className="mt-3 grid gap-1 text-sm text-muted-foreground">
-                      {plan.features.map((feature) => (
-                        <li key={feature}>{feature}</li>
-                      ))}
-                    </ul>
-                    <div className="mt-4 grid gap-2 md:grid-cols-[1fr_auto]">
-                      <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
-                      <input name="plan" type="hidden" value={plan.key} />
-                      <select
-                        aria-label={`${plan.label} billing cycle`}
-                        className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
-                        name="billingCycle"
-                        defaultValue={organization?.subscriptionBillingCycle || "monthly"}
-                      >
-                        <option value="monthly">Monthly</option>
-                        <option value="annual">Annual</option>
-                      </select>
-                      <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
-                        {organization?.subscriptionPlan === plan.key ? "Update cycle" : "Change plan"}
-                      </button>
-                    </div>
-                  </form>
-                ))}
+              <div className="mt-5 overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
+                <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+                  <thead className="border-b border-border bg-surface-secondary text-xs uppercase tracking-wide text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3">Plan</th>
+                      <th className="px-4 py-3">Price</th>
+                      <th className="px-4 py-3">Team seats</th>
+                      <th className="px-4 py-3">Unlocks</th>
+                      <th className="px-4 py-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {billingPlans.referent.map((plan) => {
+                      const isCurrentPlan = referentBillingPlan.key === plan.key;
+
+                      return (
+                        <tr key={plan.key} className="border-b border-border last:border-b-0">
+                          <td className="px-4 py-4 align-top">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">{plan.label}</span>
+                              {isCurrentPlan ? <Badge tone="success">Current</Badge> : null}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 align-top font-semibold">{formatPlanPrice(plan.monthlyPrice, "monthly")}</td>
+                          <td className="px-4 py-4 align-top">{formatPlanLimit(planTeamLimit(plan.key))}</td>
+                          <td className="px-4 py-4 align-top text-muted-foreground">
+                            <ul className="grid gap-1">
+                              {plan.features.map((feature) => (
+                                <li key={feature}>{feature}</li>
+                              ))}
+                            </ul>
+                          </td>
+                          <td className="px-4 py-4 align-top">
+                            <form action={changeBillingPlan} className="flex justify-end gap-2">
+                              <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
+                              <input name="plan" type="hidden" value={plan.key} />
+                              <select
+                                aria-label={`${plan.label} billing cycle`}
+                                className="min-h-10 max-w-32 rounded-md border border-border bg-white px-3 text-sm"
+                                name="billingCycle"
+                                defaultValue={organization?.subscriptionBillingCycle || "monthly"}
+                              >
+                                <option value="monthly">Monthly</option>
+                                <option value="annual">Annual</option>
+                              </select>
+                              <button className="focus-ring ac-button ac-button--primary min-h-10">
+                                {isCurrentPlan ? "Update" : "Choose"}
+                              </button>
+                            </form>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
+              <div className="ac-card p-5">
+                <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Current plan</p>
+                    <h3 className="mt-1 text-2xl font-semibold">{referentBillingPlan.label}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {formatPlanPrice(referentBillingPlan.monthlyPrice, organization?.subscriptionBillingCycle === "annual" ? "annual" : "monthly")}
+                    </p>
+                  </div>
+                  <Badge tone={organization?.subscriptionStatus === "active" ? "success" : "warning"}>
+                    {formatBillingStatus(organization?.subscriptionStatus)}
+                  </Badge>
+                </div>
+                <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2">
+                  <div className="ac-stat-card p-4">
+                    <dt className="text-muted-foreground">Manager seats used</dt>
+                    <dd className="mt-1 text-xl font-semibold">
+                      {teamUsage} / {formatPlanLimit(planTeamLimit(organization?.subscriptionPlan))}
+                    </dd>
+                  </div>
+                  <div className="ac-stat-card p-4">
+                    <dt className="text-muted-foreground">Active referrals</dt>
+                    <dd className="mt-1 text-xl font-semibold">{activeReferralCount}</dd>
+                  </div>
+                  <div className="ac-stat-card p-4">
+                    <dt className="text-muted-foreground">Billing cycle</dt>
+                    <dd className="mt-1 font-semibold">{organization?.subscriptionBillingCycle || "Not selected"}</dd>
+                  </div>
+                  <div className="ac-stat-card p-4">
+                    <dt className="text-muted-foreground">Renews / ends</dt>
+                    <dd className="mt-1 font-semibold">{formatBillingDate(organization?.subscriptionRenewsAt)}</dd>
+                  </div>
+                </dl>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Link className="focus-ring ac-button ac-button--primary" href="/dashboard/referent?tab=subscription&billingView=plans">
+                    Upgrade or change plan
+                  </Link>
+                  {organization?.stripeSubscriptionId ? (
+                    <>
+                      <form action={createBillingPortalSession}>
+                        <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
+                        <button className="focus-ring ac-button ac-button--secondary">
+                          Manage payment method
+                        </button>
+                      </form>
+                      <form action={cancelBillingSubscription}>
+                        <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
+                        <ConfirmSubmitButton
+                          className="focus-ring ac-button ac-button--secondary text-destructive"
+                          message={`Are you sure? Plan will end on ${formatBillingDate(organization.subscriptionRenewsAt)}.`}
+                        >
+                          Cancel plan
+                        </ConfirmSubmitButton>
+                      </form>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="ac-card p-5">
+                <h3 className="font-semibold">Upgrade summary</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Higher plans can unlock more team members, referral status tracking, in-app messaging, saved searches, bed alerts, placement collaboration, and enterprise reporting.
+                </p>
+              </div>
+            </div>
+          )}
         </Card>
       ) : null}
 

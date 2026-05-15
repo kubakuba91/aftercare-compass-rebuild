@@ -18,6 +18,12 @@ import { AftercareQuickAvailability } from "@/components/dashboard/aftercare-qui
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import {
+  RowActionsMenu,
+  RowActionsMenuButton,
+  RowActionsMenuLabel,
+  RowActionsMenuLink
+} from "@/components/ui/row-actions-menu";
 import { billingPlans, formatBillingStatus, formatPlanPrice, getBillingPlan } from "@/lib/billing";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
 import { canUsePlacementTracking, getAftercarePlan } from "@/lib/feature-gates";
@@ -413,7 +419,7 @@ export default async function AftercareDashboardPage({
     <main className="shell py-8">
       {selectedReferral ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 px-4 py-6">
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg border border-border bg-white p-5 shadow-xl">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg border border-border bg-surface p-5 shadow-xl">
             <div className="flex flex-col justify-between gap-3 border-b border-border pb-4 md:flex-row md:items-start">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -435,63 +441,63 @@ export default async function AftercareDashboardPage({
             </div>
 
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
-              <div className="rounded-md border border-border bg-muted/40 p-4">
+              <Card className="p-5">
                 <h3 className="font-semibold">Case manager</h3>
                 <dl className="mt-3 grid gap-3 text-sm">
                   <div>
-                    <dt className="text-muted-foreground">Name</dt>
-                    <dd className="font-medium">{selectedReferral.caseManagerName}</dd>
+                    <dt className="font-semibold">Name</dt>
+                    <dd className="mt-1 text-muted-foreground">{selectedReferral.caseManagerName}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Organization</dt>
-                    <dd className="font-medium">{selectedReferral.caseManagerOrganization}</dd>
+                    <dt className="font-semibold">Organization</dt>
+                    <dd className="mt-1 text-muted-foreground">{selectedReferral.caseManagerOrganization}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Email</dt>
-                    <dd className="font-medium">{selectedReferral.caseManagerEmail}</dd>
+                    <dt className="font-semibold">Email</dt>
+                    <dd className="mt-1 break-words text-muted-foreground">{selectedReferral.caseManagerEmail}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Phone</dt>
-                    <dd className="font-medium">{selectedReferral.caseManagerPhone}</dd>
+                    <dt className="font-semibold">Phone</dt>
+                    <dd className="mt-1 text-muted-foreground">{selectedReferral.caseManagerPhone}</dd>
                   </div>
                 </dl>
-              </div>
+              </Card>
 
-              <div className="rounded-md border border-border bg-muted/40 p-4">
+              <Card className="p-5">
                 <h3 className="font-semibold">Referral fit</h3>
                 <dl className="mt-3 grid gap-3 text-sm">
                   <div>
-                    <dt className="text-muted-foreground">Client age range</dt>
-                    <dd className="font-medium">{formatReferralValue(selectedReferral.clientAgeRange)}</dd>
+                    <dt className="font-semibold">Client age range</dt>
+                    <dd className="mt-1 text-muted-foreground">{formatReferralValue(selectedReferral.clientAgeRange)}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Support category</dt>
-                    <dd className="font-medium">{formatReferralValue(selectedReferral.supportCategory)}</dd>
+                    <dt className="font-semibold">Support category</dt>
+                    <dd className="mt-1 text-muted-foreground">{formatReferralValue(selectedReferral.supportCategory)}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Insurance category</dt>
-                    <dd className="font-medium">{formatReferralValue(selectedReferral.insuranceCategory)}</dd>
+                    <dt className="font-semibold">Insurance category</dt>
+                    <dd className="mt-1 text-muted-foreground">{formatReferralValue(selectedReferral.insuranceCategory)}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Preferred start window</dt>
-                    <dd className="font-medium">{formatReferralValue(selectedReferral.preferredStartWindow)}</dd>
+                    <dt className="font-semibold">Preferred start window</dt>
+                    <dd className="mt-1 text-muted-foreground">{formatReferralValue(selectedReferral.preferredStartWindow)}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Special needs/preferences</dt>
-                    <dd className="font-medium">
+                    <dt className="font-semibold">Special needs/preferences</dt>
+                    <dd className="mt-1 text-muted-foreground">
                       {selectedReferral.specialNeeds.length ? selectedReferral.specialNeeds.join(", ") : "None listed"}
                     </dd>
                   </div>
                 </dl>
-              </div>
+              </Card>
             </div>
 
-            <div className="mt-4 rounded-md border border-border bg-muted/40 p-4">
+            <Card className="mt-4 p-5">
               <h3 className="font-semibold">Reason for referral</h3>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
                 {selectedReferral.reasonForReferral}
               </p>
-            </div>
+            </Card>
 
             {referralActionOptions(selectedReferral.status, allowPlacementTracking).length ? (
               <div className="mt-4 flex flex-wrap gap-2">
@@ -731,25 +737,29 @@ export default async function AftercareDashboardPage({
                             </Badge>
                               </td>
                               <td className="py-4">
-                                <div className="flex flex-wrap justify-end gap-2">
+                                <div className="flex flex-wrap items-center justify-end gap-2">
                                   <Link
                                     className="focus-ring inline-flex min-h-8 items-center rounded-md border border-border bg-white px-2.5 text-xs font-semibold"
                                     href={referralDetailHref(referral.id, selectedProfile?.id)}
                                   >
                                     View
                                   </Link>
-                                  {compactReferralActionOptions(referral.status, allowPlacementTracking).map(([status, label]) => (
-                                    <form key={status} action={updateReferralStatus}>
-                                      <input name="referralId" type="hidden" value={referral.id} />
-                                      <button
-                                        className="focus-ring min-h-8 rounded-md border border-border bg-white px-2.5 text-xs font-semibold"
-                                        name="status"
-                                        value={status}
-                                      >
-                                        {label}
-                                      </button>
-                                    </form>
-                                  ))}
+                                  {compactReferralActionOptions(referral.status, allowPlacementTracking).length ? (
+                                    <RowActionsMenu label="Referral actions">
+                                      <RowActionsMenuLabel>Referral actions</RowActionsMenuLabel>
+                                      {compactReferralActionOptions(referral.status, allowPlacementTracking).map(([status, label]) => (
+                                        <form key={status} action={updateReferralStatus}>
+                                          <input name="referralId" type="hidden" value={referral.id} />
+                                          <RowActionsMenuButton
+                                            name="status"
+                                            value={status}
+                                          >
+                                            {label}
+                                          </RowActionsMenuButton>
+                                        </form>
+                                      ))}
+                                    </RowActionsMenu>
+                                  ) : null}
                                 </div>
                               </td>
                             </tr>
@@ -980,19 +990,22 @@ export default async function AftercareDashboardPage({
                               )}
                             </td>
                             <td className="py-4">
-                              <div className="flex justify-end gap-2">
-                                <Link
-                                  className="focus-ring inline-flex min-h-9 items-center rounded-md border border-border px-3 text-xs font-semibold"
-                                  href={`/dashboard/aftercare/profiles/${profile.id}`}
-                                >
-                                  Edit
-                                </Link>
+                              <div className="flex items-center justify-end gap-2">
                                 <Link
                                   className="focus-ring inline-flex min-h-9 items-center rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground"
                                   href={`/profiles/${profile.slug}?preview=1`}
                                 >
                                   View profile
                                 </Link>
+                                <RowActionsMenu label={`${profile.programName} actions`}>
+                                  <RowActionsMenuLabel>Actions</RowActionsMenuLabel>
+                                  <RowActionsMenuLink
+                                    description="Update home details, availability, media, and profile content."
+                                    href={`/dashboard/aftercare/profiles/${profile.id}`}
+                                  >
+                                    Edit home
+                                  </RowActionsMenuLink>
+                                </RowActionsMenu>
                               </div>
                             </td>
                           </tr>

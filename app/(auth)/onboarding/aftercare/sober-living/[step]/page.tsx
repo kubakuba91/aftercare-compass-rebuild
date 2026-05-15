@@ -252,7 +252,7 @@ export default async function SoberLivingStepPage({
             </div>
           ) : null}
           <Card className="mt-8">
-            <form action={action} className="grid gap-5">
+            <form action={action} className="grid gap-5" encType="multipart/form-data">
               {currentStep === 1 ? (
                 <>
                   <label className="grid gap-2 text-sm font-medium">

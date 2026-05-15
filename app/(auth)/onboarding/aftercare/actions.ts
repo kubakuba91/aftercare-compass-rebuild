@@ -529,7 +529,8 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
           try {
             await uploadProfileImagesForProfile(uploadTarget, files);
           } catch (error) {
-            destination = stepRedirect(4, error instanceof Error ? error.message : "Image upload failed.");
+            console.error("Sober living onboarding image upload failed", error);
+            destination = stepRedirect(5, "Your profile details were saved, but the photos did not upload. You can add photos later from the dashboard.");
           }
         }
       }

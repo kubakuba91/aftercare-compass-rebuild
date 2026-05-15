@@ -755,26 +755,31 @@ export default async function ReferentDashboardPage({
       ) : null}
 
       {isInviteManagersOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/25 p-4">
-          <div className="w-full max-w-xl rounded-lg border border-border bg-white p-5 shadow-lg">
+        <div className="ac-modal-overlay">
+          <div className="ac-modal max-w-xl p-6 md:p-7">
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold">Invite managers</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Add one or more emails. Managers will join this referent account when they sign up with an invited email.
-                </p>
+              <div className="flex gap-4">
+                <span className="ac-modal-icon">
+                  <MailPlus size={24} />
+                </span>
+                <div>
+                  <h2 className="text-xl font-semibold">Invite managers</h2>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    Add one or more emails. Managers will join this referent account when they sign up with an invited email.
+                  </p>
+                </div>
               </div>
               <Link
                 aria-label="Close invite managers"
-                className="focus-ring inline-flex size-9 items-center justify-center rounded-md border border-border bg-white text-muted-foreground hover:text-foreground"
+                className="focus-ring ac-modal-close"
                 href="/dashboard/referent?tab=managers"
               >
-                <X size={16} />
+                <X size={18} />
               </Link>
             </div>
             <form action={inviteReferentManagers} className="mt-5 grid gap-4">
               {teamMessage ? (
-                <p className="rounded-md border border-border bg-muted/40 p-3 text-sm font-semibold text-foreground">
+                <p className="ac-callout p-3 text-sm font-semibold text-foreground">
                   {teamMessage}
                 </p>
               ) : null}
@@ -792,19 +797,19 @@ export default async function ReferentDashboardPage({
                 Separate emails with commas, spaces, or new lines. Paid plan limits are checked before invites are saved.
               </p>
               {!canInviteMore ? (
-                <p className="rounded-md border border-border bg-muted/40 p-3 text-sm font-semibold">
+                <p className="ac-callout p-3 text-sm font-semibold">
                   Upgrade the referent plan to add more team members.
                 </p>
               ) : null}
               <div className="flex flex-wrap justify-end gap-2">
                 <Link
-                  className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-semibold"
+                  className="focus-ring ac-button ac-button--secondary"
                   href="/dashboard/referent?tab=managers"
                 >
                   Cancel
                 </Link>
                 <button
-                  className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  className="focus-ring ac-button ac-button--primary disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!canManageTeam || !canInviteMore}
                 >
                   Invite to Aftercare Compass

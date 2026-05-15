@@ -71,31 +71,36 @@ export function FavoriteListingButton({
       {showPrompt ? (
         <div
           aria-modal="true"
-          className="fixed inset-0 z-50 grid place-items-center bg-black/30 p-4"
+          className="ac-modal-overlay"
           role="dialog"
         >
-          <div className="relative w-full max-w-md rounded-lg border border-border bg-white p-6 shadow-xl">
+          <div className="ac-modal relative max-w-md p-6">
             <button
               aria-label="Close"
-              className="focus-ring absolute right-4 top-4 rounded-md p-1"
+              className="focus-ring ac-modal-close absolute right-4 top-4"
               onClick={() => setShowPrompt(false)}
               type="button"
             >
               <X size={18} />
             </button>
-            <h2 className="pr-8 text-2xl font-semibold">Save this home</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Log in or create an account to favorite homes and find them again later.
-            </p>
+            <span className="ac-modal-icon">
+              <Heart size={24} />
+            </span>
+            <div className="mt-5">
+              <h2 className="pr-8 text-2xl font-semibold">Save this home</h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Log in or create an account to favorite homes and find them again later.
+              </p>
+            </div>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <Link
-                className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                className="focus-ring ac-button ac-button--primary"
                 href="/sign-in"
               >
                 Log in
               </Link>
               <Link
-                className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold"
+                className="focus-ring ac-button ac-button--secondary"
                 href="/sign-up"
               >
                 Create account

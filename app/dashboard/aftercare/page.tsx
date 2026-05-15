@@ -427,8 +427,8 @@ export default async function AftercareDashboardPage({
   return (
     <main className="shell py-8">
       {selectedReferral ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 px-4 py-6">
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg border border-border bg-surface p-5 shadow-xl">
+        <div className="ac-modal-overlay px-4 py-6">
+          <div className="ac-modal max-w-3xl p-6 md:p-7">
             <div className="flex flex-col justify-between gap-3 border-b border-border pb-4 md:flex-row md:items-start">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -442,10 +442,11 @@ export default async function AftercareDashboardPage({
                 </p>
               </div>
               <Link
-                className="focus-ring inline-flex min-h-9 items-center justify-center rounded-md border border-border bg-white px-3 text-xs font-semibold"
+                aria-label="Close referral details"
+                className="focus-ring ac-modal-close"
                 href={selectedProfile ? `/dashboard/aftercare?tab=overview&profileId=${selectedProfile.id}` : "/dashboard/aftercare?tab=overview"}
               >
-                Close
+                <X size={18} />
               </Link>
             </div>
 
@@ -514,7 +515,7 @@ export default async function AftercareDashboardPage({
                   <form key={status} action={updateReferralStatus}>
                     <input name="referralId" type="hidden" value={selectedReferral.id} />
                     <button
-                      className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold"
+                      className="focus-ring ac-button ac-button--secondary"
                       name="status"
                       value={status}
                     >
@@ -1446,26 +1447,31 @@ export default async function AftercareDashboardPage({
         </section>
       </div>
       {isInviteManagersOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/25 p-4">
-          <div className="w-full max-w-xl rounded-lg border border-border bg-white p-5 shadow-lg">
+        <div className="ac-modal-overlay">
+          <div className="ac-modal max-w-xl p-6 md:p-7">
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold">Invite managers</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Add one or more emails. Managers will join this aftercare account when they sign up with an invited email.
-                </p>
+              <div className="flex gap-4">
+                <span className="ac-modal-icon">
+                  <MailPlus size={24} />
+                </span>
+                <div>
+                  <h2 className="text-xl font-semibold">Invite managers</h2>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    Add one or more emails. Managers will join this aftercare account when they sign up with an invited email.
+                  </p>
+                </div>
               </div>
               <Link
                 aria-label="Close invite managers"
-                className="focus-ring inline-flex size-9 items-center justify-center rounded-md border border-border bg-white text-muted-foreground hover:text-foreground"
+                className="focus-ring ac-modal-close"
                 href="/dashboard/aftercare?tab=managers"
               >
-                <X size={16} />
+                <X size={18} />
               </Link>
             </div>
             <form action={inviteAftercareManagers} className="mt-5 grid gap-4">
               {query.managerMessage ? (
-                <p className="rounded-md border border-border bg-muted/40 p-3 text-sm font-semibold text-foreground">
+                <p className="ac-callout p-3 text-sm font-semibold text-foreground">
                   {query.managerMessage}
                 </p>
               ) : null}
@@ -1483,19 +1489,19 @@ export default async function AftercareDashboardPage({
                 Separate emails with commas, spaces, or new lines. Paid plan limits are checked before invites are saved.
               </p>
               {!canInviteMoreManagers ? (
-                <p className="rounded-md border border-border bg-muted/40 p-3 text-sm font-semibold">
+                <p className="ac-callout p-3 text-sm font-semibold">
                   Upgrade the aftercare plan to add more managers.
                 </p>
               ) : null}
               <div className="flex flex-wrap justify-end gap-2">
                 <Link
-                  className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-semibold"
+                  className="focus-ring ac-button ac-button--secondary"
                   href="/dashboard/aftercare?tab=managers"
                 >
                   Cancel
                 </Link>
                 <button
-                  className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  className="focus-ring ac-button ac-button--primary disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!canInviteMoreManagers}
                 >
                   Invite to Aftercare Compass

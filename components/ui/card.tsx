@@ -8,9 +8,8 @@ export function Card({
   className?: string;
 }) {
   return (
-    <section className={cn("rounded-lg border border-border bg-white p-5 shadow-sm", className)}>
+    <section className={cn("ac-card p-6", className)}>
       {children}
     </section>
   );
 }
-

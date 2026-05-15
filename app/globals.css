@@ -318,3 +318,27 @@ input[type="checkbox"] {
   background: rgb(236 253 245);
   color: rgb(6 95 70);
 }
+
+.ac-card {
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  background: var(--surface);
+  box-shadow:
+    0 1px 2px rgb(from var(--foreground) r g b / 0.04),
+    0 10px 30px rgb(from var(--foreground) r g b / 0.08);
+}
+
+.ac-stat-card {
+  border: 1px solid var(--separator);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow:
+    0 1px 2px rgb(from var(--foreground) r g b / 0.04),
+    0 8px 24px rgb(from var(--foreground) r g b / 0.07);
+}
+
+.ac-callout {
+  border: 1px solid var(--separator);
+  border-radius: 1rem;
+  background: var(--surface-secondary);
+}

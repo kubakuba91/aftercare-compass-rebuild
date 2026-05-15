@@ -558,21 +558,21 @@ export default async function AftercareDashboardPage({
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <div className="rounded-md border border-border bg-muted/50 p-3">
-                      <p className="text-sm text-muted-foreground">Open requests</p>
-                      <p className="mt-1 text-2xl font-semibold">{openReferrals.length + newLeadCount}</p>
+                    <div className="ac-stat-card p-4">
+                      <p className="text-sm font-medium text-muted-foreground">Open requests</p>
+                      <p className="mt-3 text-3xl font-semibold tracking-tight">{openReferrals.length + newLeadCount}</p>
                     </div>
-                    <div className="rounded-md border border-border bg-muted/50 p-3">
-                      <p className="text-sm text-muted-foreground">Open referrals</p>
-                      <p className="mt-1 text-2xl font-semibold">{openReferrals.length}</p>
+                    <div className="ac-stat-card p-4">
+                      <p className="text-sm font-medium text-muted-foreground">Open referrals</p>
+                      <p className="mt-3 text-3xl font-semibold tracking-tight">{openReferrals.length}</p>
                     </div>
-                    <div className="rounded-md border border-border bg-muted/50 p-3">
-                      <p className="text-sm text-muted-foreground">Beds available</p>
-                      <p className="mt-1 text-2xl font-semibold">{availableBeds}</p>
+                    <div className="ac-stat-card p-4">
+                      <p className="text-sm font-medium text-muted-foreground">Beds available</p>
+                      <p className="mt-3 text-3xl font-semibold tracking-tight">{availableBeds}</p>
                     </div>
-                    <div className="rounded-md border border-border bg-muted/50 p-3">
-                      <p className="text-sm text-muted-foreground">Availability</p>
-                      <p className="mt-1 text-lg font-semibold">
+                    <div className="ac-stat-card p-4">
+                      <p className="text-sm font-medium text-muted-foreground">Availability</p>
+                      <p className="mt-3 text-2xl font-semibold tracking-tight">
                         {staleAvailabilityCount ? `${staleAvailabilityCount} stale` : "Current"}
                       </p>
                     </div>
@@ -613,7 +613,7 @@ export default async function AftercareDashboardPage({
                     updateAction={updateAftercareAvailability}
                   />
                   {selectedProfile.type === "sober_living" ? (
-                    <form action={sendBedAvailabilityTextCheck} className="mt-4 grid gap-3 rounded-md border border-border bg-muted/40 p-4">
+                    <form action={sendBedAvailabilityTextCheck} className="ac-callout mt-4 grid gap-3 p-4">
                       <input name="profileId" type="hidden" value={selectedProfile.id} />
                       <div>
                         <h3 className="font-semibold">Text a bed check</h3>
@@ -651,7 +651,7 @@ export default async function AftercareDashboardPage({
                   ) : null}
                 </div>
                 ) : (
-                  <div className="mt-5 rounded-md border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                  <div className="ac-callout mt-5 p-4 text-sm text-muted-foreground">
                     Select a specific home or program above to update availability. The all-homes view
                     stays read-only so bed changes are not applied to the wrong listing.
                   </div>

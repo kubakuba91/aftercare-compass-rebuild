@@ -82,8 +82,7 @@ async function profileLimitMessageForExistingOrg(orgId: string | null) {
   const organization = await prisma.organization.findUnique({
     where: { id: orgId },
     select: {
-      subscriptionPlan: true,
-      _count: { select: { profiles: true } }
+      subscriptionPlan: true
     }
   });
 
@@ -92,8 +91,14 @@ async function profileLimitMessageForExistingOrg(orgId: string | null) {
   }
 
   const limit = getAftercareProfileLimit(organization.subscriptionPlan);
+  const planCountedProfileCount = await prisma.aftercareProfile.count({
+    where: {
+      orgId,
+      status: { not: ProfileStatus.unpublished }
+    }
+  });
 
-  if (!isWithinPlanLimit(limit, organization._count.profiles)) {
+  if (!isWithinPlanLimit(limit, planCountedProfileCount)) {
     return "Your current plan has reached its profile limit. Upgrade to add another home or program.";
   }
 

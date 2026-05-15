@@ -534,12 +534,22 @@ export default async function AftercareProfileDetailPage({
                 {profile.status === "published" ? "Republish profile" : "Publish profile"}
               </button>
               {profile.status === "published" ? (
+                <ConfirmSubmitButton
+                  className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold"
+                  message="Unpublish this profile? It will be removed from marketplace search and public profile pages, but the profile data will be preserved."
+                  name="status"
+                  value="unpublished"
+                >
+                  Unpublish profile
+                </ConfirmSubmitButton>
+              ) : null}
+              {profile.status === "unpublished" ? (
                 <button
                   className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold"
                   name="status"
                   value="draft"
                 >
-                  Unpublish profile
+                  Restore as draft
                 </button>
               ) : null}
             </form>

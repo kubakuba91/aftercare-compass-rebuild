@@ -21,6 +21,7 @@ import { Card } from "@/components/ui/card";
 import {
   RowActionsMenu,
   RowActionsMenuButton,
+  RowActionsMenuDivider,
   RowActionsMenuLabel,
   RowActionsMenuLink
 } from "@/components/ui/row-actions-menu";
@@ -39,6 +40,7 @@ import {
   removeAftercareManager,
   removeAftercareManagerInvite,
   sendBedAvailabilityTextCheck,
+  updateAftercareProfileStatusFromDashboard,
   updateAftercareAvailability,
   updateManagerSmsSettings,
   updateReferralStatus,
@@ -248,6 +250,7 @@ export default async function AftercareDashboardPage({
     invite?: string;
     managerMessage?: string;
     billingMessage?: string;
+    homesMessage?: string;
   }>;
 }) {
   const appUser = await getAftercareDashboardUser();
@@ -259,6 +262,7 @@ export default async function AftercareDashboardPage({
   const isEditingDisplayName = activeTab === "account" && query.edit === "displayName";
   const isInviteManagersOpen = activeTab === "managers" && query.invite === "1";
   const billingMessage = Array.isArray(query.billingMessage) ? query.billingMessage[0] : query.billingMessage;
+  const homesMessage = Array.isArray(query.homesMessage) ? query.homesMessage[0] : query.homesMessage;
 
   const [profiles, leads, referrals, pendingDocumentCount, managers, pendingManagerInvites] = await Promise.all([
     prisma.aftercareProfile.findMany({
@@ -379,8 +383,9 @@ export default async function AftercareDashboardPage({
     })
   ]);
 
+  const planCountedProfiles = profiles.filter((profile) => profile.status !== "unpublished");
   const selectedProfile = profiles.find((profile) => profile.id === query.profileId) ?? null;
-  const scopedProfiles = selectedProfile ? [selectedProfile] : profiles;
+  const scopedProfiles = selectedProfile ? [selectedProfile] : planCountedProfiles;
   const scopedLeads = selectedProfile
     ? leads.filter((lead) => lead.profileId === selectedProfile.id)
     : leads;
@@ -412,8 +417,8 @@ export default async function AftercareDashboardPage({
   const aftercareManagerUsage = managers.filter((manager) => manager.isActive).length + pendingManagerInvites.length;
   const canInviteMoreManagers = aftercareManagerLimit === "unlimited" || aftercareManagerUsage < aftercareManagerLimit;
   const allowPlacementTracking = canUsePlacementTracking(appUser.organization);
-  const canAddProfiles = canAddAnotherProfile(appUser.organization?.subscriptionPlan, profiles.length);
-  const nextProfilePlan = nextProfileCapacityPlan(appUser.organization?.subscriptionPlan, profiles.length);
+  const canAddProfiles = canAddAnotherProfile(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
+  const nextProfilePlan = nextProfileCapacityPlan(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
 
   return (
     <main className="shell py-8">
@@ -919,11 +924,16 @@ export default async function AftercareDashboardPage({
                 <div className="mt-4 rounded-md border border-warning/40 bg-warning/10 p-4 text-sm">
                   <p className="font-semibold">You are at your current home/program limit.</p>
                   <p className="mt-1 text-muted-foreground">
-                    This account has {profiles.length} of {formatPlanLimit(currentAftercarePlan(appUser.organization?.subscriptionPlan).profiles)} homes/programs.{" "}
+                    This account has {planCountedProfiles.length} of {formatPlanLimit(currentAftercarePlan(appUser.organization?.subscriptionPlan).profiles)} published or draft homes/programs.{" "}
                     {nextProfilePlan
                       ? `To add another, upgrade to ${nextProfilePlan.label}.`
                       : "Contact support to add more homes or programs."}
                   </p>
+                </div>
+              ) : null}
+              {homesMessage ? (
+                <div className="mt-4 rounded-md border border-success/40 bg-success/10 p-4 text-sm font-semibold text-success-foreground">
+                  {homesMessage}
                 </div>
               ) : null}
 
@@ -1005,6 +1015,34 @@ export default async function AftercareDashboardPage({
                                   >
                                     Edit home
                                   </RowActionsMenuLink>
+                                  <RowActionsMenuDivider />
+                                  {profile.status === "unpublished" ? (
+                                    <form action={updateAftercareProfileStatusFromDashboard}>
+                                      <input name="profileId" type="hidden" value={profile.id} />
+                                      <RowActionsMenuButton
+                                        description="Move this profile back into draft editing."
+                                        name="status"
+                                        value="draft"
+                                      >
+                                        Restore as draft
+                                      </RowActionsMenuButton>
+                                    </form>
+                                  ) : (
+                                    <form action={updateAftercareProfileStatusFromDashboard}>
+                                      <input name="profileId" type="hidden" value={profile.id} />
+                                      <ConfirmSubmitButton
+                                        className="block w-full rounded-md px-3 py-2 text-left text-sm text-destructive transition hover:bg-surface-secondary"
+                                        message="Unpublish this home/program? It will be removed from marketplace search and will no longer count toward your plan limit."
+                                        name="status"
+                                        value="unpublished"
+                                      >
+                                        <span className="font-semibold">Unpublish home</span>
+                                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                                          Hide this listing from search without deleting its data.
+                                        </span>
+                                      </ConfirmSubmitButton>
+                                    </form>
+                                  )}
                                 </RowActionsMenu>
                               </div>
                             </td>
@@ -1164,7 +1202,7 @@ export default async function AftercareDashboardPage({
                     <div>
                       <dt className="text-muted-foreground">Homes/programs used</dt>
                       <dd className="mt-1 font-semibold">
-                        {profiles.length} / {formatPlanLimit(currentAftercarePlan(appUser.organization?.subscriptionPlan).profiles)}
+                        {planCountedProfiles.length} / {formatPlanLimit(currentAftercarePlan(appUser.organization?.subscriptionPlan).profiles)}
                       </dd>
                     </div>
                     <div>

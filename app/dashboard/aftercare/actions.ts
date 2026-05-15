@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { ProfileType, ReferralStatus, Role } from "@prisma/client";
+import { ProfileStatus, ProfileType, ReferralStatus, Role } from "@prisma/client";
 import { z } from "zod";
 import { availabilityReplyExample } from "@/lib/availability-sms";
 import { notifyReferralStatusChanged, sendOrganizationInviteEmail } from "@/lib/email-notifications";
@@ -35,6 +35,16 @@ function overviewHref(profileId: string, error?: string) {
 
   if (error) {
     params.set("availabilityError", error);
+  }
+
+  return `/dashboard/aftercare?${params.toString()}`;
+}
+
+function homesHref(message?: string) {
+  const params = new URLSearchParams({ tab: "homes" });
+
+  if (message) {
+    params.set("homesMessage", message);
   }
 
   return `/dashboard/aftercare?${params.toString()}`;
@@ -103,6 +113,56 @@ const emailListSchema = z.array(z.string().email()).min(1);
 
 function smsToken() {
   return `AC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+}
+
+export async function updateAftercareProfileStatusFromDashboard(formData: FormData) {
+  const appUser = await getAftercareDashboardUser(homesHref());
+  const profileId = String(formData.get("profileId") || "");
+  const nextStatus = String(formData.get("status") || "");
+
+  if (nextStatus !== ProfileStatus.unpublished && nextStatus !== ProfileStatus.draft) {
+    redirect(homesHref("That profile status is not available from the dashboard."));
+  }
+
+  const profile = await prisma.aftercareProfile.findFirst({
+    where: {
+      id: profileId,
+      orgId: appUser.orgId
+    },
+    select: {
+      id: true,
+      slug: true,
+      programName: true
+    }
+  });
+
+  if (!profile) {
+    redirect(homesHref("Profile not found."));
+  }
+
+  const status = nextStatus === ProfileStatus.unpublished ? ProfileStatus.unpublished : ProfileStatus.draft;
+
+  await prisma.aftercareProfile.update({
+    where: { id: profile.id },
+    data: {
+      status,
+      publishedAt: null,
+      unpublishedAt: status === ProfileStatus.unpublished ? new Date() : null,
+      unpublishedByUserId: status === ProfileStatus.unpublished ? appUser.id : null
+    }
+  });
+
+  revalidatePath("/dashboard/aftercare");
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+
+  redirect(
+    homesHref(
+      status === ProfileStatus.unpublished
+        ? `${profile.programName} was unpublished and no longer counts toward your plan limit.`
+        : `${profile.programName} was restored as a draft.`
+    )
+  );
 }
 
 export async function updateAftercareAvailability(formData: FormData) {

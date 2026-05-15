@@ -30,6 +30,7 @@ enum ProfileType {
 enum ProfileStatus {
   draft
   published
+  unpublished
   suspended
   under_review
 }
@@ -228,6 +229,8 @@ model AftercareProfile {
   programName                     String
   slug                            String        @unique
   status                          ProfileStatus @default(draft)
+  unpublishedAt                   DateTime?
+  unpublishedByUserId             String?
   verificationTier                Int           @default(1)
   ownershipStatus                 ProfileOwnershipStatus @default(claimed)
   claimedAt                       DateTime?

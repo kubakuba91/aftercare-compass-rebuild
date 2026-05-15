@@ -285,6 +285,7 @@ export async function removeAftercareProfileImage(formData: FormData) {
 export async function updateAftercareProfileStatus(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
   const nextStatus = String(formData.get("status") || "");
+  const appUser = await getAftercareDashboardUser(profileHref(profileId));
   const profile = await getOwnedProfile(profileId);
   ensureProfileCanBeEdited(profile);
 
@@ -296,15 +297,42 @@ export async function updateAftercareProfileStatus(formData: FormData) {
     }
   }
 
+  if (
+    nextStatus !== ProfileStatus.published &&
+    nextStatus !== ProfileStatus.draft &&
+    nextStatus !== ProfileStatus.unpublished
+  ) {
+    redirect(profileHref(profile.id, "That profile status is not available."));
+  }
+
+  const status =
+    nextStatus === ProfileStatus.published
+      ? ProfileStatus.published
+      : nextStatus === ProfileStatus.unpublished
+        ? ProfileStatus.unpublished
+        : ProfileStatus.draft;
+
   await prisma.aftercareProfile.update({
     where: { id: profile.id },
     data: {
-      status: nextStatus === ProfileStatus.published ? ProfileStatus.published : ProfileStatus.draft,
-      publishedAt: nextStatus === ProfileStatus.published ? new Date() : null
+      status,
+      publishedAt: status === ProfileStatus.published ? new Date() : null,
+      unpublishedAt: status === ProfileStatus.unpublished ? new Date() : null,
+      unpublishedByUserId: status === ProfileStatus.unpublished ? appUser.id : null
     }
   });
 
   revalidatePath("/dashboard/aftercare");
   revalidatePath(profileHref(profile.id));
-  redirect(profileHref(profile.id, nextStatus === ProfileStatus.published ? "Profile published." : "Profile moved to draft."));
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+
+  const message =
+    status === ProfileStatus.published
+      ? "Profile published."
+      : status === ProfileStatus.unpublished
+        ? "Profile unpublished. It no longer appears in search and does not count toward your plan limit."
+        : "Profile moved to draft.";
+
+  redirect(profileHref(profile.id, message));
 }

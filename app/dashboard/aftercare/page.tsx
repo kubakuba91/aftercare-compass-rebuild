@@ -831,19 +831,31 @@ export default async function AftercareDashboardPage({
                             <p className="font-semibold">{profile.programName}</p>
                             <p className="mt-1 text-xs text-muted-foreground">{availabilityLabel(profile)}</p>
                           </div>
-                          <div className="flex flex-wrap gap-2 text-xs">
+                          <div className="flex flex-wrap gap-2">
                             {profile.type === "sober_living" && visiblePopulationBeds.length ? (
                               visiblePopulationBeds.map((bed) => (
-                                <span key={bed.label} className="rounded-md border border-border bg-muted/50 px-2 py-1">
-                                  {bed.label}: {bed.available}/{bed.total}
-                                </span>
+                                <Badge
+                                  key={bed.label}
+                                  tone={bed.available > 0 ? "success" : "neutral"}
+                                  className="min-h-8 px-3 text-sm shadow-sm"
+                                >
+                                  <span className="text-muted-foreground">{bed.label}</span>
+                                  <span>{bed.available}/{bed.total}</span>
+                                </Badge>
                               ))
                             ) : (
-                              <span className="rounded-md border border-border bg-muted/50 px-2 py-1">
+                              <Badge
+                                tone={
+                                  profile.type === "continued_care" && profile.acceptingNewPatients
+                                    ? "success"
+                                    : "neutral"
+                                }
+                                className="min-h-8 px-3 text-sm shadow-sm"
+                              >
                                 {profile.type === "continued_care"
                                   ? availabilityLabel(profile)
                                   : "Population beds not set"}
-                              </span>
+                              </Badge>
                             )}
                           </div>
                           <div className="flex flex-wrap items-center gap-2 md:justify-end">

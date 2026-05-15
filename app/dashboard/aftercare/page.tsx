@@ -5,6 +5,7 @@ import {
   Building2,
   CreditCard,
   Home,
+  Info,
   MailPlus,
   Pencil,
   Settings,
@@ -926,24 +927,32 @@ export default async function AftercareDashboardPage({
                   >
                     Add home
                   </Link>
-                ) : (
-                  <Link
-                    className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-                    href="/dashboard/aftercare?tab=subscription"
-                  >
-                    Upgrade to add home
-                  </Link>
-                )}
+                ) : null}
               </div>
               {!canAddProfiles ? (
-                <div className="mt-4 rounded-md border border-warning/40 bg-warning/10 p-4 text-sm">
-                  <p className="font-semibold">You are at your current home/program limit.</p>
-                  <p className="mt-1 text-muted-foreground">
-                    This account has {planCountedProfiles.length} of {formatPlanLimit(currentAftercarePlan(appUser.organization?.subscriptionPlan).profiles)} published or draft homes/programs.{" "}
-                    {nextProfilePlan
-                      ? `To add another, upgrade to ${nextProfilePlan.label}.`
-                      : "Contact support to add more homes or programs."}
-                  </p>
+                <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm md:flex-row md:items-center md:justify-between">
+                  <div className="flex gap-3">
+                    <span className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-surface-secondary text-foreground">
+                      <Info className="size-4" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="font-semibold">You are at your current home/program limit.</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {planCountedProfiles.length} of{" "}
+                        {formatPlanLimit(currentAftercarePlan(appUser.organization?.subscriptionPlan).profiles)}{" "}
+                        published or draft homes/programs used.
+                        {nextProfilePlan
+                          ? ` Upgrade to ${nextProfilePlan.label} to add another.`
+                          : " Contact support to add more homes or programs."}
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    className="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-surface-secondary px-6 text-sm font-semibold text-foreground shadow-sm hover:bg-surface-tertiary"
+                    href="/dashboard/aftercare?tab=subscription"
+                  >
+                    Upgrade
+                  </Link>
                 </div>
               ) : null}
               {homesMessage ? (

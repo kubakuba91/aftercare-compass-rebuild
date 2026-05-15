@@ -547,8 +547,8 @@ export default async function AftercareDashboardPage({
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="h-fit rounded-lg border border-border bg-white p-4 shadow-sm">
-          <nav className="grid gap-1">
+        <aside className="h-fit">
+          <nav className="ac-tabs ac-tabs--vertical w-full" aria-label="Aftercare dashboard sections">
             {dashboardTabs.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.key;
@@ -556,12 +556,8 @@ export default async function AftercareDashboardPage({
               return (
                 <Link
                   key={item.key}
-                  className={cn(
-                    "focus-ring flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-semibold",
-                    isActive
-                      ? "border border-primary bg-primary/5 text-primary"
-                      : "text-muted-foreground hover:bg-muted"
-                  )}
+                  className="focus-ring ac-tab"
+                  data-active={isActive ? "true" : "false"}
                   href={`/dashboard/aftercare?tab=${item.key}`}
                 >
                   <Icon size={18} />

@@ -278,7 +278,7 @@ export default async function ReferentDashboardPage({
         </div>
       </div>
 
-      <nav className="mt-6 flex flex-wrap gap-2">
+      <nav className="ac-tabs mt-6" aria-label="Referent dashboard sections">
         {dashboardTabs.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.key;
@@ -286,10 +286,8 @@ export default async function ReferentDashboardPage({
           return (
             <Link
               key={item.key}
-              className={cn(
-                "focus-ring inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-4 text-sm font-semibold",
-                isActive ? "bg-primary text-primary-foreground" : "bg-white text-foreground"
-              )}
+              className="focus-ring ac-tab"
+              data-active={isActive ? "true" : "false"}
               href={`/dashboard/referent?tab=${item.key}`}
             >
               <Icon size={16} />

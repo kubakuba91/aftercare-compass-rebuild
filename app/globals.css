@@ -343,6 +343,64 @@ input[type="checkbox"] {
   background: var(--surface-secondary);
 }
 
+.ac-tabs {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.25rem;
+  overflow-x: auto;
+  border-radius: 1.25rem;
+  background: var(--surface-secondary);
+  padding: 0.35rem;
+  box-shadow: inset 0 0 0 1px rgb(from var(--foreground) r g b / 0.03);
+}
+
+.ac-tabs--vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow-x: visible;
+}
+
+.ac-tab {
+  display: inline-flex;
+  min-height: 2.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  padding: 0 1rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.ac-tab:hover {
+  background: rgb(from var(--surface) r g b / 0.55);
+  color: var(--foreground);
+}
+
+.ac-tab[data-active="true"] {
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow:
+    0 1px 2px rgb(from var(--foreground) r g b / 0.06),
+    0 8px 20px rgb(from var(--foreground) r g b / 0.08);
+}
+
+.ac-tabs--vertical .ac-tab {
+  width: 100%;
+  justify-content: flex-start;
+}
+
 .ac-modal-overlay {
   position: fixed;
   inset: 0;

@@ -440,14 +440,15 @@ export default async function AdminDashboardPage({
         <SignOutButton />
       </div>
 
-      <nav className="mt-6 flex flex-wrap gap-2">
+      <nav className="ac-tabs mt-6" aria-label="System admin dashboard sections">
         {adminTabs.map((tab) => {
           const Icon = tab.icon;
           const selected = activeTab === tab.key;
 
           return (
             <Link
-              className={`focus-ring inline-flex min-h-10 items-center gap-2 rounded-md border px-3 text-sm font-semibold ${selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-white"}`}
+              className="focus-ring ac-tab"
+              data-active={selected ? "true" : "false"}
               href={`/dashboard/admin?tab=${tab.key}`}
               key={tab.key}
             >

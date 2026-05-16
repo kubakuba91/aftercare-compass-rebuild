@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
 import { getCurrentAppUser } from "@/lib/current-user";
-import { canReceiveDirectReferrals, canSubmitReferrals } from "@/lib/feature-gates";
+import { canReceiveDirectReferrals, canSubmitReferrals, canUseLiveAvailability } from "@/lib/feature-gates";
 import { prisma } from "@/lib/prisma";
 import { richTextHtml } from "@/lib/rich-text";
 import { createProfileClaimRequest, createProfileReferral, createPublicProfileLead } from "./actions";
@@ -365,6 +365,7 @@ export default async function PublicProfilePage({
   }
 
   const isSoberLiving = profile.type === "sober_living";
+  const profileShowsLiveAvailability = !isSoberLiving || canUseLiveAvailability(profile.organization, profile);
   const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
   const visiblePopulationBeds = getVisiblePopulationBeds(profile);
   const priceLabel = formatPricePerWeek(profile.pricePerWeek);
@@ -395,7 +396,11 @@ export default async function PublicProfilePage({
       <PublicSearchHeader
         defaultLocation={publicLocation}
         defaultType={profile.type}
-        defaultAvailability={profile.bedsAvailable || profile.acceptingNewPatients ? "available" : ""}
+        defaultAvailability={
+          (isSoberLiving ? profileShowsLiveAvailability && profile.bedsAvailable : profile.acceptingNewPatients)
+            ? "available"
+            : ""
+        }
         isSignedIn={Boolean(appUser)}
       />
       <main className="shell py-8">
@@ -415,9 +420,17 @@ export default async function PublicProfilePage({
                   <TrustBadge verificationTier={profile.verificationTier} />
                   <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
                   <Badge>{isSoberLiving ? "Sober Living" : "Continued Care"}</Badge>
-                  <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
-                    {availabilityText(profile)}
-                  </Badge>
+                  {profileShowsLiveAvailability ? (
+                    <Badge
+                      tone={
+                        (isSoberLiving ? profile.bedsAvailable : profile.acceptingNewPatients)
+                          ? "success"
+                          : "warning"
+                      }
+                    >
+                      {availabilityText(profile)}
+                    </Badge>
+                  ) : null}
                 </div>
                 <FavoriteListingButton
                   canFavorite={isReferent}
@@ -477,7 +490,7 @@ export default async function PublicProfilePage({
           </div>
 
           <div className="mt-5 grid gap-4">
-            {isSoberLiving ? (
+            {isSoberLiving && profileShowsLiveAvailability ? (
               <Card>
                 <BedDouble className="text-primary" size={22} />
                 <h2 className="mt-3 text-xl font-semibold">Bed availability</h2>
@@ -496,7 +509,7 @@ export default async function PublicProfilePage({
                   </p>
                 )}
               </Card>
-            ) : (
+            ) : !isSoberLiving ? (
               <Card>
                 <CheckCircle2 className="text-primary" size={22} />
                 <h2 className="mt-3 text-xl font-semibold">Program availability</h2>
@@ -505,7 +518,7 @@ export default async function PublicProfilePage({
                   {profile.availabilityNotes ? ` · ${profile.availabilityNotes}` : ""}
                 </p>
               </Card>
-            )}
+            ) : null}
 
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
@@ -621,7 +634,11 @@ export default async function PublicProfilePage({
                     publicState: profile.publicState,
                     latitude: profile.latitude ? Number(profile.latitude) : null,
                     longitude: profile.longitude ? Number(profile.longitude) : null,
-                    isAvailable: Boolean(profile.bedsAvailable || profile.acceptingNewPatients),
+                    isAvailable: Boolean(
+                      isSoberLiving
+                        ? profileShowsLiveAvailability && profile.bedsAvailable
+                        : profile.acceptingNewPatients
+                    ),
                     selectionHref: `/profiles/${profile.slug}`
                   }
                 ]}

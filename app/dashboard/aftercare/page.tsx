@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/row-actions-menu";
 import { billingPlans, formatBillingStatus, formatPlanPrice, getBillingPlan } from "@/lib/billing";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
-import { canUsePlacementTracking, getAftercarePlan } from "@/lib/feature-gates";
+import { canUseLiveAvailability, canUsePlacementTracking, getAftercarePlan } from "@/lib/feature-gates";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 import {
@@ -278,6 +278,7 @@ export default async function AftercareDashboardPage({
         type: true,
         status: true,
         verificationTier: true,
+        ownershipStatus: true,
         publicCity: true,
         publicState: true,
         admissionsContactEmail: true,
@@ -400,8 +401,11 @@ export default async function AftercareDashboardPage({
   const scopedPendingDocumentCount = selectedProfile
     ? pendingDocumentCount.filter((document) => document.profileId === selectedProfile.id).length
     : pendingDocumentCount.length;
-  const totalBeds = scopedProfiles.reduce((sum, profile) => sum + (profile.totalBeds ?? 0), 0);
-  const availableBeds = scopedProfiles.reduce((sum, profile) => sum + (profile.bedsAvailable ?? 0), 0);
+  const liveAvailabilityProfiles = scopedProfiles.filter(
+    (profile) => profile.type !== "sober_living" || canUseLiveAvailability(appUser.organization, profile)
+  );
+  const totalBeds = liveAvailabilityProfiles.reduce((sum, profile) => sum + (profile.totalBeds ?? 0), 0);
+  const availableBeds = liveAvailabilityProfiles.reduce((sum, profile) => sum + (profile.bedsAvailable ?? 0), 0);
   const newLeadCount = scopedLeads.filter((lead) => lead.status === "new").length;
   const staleAvailabilityCount = scopedProfiles.filter((profile) => {
     const lastUpdated =
@@ -420,6 +424,10 @@ export default async function AftercareDashboardPage({
   const aftercareManagerUsage = managers.filter((manager) => manager.isActive).length + pendingManagerInvites.length;
   const canInviteMoreManagers = aftercareManagerLimit === "unlimited" || aftercareManagerUsage < aftercareManagerLimit;
   const allowPlacementTracking = canUsePlacementTracking(appUser.organization);
+  const selectedProfileCanUseLiveAvailability = selectedProfile
+    ? canUseLiveAvailability(appUser.organization, selectedProfile)
+    : false;
+  const liveBedCountLockedMessage = "upgrade plan to unlock live bed count";
   const canAddProfiles = canAddAnotherProfile(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
   const nextProfilePlan = nextProfileCapacityPlan(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
   const aftercareBillingPlan = getBillingPlan("aftercare", appUser.organization?.subscriptionPlan);
@@ -629,6 +637,11 @@ export default async function AftercareDashboardPage({
                   </div>
                   <AftercareQuickAvailability
                     error={query.availabilityError}
+                    lockedReason={
+                      selectedProfile.type === "sober_living" && !selectedProfileCanUseLiveAvailability
+                        ? liveBedCountLockedMessage
+                        : undefined
+                    }
                     profile={{
                       id: selectedProfile.id,
                       programName: selectedProfile.programName,
@@ -812,12 +825,18 @@ export default async function AftercareDashboardPage({
                       Scan all homes and spot stale bed counts quickly.
                     </p>
                   </div>
-                  <Badge>{availableBeds} of {totalBeds} beds available</Badge>
+                  <Badge>
+                    {liveAvailabilityProfiles.length
+                      ? `${availableBeds} of ${totalBeds} beds available`
+                      : "Live bed count locked"}
+                  </Badge>
                 </div>
                 {scopedProfiles.length ? (
                   <div className="mt-5 grid gap-3">
                     {scopedProfiles.map((profile) => {
                       const visiblePopulationBeds = getVisiblePopulationBeds(profile);
+                      const liveBedCountLocked =
+                        profile.type === "sober_living" && !canUseLiveAvailability(appUser.organization, profile);
                       const lastUpdated =
                         profile.type === "sober_living"
                           ? profile.bedsAvailableUpdatedAt
@@ -829,40 +848,53 @@ export default async function AftercareDashboardPage({
                             <p className="font-semibold">{profile.programName}</p>
                             <p className="mt-1 text-xs text-muted-foreground">{availabilityLabel(profile)}</p>
                           </div>
-                          <div className="flex flex-wrap gap-2">
-                            {profile.type === "sober_living" && visiblePopulationBeds.length ? (
-                              visiblePopulationBeds.map((bed) => (
+                          <div className="relative min-h-10">
+                            <div className={cn("flex flex-wrap gap-2", liveBedCountLocked ? "opacity-25" : null)}>
+                              {profile.type === "sober_living" && visiblePopulationBeds.length ? (
+                                visiblePopulationBeds.map((bed) => (
+                                  <Badge
+                                    key={bed.label}
+                                    tone={bed.available > 0 ? "success" : "neutral"}
+                                    className="min-h-8 px-3 text-sm shadow-sm"
+                                  >
+                                    <span className="text-muted-foreground">{bed.label}</span>
+                                    <span>{bed.available}/{bed.total}</span>
+                                  </Badge>
+                                ))
+                              ) : (
                                 <Badge
-                                  key={bed.label}
-                                  tone={bed.available > 0 ? "success" : "neutral"}
+                                  tone={
+                                    profile.type === "continued_care" && profile.acceptingNewPatients
+                                      ? "success"
+                                      : "neutral"
+                                  }
                                   className="min-h-8 px-3 text-sm shadow-sm"
                                 >
-                                  <span className="text-muted-foreground">{bed.label}</span>
-                                  <span>{bed.available}/{bed.total}</span>
+                                  {profile.type === "continued_care"
+                                    ? availabilityLabel(profile)
+                                    : "Population beds not set"}
                                 </Badge>
-                              ))
-                            ) : (
-                              <Badge
-                                tone={
-                                  profile.type === "continued_care" && profile.acceptingNewPatients
-                                    ? "success"
-                                    : "neutral"
-                                }
-                                className="min-h-8 px-3 text-sm shadow-sm"
-                              >
-                                {profile.type === "continued_care"
-                                  ? availabilityLabel(profile)
-                                  : "Population beds not set"}
-                              </Badge>
-                            )}
+                              )}
+                            </div>
+                            {liveBedCountLocked ? (
+                              <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-center">
+                                <span className="rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold shadow-sm">
+                                  {liveBedCountLockedMessage}
+                                </span>
+                              </div>
+                            ) : null}
                           </div>
                           <div className="flex flex-wrap items-center gap-2 md:justify-end">
                             <span className="text-xs text-muted-foreground">{formatDate(lastUpdated)}</span>
                             <Link
                               className="focus-ring inline-flex min-h-8 items-center rounded-md border border-border bg-white px-2.5 text-xs font-semibold"
-                              href={`/dashboard/aftercare?tab=overview&profileId=${profile.id}`}
+                              href={
+                                liveBedCountLocked
+                                  ? "/dashboard/aftercare?tab=subscription"
+                                  : `/dashboard/aftercare?tab=overview&profileId=${profile.id}`
+                              }
                             >
-                              Update
+                              {liveBedCountLocked ? "Upgrade" : "Update"}
                             </Link>
                           </div>
                         </div>
@@ -977,6 +1009,8 @@ export default async function AftercareDashboardPage({
                       {profiles.map((profile) => {
                         const readiness = profileReadiness(profile);
                         const visiblePopulationBeds = getVisiblePopulationBeds(profile);
+                        const liveBedCountLocked =
+                          profile.type === "sober_living" && !canUseLiveAvailability(appUser.organization, profile);
 
                         return (
                           <tr key={profile.id} className="border-b border-border last:border-0">
@@ -994,19 +1028,36 @@ export default async function AftercareDashboardPage({
                                 {profile.status}
                               </Badge>
                             </td>
-                            <td className="py-4 pr-4">{availabilityLabel(profile)}</td>
+                            <td className="py-4 pr-4">
+                              {liveBedCountLocked ? (
+                                <span className="text-xs font-semibold text-muted-foreground">
+                                  Live bed count locked
+                                </span>
+                              ) : (
+                                availabilityLabel(profile)
+                              )}
+                            </td>
                             <td className="py-4 pr-4">
                               {profile.type === "sober_living" ? (
-                                <div className="grid gap-1 text-xs">
-                                  {visiblePopulationBeds.length ? (
-                                    visiblePopulationBeds.map((bed) => (
-                                      <span key={bed.label}>
-                                        {bed.label}: {bed.available}/{bed.total}
+                                <div className="relative min-h-10">
+                                  <div className={cn("grid gap-1 text-xs", liveBedCountLocked ? "opacity-25" : null)}>
+                                    {visiblePopulationBeds.length ? (
+                                      visiblePopulationBeds.map((bed) => (
+                                        <span key={bed.label}>
+                                          {bed.label}: {bed.available}/{bed.total}
+                                        </span>
+                                      ))
+                                    ) : (
+                                      <span className="text-muted-foreground">Not set</span>
+                                    )}
+                                  </div>
+                                  {liveBedCountLocked ? (
+                                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-center">
+                                      <span className="rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold shadow-sm">
+                                        {liveBedCountLockedMessage}
                                       </span>
-                                    ))
-                                  ) : (
-                                    <span className="text-muted-foreground">Not set</span>
-                                  )}
+                                    </div>
+                                  ) : null}
                                 </div>
                               ) : (
                                 <span className="text-muted-foreground">Program availability</span>
@@ -1014,11 +1065,13 @@ export default async function AftercareDashboardPage({
                             </td>
                             <td className="py-4 pr-4">{readiness.percent}%</td>
                             <td className="py-4 pr-4">
-                              {formatDate(
-                                profile.type === "sober_living"
-                                  ? profile.bedsAvailableUpdatedAt
-                                  : profile.acceptingNewPatientsUpdatedAt
-                              )}
+                              {liveBedCountLocked
+                                ? "Locked"
+                                : formatDate(
+                                    profile.type === "sober_living"
+                                      ? profile.bedsAvailableUpdatedAt
+                                      : profile.acceptingNewPatientsUpdatedAt
+                                  )}
                             </td>
                             <td className="py-4">
                               <div className="flex items-center justify-end gap-2">

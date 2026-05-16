@@ -10,6 +10,7 @@ import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { canUseLiveAvailability } from "@/lib/feature-gates";
 import { prisma } from "@/lib/prisma";
 import { approximatePublicPoint, milesBetween, searchCenterFromQuery } from "@/lib/public-location";
 import { richTextToPlainText } from "@/lib/rich-text";
@@ -383,6 +384,13 @@ export default async function SearchPage({
       insuranceAccepted: true,
       matAccepted: true,
       roomTypes: true,
+      organization: {
+        select: {
+          type: true,
+          subscriptionPlan: true,
+          subscriptionStatus: true
+        }
+      },
       images: {
         orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
         take: 1,
@@ -475,6 +483,12 @@ export default async function SearchPage({
                 ],
                 3
               );
+              const showLiveAvailability =
+                profile.type !== ProfileType.sober_living || canUseLiveAvailability(profile.organization, profile);
+              const profileIsAvailable =
+                profile.type === ProfileType.sober_living
+                  ? showLiveAvailability && Boolean(profile.bedsAvailable)
+                  : Boolean(profile.acceptingNewPatients);
 
               return (
                 <div key={profile.id} className="scroll-mt-24" id={`listing-${profile.id}`}>
@@ -517,9 +531,11 @@ export default async function SearchPage({
                         <h2 className="min-w-0 flex-1 text-lg font-semibold leading-tight">{profile.programName}</h2>
                         <TrustBadge verificationTier={profile.verificationTier} />
                         <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
-                        <Badge tone={profile.bedsAvailable || profile.acceptingNewPatients ? "success" : "warning"}>
-                          {availabilityText(profile)}
-                        </Badge>
+                        {showLiveAvailability ? (
+                          <Badge tone={profileIsAvailable ? "success" : "warning"}>
+                            {availabilityText(profile)}
+                          </Badge>
+                        ) : null}
                       </div>
 
                       <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -586,7 +602,11 @@ export default async function SearchPage({
             publicState: profile.publicState,
             latitude: profile.latitude ? Number(profile.latitude) : null,
             longitude: profile.longitude ? Number(profile.longitude) : null,
-            isAvailable: Boolean(profile.bedsAvailable || profile.acceptingNewPatients),
+            isAvailable: Boolean(
+              profile.type === ProfileType.sober_living
+                ? canUseLiveAvailability(profile.organization, profile) && profile.bedsAvailable
+                : profile.acceptingNewPatients
+            ),
             selectionHref: selectedListingHref(profile.id)
           }))}
           selectedListingId={selectedListingId}

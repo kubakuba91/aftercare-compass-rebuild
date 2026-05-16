@@ -798,7 +798,7 @@ export default async function AftercareDashboardPage({
                       </table>
                     </div>
                   ) : (
-                    <p className="mt-5 rounded-md border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
+                    <p className="ac-panel-card mt-5 p-4 text-sm leading-6 text-muted-foreground">
                       New referrals and public profile contact forms will appear here.
                     </p>
                   )}
@@ -824,7 +824,7 @@ export default async function AftercareDashboardPage({
                           : profile.acceptingNewPatientsUpdatedAt;
 
                       return (
-                        <div key={profile.id} className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-[1fr_1.4fr_auto] md:items-center">
+                        <div key={profile.id} className="ac-panel-card grid gap-3 p-3 md:grid-cols-[1fr_1.4fr_auto] md:items-center">
                           <div>
                             <p className="font-semibold">{profile.programName}</p>
                             <p className="mt-1 text-xs text-muted-foreground">{availabilityLabel(profile)}</p>
@@ -870,7 +870,7 @@ export default async function AftercareDashboardPage({
                     })}
                   </div>
                 ) : (
-                  <p className="mt-4 rounded-md border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                  <p className="ac-panel-card mt-4 p-4 text-sm text-muted-foreground">
                     No homes or programs have been created yet.
                   </p>
                 )}
@@ -889,15 +889,15 @@ export default async function AftercareDashboardPage({
                   </Badge>
                 </div>
                 <div className="mt-5 grid gap-3 md:grid-cols-3">
-                  <div className="rounded-md border border-border bg-muted/50 p-3">
+                  <div className="ac-metric-card p-4">
                     <p className="text-sm text-muted-foreground">Profiles shown</p>
                     <p className="mt-1 text-2xl font-semibold">{scopedProfiles.length}</p>
                   </div>
-                  <div className="rounded-md border border-border bg-muted/50 p-3">
+                  <div className="ac-metric-card p-4">
                     <p className="text-sm text-muted-foreground">Pending documents</p>
                     <p className="mt-1 text-2xl font-semibold">{scopedPendingDocumentCount}</p>
                   </div>
-                  <div className="rounded-md border border-border bg-muted/50 p-3">
+                  <div className="ac-metric-card p-4">
                     <p className="text-sm text-muted-foreground">Self-reported listings</p>
                     <p className="mt-1 text-2xl font-semibold">
                       {scopedProfiles.filter((profile) => profile.verificationTier === 1).length}
@@ -1074,7 +1074,7 @@ export default async function AftercareDashboardPage({
                   </table>
                 </div>
               ) : (
-                <div className="mt-5 rounded-md border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                <div className="ac-panel-card mt-5 p-4 text-sm text-muted-foreground">
                   No homes or programs have been created yet.
                 </div>
               )}
@@ -1105,7 +1105,7 @@ export default async function AftercareDashboardPage({
               </div>
               <div className="mt-5 grid gap-3">
                 {managers.map((manager) => (
-                  <div key={manager.id} className="flex flex-col justify-between gap-3 rounded-md border border-border p-4 md:flex-row md:items-center">
+                  <div key={manager.id} className="ac-panel-card flex flex-col justify-between gap-3 p-4 md:flex-row md:items-center">
                     <div>
                       <p className="font-semibold">
                         {[manager.firstName, manager.lastName].filter(Boolean).join(" ") || manager.email}
@@ -1134,7 +1134,7 @@ export default async function AftercareDashboardPage({
                         </form>
                       ) : null}
                     </div>
-                    <form action={updateManagerSmsSettings} className="grid gap-3 rounded-md border border-border bg-muted/40 p-3 md:col-span-2">
+                    <form action={updateManagerSmsSettings} className="ac-panel-card grid gap-3 p-3 md:col-span-2">
                       <input name="managerId" type="hidden" value={manager.id} />
                       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
                         <label className="grid gap-2 text-sm font-medium">
@@ -1166,7 +1166,7 @@ export default async function AftercareDashboardPage({
                   </div>
                 ))}
                 {pendingManagerInvites.map((invite) => (
-                  <div key={invite.id} className="flex flex-col justify-between gap-3 rounded-md border border-border bg-muted/40 p-4 md:flex-row md:items-center">
+                  <div key={invite.id} className="ac-panel-card flex flex-col justify-between gap-3 p-4 md:flex-row md:items-center">
                     <div>
                       <p className="font-semibold">{invite.email}</p>
                       <p className="mt-1 text-sm text-muted-foreground">
@@ -1396,7 +1396,7 @@ export default async function AftercareDashboardPage({
                 </div>
               </dl>
               {isEditingDisplayName ? (
-                <form action={updateUserDisplayName} className="mt-6 grid gap-4 rounded-md border border-border bg-muted/40 p-4">
+                <form action={updateUserDisplayName} className="ac-panel-card mt-6 grid gap-4 p-4">
                   <h3 className="font-semibold">Update display name</h3>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
@@ -1429,7 +1429,7 @@ export default async function AftercareDashboardPage({
                   </div>
                 </form>
               ) : null}
-              <div className="mt-6 rounded-md border border-border bg-muted/40 p-4">
+              <div className="ac-panel-card mt-6 p-4">
                 <h3 className="font-semibold">Session</h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   Sign out of this account on the current device.

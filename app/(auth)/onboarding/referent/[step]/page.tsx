@@ -246,7 +246,7 @@ export default async function ReferentStepPage({
               {currentStep === 3 ? (
                 <>
                   <div className="text-sm font-medium">Plan preference</div>
-                  <div className="rounded-md border border-border bg-muted/60 p-4 text-sm text-muted-foreground">
+                  <div className="ac-panel-card p-4 text-sm text-muted-foreground">
                     Billing is skipped during beta onboarding. Choose a preference now, or continue with the default Professional plan.
                   </div>
                   <div className="grid gap-3">
@@ -255,7 +255,7 @@ export default async function ReferentStepPage({
                       const price = plan.monthlyPrice ? `$${plan.monthlyPrice}/mo` : "Custom";
 
                       return (
-                        <label key={planKey} className="grid gap-2 rounded-md border border-border bg-white p-4">
+                        <label key={planKey} className="ac-panel-card grid gap-2 p-4">
                           <span className="flex items-start gap-3">
                             <input
                               type="radio"
@@ -294,7 +294,7 @@ export default async function ReferentStepPage({
                       className="min-h-36 rounded-md border border-border bg-white p-3 text-sm"
                     />
                   </label>
-                  <div className="rounded-md border border-border bg-muted/60 p-4 text-sm text-muted-foreground">
+                  <div className="ac-panel-card p-4 text-sm text-muted-foreground">
                     You can skip this for now. Team invitations will be sent once the invite email workflow is enabled.
                   </div>
                 </>

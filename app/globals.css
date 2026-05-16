@@ -337,6 +337,26 @@ input[type="checkbox"] {
     0 8px 24px rgb(from var(--foreground) r g b / 0.07);
 }
 
+.ac-panel-card {
+  border: 1px solid var(--separator);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow:
+    0 1px 2px rgb(from var(--foreground) r g b / 0.035),
+    0 6px 18px rgb(from var(--foreground) r g b / 0.055);
+}
+
+.ac-metric-card {
+  border: 1px solid var(--separator);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgb(from var(--surface) r g b / 0.98), rgb(from var(--surface-secondary) r g b / 0.44)),
+    var(--surface);
+  box-shadow:
+    0 1px 2px rgb(from var(--foreground) r g b / 0.04),
+    0 8px 22px rgb(from var(--foreground) r g b / 0.06);
+}
+
 .ac-callout {
   border: 1px solid var(--separator);
   border-radius: 1rem;

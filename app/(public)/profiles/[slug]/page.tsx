@@ -64,7 +64,7 @@ function ContactForm({
         Send a contact request to the provider. This creates an internal lead for their team.
       </p>
       {notice ? (
-        <div className="mt-4 rounded-md border border-border bg-muted/50 p-3 text-sm font-semibold">
+        <div className="ac-panel-card mt-4 p-3 text-sm font-semibold">
           {notice}
         </div>
       ) : null}
@@ -484,7 +484,7 @@ export default async function PublicProfilePage({
                 {visiblePopulationBeds.length ? (
                   <div className="mt-4 grid gap-3 md:grid-cols-3">
                     {visiblePopulationBeds.map((bed) => (
-                      <div key={bed.label} className="rounded-md border border-border bg-muted/40 p-3">
+                      <div key={bed.label} className="ac-metric-card p-4">
                         <p className="text-sm text-muted-foreground">{bed.label}</p>
                         <p className="mt-1 text-2xl font-semibold">{bed.available}/{bed.total}</p>
                       </div>

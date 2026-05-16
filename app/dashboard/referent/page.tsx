@@ -521,7 +521,7 @@ export default async function ReferentDashboardPage({
               ))}
             </div>
           ) : (
-            <p className="mt-5 rounded-md border border-dashed border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
+            <p className="ac-panel-card mt-5 p-4 text-sm leading-6 text-muted-foreground">
               No referrals yet. Search published profiles and use Place Client to submit the first one.
             </p>
           )}
@@ -538,7 +538,7 @@ export default async function ReferentDashboardPage({
           {favorites.length ? (
             <div className="mt-4 grid gap-3">
               {favorites.map((favorite) => (
-                <div key={favorite.id} className="rounded-md border border-border p-3 text-sm">
+                <div key={favorite.id} className="ac-panel-card p-3 text-sm">
                   <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
                     <div>
                       <Link
@@ -642,7 +642,7 @@ export default async function ReferentDashboardPage({
             {pendingInviteEmails.map((email) => (
               <div
                 key={email}
-                className="grid gap-3 border-b border-border bg-muted/40 p-3 text-sm last:border-b-0 md:grid-cols-[minmax(0,1fr)_160px_120px] md:items-center"
+                className="grid gap-3 border-b border-border bg-surface-secondary/50 p-3 text-sm last:border-b-0 md:grid-cols-[minmax(0,1fr)_160px_120px] md:items-center"
               >
                 <div>
                   <p className="font-semibold">{email}</p>
@@ -706,7 +706,7 @@ export default async function ReferentDashboardPage({
           </dl>
 
           {isEditingDisplayName ? (
-            <form action={updateReferentDisplayName} className="mt-6 grid gap-4 rounded-md border border-border bg-muted/40 p-4">
+            <form action={updateReferentDisplayName} className="ac-panel-card mt-6 grid gap-4 p-4">
               <h3 className="font-semibold">Update display name</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 text-sm font-medium">
@@ -740,7 +740,7 @@ export default async function ReferentDashboardPage({
             </form>
           ) : null}
 
-          <div className="mt-6 rounded-md border border-border bg-muted/40 p-4">
+          <div className="ac-panel-card mt-6 p-4">
             <h3 className="font-semibold">Session</h3>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Sign out of this account on the current device.

@@ -140,7 +140,7 @@ function bedFieldsForPopulation(
   availableValue?: number | null
 ) {
   return (
-    <div className="rounded-md border border-border bg-white p-4">
+    <div className="ac-panel-card p-4">
       <h3 className="text-sm font-semibold">{requiredLabel(`${label} beds`)}</h3>
       <div className="mt-3 grid gap-4 md:grid-cols-2">
         <label className="grid gap-2 text-sm font-medium">
@@ -516,11 +516,11 @@ export default async function SoberLivingStepPage({
                     Referral fit notes
                     <textarea name="referralFitNotes" defaultValue={profile?.referralFitNotes ?? ""} className={textAreaClassName()} />
                   </label>
-                  <label className="flex items-start gap-3 rounded-md border border-border bg-white p-3 text-sm">
+                  <label className="ac-panel-card flex items-start gap-3 p-3 text-sm">
                     <input type="checkbox" name="goodNeighborPolicyAcknowledged" value="yes" defaultChecked={profile?.goodNeighborPolicyAcknowledged ?? false} required />
                     <span>{requiredLabel("I acknowledge that the home will follow a Good Neighbor Policy and keep public profile information accurate.")}</span>
                   </label>
-                  <div className="rounded-md border border-border bg-muted/60 p-4 text-sm">
+                  <div className="ac-panel-card p-4 text-sm">
                     Review the previous steps, then finish to open the aftercare dashboard.
                   </div>
                 </>

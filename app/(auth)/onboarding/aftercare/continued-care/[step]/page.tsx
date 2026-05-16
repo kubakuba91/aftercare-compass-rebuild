@@ -356,7 +356,7 @@ export default async function ContinuedCareStepPage({
                       <input name="videoUrls" type="url" defaultValue={videoUrls[index] ?? ""} className={fieldClassName()} />
                     </label>
                   ))}
-                  <div className="rounded-md border border-border bg-muted/60 p-4 text-sm">
+                  <div className="ac-panel-card p-4 text-sm">
                     Finish to create the draft program profile and open the aftercare dashboard.
                   </div>
                 </>

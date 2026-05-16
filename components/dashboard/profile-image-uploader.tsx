@@ -205,7 +205,7 @@ export function ProfileImageUploader({
       </p>
 
       {isOptimizing ? (
-        <div className="rounded-md border border-border bg-white p-3 text-sm font-semibold">
+        <div className="ac-panel-card p-3 text-sm font-semibold">
           Optimizing images...
         </div>
       ) : null}

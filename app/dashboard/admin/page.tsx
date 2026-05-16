@@ -493,27 +493,27 @@ export default async function AdminDashboardPage({
             <Card>
               <h2 className="text-xl font-semibold">Operational queue</h2>
               <div className="mt-4 grid gap-3">
-                <div className="rounded-md border border-border p-4">
+                <div className="ac-panel-card p-4">
                   <p className="font-semibold">Application review</p>
                   <p className="mt-1 text-sm text-muted-foreground">{pendingApplicationCount} onboarding submissions need approval.</p>
                 </div>
-                <div className="rounded-md border border-border p-4">
+                <div className="ac-panel-card p-4">
                   <p className="font-semibold">Verification review</p>
                   <p className="mt-1 text-sm text-muted-foreground">{pendingVerificationCount} pending document reviews.</p>
                 </div>
-                <div className="rounded-md border border-border p-4">
+                <div className="ac-panel-card p-4">
                   <p className="font-semibold">Referral response</p>
                   <p className="mt-1 text-sm text-muted-foreground">{countReferrals(ReferralStatus.pending)} referrals still pending provider action.</p>
                 </div>
-                <div className="rounded-md border border-border p-4">
+                <div className="ac-panel-card p-4">
                   <p className="font-semibold">Public lead follow-up</p>
                   <p className="mt-1 text-sm text-muted-foreground">{countLeads(LeadStatus.new)} new public leads in provider inboxes.</p>
                 </div>
-                <div className="rounded-md border border-border p-4">
+                <div className="ac-panel-card p-4">
                   <p className="font-semibold">Profile claims</p>
                   <p className="mt-1 text-sm text-muted-foreground">{pendingClaimCount} ownership claims need review.</p>
                 </div>
-                <div className="rounded-md border border-border p-4">
+                <div className="ac-panel-card p-4">
                   <p className="font-semibold">Marketplace quality</p>
                   <p className="mt-1 text-sm text-muted-foreground">{openFlagCount} open profile flags.</p>
                 </div>
@@ -655,7 +655,7 @@ export default async function AdminDashboardPage({
             <h2 className="text-xl font-semibold">Recent referrals</h2>
             <div className="mt-4 grid gap-3">
               {referrals.map((referral) => (
-                <div className="rounded-md border border-border p-4 text-sm" key={referral.id}>
+                <div className="ac-panel-card p-4 text-sm" key={referral.id}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold">{referral.referentOrg.name}</p>
@@ -676,7 +676,7 @@ export default async function AdminDashboardPage({
             <h2 className="text-xl font-semibold">Recent public leads</h2>
             <div className="mt-4 grid gap-3">
               {leads.map((lead) => (
-                <div className="rounded-md border border-border p-4 text-sm" key={lead.id}>
+                <div className="ac-panel-card p-4 text-sm" key={lead.id}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold">{lead.name}</p>
@@ -720,7 +720,7 @@ export default async function AdminDashboardPage({
             <Badge tone="warning">{pendingClaimCount} pending</Badge>
           </div>
           {reviewMessage ? (
-            <p className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-sm font-semibold text-primary">
+            <p className="ac-panel-card mt-4 p-3 text-sm font-semibold text-primary">
               {reviewMessage}
             </p>
           ) : null}
@@ -808,7 +808,7 @@ export default async function AdminDashboardPage({
               </tbody>
             </table>
             {!profileClaims.length ? (
-              <p className="mt-4 rounded-md border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+              <p className="ac-panel-card mt-4 p-4 text-sm text-muted-foreground">
                 No profile claims have been submitted yet.
               </p>
             ) : null}
@@ -842,7 +842,7 @@ export default async function AdminDashboardPage({
               <Badge tone="warning">{pendingApplicationCount} pending</Badge>
             </div>
             {reviewMessage ? (
-              <p className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-sm font-semibold text-primary">
+              <p className="ac-panel-card mt-4 p-3 text-sm font-semibold text-primary">
                 {reviewMessage}
               </p>
             ) : null}
@@ -933,7 +933,7 @@ export default async function AdminDashboardPage({
                 </tbody>
               </table>
               {!applicationReviews.length ? (
-                <p className="mt-4 rounded-md border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                <p className="ac-panel-card mt-4 p-4 text-sm text-muted-foreground">
                   No onboarding applications have been submitted yet.
                 </p>
               ) : null}
@@ -978,7 +978,7 @@ export default async function AdminDashboardPage({
                 </tbody>
               </table>
               {!verificationDocuments.length ? (
-                <p className="mt-4 rounded-md border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                <p className="ac-panel-card mt-4 p-4 text-sm text-muted-foreground">
                   No verification documents have been submitted yet.
                 </p>
               ) : null}
@@ -992,7 +992,7 @@ export default async function AdminDashboardPage({
             </div>
             <div className="mt-4 grid gap-3">
               {flags.map((flag) => (
-                <div className="rounded-md border border-border p-4 text-sm" key={flag.id}>
+                <div className="ac-panel-card p-4 text-sm" key={flag.id}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold">{formatValue(flag.flagType)}</p>

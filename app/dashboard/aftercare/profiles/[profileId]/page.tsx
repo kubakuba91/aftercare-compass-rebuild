@@ -103,7 +103,7 @@ function ReadinessChecklist({
         return (
           <div
             key={check.label}
-            className="flex items-start gap-2 rounded-md border border-border bg-white p-3 text-sm"
+            className="ac-panel-card flex items-start gap-2 p-3 text-sm"
           >
             <Icon
               className={check.complete ? "mt-0.5 shrink-0 text-primary" : "mt-0.5 shrink-0 text-accent"}
@@ -268,7 +268,7 @@ export default async function AftercareProfileDetailPage({
                       ["Women", "bedsWomen", "bedsWomenAvailable", profile.bedsWomen, profile.bedsWomenAvailable],
                       ["LGBTQ+", "bedsLgbtq", "bedsLgbtqAvailable", profile.bedsLgbtq, profile.bedsLgbtqAvailable]
                     ].map(([label, totalName, availableName, total, available]) => (
-                      <div key={String(totalName)} className="rounded-md border border-border bg-muted/30 p-3">
+                      <div key={String(totalName)} className="ac-panel-card p-4">
                         <p className="font-semibold">{label}</p>
                         <div className="mt-3 grid gap-3">
                           <label className={labelClassName()}>
@@ -400,7 +400,7 @@ export default async function AftercareProfileDetailPage({
                 ))}
               </div>
             ) : (
-              <div className="mt-5 rounded-md border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+              <div className="ac-panel-card mt-5 p-4 text-sm text-muted-foreground">
                 No images uploaded yet.
               </div>
             )}
@@ -492,7 +492,7 @@ export default async function AftercareProfileDetailPage({
                 ))}
               </div>
               {isSoberLiving ? (
-                <label className="flex items-start gap-3 rounded-md border border-border bg-muted/40 p-3 text-sm">
+                <label className="ac-panel-card flex items-start gap-3 p-4 text-sm">
                   <input
                     defaultChecked={profile.goodNeighborPolicyAcknowledged}
                     name="goodNeighborPolicyAcknowledged"

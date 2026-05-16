@@ -57,7 +57,7 @@ export function AftercareQuickAvailability({
 }: AftercareQuickAvailabilityProps) {
   if (!profile) {
     return (
-      <div className="rounded-md border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+      <div className="ac-panel-card p-4 text-sm text-muted-foreground">
         Select a home or program above to make quick availability updates.
       </div>
     );
@@ -70,7 +70,7 @@ export function AftercareQuickAvailability({
           {error}
         </div>
       ) : null}
-      <form action={updateAction} className="grid gap-4 rounded-md border border-border bg-muted/40 p-4">
+      <form action={updateAction} className="ac-panel-card grid gap-4 p-4">
         <input type="hidden" name="profileId" value={profile.id} />
         {profile.type === "sober_living" ? (
           <>

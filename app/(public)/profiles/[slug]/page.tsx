@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { OrganizationType, ProfileOwnershipStatus } from "@prisma/client";
-import { BadgeCheck, BedDouble, CheckCircle2, HandHeart, Mail, MapPin, PillBottle, Send, ShieldCheck, Users, Video } from "lucide-react";
+import { BadgeCheck, BedDouble, CheckCircle2, HandHeart, Mail, MapPin, Phone, PillBottle, Send, ShieldCheck, Users, Video } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { ExpandableRichText } from "@/components/public/expandable-rich-text";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
 import { getCurrentAppUser } from "@/lib/current-user";
 import { canReceiveDirectReferrals, canSubmitReferrals, canUseLiveAvailability } from "@/lib/feature-gates";
+import { formatPhoneForDisplay, normalizePhoneNumber } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 import { richTextHtml } from "@/lib/rich-text";
 import { createProfileClaimRequest, createProfileReferral, createPublicProfileLead } from "./actions";
@@ -43,6 +44,13 @@ function formatPricePerWeek(value: number | null) {
   }
 
   return `$${value}/week`;
+}
+
+function telHref(value: string) {
+  const normalized = normalizePhoneNumber(value);
+  const fallback = value.replace(/[^\d+]/g, "");
+
+  return `tel:${normalized || fallback}`;
 }
 
 function ContactForm({
@@ -369,6 +377,7 @@ export default async function PublicProfilePage({
   const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
   const visiblePopulationBeds = getVisiblePopulationBeds(profile);
   const priceLabel = formatPricePerWeek(profile.pricePerWeek);
+  const admissionsPhone = profile.admissionsContactPhone?.trim() ?? "";
   const isReferent = appUser?.role.startsWith("referent") ?? false;
   const isAftercareUser = appUser?.role.startsWith("aftercare") ?? false;
   const profileAcceptsDirectReferrals = canReceiveDirectReferrals(profile.organization, profile);
@@ -451,6 +460,27 @@ export default async function PublicProfilePage({
               <MapPin size={16} />
               {publicLocation || "Location not listed"} · Exact address is private
             </p>
+            {admissionsPhone ? (
+              <div className="mt-5 flex flex-col gap-4 rounded-[1.5rem] border border-border bg-surface p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-foreground">
+                    <Phone aria-hidden="true" size={20} />
+                  </span>
+                  <div>
+                    <p className="font-semibold">Call for availability</p>
+                    <p className="text-sm text-muted-foreground">
+                      Speak with admissions about current openings.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  className="focus-ring inline-flex min-h-11 items-center justify-center rounded-full bg-default px-5 text-sm font-semibold text-default-foreground transition hover:bg-surface-tertiary"
+                  href={telHref(admissionsPhone)}
+                >
+                  {formatPhoneForDisplay(admissionsPhone)}
+                </a>
+              </div>
+            ) : null}
             {profile.images.length ? (
               <div className="mt-6 grid gap-3 md:grid-cols-[1.4fr_1fr]">
                 <div className="relative min-h-[28rem] overflow-hidden rounded-lg border border-border bg-muted">

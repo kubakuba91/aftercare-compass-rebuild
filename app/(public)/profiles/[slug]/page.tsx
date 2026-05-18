@@ -482,8 +482,8 @@ export default async function PublicProfilePage({
               </div>
             ) : null}
             {profile.images.length ? (
-              <div className="mt-6 grid gap-3 md:grid-cols-[1.4fr_1fr]">
-                <div className="relative min-h-[28rem] overflow-hidden rounded-lg border border-border bg-muted">
+              <div className="mt-6 grid gap-3 md:grid-cols-[1.35fr_1fr]">
+                <div className="relative min-h-[28rem] overflow-hidden rounded-[1.25rem] border border-border bg-muted">
                   <Image
                     alt={profile.images[0]?.altText || profile.programName}
                     className="object-cover"
@@ -495,8 +495,11 @@ export default async function PublicProfilePage({
                   />
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
-                  {profile.images.slice(1, 4).map((image) => (
-                    <div key={image.id} className="relative min-h-40 overflow-hidden rounded-lg border border-border bg-muted">
+                  {profile.images.slice(1, 3).map((image, index) => {
+                    const showAllPhotosLink = profile.images.length > 3 && index === 1;
+
+                    return (
+                    <div key={image.id} className="relative min-h-40 overflow-hidden rounded-[1.25rem] border border-border bg-muted">
                       <Image
                         alt={image.altText || profile.programName}
                         className="object-cover"
@@ -505,8 +508,17 @@ export default async function PublicProfilePage({
                         src={image.url}
                         unoptimized
                       />
+                      {showAllPhotosLink ? (
+                        <Link
+                          className="focus-ring absolute bottom-4 right-4 inline-flex min-h-11 items-center justify-center rounded-full bg-surface px-4 text-sm font-semibold text-foreground shadow-lg transition hover:bg-surface-secondary"
+                          href={`/profiles/${profile.slug}/photos${canPreviewDraft ? "?preview=1" : ""}`}
+                        >
+                          View all photos
+                        </Link>
+                      ) : null}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ) : (

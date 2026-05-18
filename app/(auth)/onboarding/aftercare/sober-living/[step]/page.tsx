@@ -9,6 +9,7 @@ import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recov
 import { Card } from "@/components/ui/card";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { isClerkIdentityError } from "@/lib/current-user";
+import { getAftercarePhotoLimit } from "@/lib/feature-gates";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { richTextHtml } from "@/lib/rich-text";
@@ -241,6 +242,13 @@ export default async function SoberLivingStepPage({
         }
       })
     : [];
+  const organization = draft.user.orgId
+    ? await prisma.organization.findUnique({
+        where: { id: draft.user.orgId },
+        select: { subscriptionPlan: true }
+      })
+    : null;
+  const photoLimit = getAftercarePhotoLimit(organization?.subscriptionPlan);
 
   return (
     <main className="grid min-h-screen lg:grid-cols-[320px_1fr]">
@@ -489,7 +497,11 @@ export default async function SoberLivingStepPage({
                         ))}
                       </div>
                     ) : null}
-                    <ProfileImageUploader inputFormId={photoUploadFormId} />
+                    <ProfileImageUploader
+                      currentImageCount={uploadedImages.length}
+                      inputFormId={photoUploadFormId}
+                      photoLimit={photoLimit}
+                    />
                   </div>
                   {[0, 1, 2].map((index) => (
                     <label key={index} className="grid gap-2 text-sm font-medium">

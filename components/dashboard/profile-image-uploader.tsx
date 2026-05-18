@@ -10,6 +10,8 @@ type PreparedImage = {
   previewUrl: string;
 };
 
+type PhotoLimit = number | "unlimited";
+
 const maxDimension = 1600;
 const compressionQuality = 0.82;
 
@@ -89,15 +91,26 @@ async function optimizeImage(file: File) {
 
 export function ProfileImageUploader({
   inputFormId,
-  showSubmitButton = true
+  showSubmitButton = true,
+  currentImageCount = 0,
+  photoLimit = 12
 }: {
   inputFormId?: string;
   showSubmitButton?: boolean;
+  currentImageCount?: number;
+  photoLimit?: PhotoLimit;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [images, setImages] = useState<PreparedImage[]>([]);
   const [error, setError] = useState("");
+  const hasUnlimitedPhotos = photoLimit === "unlimited";
+  const totalSelectedCount = currentImageCount + images.length;
+  const isOverPhotoLimit = !hasUnlimitedPhotos && totalSelectedCount > photoLimit;
+  const canSelectMoreImages = hasUnlimitedPhotos || currentImageCount < photoLimit;
+  const galleryLimitText = hasUnlimitedPhotos
+    ? `${totalSelectedCount} uploaded or selected. Unlimited photo gallery on this plan.`
+    : `${totalSelectedCount} of ${photoLimit} photos uploaded or selected.`;
 
   function syncInputFiles(nextImages: PreparedImage[]) {
     if (!inputRef.current) {
@@ -130,6 +143,20 @@ export function ProfileImageUploader({
     }
 
     const selectedFiles = Array.from(files);
+    const availableSlots =
+      photoLimit === "unlimited" ? null : Math.max(photoLimit - currentImageCount, 0);
+
+    if (availableSlots !== null && selectedFiles.length > availableSlots) {
+      setError(
+        availableSlots > 0
+          ? `Your current plan has room for ${availableSlots} more photo${availableSlots === 1 ? "" : "s"}.`
+          : "Your current plan photo gallery is full. Remove a photo or upgrade to add more."
+      );
+      setImages([]);
+      syncInputFiles([]);
+      return;
+    }
+
     const invalidFile = selectedFiles.find((file) => !file.type.startsWith("image/"));
 
     if (invalidFile) {
@@ -191,7 +218,8 @@ export function ProfileImageUploader({
         <input
           ref={inputRef}
           accept="image/*"
-          className="min-h-11 rounded-md border border-border bg-white px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground"
+          className="min-h-11 rounded-md border border-border bg-white px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={!canSelectMoreImages || isOptimizing}
           form={inputFormId}
           multiple
           name="images"
@@ -203,6 +231,12 @@ export function ProfileImageUploader({
       <p className="text-xs leading-5 text-muted-foreground">
         Images are optimized in your browser before upload. Large photos are resized to 1600px max and saved as lightweight WebP when possible.
       </p>
+      <p className="text-xs leading-5 text-muted-foreground">{galleryLimitText}</p>
+      {!canSelectMoreImages ? (
+        <p className="text-xs leading-5 text-muted-foreground">
+          Remove a photo or upgrade to add more.
+        </p>
+      ) : null}
 
       {isOptimizing ? (
         <div className="ac-panel-card p-3 text-sm font-semibold">
@@ -250,7 +284,7 @@ export function ProfileImageUploader({
       {showSubmitButton ? (
         <button
           className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 md:w-fit"
-          disabled={isOptimizing}
+          disabled={isOptimizing || isOverPhotoLimit}
           form={inputFormId}
         >
           <ImagePlus size={16} />

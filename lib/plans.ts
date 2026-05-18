@@ -46,6 +46,7 @@ export const aftercarePlans = {
     liveAvailability: false,
     verificationEligible: false,
     placementTracking: false,
+    photoGalleryLimit: 3,
     badge: "Self-Reported"
   },
   professional: {
@@ -59,6 +60,7 @@ export const aftercarePlans = {
     liveAvailability: true,
     verificationEligible: true,
     placementTracking: false,
+    photoGalleryLimit: 12,
     badge: "Self-Reported"
   },
   verified: {
@@ -72,6 +74,7 @@ export const aftercarePlans = {
     liveAvailability: true,
     verificationEligible: true,
     placementTracking: true,
+    photoGalleryLimit: 12,
     badge: "Aftercare Compass Verified"
   },
   network: {
@@ -85,6 +88,7 @@ export const aftercarePlans = {
     liveAvailability: true,
     verificationEligible: true,
     placementTracking: true,
+    photoGalleryLimit: 12,
     badge: "Enterprise Verified Network"
   }
 } as const;

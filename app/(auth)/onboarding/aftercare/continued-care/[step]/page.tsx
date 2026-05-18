@@ -15,6 +15,7 @@ import {
   telehealthModeOptions
 } from "@/lib/continued-care-onboarding";
 import { isClerkIdentityError } from "@/lib/current-user";
+import { getAftercarePhotoLimit } from "@/lib/feature-gates";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
@@ -146,6 +147,13 @@ export default async function ContinuedCareStepPage({
   const action = saveContinuedCareOnboardingStep.bind(null, currentStep);
   const selected = (values?: string[] | null) => values ?? [];
   const videoUrls = Array.isArray(profile?.videoUrls) ? profile.videoUrls : [];
+  const organization = draft.user.orgId
+    ? await prisma.organization.findUnique({
+        where: { id: draft.user.orgId },
+        select: { subscriptionPlan: true }
+      })
+    : null;
+  const photoLimit = getAftercarePhotoLimit(organization?.subscriptionPlan);
 
   return (
     <main className="grid min-h-screen lg:grid-cols-[320px_1fr]">
@@ -348,7 +356,7 @@ export default async function ContinuedCareStepPage({
                   </div>
                   <div className="grid gap-2 rounded-md border border-dashed border-border bg-muted/30 p-4 text-sm font-medium">
                     Profile photos
-                    <ProfileImageUploader showSubmitButton={false} />
+                    <ProfileImageUploader currentImageCount={0} photoLimit={photoLimit} showSubmitButton={false} />
                   </div>
                   {[0, 1, 2].map((index) => (
                     <label key={index} className="grid gap-2 text-sm font-medium">

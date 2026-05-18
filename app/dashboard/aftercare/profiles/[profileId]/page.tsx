@@ -28,6 +28,7 @@ import { Card } from "@/components/ui/card";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { richTextHtml } from "@/lib/rich-text";
 import { prisma } from "@/lib/prisma";
+import { formatPhotoLimit, getAftercarePhotoLimit } from "@/lib/feature-gates";
 import {
   getAftercareDashboardUser,
   redirectIncompleteAftercareOnboarding
@@ -145,6 +146,11 @@ export default async function AftercareProfileDetailPage({
       leads: { select: { id: true }, take: 1 },
       referrals: { select: { id: true }, take: 1 },
       certifications: { select: { id: true, status: true } },
+      organization: {
+        select: {
+          subscriptionPlan: true
+        }
+      },
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }] }
     }
   });
@@ -156,6 +162,11 @@ export default async function AftercareProfileDetailPage({
   const isSoberLiving = profile.type === "sober_living";
   const readiness = getAftercareProfileReadiness(profile);
   const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
+  const photoLimit = getAftercarePhotoLimit(profile.organization.subscriptionPlan);
+  const photoLimitCopy =
+    photoLimit === "unlimited"
+      ? "Upload unlimited profile images on your current plan. The cover image appears on search cards and at the top of the public profile."
+      : `Upload up to ${photoLimit} images on your current plan. The cover image appears on search cards and at the top of the public profile.`;
 
   return (
     <main className="shell py-8">
@@ -344,14 +355,17 @@ export default async function AftercareProfileDetailPage({
               <div>
                 <h2 className="text-xl font-semibold">Profile images</h2>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  Upload up to 6 images. The cover image appears on search cards and at the top of the public profile.
+                  {photoLimitCopy}
                 </p>
+                <span className="mt-2 block text-xs font-semibold text-muted-foreground">
+                  Current plan includes {formatPhotoLimit(photoLimit)}.
+                </span>
               </div>
             </div>
 
             <form action={uploadAftercareProfileImages} className="mt-5 grid gap-3 rounded-md border border-dashed border-border bg-muted/30 p-4">
               <input name="profileId" type="hidden" value={profile.id} />
-              <ProfileImageUploader />
+              <ProfileImageUploader currentImageCount={profile.images.length} photoLimit={photoLimit} />
             </form>
 
             {profile.images.length ? (

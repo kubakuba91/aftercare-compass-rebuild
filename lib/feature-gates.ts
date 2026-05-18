@@ -63,6 +63,14 @@ export function getAftercareProfileLimit(planKey: string | null | undefined): Pl
   return getAftercarePlan(planKey).profiles;
 }
 
+export function getAftercarePhotoLimit(planKey: string | null | undefined): PlanLimit {
+  return getAftercarePlan(planKey).photoGalleryLimit;
+}
+
+export function formatPhotoLimit(limit: PlanLimit) {
+  return limit === "unlimited" ? "unlimited photos" : `${limit} photo${limit === 1 ? "" : "s"}`;
+}
+
 export function getReferentTeamLimit(planKey: string | null | undefined): PlanLimit {
   return getReferentPlan(planKey).teamMembers;
 }

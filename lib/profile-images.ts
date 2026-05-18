@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { formatPhotoLimit, getAftercarePhotoLimit, isWithinPlanLimit } from "@/lib/feature-gates";
 import { prisma } from "@/lib/prisma";
 import { ensureProfileMediaBucket, profileMediaBucket } from "@/lib/supabase-storage";
 
@@ -24,12 +25,37 @@ export async function uploadProfileImagesForProfile(profile: ProfileImageUploadT
     return 0;
   }
 
-  const currentImageCount = await prisma.profileImage.count({
-    where: { profileId: profile.id }
+  const profileRecord = await prisma.aftercareProfile.findFirst({
+    where: {
+      id: profile.id,
+      orgId: profile.orgId
+    },
+    select: {
+      id: true,
+      organization: {
+        select: {
+          subscriptionPlan: true
+        }
+      },
+      _count: {
+        select: {
+          images: true
+        }
+      }
+    }
   });
 
-  if (currentImageCount + files.length > 6) {
-    throw new Error("Each profile can have up to 6 images for now.");
+  if (!profileRecord) {
+    throw new Error("Profile could not be found for this account.");
+  }
+
+  const currentImageCount = profileRecord._count.images;
+  const photoLimit = getAftercarePhotoLimit(profileRecord.organization.subscriptionPlan);
+
+  if (!isWithinPlanLimit(photoLimit, currentImageCount, files.length)) {
+    throw new Error(
+      `Your current plan includes ${formatPhotoLimit(photoLimit)}. Remove a photo or upgrade to add more.`
+    );
   }
 
   const invalidFile = files.find((file) => !file.type.startsWith("image/") || file.size > 10 * 1024 * 1024);

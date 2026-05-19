@@ -40,7 +40,9 @@ import {
   updateAftercareProfileStatus,
   uploadAftercareProfileImages,
   removeAftercareProfileImage,
-  setAftercareProfileCoverImage
+  setAftercareProfileCoverImage,
+  addAssociatedContinuedCareProgram,
+  removeAssociatedContinuedCareProgram
 } from "./actions";
 
 const photoReadinessOptions = [
@@ -151,6 +153,22 @@ export default async function AftercareProfileDetailPage({
           subscriptionPlan: true
         }
       },
+      continuedCareAssociations: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          continuedCareProfile: {
+            select: {
+              id: true,
+              programName: true,
+              status: true,
+              publicCity: true,
+              publicState: true,
+              levelsOfCare: true,
+              acceptingNewPatients: true
+            }
+          }
+        }
+      },
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }] }
     }
   });
@@ -167,6 +185,26 @@ export default async function AftercareProfileDetailPage({
     photoLimit === "unlimited"
       ? "Upload unlimited profile images on your current plan. The cover image appears on search cards and at the top of the public profile."
       : `Upload up to ${photoLimit} images on your current plan. The cover image appears on search cards and at the top of the public profile.`;
+  const associatedContinuedCareIds = new Set(
+    profile.continuedCareAssociations.map((association) => association.continuedCareProfileId)
+  );
+  const continuedCareOptions = isSoberLiving
+    ? await prisma.aftercareProfile.findMany({
+        where: {
+          orgId: appUser.orgId,
+          type: "continued_care",
+          id: { notIn: Array.from(associatedContinuedCareIds) }
+        },
+        orderBy: { programName: "asc" },
+        select: {
+          id: true,
+          programName: true,
+          status: true,
+          publicCity: true,
+          publicState: true
+        }
+      })
+    : [];
 
   return (
     <main className="shell py-8">
@@ -522,6 +560,84 @@ export default async function AftercareProfileDetailPage({
               </button>
             </form>
           </Card>
+
+          {isSoberLiving ? (
+            <Card>
+              <h2 className="text-xl font-semibold">Associated continued care</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Link continued care programs from your organization that residents commonly step into or coordinate with.
+              </p>
+
+              {profile.continuedCareAssociations.length ? (
+                <div className="mt-5 grid gap-3">
+                  {profile.continuedCareAssociations.map((association) => (
+                    <div
+                      key={association.id}
+                      className="flex flex-col gap-3 rounded-md border border-border bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <p className="font-semibold">{association.continuedCareProfile.programName}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {[association.continuedCareProfile.publicCity, association.continuedCareProfile.publicState]
+                            .filter(Boolean)
+                            .join(", ") || "Location not listed"}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <Badge>{association.continuedCareProfile.status}</Badge>
+                          {association.continuedCareProfile.acceptingNewPatients ? (
+                            <Badge tone="success">Accepting patients</Badge>
+                          ) : null}
+                        </div>
+                      </div>
+                      <form action={removeAssociatedContinuedCareProgram}>
+                        <input name="profileId" type="hidden" value={profile.id} />
+                        <input name="associationId" type="hidden" value={association.id} />
+                        <ConfirmSubmitButton
+                          className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold text-destructive"
+                          message="Remove this associated continued care program?"
+                        >
+                          <Trash2 size={15} />
+                          Remove
+                        </ConfirmSubmitButton>
+                      </form>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="ac-panel-card mt-5 p-4 text-sm text-muted-foreground">
+                  No continued care programs linked yet.
+                </div>
+              )}
+
+              <form action={addAssociatedContinuedCareProgram} className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]">
+                <input name="profileId" type="hidden" value={profile.id} />
+                <select
+                  className={fieldClassName()}
+                  disabled={!continuedCareOptions.length}
+                  name="continuedCareProfileId"
+                  required
+                >
+                  <option value="">
+                    {continuedCareOptions.length ? "Choose a continued care program" : "No continued care programs available"}
+                  </option>
+                  {continuedCareOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.programName}
+                      {[option.publicCity, option.publicState].filter(Boolean).length
+                        ? ` - ${[option.publicCity, option.publicState].filter(Boolean).join(", ")}`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="focus-ring min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!continuedCareOptions.length}
+                >
+                  Add program
+                </button>
+              </form>
+            </Card>
+          ) : null}
         </section>
 
         <aside className="grid h-fit gap-4">

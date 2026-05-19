@@ -299,6 +299,67 @@ export async function removeAftercareProfileImage(formData: FormData) {
   redirect(profileHref(profile.id, "Image removed."));
 }
 
+export async function addAssociatedContinuedCareProgram(formData: FormData) {
+  const profileId = String(formData.get("profileId") || "");
+  const continuedCareProfileId = String(formData.get("continuedCareProfileId") || "");
+  const appUser = await getAftercareDashboardUser(profileHref(profileId));
+  const profile = await getOwnedProfile(profileId);
+  ensureProfileCanBeEdited(profile);
+
+  if (profile.type !== ProfileType.sober_living) {
+    redirect(profileHref(profile.id, "Associated continued care can only be added to sober living homes."));
+  }
+
+  const continuedCareProfile = await prisma.aftercareProfile.findFirst({
+    where: {
+      id: continuedCareProfileId,
+      orgId: appUser.orgId,
+      type: ProfileType.continued_care
+    },
+    select: { id: true }
+  });
+
+  if (!continuedCareProfile) {
+    redirect(profileHref(profile.id, "Choose a continued care program from your organization."));
+  }
+
+  await prisma.profileAssociation.upsert({
+    where: {
+      soberLivingProfileId_continuedCareProfileId: {
+        soberLivingProfileId: profile.id,
+        continuedCareProfileId: continuedCareProfile.id
+      }
+    },
+    create: {
+      soberLivingProfileId: profile.id,
+      continuedCareProfileId: continuedCareProfile.id
+    },
+    update: {}
+  });
+
+  revalidatePath(profileHref(profile.id));
+  revalidatePath(`/profiles/${profile.slug}`);
+  redirect(profileHref(profile.id, "Associated continued care program added."));
+}
+
+export async function removeAssociatedContinuedCareProgram(formData: FormData) {
+  const profileId = String(formData.get("profileId") || "");
+  const associationId = String(formData.get("associationId") || "");
+  const profile = await getOwnedProfile(profileId);
+  ensureProfileCanBeEdited(profile);
+
+  await prisma.profileAssociation.deleteMany({
+    where: {
+      id: associationId,
+      soberLivingProfileId: profile.id
+    }
+  });
+
+  revalidatePath(profileHref(profile.id));
+  revalidatePath(`/profiles/${profile.slug}`);
+  redirect(profileHref(profile.id, "Associated continued care program removed."));
+}
+
 export async function updateAftercareProfileStatus(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
   const nextStatus = String(formData.get("status") || "");

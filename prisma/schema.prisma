@@ -316,12 +316,27 @@ model AftercareProfile {
   availabilitySmsChecks AvailabilitySmsCheck[]
   adminReviews   AdminReview[]
   claimRequests  ProfileClaimRequest[]
+  continuedCareAssociations ProfileAssociation[] @relation("SoberLivingAssociations")
+  soberLivingAssociations ProfileAssociation[] @relation("ContinuedCareAssociations")
 
   @@index([orgId])
   @@index([type, status])
   @@index([publicCity, publicState])
   @@index([verificationTier])
   @@index([ownershipStatus])
+}
+
+model ProfileAssociation {
+  id                       String           @id @default(cuid())
+  soberLivingProfileId     String
+  continuedCareProfileId   String
+  createdAt                DateTime         @default(now())
+
+  soberLivingProfile       AftercareProfile @relation("SoberLivingAssociations", fields: [soberLivingProfileId], references: [id], onDelete: Cascade)
+  continuedCareProfile     AftercareProfile @relation("ContinuedCareAssociations", fields: [continuedCareProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([soberLivingProfileId, continuedCareProfileId])
+  @@index([continuedCareProfileId])
 }
 
 model ProfileClaimRequest {

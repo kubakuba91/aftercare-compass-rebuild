@@ -355,6 +355,37 @@ export default async function PublicProfilePage({
           subscriptionStatus: true
         }
       },
+      continuedCareAssociations: {
+        where: {
+          continuedCareProfile: {
+            status: "published"
+          }
+        },
+        orderBy: { createdAt: "asc" },
+        include: {
+          continuedCareProfile: {
+            select: {
+              id: true,
+              slug: true,
+              programName: true,
+              publicCity: true,
+              publicState: true,
+              levelsOfCare: true,
+              programTypes: true,
+              acceptingNewPatients: true,
+              organization: {
+                select: {
+                  type: true,
+                  subscriptionPlan: true,
+                  subscriptionStatus: true
+                }
+              },
+              verificationTier: true,
+              ownershipStatus: true
+            }
+          }
+        }
+      },
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }] }
     }
   });
@@ -560,6 +591,55 @@ export default async function PublicProfilePage({
                   {availabilityText(profile)}
                   {profile.availabilityNotes ? ` · ${profile.availabilityNotes}` : ""}
                 </p>
+              </Card>
+            ) : null}
+
+            {isSoberLiving && profile.continuedCareAssociations.length ? (
+              <Card>
+                <HandHeart className="text-primary" size={22} />
+                <h2 className="mt-3 text-xl font-semibold">Associated continued care</h2>
+                <div className="mt-4 grid gap-3">
+                  {profile.continuedCareAssociations.map((association) => {
+                    const continuedCareProfile = association.continuedCareProfile;
+                    const associatedLocation = [
+                      continuedCareProfile.publicCity,
+                      continuedCareProfile.publicState
+                    ].filter(Boolean).join(", ");
+
+                    return (
+                      <Link
+                        key={association.id}
+                        className="focus-ring block rounded-md border border-border bg-white p-4 transition hover:border-primary/40"
+                        href={`/profiles/${continuedCareProfile.slug}`}
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold">{continuedCareProfile.programName}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              {associatedLocation || "Location not listed"}
+                            </p>
+                          </div>
+                          <TrustBadge
+                            isVerified={canDisplayVerifiedBadge(
+                              continuedCareProfile.organization,
+                              continuedCareProfile
+                            )}
+                            verificationTier={continuedCareProfile.verificationTier}
+                          />
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Badge>Continued Care</Badge>
+                          {continuedCareProfile.acceptingNewPatients ? (
+                            <Badge tone="success">Accepting patients</Badge>
+                          ) : null}
+                          {continuedCareProfile.levelsOfCare.slice(0, 2).map((level) => (
+                            <Badge key={level}>{level}</Badge>
+                          ))}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
               </Card>
             ) : null}
 

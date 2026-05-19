@@ -45,14 +45,6 @@ import {
   removeAssociatedContinuedCareProgram
 } from "./actions";
 
-const photoReadinessOptions = [
-  "Exterior photo ready",
-  "Bedroom photo ready",
-  "Shared space photo ready",
-  "Kitchen photo ready",
-  "Team or program photo ready"
-];
-
 const editSections = [
   { id: "basics", label: "Basics" },
   { id: "availability", label: "Availability" },
@@ -476,50 +468,34 @@ export default async function AftercareProfileDetailPage({
                     <option value="no">No</option>
                   </select>
                 </label>
-                <label className={labelClassName()}>
-                  Medication administration
-                  <select className={fieldClassName()} defaultValue={textValue(profile.medicationAdministration)} name="medicationAdministration">
-                    <option value="">Not set</option>
-                    {medicationAdministrationOptions.map((option) => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
-                </label>
               </div>
               <label className={labelClassName()}>
                 Funding notes
                 <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
               </label>
               <CheckboxGroup label="MAT accepted" name="matAccepted" options={matOptions} selected={profile.matAccepted} />
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className={labelClassName()}>
-                  Medication restrictions
-                  <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.medicationRestrictions)} name="medicationRestrictions" />
-                </label>
-                <label className={labelClassName()}>
-                  Drug testing policy
-                  <select className={fieldClassName()} defaultValue={textValue(profile.drugTestingPolicy)} name="drugTestingPolicy">
-                    <option value="">Not set</option>
-                    {drugTestingPolicyOptions.map((option) => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <CheckboxGroup label="Photo readiness" name="photoReadiness" options={photoReadinessOptions} selected={profile.photoReadiness} />
-              <div className="grid gap-3">
-                <p className="text-sm font-medium">Video URLs</p>
-                {[0, 1, 2].map((index) => (
-                  <input
-                    key={index}
-                    className={fieldClassName()}
-                    defaultValue={profile.videoUrls[index] ?? ""}
-                    name="videoUrls"
-                    placeholder="https://..."
-                    type="url"
-                  />
-                ))}
-              </div>
+              <label className={labelClassName()}>
+                Medication administration
+                <select className={fieldClassName()} defaultValue={textValue(profile.medicationAdministration)} name="medicationAdministration">
+                  <option value="">Not set</option>
+                  {medicationAdministrationOptions.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </label>
+              <label className={labelClassName()}>
+                Medication restrictions
+                <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.medicationRestrictions)} name="medicationRestrictions" />
+              </label>
+              <label className={labelClassName()}>
+                Drug testing policy
+                <select className={fieldClassName()} defaultValue={textValue(profile.drugTestingPolicy)} name="drugTestingPolicy">
+                  <option value="">Not set</option>
+                  {drugTestingPolicyOptions.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </label>
               {isSoberLiving ? (
                 <label className="ac-panel-card flex items-start gap-3 p-4 text-sm">
                   <input
@@ -547,6 +523,21 @@ export default async function AftercareProfileDetailPage({
                     Current plan includes {formatPhotoLimit(photoLimit)}.
                   </span>
                 </div>
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                <p className="text-sm font-medium">Video URLs</p>
+                {[0, 1, 2].map((index) => (
+                  <input
+                    key={index}
+                    className={fieldClassName()}
+                    defaultValue={profile.videoUrls[index] ?? ""}
+                    form="profile-edit-form"
+                    name="videoUrls"
+                    placeholder="https://..."
+                    type="url"
+                  />
+                ))}
               </div>
 
               <form action={uploadAftercareProfileImages} className="mt-5 grid gap-3 rounded-md border border-dashed border-border bg-muted/30 p-4">

@@ -218,6 +218,26 @@ input[type="checkbox"] {
   color: var(--field-foreground);
 }
 
+.ac-multiselect__chip {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 1.5rem;
+  align-items: center;
+  border: 1px solid var(--separator);
+  border-radius: 999px;
+  background: var(--surface-secondary);
+  padding: 0 0.5rem;
+  color: var(--field-foreground);
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.ac-multiselect__chip--count {
+  background: rgb(from var(--primary) r g b / 0.1);
+  color: var(--primary);
+}
+
 .ac-multiselect__menu {
   border-top: 1px solid var(--separator);
   background: var(--overlay);

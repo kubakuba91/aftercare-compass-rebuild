@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, BedDouble, Building2, CheckCircle2, CircleAlert, Eye, ImagePlus, Save, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
+import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
 import {
   amenityOptions,
@@ -103,17 +104,12 @@ function CheckboxGroup({
   return (
     <fieldset className="grid gap-2">
       <legend className="text-sm font-medium">{label}</legend>
-      <div className="grid gap-2 md:grid-cols-2">
-        {options.map((option) => (
-          <label
-            key={option}
-            className="flex min-h-10 items-center gap-2 rounded-md border border-border bg-white px-3 text-sm"
-          >
-            <input defaultChecked={selected.includes(option)} name={name} type="checkbox" value={option} />
-            {option}
-          </label>
-        ))}
-      </div>
+      <MultiSelectDropdown
+        name={name}
+        options={options}
+        placeholder={`Select ${label.toLowerCase()}...`}
+        selected={selected}
+      />
     </fieldset>
   );
 }

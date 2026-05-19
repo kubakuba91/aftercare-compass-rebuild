@@ -71,8 +71,8 @@ export function PublicSearchHeader({
           />
         </Link>
         <form action="/search" className="relative grid flex-1 gap-2 md:grid-cols-[340px_1fr_180px_160px]">
-          <div className="grid rounded-md border border-[#12185f] bg-[#12185f] p-1 shadow-sm sm:grid-cols-2">
-            <label className="focus-within:ring-ring flex min-h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded border border-transparent px-4 text-center text-sm font-semibold text-white transition has-[:checked]:border-white has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:checked]:shadow-sm has-[:focus-visible]:ring-2">
+          <div className="grid h-14 rounded-lg border border-[#12185f] bg-[#12185f] p-1 shadow-sm sm:grid-cols-2">
+            <label className="focus-within:ring-ring flex h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-transparent px-4 text-center text-sm font-semibold text-white transition has-[:checked]:border-white has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:checked]:shadow-sm has-[:focus-visible]:ring-2">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "sober_living" || !defaultType}
@@ -82,7 +82,7 @@ export function PublicSearchHeader({
               />
               Sober Living
             </label>
-            <label className="focus-within:ring-ring flex min-h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded border border-transparent px-4 text-center text-sm font-semibold text-white transition has-[:checked]:border-white has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:checked]:shadow-sm has-[:focus-visible]:ring-2">
+            <label className="focus-within:ring-ring flex h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-transparent px-4 text-center text-sm font-semibold text-white transition has-[:checked]:border-white has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:checked]:shadow-sm has-[:focus-visible]:ring-2">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "continued_care"}
@@ -94,13 +94,13 @@ export function PublicSearchHeader({
             </label>
           </div>
           <input
-            className="min-h-11 rounded-md border border-border px-3 text-sm"
+            className="h-14 rounded-lg border border-border px-3 text-sm"
             defaultValue={defaultLocation}
             name="q"
             placeholder="City, state, or name"
           />
           <Link
-            className="focus-ring flex min-h-11 items-center gap-2 rounded-md border border-border bg-white px-3 text-sm font-semibold"
+            className="focus-ring flex h-14 items-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold"
             href={filtersHref}
           >
             <SlidersHorizontal size={16} />
@@ -109,7 +109,7 @@ export function PublicSearchHeader({
               {activeFilterCount ? `${activeFilterCount} active` : "None"}
             </span>
           </Link>
-          <button className="focus-ring min-h-11 rounded-md bg-[#12185f] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#0d1249]">
+          <button className="focus-ring h-14 rounded-lg bg-[#12185f] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#0d1249]">
             Search
           </button>
           {!showFilters && defaultAvailability === "available" ? (
@@ -229,7 +229,7 @@ export function PublicSearchHeader({
           ) : null}
         </form>
         <Link
-          className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-border px-3 text-sm font-semibold"
+          className="focus-ring inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm font-semibold"
           href={isSignedIn ? "/auth/complete" : "/sign-in"}
         >
           {isSignedIn ? (

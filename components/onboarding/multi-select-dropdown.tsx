@@ -9,6 +9,7 @@ type MultiSelectDropdownProps = {
   placeholder?: string;
   selected?: string[];
   closeOnSelect?: boolean;
+  maxVisibleChips?: number;
 };
 
 export function MultiSelectDropdown({
@@ -16,7 +17,8 @@ export function MultiSelectDropdown({
   options,
   placeholder = "Select options",
   selected = [],
-  closeOnSelect = false
+  closeOnSelect = false,
+  maxVisibleChips = 5
 }: MultiSelectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedValues, setSelectedValues] = useState(() => new Set(selected));
@@ -24,7 +26,7 @@ export function MultiSelectDropdown({
   const summary = useMemo(() => {
     return options.filter((option) => selectedValues.has(option));
   }, [options, selectedValues]);
-  const visibleSummary = summary.slice(0, 2);
+  const visibleSummary = summary.slice(0, maxVisibleChips);
   const hiddenSummaryCount = Math.max(0, summary.length - visibleSummary.length);
 
   function toggleValue(option: string) {

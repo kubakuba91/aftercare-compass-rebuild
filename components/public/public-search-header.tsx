@@ -70,7 +70,7 @@ export function PublicSearchHeader({
             width={48}
           />
         </Link>
-        <form action="/search" className="relative grid flex-1 gap-2 md:grid-cols-[340px_1fr_180px_160px]">
+        <form action="/search" className="relative grid flex-1 gap-2 md:grid-cols-[340px_1fr_128px_160px]">
           <div className="grid h-14 gap-1.5 overflow-hidden rounded-lg border border-[#12185f] bg-[#12185f] p-2 sm:grid-cols-2">
             <label className="focus-within:ring-ring flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-4 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
               <input
@@ -100,7 +100,7 @@ export function PublicSearchHeader({
             placeholder="City, state, or name"
           />
           <Link
-            className="focus-ring flex h-14 items-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold"
+            className="focus-ring flex h-14 items-center justify-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold"
             href={filtersHref}
           >
             <SlidersHorizontal size={16} />

@@ -176,7 +176,7 @@ export function ApproximateLocationMap({
         ) : null}
         {apiKey && !points.length ? (
           <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm leading-6 text-muted-foreground">
-            Location pins will appear once listings have public city and state data.
+            Location pins will appear once listings have public map coordinates.
           </div>
         ) : null}
       </div>

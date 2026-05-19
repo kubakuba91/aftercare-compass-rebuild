@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ProfileStatus, ProfileType } from "@prisma/client";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
-import { canManageAftercareProfile, canUseLiveAvailability } from "@/lib/feature-gates";
+import {
+  canManageAftercareProfile,
+  canUseLiveAvailability,
+  getAftercareProfileLimit,
+  isWithinPlanLimit
+} from "@/lib/feature-gates";
 import { geocodeProfileAddress, resetProfileCoordinates } from "@/lib/geocoding";
 import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { prisma } from "@/lib/prisma";
@@ -306,6 +311,24 @@ export async function updateAftercareProfileStatus(formData: FormData) {
 
     if (!readiness.canPublish) {
       redirect(profileHref(profile.id, readiness.blockers[0] || "Profile is not ready to publish."));
+    }
+
+    const profileLimit = getAftercareProfileLimit(profile.organization.subscriptionPlan);
+    const planCountedProfileCount = await prisma.aftercareProfile.count({
+      where: {
+        orgId: profile.orgId,
+        status: { not: ProfileStatus.unpublished }
+      }
+    });
+    const addedCount = profile.status === ProfileStatus.unpublished ? 1 : 0;
+
+    if (!isWithinPlanLimit(profileLimit, planCountedProfileCount, addedCount)) {
+      redirect(
+        profileHref(
+          profile.id,
+          "Your current plan has reached its profile limit. Upgrade before publishing another home or program."
+        )
+      );
     }
   }
 

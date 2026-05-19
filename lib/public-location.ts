@@ -24,7 +24,8 @@ export const cityCenters: Record<string, [number, number]> = {
   "wayne,pa": [40.044, -75.3877],
   "honey brook,pa": [40.0943, -75.9119],
   "west chester,pa": [39.9607, -75.6055],
-  "king of prussia,pa": [40.1013, -75.3836]
+  "king of prussia,pa": [40.1013, -75.3836],
+  "nashville,tn": [36.1627, -86.7816]
 };
 
 export const stateCenters: Record<string, [number, number]> = {
@@ -38,7 +39,8 @@ export const stateCenters: Record<string, [number, number]> = {
   WV: [38.5976, -80.4549],
   CT: [41.6032, -73.0877],
   MA: [42.4072, -71.3824],
-  DC: [38.9072, -77.0369]
+  DC: [38.9072, -77.0369],
+  TN: [35.5175, -86.5804]
 };
 
 const stateAliases: Record<string, string> = {
@@ -51,6 +53,7 @@ const stateAliases: Record<string, string> = {
   "new york": "NY",
   ohio: "OH",
   pennsylvania: "PA",
+  tennessee: "TN",
   virginia: "VA",
   "west virginia": "WV"
 };

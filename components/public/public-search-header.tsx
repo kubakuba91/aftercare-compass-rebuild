@@ -71,8 +71,8 @@ export function PublicSearchHeader({
           />
         </Link>
         <form action="/search" className="relative grid flex-1 gap-2 md:grid-cols-[340px_1fr_180px_160px]">
-          <div className="grid h-14 gap-1 overflow-hidden rounded-lg border border-[#12185f] bg-[#12185f] p-1 shadow-sm sm:grid-cols-2">
-            <label className="focus-within:ring-ring flex h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded-[10px] px-4 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
+          <div className="grid h-14 gap-1.5 overflow-hidden rounded-lg border border-[#12185f] bg-[#12185f] p-2 sm:grid-cols-2">
+            <label className="focus-within:ring-ring flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-4 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "sober_living" || !defaultType}
@@ -82,7 +82,7 @@ export function PublicSearchHeader({
               />
               Sober Living
             </label>
-            <label className="focus-within:ring-ring flex h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded-[10px] px-4 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
+            <label className="focus-within:ring-ring flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-4 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "continued_care"}

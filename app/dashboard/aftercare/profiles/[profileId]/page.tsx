@@ -36,9 +36,7 @@ import {
   redirectIncompleteAftercareOnboarding
 } from "@/lib/protected-routing";
 import {
-  updateAftercareProfileAvailability,
-  updateAftercareProfileBasics,
-  updateAftercareProfileContent,
+  updateAftercareProfileDetails,
   updateAftercareProfileStatus,
   uploadAftercareProfileImages,
   removeAftercareProfileImage,
@@ -58,8 +56,8 @@ const photoReadinessOptions = [
 const editSections = [
   { id: "basics", label: "Basics" },
   { id: "availability", label: "Availability" },
-  { id: "images", label: "Images" },
   { id: "content", label: "Content" },
+  { id: "images", label: "Images" },
   { id: "associated-care", label: "Associated Care", soberLivingOnly: true },
   { id: "publish", label: "Publish" }
 ];
@@ -301,11 +299,12 @@ export default async function AftercareProfileDetailPage({
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_360px]">
         <section className="grid gap-5">
+          <form action={updateAftercareProfileDetails} className="grid gap-5" id="profile-edit-form">
           <Card className="scroll-mt-24 overflow-hidden p-0" id="basics">
             <SectionIntro title="Program basics">
               Public identity, location, and admissions contact information.
             </SectionIntro>
-            <form action={updateAftercareProfileBasics} className="grid gap-4 p-5">
+            <div className="grid gap-4 p-5">
               <input name="profileId" type="hidden" value={profile.id} />
               <div className="grid gap-4 md:grid-cols-2">
                 <label className={labelClassName()}>
@@ -358,20 +357,16 @@ export default async function AftercareProfileDetailPage({
                   <input className={fieldClassName()} defaultValue={textValue(profile.stateLicenseNumber)} name="stateLicenseNumber" />
                 </label>
               </div>
-              <button className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground md:w-fit">
-                <Save size={16} />
-                Save basics
-              </button>
-            </form>
+            </div>
           </Card>
 
           <Card className="scroll-mt-24 overflow-hidden p-0" id="availability">
             <SectionIntro title="Availability">
               {isSoberLiving
-                ? "Beds, pricing, room types, and availability notes."
+                ? "Population served, beds, pricing, room types, and availability notes."
                 : "Intake status, care levels, program types, and hours."}
             </SectionIntro>
-            <form action={updateAftercareProfileAvailability} className="grid gap-4 p-5">
+            <div className="grid gap-4 p-5">
               <input name="profileId" type="hidden" value={profile.id} />
               {isSoberLiving ? (
                 <>
@@ -435,82 +430,6 @@ export default async function AftercareProfileDetailPage({
                 Availability notes
                 <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.availabilityNotes)} name="availabilityNotes" />
               </label>
-              <button className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground md:w-fit">
-                <Save size={16} />
-                Save availability
-              </button>
-            </form>
-          </Card>
-
-          <Card className="scroll-mt-24 overflow-hidden p-0" id="images">
-            <SectionIntro title="Profile images">
-              {photoLimitCopy}
-            </SectionIntro>
-            <div className="p-5">
-              <div className="flex items-start gap-3">
-                <ImagePlus className="mt-1 text-primary" size={24} />
-                <div>
-                  <span className="mt-2 block text-xs font-semibold text-muted-foreground">
-                    Current plan includes {formatPhotoLimit(photoLimit)}.
-                  </span>
-                </div>
-              </div>
-
-              <form action={uploadAftercareProfileImages} className="mt-5 grid gap-3 rounded-md border border-dashed border-border bg-muted/30 p-4">
-                <input name="profileId" type="hidden" value={profile.id} />
-                <ProfileImageUploader currentImageCount={profile.images.length} photoLimit={photoLimit} />
-              </form>
-
-            {profile.images.length ? (
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
-                {profile.images.map((image) => (
-                  <div key={image.id} className="overflow-hidden rounded-md border border-border bg-white">
-                    <div className="relative aspect-[4/3] bg-muted">
-                      <Image
-                        alt={image.altText || profile.programName}
-                        className="object-cover"
-                        fill
-                        sizes="(min-width: 1024px) 320px, 100vw"
-                        src={image.url}
-                        unoptimized
-                      />
-                      {image.isCover ? (
-                        <Badge className="absolute left-3 top-3" tone="verified">
-                          Cover
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <div className="flex flex-wrap gap-2 p-3">
-                      {!image.isCover ? (
-                        <form action={setAftercareProfileCoverImage}>
-                          <input name="profileId" type="hidden" value={profile.id} />
-                          <input name="imageId" type="hidden" value={image.id} />
-                          <button className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold">
-                            <Star size={15} />
-                            Make cover
-                          </button>
-                        </form>
-                      ) : null}
-                      <form action={removeAftercareProfileImage}>
-                        <input name="profileId" type="hidden" value={profile.id} />
-                        <input name="imageId" type="hidden" value={image.id} />
-                        <ConfirmSubmitButton
-                          className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold text-destructive"
-                          message="Remove this image from the profile?"
-                        >
-                          <Trash2 size={15} />
-                          Remove
-                        </ConfirmSubmitButton>
-                      </form>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="ac-panel-card mt-5 p-4 text-sm text-muted-foreground">
-                No images uploaded yet.
-              </div>
-            )}
             </div>
           </Card>
 
@@ -518,7 +437,7 @@ export default async function AftercareProfileDetailPage({
             <SectionIntro title="Profile content">
               Story, services, fit, payment, clinical details, and public-facing notes.
             </SectionIntro>
-            <form action={updateAftercareProfileContent} className="grid gap-5 p-5">
+            <div className="grid gap-5 p-5">
               <input name="profileId" type="hidden" value={profile.id} />
               <label className={labelClassName()}>
                 Description
@@ -614,11 +533,80 @@ export default async function AftercareProfileDetailPage({
                   Good Neighbor Policy acknowledged
                 </label>
               ) : null}
-              <button className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground md:w-fit">
-                <Save size={16} />
-                Save content
-              </button>
-            </form>
+            </div>
+          </Card>
+          </form>
+
+          <Card className="scroll-mt-24 overflow-hidden p-0" id="images">
+            <SectionIntro title="Profile images">
+              {photoLimitCopy}
+            </SectionIntro>
+            <div className="p-5">
+              <div className="flex items-start gap-3">
+                <ImagePlus className="mt-1 text-primary" size={24} />
+                <div>
+                  <span className="mt-2 block text-xs font-semibold text-muted-foreground">
+                    Current plan includes {formatPhotoLimit(photoLimit)}.
+                  </span>
+                </div>
+              </div>
+
+              <form action={uploadAftercareProfileImages} className="mt-5 grid gap-3 rounded-md border border-dashed border-border bg-muted/30 p-4">
+                <input name="profileId" type="hidden" value={profile.id} />
+                <ProfileImageUploader currentImageCount={profile.images.length} photoLimit={photoLimit} />
+              </form>
+
+              {profile.images.length ? (
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {profile.images.map((image) => (
+                    <div key={image.id} className="overflow-hidden rounded-md border border-border bg-white">
+                      <div className="relative aspect-[4/3] bg-muted">
+                        <Image
+                          alt={image.altText || profile.programName}
+                          className="object-cover"
+                          fill
+                          sizes="(min-width: 1024px) 320px, 100vw"
+                          src={image.url}
+                          unoptimized
+                        />
+                        {image.isCover ? (
+                          <Badge className="absolute left-3 top-3" tone="verified">
+                            Cover
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <div className="flex flex-wrap gap-2 p-3">
+                        {!image.isCover ? (
+                          <form action={setAftercareProfileCoverImage}>
+                            <input name="profileId" type="hidden" value={profile.id} />
+                            <input name="imageId" type="hidden" value={image.id} />
+                            <button className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold">
+                              <Star size={15} />
+                              Make cover
+                            </button>
+                          </form>
+                        ) : null}
+                        <form action={removeAftercareProfileImage}>
+                          <input name="profileId" type="hidden" value={profile.id} />
+                          <input name="imageId" type="hidden" value={image.id} />
+                          <ConfirmSubmitButton
+                            className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold text-destructive"
+                            message="Remove this image from the profile?"
+                          >
+                            <Trash2 size={15} />
+                            Remove
+                          </ConfirmSubmitButton>
+                        </form>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="ac-panel-card mt-5 p-4 text-sm text-muted-foreground">
+                  No images uploaded yet.
+                </div>
+              )}
+            </div>
           </Card>
 
           {isSoberLiving ? (
@@ -702,6 +690,14 @@ export default async function AftercareProfileDetailPage({
         </section>
 
         <aside className="grid h-fit gap-4 lg:sticky lg:top-6">
+          <button
+            className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+            form="profile-edit-form"
+          >
+            <Save size={16} />
+            Save changes
+          </button>
+
           <Card className="scroll-mt-24" id="publish">
             <ShieldCheck className="text-primary" size={24} />
             <h2 className="mt-3 font-semibold">Publish readiness</h2>

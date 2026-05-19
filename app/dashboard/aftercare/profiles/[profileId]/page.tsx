@@ -443,20 +443,18 @@ export default async function AftercareProfileDetailPage({
                 Description
                 <RichTextEditor initialValue={richTextHtml(profile.description)} name="description" required />
               </label>
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className={labelClassName()}>
-                  House rules
-                  <RichTextEditor initialValue={richTextHtml(profile.houseRulesText)} name="houseRulesText" />
-                </label>
-                <label className={labelClassName()}>
-                  Referral fit notes
-                  <textarea className="min-h-28 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.referralFitNotes)} name="referralFitNotes" />
-                </label>
-              </div>
+              <label className={labelClassName()}>
+                House rules
+                <RichTextEditor initialValue={richTextHtml(profile.houseRulesText)} name="houseRulesText" />
+              </label>
+              <label className={labelClassName()}>
+                Referral fit notes
+                <textarea className="min-h-44 rounded-md border border-border bg-white p-3 text-sm leading-6" defaultValue={textValue(profile.referralFitNotes)} name="referralFitNotes" />
+              </label>
               {!isSoberLiving ? (
                 <label className={labelClassName()}>
                   Referral process
-                  <textarea className="min-h-28 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.referralProcessDescription)} name="referralProcessDescription" />
+                  <textarea className="min-h-44 rounded-md border border-border bg-white p-3 text-sm leading-6" defaultValue={textValue(profile.referralProcessDescription)} name="referralProcessDescription" />
                 </label>
               ) : null}
               {!isSoberLiving ? (

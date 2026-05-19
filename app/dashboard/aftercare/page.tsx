@@ -6,9 +6,12 @@ import {
   CreditCard,
   Home,
   Info,
+  LockKeyhole,
   MailPlus,
   Pencil,
   Settings,
+  TrendingDown,
+  TrendingUp,
   UserCircle,
   Users,
   X
@@ -28,7 +31,12 @@ import {
 } from "@/components/ui/row-actions-menu";
 import { billingPlans, formatBillingStatus, formatPlanPrice, getBillingPlan } from "@/lib/billing";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
-import { canUseLiveAvailability, canUsePlacementTracking, getAftercarePlan } from "@/lib/feature-gates";
+import {
+  canUseLiveAvailability,
+  canUseOperationalAnalytics,
+  canUsePlacementTracking,
+  getAftercarePlan
+} from "@/lib/feature-gates";
 import { formatPhoneForDisplay } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 import {
@@ -238,6 +246,164 @@ function addProfileHref(organizationType: string | undefined) {
   return "/onboarding/aftercare/sober-living/1?new=1";
 }
 
+type AnalyticsWindow = 7 | 14 | 30;
+
+function parseAnalyticsWindow(value: string | undefined): AnalyticsWindow {
+  if (value === "7" || value === "14") {
+    return Number(value) as AnalyticsWindow;
+  }
+
+  return 30;
+}
+
+function overviewAnalyticsHref(profileId: string | undefined, days: AnalyticsWindow) {
+  const params = new URLSearchParams({
+    tab: "overview",
+    analyticsWindow: String(days)
+  });
+
+  if (profileId) {
+    params.set("profileId", profileId);
+  }
+
+  return `/dashboard/aftercare?${params.toString()}`;
+}
+
+function profileBedStats(profile: {
+  type: string;
+  totalBeds: number | null;
+  bedsAvailable: number | null;
+  bedsMen: number | null;
+  bedsMenAvailable: number | null;
+  bedsWomen: number | null;
+  bedsWomenAvailable: number | null;
+  bedsLgbtq: number | null;
+  bedsLgbtqAvailable: number | null;
+}): { total: number; available: number } {
+  if (profile.type !== "sober_living") {
+    return { total: 0, available: 0 };
+  }
+
+  const populationBeds = [
+    { total: profile.bedsMen, available: profile.bedsMenAvailable },
+    { total: profile.bedsWomen, available: profile.bedsWomenAvailable },
+    { total: profile.bedsLgbtq, available: profile.bedsLgbtqAvailable }
+  ].filter((bed) => (bed.total ?? 0) > 0);
+
+  if (populationBeds.length) {
+    return populationBeds.reduce<{ total: number; available: number }>(
+      (totals, bed) => {
+        const total = bed.total ?? 0;
+        const available = Math.min(Math.max(bed.available ?? 0, 0), total);
+
+        return {
+          total: totals.total + total,
+          available: totals.available + available
+        };
+      },
+      { total: 0, available: 0 }
+    );
+  }
+
+  const total = profile.totalBeds ?? 0;
+  return {
+    total,
+    available: Math.min(Math.max(profile.bedsAvailable ?? 0, 0), total)
+  };
+}
+
+function aggregateBedStats(
+  profiles: Array<Parameters<typeof profileBedStats>[0]>
+): { total: number; available: number } {
+  return profiles.reduce(
+    (totals, profile) => {
+      const profileTotals = profileBedStats(profile);
+
+      return {
+        total: totals.total + profileTotals.total,
+        available: totals.available + profileTotals.available
+      };
+    },
+    { total: 0, available: 0 }
+  );
+}
+
+function referralWindowComparison(
+  referrals: Array<{ createdAt: Date }>,
+  days: AnalyticsWindow
+) {
+  const now = Date.now();
+  const windowMs = days * 24 * 60 * 60 * 1000;
+  const currentStart = now - windowMs;
+  const previousStart = now - windowMs * 2;
+
+  const current = referrals.filter((referral) => referral.createdAt.getTime() >= currentStart).length;
+  const previous = referrals.filter((referral) => {
+    const createdAt = referral.createdAt.getTime();
+
+    return createdAt >= previousStart && createdAt < currentStart;
+  }).length;
+
+  if (previous === 0) {
+    return {
+      current,
+      previous,
+      percentChange: current > 0 ? 100 : 0
+    };
+  }
+
+  return {
+    current,
+    previous,
+    percentChange: Math.round(((current - previous) / previous) * 100)
+  };
+}
+
+function formatPercentChange(value: number) {
+  if (value > 0) {
+    return `+${value}%`;
+  }
+
+  return `${value}%`;
+}
+
+function AnalyticsMetricCard({
+  label,
+  value,
+  detail,
+  locked,
+  trend
+}: {
+  label: string;
+  value: string | number;
+  detail: string;
+  locked?: boolean;
+  trend?: "up" | "down" | "flat";
+}) {
+  const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : null;
+
+  return (
+    <div className={cn("ac-metric-card relative overflow-hidden p-4", locked ? "bg-surface-secondary" : null)}>
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        {locked ? <LockKeyhole className="text-muted-foreground" size={16} /> : null}
+        {!locked && TrendIcon ? (
+          <TrendIcon
+            className={trend === "up" ? "text-success" : "text-danger"}
+            size={16}
+          />
+        ) : null}
+      </div>
+      <p className={cn("mt-3 text-3xl font-semibold tracking-tight", locked ? "text-muted-foreground" : null)}>
+        {locked ? "Locked" : value}
+      </p>
+      <p className="mt-2 text-xs leading-5 text-muted-foreground">
+        {locked ? "Upgrade to Professional to unlock." : detail}
+      </p>
+    </div>
+  );
+}
+
 export default async function AftercareDashboardPage({
   searchParams
 }: {
@@ -253,6 +419,7 @@ export default async function AftercareDashboardPage({
     billingMessage?: string;
     billingView?: string;
     homesMessage?: string;
+    analyticsWindow?: string;
   }>;
 }) {
   const appUser = await getAftercareDashboardUser();
@@ -330,7 +497,7 @@ export default async function AftercareDashboardPage({
         aftercareOrgId: appUser.orgId
       },
       orderBy: { createdAt: "desc" },
-      take: 20,
+      take: 200,
       select: {
         id: true,
         aftercareProfileId: true,
@@ -407,6 +574,20 @@ export default async function AftercareDashboardPage({
   const totalBeds = liveAvailabilityProfiles.reduce((sum, profile) => sum + (profile.totalBeds ?? 0), 0);
   const availableBeds = liveAvailabilityProfiles.reduce((sum, profile) => sum + (profile.bedsAvailable ?? 0), 0);
   const newLeadCount = scopedLeads.filter((lead) => lead.status === "new").length;
+  const analyticsWindow = parseAnalyticsWindow(query.analyticsWindow);
+  const operationalAnalyticsUnlocked = canUseOperationalAnalytics(appUser.organization);
+  const scopedBedStats = aggregateBedStats(scopedProfiles);
+  const occupiedBeds = Math.max(scopedBedStats.total - scopedBedStats.available, 0);
+  const occupancyRate = scopedBedStats.total
+    ? Math.round((occupiedBeds / scopedBedStats.total) * 100)
+    : null;
+  const referralAnalytics = referralWindowComparison(scopedReferrals, analyticsWindow);
+  const referralTrend =
+    referralAnalytics.percentChange > 0
+      ? "up"
+      : referralAnalytics.percentChange < 0
+        ? "down"
+        : "flat";
   const staleAvailabilityCount = scopedProfiles.filter((profile) => {
     const lastUpdated =
       profile.type === "sober_living"
@@ -579,6 +760,69 @@ export default async function AftercareDashboardPage({
         <section className="min-w-0">
           {activeTab === "overview" ? (
             <div className="grid gap-5">
+              <Card>
+                <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                  <div>
+                    <h2 className="text-xl font-semibold">Analytics snapshot</h2>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      {selectedProfile
+                        ? `Showing ${selectedProfile.programName}.`
+                        : "Showing all active homes and programs."}
+                    </p>
+                  </div>
+                  <div className="inline-flex w-fit rounded-full bg-surface-secondary p-1 text-xs font-semibold">
+                    {([7, 14, 30] as const).map((days) => (
+                      <Link
+                        key={days}
+                        className={cn(
+                          "focus-ring rounded-full px-3 py-1.5 transition",
+                          analyticsWindow === days
+                            ? "bg-surface text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                        href={overviewAnalyticsHref(selectedProfile?.id, days)}
+                      >
+                        {days}d
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <AnalyticsMetricCard
+                    detail={
+                      occupancyRate === null
+                        ? "No bed-based profiles in this view yet."
+                        : `${occupiedBeds} occupied of ${scopedBedStats.total} total beds.`
+                    }
+                    label="Occupancy rate"
+                    locked={!operationalAnalyticsUnlocked}
+                    value={occupancyRate === null ? "N/A" : `${occupancyRate}%`}
+                  />
+                  <AnalyticsMetricCard
+                    detail={`${referralAnalytics.current} referrals in the last ${analyticsWindow} days vs ${referralAnalytics.previous} previous.`}
+                    label="Referral activity"
+                    locked={!operationalAnalyticsUnlocked}
+                    trend={referralTrend}
+                    value={formatPercentChange(referralAnalytics.percentChange)}
+                  />
+                  <AnalyticsMetricCard
+                    detail={`${openReferrals.length} referrals and ${newLeadCount} public leads need review.`}
+                    label="Open requests"
+                    value={openReferrals.length + newLeadCount}
+                  />
+                  <AnalyticsMetricCard
+                    detail={
+                      totalBeds
+                        ? `${availableBeds} of ${totalBeds} live beds are currently marked available.`
+                        : "No live bed availability in this view."
+                    }
+                    label="Beds available"
+                    value={totalBeds ? availableBeds : "N/A"}
+                  />
+                </div>
+              </Card>
+
               <Card>
                 <div className="grid gap-5 xl:grid-cols-[320px_1fr]">
                   <div>

@@ -105,9 +105,11 @@ export function PublicSearchHeader({
           >
             <SlidersHorizontal size={16} />
             Filters
-            <span className="font-normal text-muted-foreground">
-              {activeFilterCount ? `${activeFilterCount} active` : "None"}
-            </span>
+            {activeFilterCount ? (
+              <span className="rounded-full bg-[#12185f]/10 px-2 py-0.5 text-xs font-semibold text-[#12185f]">
+                {activeFilterCount}
+              </span>
+            ) : null}
           </Link>
           <button className="focus-ring h-14 rounded-lg bg-[#12185f] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#0d1249]">
             Search

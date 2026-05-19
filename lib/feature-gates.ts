@@ -146,6 +146,21 @@ export function canUseLiveAvailability(
   return plan.liveAvailability && isSubscriptionUsable(organization.subscriptionStatus);
 }
 
+export function canUseOperationalAnalytics(organization: OrganizationGateContext | null | undefined) {
+  if (
+    !organization ||
+    (
+      organization.type !== OrganizationType.aftercare_sober_living &&
+      organization.type !== OrganizationType.aftercare_continued_care
+    )
+  ) {
+    return false;
+  }
+
+  return getAftercarePlan(organization.subscriptionPlan).operationalAnalytics &&
+    isSubscriptionUsable(organization.subscriptionStatus);
+}
+
 export function canRequestVerification(
   organization: OrganizationGateContext | null | undefined,
   profile?: ProfileGateContext | null

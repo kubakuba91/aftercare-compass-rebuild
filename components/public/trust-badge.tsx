@@ -3,11 +3,16 @@
 import { useCallback, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 
-export function TrustBadge({ verificationTier }: { verificationTier: number }) {
+type TrustBadgeProps = {
+  verificationTier?: number | null;
+  isVerified?: boolean;
+};
+
+export function TrustBadge({ verificationTier = 1, isVerified: verifiedOverride }: TrustBadgeProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ left: 16, top: 16 });
-  const isVerified = verificationTier > 1;
+  const isVerified = typeof verifiedOverride === "boolean" ? verifiedOverride : (verificationTier ?? 1) > 1;
   const label = isVerified ? "Verified" : "Self-reported";
   const description = isVerified
     ? "Aftercare Compass has reviewed this provider's trust details."

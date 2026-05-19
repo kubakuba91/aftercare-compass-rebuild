@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
-import { Prisma, ProfileType, Role } from "@prisma/client";
+import { Prisma, ProfileOwnershipStatus, ProfileType, Role, SubscriptionStatus } from "@prisma/client";
 import { MapPin } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
@@ -10,7 +10,7 @@ import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { canUseLiveAvailability } from "@/lib/feature-gates";
+import { canDisplayVerifiedBadge, canUseLiveAvailability } from "@/lib/feature-gates";
 import { prisma } from "@/lib/prisma";
 import { approximatePublicPoint, milesBetween, searchCenterFromQuery } from "@/lib/public-location";
 import { richTextToPlainText } from "@/lib/rich-text";
@@ -316,7 +316,14 @@ export default async function SearchPage({
   }
 
   if (verified) {
-    andFilters.push({ verificationTier: { gt: 1 } });
+    andFilters.push({
+      verificationTier: { gt: 1 },
+      ownershipStatus: ProfileOwnershipStatus.claimed,
+      organization: {
+        subscriptionPlan: { in: ["verified", "network"] },
+        subscriptionStatus: { in: [SubscriptionStatus.active, SubscriptionStatus.trialing] }
+      }
+    });
   }
 
   if (minPrice !== undefined || maxPrice !== undefined) {
@@ -485,6 +492,7 @@ export default async function SearchPage({
               );
               const showLiveAvailability =
                 profile.type !== ProfileType.sober_living || canUseLiveAvailability(profile.organization, profile);
+              const showVerifiedBadge = canDisplayVerifiedBadge(profile.organization, profile);
               const profileIsAvailable =
                 profile.type === ProfileType.sober_living
                   ? showLiveAvailability && Boolean(profile.bedsAvailable)
@@ -529,7 +537,7 @@ export default async function SearchPage({
                     <div className="grid gap-3 p-4">
                       <div className="flex flex-wrap items-start gap-2 pr-12 md:flex-nowrap md:items-center">
                         <h2 className="min-w-0 flex-1 text-lg font-semibold leading-tight">{profile.programName}</h2>
-                        <TrustBadge verificationTier={profile.verificationTier} />
+                        <TrustBadge isVerified={showVerifiedBadge} verificationTier={profile.verificationTier} />
                         <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
                         {showLiveAvailability ? (
                           <Badge tone={profileIsAvailable ? "success" : "warning"}>

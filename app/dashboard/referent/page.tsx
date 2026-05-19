@@ -20,7 +20,7 @@ import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-butto
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { billingPlans, formatBillingStatus, formatPlanPrice, getBillingPlan } from "@/lib/billing";
-import { getReferentTeamLimit } from "@/lib/feature-gates";
+import { canDisplayVerifiedBadge, getReferentTeamLimit } from "@/lib/feature-gates";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
 import { maxReferentStep } from "@/lib/referent-onboarding";
@@ -196,7 +196,15 @@ export default async function ReferentDashboardPage({
             bedsAvailable: true,
             acceptingNewPatients: true,
             pricePerWeek: true,
-            verificationTier: true
+            verificationTier: true,
+            ownershipStatus: true,
+            organization: {
+              select: {
+                type: true,
+                subscriptionPlan: true,
+                subscriptionStatus: true
+              }
+            }
           }
         }
       }
@@ -537,7 +545,13 @@ export default async function ReferentDashboardPage({
           </p>
           {favorites.length ? (
             <div className="mt-4 grid gap-3">
-              {favorites.map((favorite) => (
+              {favorites.map((favorite) => {
+                const favoriteShowsVerifiedBadge = canDisplayVerifiedBadge(
+                  favorite.profile.organization,
+                  favorite.profile
+                );
+
+                return (
                 <div key={favorite.id} className="ac-panel-card p-3 text-sm">
                   <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
                     <div>
@@ -552,8 +566,8 @@ export default async function ReferentDashboardPage({
                         {[favorite.profile.publicCity, favorite.profile.publicState].filter(Boolean).join(", ")}
                       </p>
                     </div>
-                    <Badge tone={favorite.profile.verificationTier > 1 ? "verified" : "neutral"}>
-                      {favorite.profile.verificationTier > 1 ? "Verified" : "Self-reported"}
+                    <Badge tone={favoriteShowsVerifiedBadge ? "verified" : "neutral"}>
+                      {favoriteShowsVerifiedBadge ? "Verified" : "Self-reported"}
                     </Badge>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -570,7 +584,8 @@ export default async function ReferentDashboardPage({
                     View profile
                   </Link>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="mt-2 text-sm leading-6 text-muted-foreground">

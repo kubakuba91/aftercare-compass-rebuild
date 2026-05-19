@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
 import { getCurrentAppUser } from "@/lib/current-user";
-import { canReceiveDirectReferrals, canSubmitReferrals, canUseLiveAvailability } from "@/lib/feature-gates";
+import { canDisplayVerifiedBadge, canReceiveDirectReferrals, canSubmitReferrals, canUseLiveAvailability } from "@/lib/feature-gates";
 import { formatPhoneForDisplay, normalizePhoneNumber } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 import { richTextHtml } from "@/lib/rich-text";
@@ -374,6 +374,7 @@ export default async function PublicProfilePage({
 
   const isSoberLiving = profile.type === "sober_living";
   const profileShowsLiveAvailability = !isSoberLiving || canUseLiveAvailability(profile.organization, profile);
+  const profileShowsVerifiedBadge = canDisplayVerifiedBadge(profile.organization, profile);
   const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
   const visiblePopulationBeds = getVisiblePopulationBeds(profile);
   const priceLabel = formatPricePerWeek(profile.pricePerWeek);
@@ -426,7 +427,7 @@ export default async function PublicProfilePage({
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-3xl font-semibold">{profile.programName}</h1>
                 <div className="flex flex-wrap gap-2">
-                  <TrustBadge verificationTier={profile.verificationTier} />
+                  <TrustBadge isVerified={profileShowsVerifiedBadge} verificationTier={profile.verificationTier} />
                   <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
                   <Badge>{isSoberLiving ? "Sober Living" : "Continued Care"}</Badge>
                   {profileShowsLiveAvailability ? (

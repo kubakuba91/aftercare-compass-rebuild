@@ -17,6 +17,7 @@ type OrganizationGateContext = {
 
 type ProfileGateContext = {
   ownershipStatus?: ProfileOwnershipStatus | null;
+  verificationTier?: number | null;
 };
 
 export function normalizeAftercarePlanKey(planKey: string | null | undefined): AftercarePlanKey {
@@ -155,6 +156,38 @@ export function canRequestVerification(
 
   return getAftercarePlan(organization.subscriptionPlan).verificationEligible &&
     isSubscriptionUsable(organization.subscriptionStatus);
+}
+
+export function canDisplayVerifiedBadge(
+  organization: OrganizationGateContext | null | undefined,
+  profile?: ProfileGateContext | null
+) {
+  if (
+    !organization ||
+    !profile ||
+    (
+      organization.type !== OrganizationType.aftercare_sober_living &&
+      organization.type !== OrganizationType.aftercare_continued_care
+    )
+  ) {
+    return false;
+  }
+
+  if ((profile.verificationTier ?? 1) <= 1) {
+    return false;
+  }
+
+  if (profile.ownershipStatus && profile.ownershipStatus !== ProfileOwnershipStatus.claimed) {
+    return false;
+  }
+
+  const planKey = normalizeAftercarePlanKey(organization.subscriptionPlan);
+  const hasVerifiedPlan = planKey === "verified" || planKey === "network";
+  const hasActiveSubscription =
+    organization.subscriptionStatus === SubscriptionStatus.active ||
+    organization.subscriptionStatus === SubscriptionStatus.trialing;
+
+  return hasVerifiedPlan && hasActiveSubscription;
 }
 
 export function canUsePlacementTracking(organization: OrganizationGateContext | null | undefined) {

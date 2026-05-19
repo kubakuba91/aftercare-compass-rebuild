@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Prisma, ProfileStatus, ProfileType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getAftercareProfileLimit, isWithinPlanLimit } from "@/lib/feature-gates";
+import { geocodeProfileAddress, resetProfileCoordinates } from "@/lib/geocoding";
 import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
@@ -152,6 +153,27 @@ async function createProfileAdminReview(tx: Prisma.TransactionClient, input: {
       profileId: input.profileId,
       submittedByEmail: input.submittedByEmail
     }
+  });
+}
+
+async function updateProfileCoordinatesForAddress(input: {
+  profileId: string;
+  streetAddress?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+}) {
+  const coordinates = await geocodeProfileAddress({
+    idSeed: input.profileId,
+    streetAddress: input.streetAddress,
+    city: input.city,
+    state: input.state,
+    zip: input.zip
+  });
+
+  await prisma.aftercareProfile.update({
+    where: { id: input.profileId },
+    data: coordinates ?? resetProfileCoordinates()
   });
 }
 
@@ -308,6 +330,7 @@ export async function createAftercareProfileDraft(formData: FormData) {
     parsed.profileType === "sober_living" ? ProfileType.sober_living : ProfileType.continued_care;
   const programName = parsed.programName;
   const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
+  let geocodeTarget: { profileId: string; streetAddress: string; city: string; state: string; zip: string } | null = null;
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -355,6 +378,13 @@ export async function createAftercareProfileDraft(formData: FormData) {
           onboardingCompletedAt: new Date()
         }
       });
+      geocodeTarget = {
+        profileId: profile.id,
+        streetAddress: parsed.streetAddress,
+        city: parsed.city,
+        state: parsed.state,
+        zip: parsed.zip
+      };
 
       await createProfileAdminReview(tx, {
         orgId: organization.id,
@@ -379,6 +409,10 @@ export async function createAftercareProfileDraft(formData: FormData) {
     redirect("/setup?missing=database&from=aftercare-profile");
   }
 
+  if (geocodeTarget) {
+    await updateProfileCoordinatesForAddress(geocodeTarget);
+  }
+
   redirect("/dashboard/aftercare");
 }
 
@@ -388,6 +422,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
   }
 
   let destination = stepRedirect(step);
+  let geocodeTarget: { profileId: string; streetAddress: string; city: string; state: string; zip: string } | null = null;
 
   try {
     const draft = await getOrCreateOnboardingDraft("sober_living", false);
@@ -644,6 +679,13 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
               },
               select: { id: true }
             });
+          geocodeTarget = {
+            profileId: profile.id,
+            streetAddress: String(finalDraft.streetAddress || ""),
+            city: String(finalDraft.city || ""),
+            state: String(finalDraft.state || ""),
+            zip: String(finalDraft.zip || "")
+          };
 
           await createProfileAdminReview(tx, {
             orgId,
@@ -669,6 +711,10 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
   } catch (error) {
     console.error("Sober living onboarding step save failed", error);
     destination = stepRedirect(step, "Please check the highlighted fields and try again.");
+  }
+
+  if (geocodeTarget) {
+    await updateProfileCoordinatesForAddress(geocodeTarget);
   }
 
   redirect(destination);
@@ -761,6 +807,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
   }
 
   let destination = continuedCareStepRedirect(step);
+  let geocodeTarget: { profileId: string; streetAddress: string; city: string; state: string; zip: string } | null = null;
 
   try {
     const draft = await getOrCreateOnboardingDraft("continued_care", false);
@@ -961,6 +1008,13 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
           select: { id: true, orgId: true, programName: true }
         });
         uploadTarget = profile;
+        geocodeTarget = {
+          profileId: profile.id,
+          streetAddress: String(finalDraft.streetAddress || ""),
+          city: String(finalDraft.city || ""),
+          state: String(finalDraft.state || ""),
+          zip: String(finalDraft.zip || "")
+        };
 
         await createProfileAdminReview(tx, {
           orgId,
@@ -996,6 +1050,10 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
   } catch (error) {
     console.error("Continued care onboarding step save failed", error);
     destination = continuedCareStepRedirect(step, "Please check the highlighted fields and try again.");
+  }
+
+  if (geocodeTarget) {
+    await updateProfileCoordinatesForAddress(geocodeTarget);
   }
 
   redirect(destination);

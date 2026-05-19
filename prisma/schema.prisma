@@ -244,6 +244,9 @@ model AftercareProfile {
   publicState                     String
   latitude                        Decimal?
   longitude                       Decimal?
+  publicLatitude                  Decimal?
+  publicLongitude                 Decimal?
+  geocodedAt                      DateTime?
   admissionsContactPhone          String?
   admissionsContactEmail          String?
   preferredContactMethod          String?

@@ -4,6 +4,8 @@ export type PublicLocationInput = {
   publicState: string;
   latitude: number | null;
   longitude: number | null;
+  publicLatitude?: number | null;
+  publicLongitude?: number | null;
 };
 
 export type PublicPoint = PublicLocationInput & {
@@ -19,6 +21,7 @@ export const cityCenters: Record<string, [number, number]> = {
   "allentown,pa": [40.6023, -75.4714],
   "reading,pa": [40.3356, -75.9269],
   "york,pa": [39.9626, -76.7277],
+  "wayne,pa": [40.044, -75.3877],
   "honey brook,pa": [40.0943, -75.9119],
   "west chester,pa": [39.9607, -75.6055],
   "king of prussia,pa": [40.1013, -75.3836]
@@ -38,6 +41,23 @@ export const stateCenters: Record<string, [number, number]> = {
   DC: [38.9072, -77.0369]
 };
 
+const stateAliases: Record<string, string> = {
+  connecticut: "CT",
+  delaware: "DE",
+  "district of columbia": "DC",
+  maryland: "MD",
+  massachusetts: "MA",
+  "new jersey": "NJ",
+  "new york": "NY",
+  ohio: "OH",
+  pennsylvania: "PA",
+  virginia: "VA",
+  "west virginia": "WV"
+};
+
+const METERS_PER_DEGREE_LATITUDE = 111320;
+const DEFAULT_PUBLIC_PIN_RADIUS_METERS = 240;
+
 export function hashNumber(value: string) {
   let hash = 0;
 
@@ -48,36 +68,50 @@ export function hashNumber(value: string) {
   return hash / 100000;
 }
 
-export function offsetCoordinate([lat, lng]: [number, number], seed: string, scale: number) {
-  const latOffset = (hashNumber(`${seed}:lat`) - 0.5) * scale;
-  const lngOffset = (hashNumber(`${seed}:lng`) - 0.5) * scale;
+export function normalizeState(value: string) {
+  const normalized = value.replace(/\./g, "").replace(/\s+/g, " ").trim().toLowerCase();
+  return stateAliases[normalized] || normalized.toUpperCase();
+}
+
+function cityStateKey(city: string, state: string) {
+  return `${city.replace(/\s+/g, " ").trim().toLowerCase()},${normalizeState(state).toLowerCase()}`;
+}
+
+export function offsetCoordinate(
+  [lat, lng]: [number, number],
+  seed: string,
+  radiusMeters = DEFAULT_PUBLIC_PIN_RADIUS_METERS
+) {
+  const angle = hashNumber(`${seed}:angle`) * Math.PI * 2;
+  const distance = radiusMeters * (0.35 + hashNumber(`${seed}:distance`) * 0.65);
+  const latOffset = (Math.cos(angle) * distance) / METERS_PER_DEGREE_LATITUDE;
+  const lngScale = METERS_PER_DEGREE_LATITUDE * Math.max(0.2, Math.cos((lat * Math.PI) / 180));
+  const lngOffset = (Math.sin(angle) * distance) / lngScale;
 
   return [lat + latOffset, lng + lngOffset] as const;
 }
 
 export function approximatePublicPoint(location: PublicLocationInput): PublicPoint | null {
+  if (
+    location.publicLatitude !== null &&
+    location.publicLatitude !== undefined &&
+    location.publicLongitude !== null &&
+    location.publicLongitude !== undefined
+  ) {
+    return { ...location, lat: location.publicLatitude, lng: location.publicLongitude };
+  }
+
   if (location.latitude !== null && location.longitude !== null) {
-    const rounded: [number, number] = [
-      Math.round(location.latitude * 100) / 100,
-      Math.round(location.longitude * 100) / 100
-    ];
-    const [lat, lng] = offsetCoordinate(rounded, location.id, 0.02);
+    const [lat, lng] = offsetCoordinate([location.latitude, location.longitude], location.id);
 
     return { ...location, lat, lng };
   }
 
-  const cityKey = `${location.publicCity},${location.publicState}`.toLowerCase();
+  const cityKey = cityStateKey(location.publicCity, location.publicState);
   const cityCenter = cityCenters[cityKey];
 
   if (cityCenter) {
-    const [lat, lng] = offsetCoordinate(cityCenter, location.id, 0.04);
-    return { ...location, lat, lng };
-  }
-
-  const stateCenter = stateCenters[location.publicState.toUpperCase()];
-
-  if (stateCenter) {
-    const [lat, lng] = offsetCoordinate(stateCenter, `${location.publicCity}:${location.id}`, 0.9);
+    const [lat, lng] = offsetCoordinate(cityCenter, location.id);
     return { ...location, lat, lng };
   }
 
@@ -92,14 +126,17 @@ export function searchCenterFromQuery(query: string): { lat: number; lng: number
   }
 
   const compact = normalized.replace(/\s*,\s*/g, ",");
-  const cityCenter = cityCenters[compact];
+  const compactParts = compact.split(",");
+  const normalizedCompact =
+    compactParts.length === 2 ? `${compactParts[0]},${normalizeState(compactParts[1]).toLowerCase()}` : compact;
+  const cityCenter = cityCenters[normalizedCompact];
 
   if (cityCenter) {
     return { lat: cityCenter[0], lng: cityCenter[1] };
   }
 
   const parts = normalized.split(" ");
-  const possibleState = parts.at(-1)?.toUpperCase() || "";
+  const possibleState = normalizeState(parts.at(-1) || "");
 
   if (possibleState in stateCenters && parts.length === 1) {
     const stateCenter = stateCenters[possibleState];
@@ -108,7 +145,7 @@ export function searchCenterFromQuery(query: string): { lat: number; lng: number
 
   if (possibleState in stateCenters && parts.length > 1) {
     const city = parts.slice(0, -1).join(" ");
-    const cityStateCenter = cityCenters[`${city},${possibleState.toLowerCase()}`];
+    const cityStateCenter = cityCenters[cityStateKey(city, possibleState)];
 
     if (cityStateCenter) {
       return { lat: cityStateCenter[0], lng: cityStateCenter[1] };

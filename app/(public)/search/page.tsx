@@ -11,6 +11,7 @@ import { TrustBadge } from "@/components/public/trust-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { canDisplayVerifiedBadge, canUseLiveAvailability } from "@/lib/feature-gates";
+import { geocodeSearchQuery } from "@/lib/geocoding";
 import { prisma } from "@/lib/prisma";
 import { approximatePublicPoint, milesBetween, searchCenterFromQuery } from "@/lib/public-location";
 import { richTextToPlainText } from "@/lib/rich-text";
@@ -375,6 +376,8 @@ export default async function SearchPage({
       publicState: true,
       latitude: true,
       longitude: true,
+      publicLatitude: true,
+      publicLongitude: true,
       description: true,
       totalBeds: true,
       bedsAvailable: true,
@@ -409,7 +412,7 @@ export default async function SearchPage({
       }
     }
   });
-  const radiusCenter = radiusMiles ? searchCenterFromQuery(q) : null;
+  const radiusCenter = radiusMiles ? searchCenterFromQuery(q) ?? await geocodeSearchQuery(q) : null;
   const profiles = radiusMiles && radiusCenter
     ? rawProfiles
         .map((profile) => {
@@ -418,7 +421,9 @@ export default async function SearchPage({
             publicCity: profile.publicCity,
             publicState: profile.publicState,
             latitude: profile.latitude ? Number(profile.latitude) : null,
-            longitude: profile.longitude ? Number(profile.longitude) : null
+            longitude: profile.longitude ? Number(profile.longitude) : null,
+            publicLatitude: profile.publicLatitude ? Number(profile.publicLatitude) : null,
+            publicLongitude: profile.publicLongitude ? Number(profile.publicLongitude) : null
           });
 
           return {
@@ -610,6 +615,8 @@ export default async function SearchPage({
             publicState: profile.publicState,
             latitude: profile.latitude ? Number(profile.latitude) : null,
             longitude: profile.longitude ? Number(profile.longitude) : null,
+            publicLatitude: profile.publicLatitude ? Number(profile.publicLatitude) : null,
+            publicLongitude: profile.publicLongitude ? Number(profile.publicLongitude) : null,
             isAvailable: Boolean(
               profile.type === ProfileType.sober_living
                 ? canUseLiveAvailability(profile.organization, profile) && profile.bedsAvailable

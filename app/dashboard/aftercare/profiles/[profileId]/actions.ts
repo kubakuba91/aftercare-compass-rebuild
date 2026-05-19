@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { ProfileStatus, ProfileType } from "@prisma/client";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
 import { canManageAftercareProfile, canUseLiveAvailability } from "@/lib/feature-gates";
+import { geocodeProfileAddress, resetProfileCoordinates } from "@/lib/geocoding";
 import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
@@ -78,14 +79,24 @@ export async function updateAftercareProfileBasics(formData: FormData) {
     redirect(profileHref(profile.id, "Program name, city, and state are required."));
   }
 
+  const streetAddress = nullableText(formData.get("streetAddress"));
+  const zip = nullableText(formData.get("zip"));
+  const coordinates = await geocodeProfileAddress({
+    idSeed: profile.id,
+    streetAddress,
+    city,
+    state,
+    zip
+  });
+
   await prisma.aftercareProfile.update({
     where: { id: profile.id },
     data: {
       programName,
-      streetAddress: nullableText(formData.get("streetAddress")),
+      streetAddress,
       city,
       state,
-      zip: nullableText(formData.get("zip")),
+      zip,
       publicCity: city,
       publicState: state,
       websiteUrl: nullableText(formData.get("websiteUrl")),
@@ -93,7 +104,8 @@ export async function updateAftercareProfileBasics(formData: FormData) {
       admissionsContactEmail: nullableText(formData.get("admissionsContactEmail")),
       preferredContactMethod: nullableText(formData.get("preferredContactMethod")),
       intakeContactName: nullableText(formData.get("intakeContactName")),
-      stateLicenseNumber: nullableText(formData.get("stateLicenseNumber"))
+      stateLicenseNumber: nullableText(formData.get("stateLicenseNumber")),
+      ...(coordinates ?? resetProfileCoordinates())
     }
   });
 

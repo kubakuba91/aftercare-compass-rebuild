@@ -14,6 +14,8 @@ type ApproximateMapListing = {
   publicState: string;
   latitude: number | null;
   longitude: number | null;
+  publicLatitude?: number | null;
+  publicLongitude?: number | null;
   isAvailable: boolean;
   selectionHref: string;
 };

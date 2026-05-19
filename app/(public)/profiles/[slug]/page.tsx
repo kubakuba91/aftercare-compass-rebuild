@@ -677,6 +677,8 @@ export default async function PublicProfilePage({
                     publicState: profile.publicState,
                     latitude: profile.latitude ? Number(profile.latitude) : null,
                     longitude: profile.longitude ? Number(profile.longitude) : null,
+                    publicLatitude: profile.publicLatitude ? Number(profile.publicLatitude) : null,
+                    publicLongitude: profile.publicLongitude ? Number(profile.publicLongitude) : null,
                     isAvailable: Boolean(
                       isSoberLiving
                         ? profileShowsLiveAvailability && profile.bedsAvailable

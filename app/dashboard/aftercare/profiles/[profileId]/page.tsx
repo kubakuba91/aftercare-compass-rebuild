@@ -53,6 +53,15 @@ const photoReadinessOptions = [
   "Team or program photo ready"
 ];
 
+const editSections = [
+  { id: "basics", label: "Basics" },
+  { id: "availability", label: "Availability" },
+  { id: "images", label: "Images" },
+  { id: "content", label: "Content" },
+  { id: "associated-care", label: "Associated Care", soberLivingOnly: true },
+  { id: "publish", label: "Publish" }
+];
+
 function fieldClassName() {
   return "min-h-11 rounded-md border border-border bg-white px-3 text-sm";
 }
@@ -63,6 +72,21 @@ function labelClassName() {
 
 function textValue(value: string | null | undefined) {
   return value ?? "";
+}
+
+function SectionIntro({
+  children,
+  title
+}: {
+  children?: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <div className="border-b border-border bg-muted/20 px-5 py-4">
+      <h2 className="text-lg font-semibold">{title}</h2>
+      {children ? <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">{children}</p> : null}
+    </div>
+  );
 }
 
 function CheckboxGroup({
@@ -240,11 +264,27 @@ export default async function AftercareProfileDetailPage({
         </div>
       ) : null}
 
+      <nav className="mt-5 flex gap-2 overflow-x-auto border-b border-border pb-3" aria-label="Profile editor sections">
+        {editSections
+          .filter((section) => !section.soberLivingOnly || isSoberLiving)
+          .map((section) => (
+            <a
+              key={section.id}
+              className="focus-ring inline-flex min-h-9 shrink-0 items-center rounded-md border border-border bg-white px-3 text-sm font-semibold text-muted-foreground hover:text-foreground"
+              href={`#${section.id}`}
+            >
+              {section.label}
+            </a>
+          ))}
+      </nav>
+
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_360px]">
         <section className="grid gap-5">
-          <Card>
-            <h2 className="text-xl font-semibold">Program basics</h2>
-            <form action={updateAftercareProfileBasics} className="mt-5 grid gap-4">
+          <Card className="scroll-mt-24 overflow-hidden p-0" id="basics">
+            <SectionIntro title="Program basics">
+              Public identity, location, and admissions contact information.
+            </SectionIntro>
+            <form action={updateAftercareProfileBasics} className="grid gap-4 p-5">
               <input name="profileId" type="hidden" value={profile.id} />
               <div className="grid gap-4 md:grid-cols-2">
                 <label className={labelClassName()}>
@@ -304,10 +344,13 @@ export default async function AftercareProfileDetailPage({
             </form>
           </Card>
 
-          <Card>
-            {isSoberLiving ? <BedDouble className="text-primary" size={24} /> : <Building2 className="text-primary" size={24} />}
-            <h2 className="mt-3 text-xl font-semibold">Availability</h2>
-            <form action={updateAftercareProfileAvailability} className="mt-5 grid gap-4">
+          <Card className="scroll-mt-24 overflow-hidden p-0" id="availability">
+            <SectionIntro title="Availability">
+              {isSoberLiving
+                ? "Beds, pricing, room types, and availability notes."
+                : "Intake status, care levels, program types, and hours."}
+            </SectionIntro>
+            <form action={updateAftercareProfileAvailability} className="grid gap-4 p-5">
               <input name="profileId" type="hidden" value={profile.id} />
               {isSoberLiving ? (
                 <>
@@ -387,24 +430,24 @@ export default async function AftercareProfileDetailPage({
             </form>
           </Card>
 
-          <Card>
-            <div className="flex items-start gap-3">
-              <ImagePlus className="mt-1 text-primary" size={24} />
-              <div>
-                <h2 className="text-xl font-semibold">Profile images</h2>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  {photoLimitCopy}
-                </p>
-                <span className="mt-2 block text-xs font-semibold text-muted-foreground">
-                  Current plan includes {formatPhotoLimit(photoLimit)}.
-                </span>
+          <Card className="scroll-mt-24 overflow-hidden p-0" id="images">
+            <SectionIntro title="Profile images">
+              {photoLimitCopy}
+            </SectionIntro>
+            <div className="p-5">
+              <div className="flex items-start gap-3">
+                <ImagePlus className="mt-1 text-primary" size={24} />
+                <div>
+                  <span className="mt-2 block text-xs font-semibold text-muted-foreground">
+                    Current plan includes {formatPhotoLimit(photoLimit)}.
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <form action={uploadAftercareProfileImages} className="mt-5 grid gap-3 rounded-md border border-dashed border-border bg-muted/30 p-4">
-              <input name="profileId" type="hidden" value={profile.id} />
-              <ProfileImageUploader currentImageCount={profile.images.length} photoLimit={photoLimit} />
-            </form>
+              <form action={uploadAftercareProfileImages} className="mt-5 grid gap-3 rounded-md border border-dashed border-border bg-muted/30 p-4">
+                <input name="profileId" type="hidden" value={profile.id} />
+                <ProfileImageUploader currentImageCount={profile.images.length} photoLimit={photoLimit} />
+              </form>
 
             {profile.images.length ? (
               <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -456,11 +499,14 @@ export default async function AftercareProfileDetailPage({
                 No images uploaded yet.
               </div>
             )}
+            </div>
           </Card>
 
-          <Card>
-            <h2 className="text-xl font-semibold">Profile content</h2>
-            <form action={updateAftercareProfileContent} className="mt-5 grid gap-5">
+          <Card className="scroll-mt-24 overflow-hidden p-0" id="content">
+            <SectionIntro title="Profile content">
+              Story, services, fit, payment, clinical details, and public-facing notes.
+            </SectionIntro>
+            <form action={updateAftercareProfileContent} className="grid gap-5 p-5">
               <input name="profileId" type="hidden" value={profile.id} />
               <label className={labelClassName()}>
                 Description
@@ -562,52 +608,52 @@ export default async function AftercareProfileDetailPage({
           </Card>
 
           {isSoberLiving ? (
-            <Card>
-              <h2 className="text-xl font-semibold">Associated continued care</h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            <Card className="scroll-mt-24 overflow-hidden p-0" id="associated-care">
+              <SectionIntro title="Associated continued care">
                 Link continued care programs from your organization that residents commonly step into or coordinate with.
-              </p>
+              </SectionIntro>
 
-              {profile.continuedCareAssociations.length ? (
-                <div className="mt-5 grid gap-3">
-                  {profile.continuedCareAssociations.map((association) => (
-                    <div
-                      key={association.id}
-                      className="flex flex-col gap-3 rounded-md border border-border bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div>
-                        <p className="font-semibold">{association.continuedCareProfile.programName}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {[association.continuedCareProfile.publicCity, association.continuedCareProfile.publicState]
-                            .filter(Boolean)
-                            .join(", ") || "Location not listed"}
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <Badge>{association.continuedCareProfile.status}</Badge>
-                          {association.continuedCareProfile.acceptingNewPatients ? (
-                            <Badge tone="success">Accepting patients</Badge>
-                          ) : null}
+              <div className="p-5">
+                {profile.continuedCareAssociations.length ? (
+                  <div className="grid gap-3">
+                    {profile.continuedCareAssociations.map((association) => (
+                      <div
+                        key={association.id}
+                        className="flex flex-col gap-3 rounded-md border border-border bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div>
+                          <p className="font-semibold">{association.continuedCareProfile.programName}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {[association.continuedCareProfile.publicCity, association.continuedCareProfile.publicState]
+                              .filter(Boolean)
+                              .join(", ") || "Location not listed"}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Badge>{association.continuedCareProfile.status}</Badge>
+                            {association.continuedCareProfile.acceptingNewPatients ? (
+                              <Badge tone="success">Accepting patients</Badge>
+                            ) : null}
+                          </div>
                         </div>
+                        <form action={removeAssociatedContinuedCareProgram}>
+                          <input name="profileId" type="hidden" value={profile.id} />
+                          <input name="associationId" type="hidden" value={association.id} />
+                          <ConfirmSubmitButton
+                            className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold text-destructive"
+                            message="Remove this associated continued care program?"
+                          >
+                            <Trash2 size={15} />
+                            Remove
+                          </ConfirmSubmitButton>
+                        </form>
                       </div>
-                      <form action={removeAssociatedContinuedCareProgram}>
-                        <input name="profileId" type="hidden" value={profile.id} />
-                        <input name="associationId" type="hidden" value={association.id} />
-                        <ConfirmSubmitButton
-                          className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold text-destructive"
-                          message="Remove this associated continued care program?"
-                        >
-                          <Trash2 size={15} />
-                          Remove
-                        </ConfirmSubmitButton>
-                      </form>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="ac-panel-card mt-5 p-4 text-sm text-muted-foreground">
-                  No continued care programs linked yet.
-                </div>
-              )}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="ac-panel-card p-4 text-sm text-muted-foreground">
+                    No continued care programs linked yet.
+                  </div>
+                )}
 
               <form action={addAssociatedContinuedCareProgram} className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]">
                 <input name="profileId" type="hidden" value={profile.id} />
@@ -636,12 +682,13 @@ export default async function AftercareProfileDetailPage({
                   Add program
                 </button>
               </form>
+              </div>
             </Card>
           ) : null}
         </section>
 
-        <aside className="grid h-fit gap-4">
-          <Card>
+        <aside className="grid h-fit gap-4 lg:sticky lg:top-6">
+          <Card className="scroll-mt-24" id="publish">
             <ShieldCheck className="text-primary" size={24} />
             <h2 className="mt-3 font-semibold">Publish readiness</h2>
             <p className="mt-2 text-sm text-muted-foreground">{readiness.percent}% complete</p>

@@ -39,6 +39,15 @@ export function MultiSelectDropdown({
         next.add(option);
       }
 
+      document.dispatchEvent(
+        new CustomEvent("aftercare:multiselect-change", {
+          detail: {
+            name,
+            values: Array.from(next)
+          }
+        })
+      );
+
       return next;
     });
 

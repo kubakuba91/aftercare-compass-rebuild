@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, BedDouble, Building2, CheckCircle2, CircleAlert, Eye, ImagePlus, Save, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
+import { PopulationBedFields } from "@/components/dashboard/population-bed-fields";
 import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
@@ -73,6 +74,30 @@ function labelClassName() {
 
 function textValue(value: string | null | undefined) {
   return value ?? "";
+}
+
+function selectedPopulation(values?: string[] | null, legacyValue?: string | null) {
+  if (values?.length) {
+    return values;
+  }
+
+  if (legacyValue === "men") {
+    return ["Men"];
+  }
+
+  if (legacyValue === "women") {
+    return ["Women"];
+  }
+
+  if (legacyValue === "lgbtq") {
+    return ["LGBTQ+"];
+  }
+
+  if (legacyValue === "both") {
+    return ["Men", "Women"];
+  }
+
+  return [];
 }
 
 function SectionIntro({
@@ -350,27 +375,18 @@ export default async function AftercareProfileDetailPage({
               <input name="profileId" type="hidden" value={profile.id} />
               {isSoberLiving ? (
                 <>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    {[
-                      ["Men", "bedsMen", "bedsMenAvailable", profile.bedsMen, profile.bedsMenAvailable],
-                      ["Women", "bedsWomen", "bedsWomenAvailable", profile.bedsWomen, profile.bedsWomenAvailable],
-                      ["LGBTQ+", "bedsLgbtq", "bedsLgbtqAvailable", profile.bedsLgbtq, profile.bedsLgbtqAvailable]
-                    ].map(([label, totalName, availableName, total, available]) => (
-                      <div key={String(totalName)} className="ac-panel-card p-4">
-                        <p className="font-semibold">{label}</p>
-                        <div className="mt-3 grid gap-3">
-                          <label className={labelClassName()}>
-                            Total beds
-                            <input className={fieldClassName()} defaultValue={Number(total ?? 0)} min="0" name={String(totalName)} type="number" />
-                          </label>
-                          <label className={labelClassName()}>
-                            Available beds
-                            <input className={fieldClassName()} defaultValue={Number(available ?? 0)} min="0" name={String(availableName)} type="number" />
-                          </label>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <CheckboxGroup label="Population served" name="populationServedOptions" options={populationOptions} selected={selectedPopulation(profile.populationServedOptions, profile.populationServed)} />
+                  <PopulationBedFields
+                    initialPopulations={selectedPopulation(profile.populationServedOptions, profile.populationServed)}
+                    values={{
+                      bedsLgbtq: profile.bedsLgbtq,
+                      bedsLgbtqAvailable: profile.bedsLgbtqAvailable,
+                      bedsMen: profile.bedsMen,
+                      bedsMenAvailable: profile.bedsMenAvailable,
+                      bedsWomen: profile.bedsWomen,
+                      bedsWomenAvailable: profile.bedsWomenAvailable
+                    }}
+                  />
                   <CheckboxGroup label="Room types" name="roomTypes" options={roomTypeOptions} selected={profile.roomTypes} />
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className={labelClassName()}>
@@ -524,7 +540,9 @@ export default async function AftercareProfileDetailPage({
                   <textarea className="min-h-28 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.referralProcessDescription)} name="referralProcessDescription" />
                 </label>
               ) : null}
-              <CheckboxGroup label="Population served" name="populationServedOptions" options={populationOptions} selected={profile.populationServedOptions} />
+              {!isSoberLiving ? (
+                <CheckboxGroup label="Population served" name="populationServedOptions" options={populationOptions} selected={profile.populationServedOptions} />
+              ) : null}
               <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={specialtyPopulationOptions} selected={profile.specialtyPopulations} />
               <CheckboxGroup label="Certifications held" name="certificationsHeld" options={certificationOptions} selected={profile.certificationsHeld} />
               <CheckboxGroup label="Support services" name="supportServices" options={supportServiceOptions} selected={profile.supportServices} />

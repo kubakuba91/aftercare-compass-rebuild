@@ -128,12 +128,14 @@ export async function updateAftercareProfileAvailability(formData: FormData) {
   }
 
   if (profile.type === ProfileType.sober_living) {
-    const bedsMen = numberFromForm(formData.get("bedsMen")) ?? 0;
-    const bedsMenAvailable = numberFromForm(formData.get("bedsMenAvailable")) ?? 0;
-    const bedsWomen = numberFromForm(formData.get("bedsWomen")) ?? 0;
-    const bedsWomenAvailable = numberFromForm(formData.get("bedsWomenAvailable")) ?? 0;
-    const bedsLgbtq = numberFromForm(formData.get("bedsLgbtq")) ?? 0;
-    const bedsLgbtqAvailable = numberFromForm(formData.get("bedsLgbtqAvailable")) ?? 0;
+    const populationServedOptions = valuesFromForm(formData, "populationServedOptions");
+    const selectedPopulations = new Set(populationServedOptions);
+    const bedsMen = selectedPopulations.has("Men") ? numberFromForm(formData.get("bedsMen")) ?? 0 : 0;
+    const bedsMenAvailable = selectedPopulations.has("Men") ? numberFromForm(formData.get("bedsMenAvailable")) ?? 0 : 0;
+    const bedsWomen = selectedPopulations.has("Women") ? numberFromForm(formData.get("bedsWomen")) ?? 0 : 0;
+    const bedsWomenAvailable = selectedPopulations.has("Women") ? numberFromForm(formData.get("bedsWomenAvailable")) ?? 0 : 0;
+    const bedsLgbtq = selectedPopulations.has("LGBTQ+") ? numberFromForm(formData.get("bedsLgbtq")) ?? 0 : 0;
+    const bedsLgbtqAvailable = selectedPopulations.has("LGBTQ+") ? numberFromForm(formData.get("bedsLgbtqAvailable")) ?? 0 : 0;
 
     if (
       bedsMenAvailable > bedsMen ||
@@ -148,6 +150,8 @@ export async function updateAftercareProfileAvailability(formData: FormData) {
       data: {
         totalBeds: bedsMen + bedsWomen + bedsLgbtq,
         bedsAvailable: bedsMenAvailable + bedsWomenAvailable + bedsLgbtqAvailable,
+        populationServedOptions,
+        populationServed: populationServedOptions.join(", ") || null,
         bedsMen,
         bedsMenAvailable,
         bedsWomen,
@@ -187,6 +191,7 @@ export async function updateAftercareProfileContent(formData: FormData) {
   const profile = await getOwnedProfile(profileId);
   ensureProfileCanBeEdited(profile);
   const videoUrls = valuesFromForm(formData, "videoUrls").filter((url) => /^https?:\/\/.+\..+/.test(url));
+  const populationServedOptions = valuesFromForm(formData, "populationServedOptions");
 
   await prisma.aftercareProfile.update({
     where: { id: profile.id },
@@ -195,8 +200,12 @@ export async function updateAftercareProfileContent(formData: FormData) {
       houseRulesText: sanitizeRichText(nullableText(formData.get("houseRulesText"))),
       referralFitNotes: nullableText(formData.get("referralFitNotes")),
       referralProcessDescription: nullableText(formData.get("referralProcessDescription")),
-      populationServedOptions: valuesFromForm(formData, "populationServedOptions"),
-      populationServed: valuesFromForm(formData, "populationServedOptions").join(", ") || null,
+      ...(profile.type === ProfileType.continued_care
+        ? {
+            populationServedOptions,
+            populationServed: populationServedOptions.join(", ") || null
+          }
+        : {}),
       specialtyPopulations: valuesFromForm(formData, "specialtyPopulations"),
       certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
       supportServices: valuesFromForm(formData, "supportServices"),

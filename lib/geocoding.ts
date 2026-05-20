@@ -1,8 +1,8 @@
-import { offsetCoordinate } from "@/lib/public-location";
+import { normalizeState, offsetCoordinate, stateCenters } from "@/lib/public-location";
 
 type GeocodedCoordinates = {
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   publicLatitude: number;
   publicLongitude: number;
   geocodedAt: Date;
@@ -80,19 +80,56 @@ export async function geocodeProfileAddress(input: {
   zip?: string | null;
 }): Promise<GeocodedCoordinates | null> {
   const address = compactAddress([input.streetAddress, input.city, input.state, input.zip]);
-  const coordinates = await geocodeAddress(address);
+  const cityStateAddress = compactAddress([input.city, input.state]);
+  const fullAddressCoordinates = await geocodeAddress(address);
 
-  if (!coordinates) {
+  if (fullAddressCoordinates) {
+    const [publicLatitude, publicLongitude] = offsetCoordinate(
+      [fullAddressCoordinates.latitude, fullAddressCoordinates.longitude],
+      input.idSeed
+    );
+
+    return {
+      ...fullAddressCoordinates,
+      publicLatitude,
+      publicLongitude,
+      geocodedAt: new Date()
+    };
+  }
+
+  const cityStateCoordinates = await geocodeAddress(cityStateAddress);
+
+  if (cityStateCoordinates) {
+    const [publicLatitude, publicLongitude] = offsetCoordinate(
+      [cityStateCoordinates.latitude, cityStateCoordinates.longitude],
+      input.idSeed,
+      1600
+    );
+
+    return {
+      latitude: null,
+      longitude: null,
+      publicLatitude,
+      publicLongitude,
+      geocodedAt: new Date()
+    };
+  }
+
+  const stateCenter = input.state ? stateCenters[normalizeState(input.state)] : null;
+
+  if (!stateCenter) {
     return null;
   }
 
   const [publicLatitude, publicLongitude] = offsetCoordinate(
-    [coordinates.latitude, coordinates.longitude],
-    input.idSeed
+    stateCenter,
+    input.idSeed,
+    12000
   );
 
   return {
-    ...coordinates,
+    latitude: null,
+    longitude: null,
     publicLatitude,
     publicLongitude,
     geocodedAt: new Date()

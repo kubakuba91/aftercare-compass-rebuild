@@ -13,22 +13,13 @@ export type PublicPoint = PublicLocationInput & {
   lng: number;
 };
 
-export const cityCenters: Record<string, [number, number]> = {
-  "harrisburg,pa": [40.2732, -76.8867],
-  "lancaster,pa": [40.0379, -76.3055],
-  "philadelphia,pa": [39.9526, -75.1652],
-  "pittsburgh,pa": [40.4406, -79.9959],
-  "allentown,pa": [40.6023, -75.4714],
-  "reading,pa": [40.3356, -75.9269],
-  "york,pa": [39.9626, -76.7277],
-  "wayne,pa": [40.044, -75.3877],
-  "honey brook,pa": [40.0943, -75.9119],
-  "west chester,pa": [39.9607, -75.6055],
-  "king of prussia,pa": [40.1013, -75.3836],
-  "nashville,tn": [36.1627, -86.7816]
-};
-
 export const stateCenters: Record<string, [number, number]> = {
+  AL: [32.8067, -86.7911],
+  AK: [61.3707, -152.4044],
+  AZ: [33.7298, -111.4312],
+  AR: [34.9697, -92.3731],
+  CA: [36.1162, -119.6816],
+  CO: [39.0598, -105.3111],
   PA: [40.8781, -77.7996],
   NJ: [40.0583, -74.4057],
   NY: [42.9538, -75.5268],
@@ -40,22 +31,94 @@ export const stateCenters: Record<string, [number, number]> = {
   CT: [41.6032, -73.0877],
   MA: [42.4072, -71.3824],
   DC: [38.9072, -77.0369],
-  TN: [35.5175, -86.5804]
+  TN: [35.5175, -86.5804],
+  FL: [27.7663, -81.6868],
+  GA: [33.0406, -83.6431],
+  HI: [21.0943, -157.4983],
+  ID: [44.2405, -114.4788],
+  IL: [40.3495, -88.9861],
+  IN: [39.8494, -86.2583],
+  IA: [42.0115, -93.2105],
+  KS: [38.5266, -96.7265],
+  KY: [37.6681, -84.6701],
+  LA: [31.1695, -91.8678],
+  ME: [44.6939, -69.3819],
+  MI: [43.3266, -84.5361],
+  MN: [45.6945, -93.9002],
+  MS: [32.7416, -89.6787],
+  MO: [38.4561, -92.2884],
+  MT: [46.9219, -110.4544],
+  NE: [41.1254, -98.2681],
+  NV: [38.3135, -117.0554],
+  NH: [43.4525, -71.5639],
+  NM: [34.8405, -106.2485],
+  NC: [35.6301, -79.8064],
+  ND: [47.5289, -99.784],
+  OK: [35.5653, -96.9289],
+  OR: [44.572, -122.0709],
+  RI: [41.6809, -71.5118],
+  SC: [33.8569, -80.945],
+  SD: [44.2998, -99.4388],
+  TX: [31.0545, -97.5635],
+  UT: [40.15, -111.8624],
+  VT: [44.0459, -72.7107],
+  WA: [47.4009, -121.4905],
+  WI: [44.2685, -89.6165],
+  WY: [42.7559, -107.3025]
 };
 
 const stateAliases: Record<string, string> = {
+  alabama: "AL",
+  alaska: "AK",
+  arizona: "AZ",
+  arkansas: "AR",
+  california: "CA",
+  colorado: "CO",
   connecticut: "CT",
   delaware: "DE",
   "district of columbia": "DC",
+  florida: "FL",
+  georgia: "GA",
+  hawaii: "HI",
+  idaho: "ID",
+  illinois: "IL",
+  indiana: "IN",
+  iowa: "IA",
+  kansas: "KS",
+  kentucky: "KY",
+  louisiana: "LA",
+  maine: "ME",
   maryland: "MD",
   massachusetts: "MA",
+  michigan: "MI",
+  minnesota: "MN",
+  mississippi: "MS",
+  missouri: "MO",
+  montana: "MT",
+  nebraska: "NE",
+  nevada: "NV",
+  "new hampshire": "NH",
   "new jersey": "NJ",
+  "new mexico": "NM",
   "new york": "NY",
+  "north carolina": "NC",
+  "north dakota": "ND",
   ohio: "OH",
+  oklahoma: "OK",
+  oregon: "OR",
   pennsylvania: "PA",
+  "rhode island": "RI",
+  "south carolina": "SC",
+  "south dakota": "SD",
   tennessee: "TN",
+  texas: "TX",
+  utah: "UT",
+  vermont: "VT",
   virginia: "VA",
-  "west virginia": "WV"
+  washington: "WA",
+  "west virginia": "WV",
+  wisconsin: "WI",
+  wyoming: "WY"
 };
 
 const METERS_PER_DEGREE_LATITUDE = 111320;
@@ -74,10 +137,6 @@ export function hashNumber(value: string) {
 export function normalizeState(value: string) {
   const normalized = value.replace(/\./g, "").replace(/\s+/g, " ").trim().toLowerCase();
   return stateAliases[normalized] || normalized.toUpperCase();
-}
-
-function cityStateKey(city: string, state: string) {
-  return `${city.replace(/\s+/g, " ").trim().toLowerCase()},${normalizeState(state).toLowerCase()}`;
 }
 
 export function offsetCoordinate(
@@ -110,11 +169,10 @@ export function approximatePublicPoint(location: PublicLocationInput): PublicPoi
     return { ...location, lat, lng };
   }
 
-  const cityKey = cityStateKey(location.publicCity, location.publicState);
-  const cityCenter = cityCenters[cityKey];
+  const stateCenter = stateCenters[normalizeState(location.publicState)];
 
-  if (cityCenter) {
-    const [lat, lng] = offsetCoordinate(cityCenter, location.id);
+  if (stateCenter) {
+    const [lat, lng] = offsetCoordinate(stateCenter, location.id, 12000);
     return { ...location, lat, lng };
   }
 
@@ -130,29 +188,20 @@ export function searchCenterFromQuery(query: string): { lat: number; lng: number
 
   const compact = normalized.replace(/\s*,\s*/g, ",");
   const compactParts = compact.split(",");
-  const normalizedCompact =
-    compactParts.length === 2 ? `${compactParts[0]},${normalizeState(compactParts[1]).toLowerCase()}` : compact;
-  const cityCenter = cityCenters[normalizedCompact];
-
-  if (cityCenter) {
-    return { lat: cityCenter[0], lng: cityCenter[1] };
-  }
 
   const parts = normalized.split(" ");
-  const possibleState = normalizeState(parts.at(-1) || "");
+  const queryParts = compactParts.length === 2 ? compactParts : parts;
+  const stateCandidate = compactParts.length === 2 ? compactParts[1] : parts.at(-1) || "";
+  const possibleState = normalizeState(stateCandidate);
 
-  if (possibleState in stateCenters && parts.length === 1) {
+  if (possibleState in stateCenters && queryParts.length === 1) {
     const stateCenter = stateCenters[possibleState];
     return { lat: stateCenter[0], lng: stateCenter[1] };
   }
 
-  if (possibleState in stateCenters && parts.length > 1) {
-    const city = parts.slice(0, -1).join(" ");
-    const cityStateCenter = cityCenters[cityStateKey(city, possibleState)];
-
-    if (cityStateCenter) {
-      return { lat: cityStateCenter[0], lng: cityStateCenter[1] };
-    }
+  if (possibleState in stateCenters && queryParts.length > 1) {
+    const stateCenter = stateCenters[possibleState];
+    return { lat: stateCenter[0], lng: stateCenter[1] };
   }
 
   return null;

@@ -75,15 +75,14 @@ const stateAliases: Record<string, string> = {
 
 function availabilityText(profile: {
   type: string;
-  totalBeds: number | null;
   bedsAvailable: number | null;
   acceptingNewPatients: boolean | null;
 }) {
   if (profile.type === "sober_living") {
-    return `${profile.bedsAvailable ?? 0} beds available`;
+    return profile.bedsAvailable && profile.bedsAvailable > 0 ? "Available now" : "Call for availability";
   }
 
-  return profile.acceptingNewPatients ? "Accepting new patients" : "Not accepting patients";
+  return profile.acceptingNewPatients ? "Accepting patients" : "Call for availability";
 }
 
 function typeLabel(type: string) {

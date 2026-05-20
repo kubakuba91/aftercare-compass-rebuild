@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { OrganizationType, ProfileOwnershipStatus } from "@prisma/client";
-import { BadgeCheck, BedDouble, CheckCircle2, HandHeart, Mail, MapPin, Phone, PillBottle, Send, ShieldCheck, Users, Video } from "lucide-react";
+import { BadgeCheck, CheckCircle2, HandHeart, Mail, MapPin, Phone, PillBottle, Send, ShieldCheck, Users, Video } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { ExpandableRichText } from "@/components/public/expandable-rich-text";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
@@ -11,7 +11,6 @@ import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { getVisiblePopulationBeds } from "@/lib/bed-display";
 import { getClerkSessionUserId, getCurrentAppUser, getRequiredClerkIdentity } from "@/lib/current-user";
 import { canDisplayVerifiedBadge, canReceiveDirectReferrals, canSubmitReferrals, canUseLiveAvailability } from "@/lib/feature-gates";
 import { formatPhoneForDisplay, normalizePhoneNumber } from "@/lib/phone";
@@ -27,15 +26,14 @@ function listOrFallback(values: string[], fallback = "Not listed") {
 
 function availabilityText(profile: {
   type: string;
-  totalBeds: number | null;
   bedsAvailable: number | null;
   acceptingNewPatients: boolean | null;
 }) {
   if (profile.type === "sober_living") {
-    return `${profile.bedsAvailable ?? 0} of ${profile.totalBeds ?? 0} beds available`;
+    return profile.bedsAvailable && profile.bedsAvailable > 0 ? "Available now" : "Call for availability";
   }
 
-  return profile.acceptingNewPatients ? "Accepting new patients" : "Not accepting new patients";
+  return profile.acceptingNewPatients ? "Accepting patients" : "Call for availability";
 }
 
 function formatPricePerWeek(value: number | null) {
@@ -409,7 +407,6 @@ export default async function PublicProfilePage({
   const profileShowsLiveAvailability = !isSoberLiving || canUseLiveAvailability(profile.organization, profile);
   const profileShowsVerifiedBadge = canDisplayVerifiedBadge(profile.organization, profile);
   const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
-  const visiblePopulationBeds = getVisiblePopulationBeds(profile);
   const priceLabel = formatPricePerWeek(profile.pricePerWeek);
   const admissionsPhone = profile.admissionsContactPhone?.trim() ?? "";
   const isReferent = appUser?.role.startsWith("referent") ?? false;
@@ -569,26 +566,7 @@ export default async function PublicProfilePage({
           </div>
 
           <div className="mt-5 grid gap-4">
-            {isSoberLiving && profileShowsLiveAvailability ? (
-              <Card>
-                <BedDouble className="text-primary" size={22} />
-                <h2 className="mt-3 text-xl font-semibold">Bed availability</h2>
-                {visiblePopulationBeds.length ? (
-                  <div className="mt-4 grid gap-3 md:grid-cols-3">
-                    {visiblePopulationBeds.map((bed) => (
-                      <div key={bed.label} className="ac-metric-card p-4">
-                        <p className="text-sm text-muted-foreground">{bed.label}</p>
-                        <p className="mt-1 text-2xl font-semibold">{bed.available}/{bed.total}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    Population-specific bed counts are not listed.
-                  </p>
-                )}
-              </Card>
-            ) : !isSoberLiving ? (
+            {!isSoberLiving ? (
               <Card>
                 <CheckCircle2 className="text-primary" size={22} />
                 <h2 className="mt-3 text-xl font-semibold">Program availability</h2>

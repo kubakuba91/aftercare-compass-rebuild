@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 type ProfileEditorSection = {
   id: string;
@@ -13,7 +13,6 @@ export function ProfileEditorTabs({
   sections: ProfileEditorSection[];
 }) {
   const [activeSection, setActiveSection] = useState(sections[0]?.id ?? "");
-  const tabRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
 
   useEffect(() => {
     function updateActiveSection() {
@@ -46,23 +45,12 @@ export function ProfileEditorTabs({
     };
   }, [sections]);
 
-  useEffect(() => {
-    tabRefs.current[activeSection]?.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center"
-    });
-  }, [activeSection]);
-
   return (
-    <div className="sticky top-0 z-20 -mx-4 border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:px-0">
+    <div className="border-b border-border pb-3">
       <nav className="ac-tabs" aria-label="Profile editor sections">
         {sections.map((section) => (
           <a
             key={section.id}
-            ref={(element) => {
-              tabRefs.current[section.id] = element;
-            }}
             className="ac-tab"
             data-active={activeSection === section.id ? "true" : "false"}
             href={`#${section.id}`}

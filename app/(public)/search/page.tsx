@@ -77,16 +77,14 @@ function availabilityText(profile: {
   type: string;
   bedsAvailable: number | null;
   acceptingNewPatients: boolean | null;
-}) {
+}, canShowLiveAvailability = true) {
   if (profile.type === "sober_living") {
-    return profile.bedsAvailable && profile.bedsAvailable > 0 ? "Available now" : "Call for availability";
+    return canShowLiveAvailability && profile.bedsAvailable && profile.bedsAvailable > 0
+      ? "Available now"
+      : "Call for availability";
   }
 
   return profile.acceptingNewPatients ? "Accepting patients" : "Call for availability";
-}
-
-function typeLabel(type: string) {
-  return type === "sober_living" ? "Sober Living" : "Continued Care";
 }
 
 function compactItems(values: Array<string | null | undefined>, limit: number) {
@@ -475,7 +473,6 @@ export default async function SearchPage({
             profiles.map((profile, index) => {
               const offerings = compactItems(
                 [
-                  typeLabel(profile.type),
                   ...profile.programTypes,
                   ...profile.levelsOfCare,
                   ...profile.populationServedOptions,
@@ -494,9 +491,9 @@ export default async function SearchPage({
                 ],
                 3
               );
+              const showVerifiedBadge = canDisplayVerifiedBadge(profile.organization, profile);
               const showLiveAvailability =
                 profile.type !== ProfileType.sober_living || canUseLiveAvailability(profile.organization, profile);
-              const showVerifiedBadge = canDisplayVerifiedBadge(profile.organization, profile);
               const profileIsAvailable =
                 profile.type === ProfileType.sober_living
                   ? showLiveAvailability && Boolean(profile.bedsAvailable)
@@ -543,11 +540,9 @@ export default async function SearchPage({
                         <h2 className="min-w-0 flex-1 text-lg font-semibold leading-tight">{profile.programName}</h2>
                         <TrustBadge isVerified={showVerifiedBadge} verificationTier={profile.verificationTier} />
                         <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
-                        {showLiveAvailability ? (
-                          <Badge tone={profileIsAvailable ? "success" : "warning"}>
-                            {availabilityText(profile)}
-                          </Badge>
-                        ) : null}
+                        <Badge tone={profileIsAvailable ? "success" : "warning"}>
+                          {availabilityText(profile, showLiveAvailability)}
+                        </Badge>
                       </div>
 
                       <p className="flex items-center gap-2 text-sm text-muted-foreground">

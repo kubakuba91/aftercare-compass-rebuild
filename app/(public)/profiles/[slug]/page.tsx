@@ -28,9 +28,11 @@ function availabilityText(profile: {
   type: string;
   bedsAvailable: number | null;
   acceptingNewPatients: boolean | null;
-}) {
+}, canShowLiveAvailability = true) {
   if (profile.type === "sober_living") {
-    return profile.bedsAvailable && profile.bedsAvailable > 0 ? "Available now" : "Call for availability";
+    return canShowLiveAvailability && profile.bedsAvailable && profile.bedsAvailable > 0
+      ? "Available now"
+      : "Call for availability";
   }
 
   return profile.acceptingNewPatients ? "Accepting patients" : "Call for availability";
@@ -440,7 +442,7 @@ export default async function PublicProfilePage({
         defaultLocation={publicLocation}
         defaultType={profile.type}
         defaultAvailability={
-          (isSoberLiving ? profileShowsLiveAvailability && profile.bedsAvailable : profile.acceptingNewPatients)
+          (isSoberLiving ? profile.bedsAvailable : profile.acceptingNewPatients)
             ? "available"
             : ""
         }
@@ -462,18 +464,15 @@ export default async function PublicProfilePage({
                 <div className="flex flex-wrap gap-2">
                   <TrustBadge isVerified={profileShowsVerifiedBadge} verificationTier={profile.verificationTier} />
                   <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
-                  <Badge>{isSoberLiving ? "Sober Living" : "Continued Care"}</Badge>
-                  {profileShowsLiveAvailability ? (
-                    <Badge
-                      tone={
-                        (isSoberLiving ? profile.bedsAvailable : profile.acceptingNewPatients)
-                          ? "success"
-                          : "warning"
-                      }
-                    >
-                      {availabilityText(profile)}
-                    </Badge>
-                  ) : null}
+                  <Badge
+                    tone={
+                      (isSoberLiving ? profileShowsLiveAvailability && profile.bedsAvailable : profile.acceptingNewPatients)
+                        ? "success"
+                        : "warning"
+                    }
+                  >
+                    {availabilityText(profile, profileShowsLiveAvailability)}
+                  </Badge>
                 </div>
                 <FavoriteListingButton
                   canFavorite={isReferent}

@@ -1,6 +1,6 @@
 # Aftercare Compass Platform PRD - Reconciled Build Scope
 
-Last updated: May 13, 2026
+Last updated: May 20, 2026
 
 ## 1. Product Direction
 
@@ -113,7 +113,7 @@ Public profiles must show:
 - Unclaimed badge when added by system admin without an owner.
 - Claim workflow for unclaimed profiles.
 - City and state.
-- Availability.
+- Plan-aware public availability chip.
 - Pricing.
 - Images.
 - Services and amenities.
@@ -124,6 +124,15 @@ Public profiles must show:
 - Public contact or referral entry points depending on user role and plan.
 
 Public profiles must not show exact addresses.
+
+Public availability display rules:
+
+- Sober living profiles should show a simple public chip, not exact bed counts.
+- `Available now` appears only when live availability is enabled for that profile and stored available beds are greater than zero.
+- `Call for availability` appears for sober living profiles without live availability, unpaid/limited plans, or no current available-bed signal.
+- Continued care profiles show `Accepting patients` when accepting new patients is true; otherwise they show `Call for availability`.
+- Exact bed counts remain available in provider dashboards and internal tools, but should not be prominent on public search cards or public profile headers.
+- Sober Living / Continued Care type chips are not required on public search/profile cards when the surrounding page or search mode already provides that context.
 
 ### Public Leads
 
@@ -175,6 +184,21 @@ Onboarding should be focused, recoverable, and not blocked by payment during bet
 - If no associated dashboard exists yet, the user may return to account type selection and choose a different flow.
 - Once a dashboard exists, the user cannot switch account type.
 - Session failures should show a simple sign-in prompt and return the user to the correct flow.
+
+### Existing Profile Search Before Provider Onboarding
+
+Provider onboarding should first help users determine whether their home or program already exists in the database.
+
+Requirements:
+
+- The account-type/onboarding entry screen includes a search for existing published profiles by home/program name, city, state, and website.
+- Matching profiles display as reusable preview cards with image, program name, city/state, status, high-level tags, price where available, and a clear claim CTA.
+- Preview cards must support reuse elsewhere on the site.
+- If a profile is `Unclaimed`, the CTA routes to the public profile claim section.
+- If a profile is `Claim in review`, the card communicates that the claim is already under review.
+- If a profile is already claimed/managed, the card should direct the user to request access from that organization's admin rather than creating a competing claim.
+- If no matching profile is found, users can continue into the normal create-new-profile onboarding flow.
+- Claiming an existing profile should not auto-populate and start the full provider onboarding form. It should collect verification details and route through admin approval.
 
 ### Sober Living Onboarding
 
@@ -268,15 +292,37 @@ Unclaimed profiles must display an `Unclaimed` status and a Claim action.
 Claim workflow:
 
 - User clicks Claim.
+- If not authenticated, the user must sign in or create an account before submitting a claim.
+- After account creation/sign-in, the user returns to the profile claim form.
+- Claim form collects claimant name, work email, phone, role/title, organization, relationship to the program, and notes for verification.
 - App creates a claim request.
 - System admins receive an email notification.
 - Claimant receives confirmation.
 - System admin reviews the request.
 - System admin approves or rejects.
 - Approval associates the profile with the claimant's organization.
+- Approval grants dashboard management access but does not automatically publish, verify, or change plan eligibility beyond the approved ownership transfer.
 - Rejection sends a notification.
 - Audit trail stores requester, reviewer, decision, timestamps, and notes.
 - Once claimed, random users cannot submit competing claims unless a system admin reopens ownership.
+
+Claim ownership rules:
+
+- A signed-in user who has not completed provider onboarding may submit a claim without creating a new blank profile first.
+- If the claimant does not yet have an aftercare organization, the claim flow can create the minimal matching organization shell required for review.
+- System admin approval is required before the existing profile is transferred to the claimant's organization.
+- Competing pending claims should be visible to system admins; approving one claim should close or cancel competing claims for the same profile.
+
+### Associated Continued Care
+
+Sober living profiles may link to associated continued care programs.
+
+Requirements:
+
+- Aftercare admins can associate sober living homes with continued care programs from the same organization.
+- Public sober living profiles can show associated continued care programs that are published.
+- Associations should not override profile ownership or publish state.
+- Removing an association should not delete either profile.
 
 ## 6. Verification and Review
 
@@ -324,6 +370,22 @@ Recommended tabs:
 For sober living profiles, quick bed update should only appear when a specific home is selected, not on the all-homes overview.
 
 New requests should combine referrals and public leads into one table with communication type tags.
+
+### Profile Editor
+
+The aftercare profile editor should behave as one cohesive editor for normal profile details.
+
+Requirements:
+
+- Basics, availability, and content save through one primary `Save changes` action.
+- Images, publish/unpublish, cover image changes, image removal, and associated continued care add/remove actions remain separate workflows.
+- Section navigation can use tab styling, but it must not block natural page scrolling or force scroll position changes.
+- Publish can remain in the sidebar/readiness card, but does not need to appear as a top section tab.
+- Multi-select fields should use collapsed dropdown multi-select controls that show selected values as chips.
+- Population served appears in the availability section for sober living profiles, above population-specific bed inputs.
+- Removing a served population clears or hides that population's bed fields and prevents stale public/internal availability from lingering.
+- Profile content long-text fields should be plain text areas; rich-text toolbar controls are not required in v1.
+- Photo readiness was a temporary internal field and should not appear in the active editor or readiness checklist.
 
 ### Referent Dashboard
 
@@ -412,6 +474,7 @@ Included:
 - Limited photo gallery.
 - General inquiry form.
 - Marketplace search visibility.
+- Public availability displays as `Call for availability` unless live availability is enabled by an eligible paid plan.
 - Profile and data preservation after expiration.
 
 Restricted:
@@ -618,6 +681,7 @@ Included:
   - The referent organization must be allowed to submit referrals.
   - The aftercare profile must be allowed to receive direct referrals.
 - If a provider is on Claimed Listing or Unclaimed status, public users and referents should see general inquiry/contact behavior rather than direct referral intake.
+- If a sober living provider does not have live availability enabled, public search/profile surfaces should still show an availability chip, but it should read `Call for availability`.
 - Search ranking can use plan and verification status, but filters must still respect privacy, location, and user-selected criteria.
 
 ## 9. Notifications
@@ -668,6 +732,9 @@ Map rules:
 - Search results can show city/state.
 - Profile pages can show city/state and an approximate map.
 - Aftercare users and system admins can see exact addresses for profiles they manage or administer.
+- Profiles should store precise coordinates for internal/admin use and offset public coordinates for privacy-safe maps.
+- Existing profiles missing public coordinates should be backfilled by a one-time geocoding script using street/city/state/zip where available.
+- If exact geocoding is unavailable, the public map should fall back to a city/state approximate center when possible.
 
 ## 12. SMS Availability Checks
 
@@ -692,8 +759,10 @@ The v1 data model should include or support:
 - Organization memberships
 - Organization invites
 - Aftercare profiles
+- Profile associations between sober living homes and continued care programs
 - Continued care availability
 - Sober living bed availability by population served
+- Precise and public-offset profile coordinates
 - Profile images
 - Leads
 - Referrals
@@ -753,10 +822,14 @@ The following are not part of v1:
 - Public users can filter by location, type, population, amenities, price, distance, verified status, and availability.
 - Public users can view profile pages without seeing exact addresses.
 - Public users can submit contact requests that create internal leads.
+- Public search/profile pages show simple plan-aware availability chips instead of exact sober living bed counts.
 
 ### Onboarding
 
 - New users can create an account and enter the correct onboarding flow.
+- Provider users can search for an existing profile before creating a new one.
+- Unclaimed existing profiles can be claimed through an authenticated admin-reviewed claim flow.
+- Already claimed profiles prompt the user to request access from the owning organization admin.
 - Users can leave onboarding and resume the correct step.
 - Users can switch account type before a dashboard exists.
 - Users cannot switch account type after a dashboard exists.
@@ -791,3 +864,4 @@ The following are not part of v1:
 - Verified badges only appear after system admin approval.
 - Unclaimed profiles can be claimed through an admin-reviewed workflow.
 - One email address can belong to only one organization.
+- Public maps use city/state or public-offset coordinates and never expose exact street-level coordinates.

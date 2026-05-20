@@ -169,13 +169,6 @@ export function approximatePublicPoint(location: PublicLocationInput): PublicPoi
     return { ...location, lat, lng };
   }
 
-  const stateCenter = stateCenters[normalizeState(location.publicState)];
-
-  if (stateCenter) {
-    const [lat, lng] = offsetCoordinate(stateCenter, location.id, 12000);
-    return { ...location, lat, lng };
-  }
-
   return null;
 }
 

@@ -1,8 +1,8 @@
-import { normalizeState, offsetCoordinate, stateCenters } from "@/lib/public-location";
+import { offsetCoordinate } from "@/lib/public-location";
 
 type GeocodedCoordinates = {
-  latitude: number | null;
-  longitude: number | null;
+  latitude?: number;
+  longitude?: number;
   publicLatitude: number;
   publicLongitude: number;
   geocodedAt: Date;
@@ -10,6 +10,7 @@ type GeocodedCoordinates = {
 
 type GoogleGeocodeResult = {
   status: string;
+  error_message?: string;
   results?: Array<{
     geometry?: {
       location?: {
@@ -58,7 +59,7 @@ async function geocodeAddress(address: string) {
     const location = payload.results?.[0]?.geometry?.location;
 
     if (payload.status !== "OK" || typeof location?.lat !== "number" || typeof location.lng !== "number") {
-      console.error("Google geocoding returned no usable result", payload.status);
+      console.error("Google geocoding returned no usable result", payload.status, payload.error_message);
       return null;
     }
 
@@ -107,33 +108,13 @@ export async function geocodeProfileAddress(input: {
     );
 
     return {
-      latitude: null,
-      longitude: null,
       publicLatitude,
       publicLongitude,
       geocodedAt: new Date()
     };
   }
 
-  const stateCenter = input.state ? stateCenters[normalizeState(input.state)] : null;
-
-  if (!stateCenter) {
-    return null;
-  }
-
-  const [publicLatitude, publicLongitude] = offsetCoordinate(
-    stateCenter,
-    input.idSeed,
-    12000
-  );
-
-  return {
-    latitude: null,
-    longitude: null,
-    publicLatitude,
-    publicLongitude,
-    geocodedAt: new Date()
-  };
+  return null;
 }
 
 export function resetProfileCoordinates() {

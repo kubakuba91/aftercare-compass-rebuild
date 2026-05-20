@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { Prisma, ProfileStatus, ProfileType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getAftercareProfileLimit, isWithinPlanLimit } from "@/lib/feature-gates";
-import { geocodeProfileAddress, resetProfileCoordinates } from "@/lib/geocoding";
+import { geocodeProfileAddress } from "@/lib/geocoding";
 import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
@@ -171,10 +171,12 @@ async function updateProfileCoordinatesForAddress(input: {
     zip: input.zip
   });
 
-  await prisma.aftercareProfile.update({
-    where: { id: input.profileId },
-    data: coordinates ?? resetProfileCoordinates()
-  });
+  if (coordinates) {
+    await prisma.aftercareProfile.update({
+      where: { id: input.profileId },
+      data: coordinates
+    });
+  }
 }
 
 type SoberLivingDraftProfile = {

@@ -10,7 +10,7 @@ import {
   getAftercareProfileLimit,
   isWithinPlanLimit
 } from "@/lib/feature-gates";
-import { geocodeProfileAddress, resetProfileCoordinates } from "@/lib/geocoding";
+import { geocodeProfileAddress } from "@/lib/geocoding";
 import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
@@ -110,7 +110,7 @@ export async function updateAftercareProfileBasics(formData: FormData) {
       preferredContactMethod: nullableText(formData.get("preferredContactMethod")),
       intakeContactName: nullableText(formData.get("intakeContactName")),
       stateLicenseNumber: nullableText(formData.get("stateLicenseNumber")),
-      ...(coordinates ?? resetProfileCoordinates())
+      ...(coordinates ?? {})
     }
   });
 
@@ -178,7 +178,7 @@ export async function updateAftercareProfileDetails(formData: FormData) {
     videoUrls,
     goodNeighborPolicyAcknowledged: formData.get("goodNeighborPolicyAcknowledged") === "yes",
     availabilityNotes: nullableText(formData.get("availabilityNotes")),
-    ...(coordinates ?? resetProfileCoordinates())
+    ...(coordinates ?? {})
   };
 
   if (profile.type === ProfileType.sober_living) {

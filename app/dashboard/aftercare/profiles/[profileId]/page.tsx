@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, BedDouble, Building2, CheckCircle2, CircleAlert, Eye, ImagePlus, Save, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { PopulationBedFields } from "@/components/dashboard/population-bed-fields";
+import { ProfileEditorTabs } from "@/components/dashboard/profile-editor-tabs";
 import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
@@ -50,8 +51,7 @@ const editSections = [
   { id: "availability", label: "Availability" },
   { id: "content", label: "Content" },
   { id: "images", label: "Images" },
-  { id: "associated-care", label: "Associated Care", soberLivingOnly: true },
-  { id: "publish", label: "Publish" }
+  { id: "associated-care", label: "Associated Care", soberLivingOnly: true }
 ];
 
 function fieldClassName() {
@@ -275,19 +275,9 @@ export default async function AftercareProfileDetailPage({
         </div>
       ) : null}
 
-      <nav className="mt-5 flex gap-2 overflow-x-auto border-b border-border pb-3" aria-label="Profile editor sections">
-        {editSections
-          .filter((section) => !section.soberLivingOnly || isSoberLiving)
-          .map((section) => (
-            <a
-              key={section.id}
-              className="focus-ring inline-flex min-h-9 shrink-0 items-center rounded-md border border-border bg-white px-3 text-sm font-semibold text-muted-foreground hover:text-foreground"
-              href={`#${section.id}`}
-            >
-              {section.label}
-            </a>
-          ))}
-      </nav>
+      <div className="mt-5">
+        <ProfileEditorTabs sections={editSections.filter((section) => !section.soberLivingOnly || isSoberLiving)} />
+      </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_360px]">
         <section className="grid gap-5">

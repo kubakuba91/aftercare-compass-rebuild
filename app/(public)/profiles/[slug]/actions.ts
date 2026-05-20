@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { OrganizationType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
-import { getCurrentAppUser } from "@/lib/current-user";
+import { defaultRoleForAccountType, getCurrentAppUser, getRequiredClerkIdentity } from "@/lib/current-user";
 import { notifyNewPublicLead, notifyNewReferral, notifyProfileClaimSubmitted } from "@/lib/email-notifications";
 import { canReceiveDirectReferrals, canSubmitReferrals } from "@/lib/feature-gates";
 import { prisma } from "@/lib/prisma";
@@ -178,17 +178,43 @@ export async function createProfileClaimRequest(formData: FormData) {
     redirect(`/profiles/${slug}?claim=invalid`);
   }
 
-  const appUser = await getCurrentAppUser();
+  let appUser = await getCurrentAppUser();
 
   if (!appUser) {
-    redirect(`/sign-in?redirect_url=${encodeURIComponent(`/profiles/${parsed.data.slug}`)}`);
+    try {
+      const identity = await getRequiredClerkIdentity();
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [{ email: identity.email }, { clerkUserId: identity.clerkUserId }]
+        },
+        select: { id: true }
+      });
+      const userData = {
+        clerkUserId: identity.clerkUserId,
+        email: identity.email,
+        firstName: identity.firstName,
+        lastName: identity.lastName,
+        emailVerified: identity.emailVerified,
+        emailVerifiedAt: identity.emailVerified ? new Date() : null,
+        role: Role.aftercare_admin
+      };
+
+      appUser = existingUser
+        ? await prisma.user.update({
+            where: { id: existingUser.id },
+            data: userData,
+            include: { organization: true }
+          })
+        : await prisma.user.create({
+            data: userData,
+            include: { organization: true }
+          });
+    } catch {
+      redirect(`/sign-in?redirect_url=${encodeURIComponent(`/profiles/${parsed.data.slug}`)}`);
+    }
   }
 
   if (appUser.role !== Role.aftercare_admin && appUser.role !== Role.aftercare_manager) {
-    redirect(`/profiles/${parsed.data.slug}?claim=provider_required`);
-  }
-
-  if (!appUser.orgId || !appUser.organization) {
     redirect(`/profiles/${parsed.data.slug}?claim=provider_required`);
   }
 
@@ -215,7 +241,27 @@ export async function createProfileClaimRequest(formData: FormData) {
       ? OrganizationType.aftercare_sober_living
       : OrganizationType.aftercare_continued_care;
 
-  if (appUser.organization.type !== requiredOrgType) {
+  if (!appUser.orgId || !appUser.organization) {
+    const organization = await prisma.organization.create({
+      data: {
+        type: requiredOrgType,
+        name: parsed.data.claimantOrganization,
+        email: parsed.data.claimantEmail.toLowerCase(),
+        phone: parsed.data.claimantPhone || null
+      }
+    });
+
+    appUser = await prisma.user.update({
+      where: { id: appUser.id },
+      data: {
+        orgId: organization.id,
+        role: defaultRoleForAccountType(profile.type === "sober_living" ? "sober_living" : "continued_care")
+      },
+      include: { organization: true }
+    });
+  }
+
+  if (appUser.organization?.type !== requiredOrgType) {
     redirect(`/profiles/${parsed.data.slug}?claim=provider_type`);
   }
 

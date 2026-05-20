@@ -16,7 +16,6 @@ type AftercareReadinessProfile = {
   programTypes?: string[];
   levelsOfCare?: string[];
   goodNeighborPolicyAcknowledged: boolean;
-  photoReadiness: string[];
 };
 
 export function getAftercareProfileReadiness(profile: AftercareReadinessProfile) {
@@ -85,13 +84,7 @@ export function getAftercareProfileReadiness(profile: AftercareReadinessProfile)
             required: true,
             message: "Level of care is required."
           }
-        ]),
-    {
-      label: "Photo readiness",
-      complete: Boolean(profile.photoReadiness.length),
-      required: false,
-      message: "Photos are not ready yet."
-    }
+        ])
   ];
 
   const blockers = checks

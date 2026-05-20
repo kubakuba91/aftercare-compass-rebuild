@@ -12,7 +12,7 @@ import { TrustBadge } from "@/components/public/trust-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
-import { getCurrentAppUser } from "@/lib/current-user";
+import { getClerkSessionUserId, getCurrentAppUser, getRequiredClerkIdentity } from "@/lib/current-user";
 import { canDisplayVerifiedBadge, canReceiveDirectReferrals, canSubmitReferrals, canUseLiveAvailability } from "@/lib/feature-gates";
 import { formatPhoneForDisplay, normalizePhoneNumber } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
@@ -63,7 +63,7 @@ function ContactForm({
   notice?: string;
 }) {
   return (
-    <Card className="h-fit">
+    <Card className="h-fit scroll-mt-24" id="claim">
       <div className="flex items-center gap-2">
         <Mail size={18} />
         <h2 className="font-semibold">Contact this program</h2>
@@ -338,11 +338,13 @@ export default async function PublicProfilePage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ lead?: string; referral?: string; preview?: string; claim?: string }>;
 }) {
-  const [{ slug }, query, appUser] = await Promise.all([
+  const [{ slug }, query, appUser, clerkUserId] = await Promise.all([
     params,
     searchParams,
-    getCurrentAppUser()
+    getCurrentAppUser(),
+    getClerkSessionUserId()
   ]);
+  const clerkIdentity = !appUser && clerkUserId ? await getRequiredClerkIdentity().catch(() => null) : null;
   const profile = await prisma.aftercareProfile.findUnique({
     where: {
       slug
@@ -415,11 +417,14 @@ export default async function PublicProfilePage({
   const profileAcceptsDirectReferrals = canReceiveDirectReferrals(profile.organization, profile);
   const referentCanSubmitReferrals = canSubmitReferrals(appUser?.organization);
   const userName = [appUser?.firstName, appUser?.lastName].filter(Boolean).join(" ") || "";
+  const claimantName = userName || [clerkIdentity?.firstName, clerkIdentity?.lastName].filter(Boolean).join(" ") || "";
+  const claimantEmail = appUser?.email || clerkIdentity?.email || "";
   const canClaimProfile =
-    Boolean(appUser?.orgId) &&
-    isAftercareUser &&
+    Boolean(clerkUserId) &&
+    (!appUser || isAftercareUser) &&
     ((profile.type === "sober_living" && appUser?.organization?.type === OrganizationType.aftercare_sober_living) ||
-      (profile.type === "continued_care" && appUser?.organization?.type === OrganizationType.aftercare_continued_care));
+      (profile.type === "continued_care" && appUser?.organization?.type === OrganizationType.aftercare_continued_care) ||
+      !appUser?.orgId);
   const favorite = isReferent && appUser?.orgId
     ? await prisma.favorite.findUnique({
         where: {
@@ -778,11 +783,11 @@ export default async function PublicProfilePage({
           <ClaimProfileCard
             canClaim={canClaimProfile}
             claimStatus={query.claim}
-            isSignedIn={Boolean(appUser)}
+            isSignedIn={Boolean(clerkUserId)}
             organizationName={appUser?.organization?.name || ""}
             profile={profile}
-            userEmail={appUser?.email || ""}
-            userName={userName}
+            userEmail={claimantEmail}
+            userName={claimantName}
           />
         ) : isReferent && profileAcceptsDirectReferrals && referentCanSubmitReferrals ? (
           <PlaceClientForm

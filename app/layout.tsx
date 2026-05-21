@@ -5,7 +5,23 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Aftercare Compass",
-  description: "A referral-ready aftercare placement marketplace."
+  description: "A referral-ready aftercare placement marketplace.",
+  icons: {
+    icon: [
+      {
+        url: "/brand/ac-favicon.png",
+        type: "image/png",
+        sizes: "512x512"
+      }
+    ],
+    apple: [
+      {
+        url: "/brand/ac-favicon.png",
+        type: "image/png",
+        sizes: "512x512"
+      }
+    ]
+  }
 };
 
 export default function RootLayout({

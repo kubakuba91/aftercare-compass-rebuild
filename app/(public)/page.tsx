@@ -68,19 +68,19 @@ export default async function HomePage() {
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-[minmax(0,520px)_250px]">
-                  <label className="flex min-h-16 items-center gap-3 rounded-md bg-white px-5 shadow-sm">
+                  <label className="focus-within:ring-ring flex min-h-16 items-center gap-3 rounded-2xl border border-border bg-white px-5 shadow-sm focus-within:ring-2">
                     <span className="sr-only">Search by city, state, or program name</span>
+                    <Search className="shrink-0 text-primary" size={28} />
                     <input
                       name="q"
-                      className="min-w-0 flex-1 bg-transparent text-base outline-none"
+                      className="!min-h-0 min-w-0 flex-1 appearance-none !border-0 !bg-transparent !p-0 text-base font-medium !shadow-none outline-none placeholder:text-muted-foreground focus:!border-0 focus:!shadow-none focus:ring-0"
                       placeholder="City, state, or program name"
                     />
-                    <Search className="shrink-0 text-primary" size={32} />
                   </label>
 
                   <button
                     type="submit"
-                    className="focus-ring min-h-16 rounded-md bg-[#12185f] px-8 text-lg font-semibold text-white shadow-sm hover:bg-[#0d1249]"
+                    className="focus-ring min-h-16 rounded-2xl bg-[#12185f] px-8 text-lg font-semibold text-white shadow-sm hover:bg-[#0d1249]"
                   >
                     Search
                   </button>

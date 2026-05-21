@@ -629,10 +629,10 @@ export default async function AdminDashboardPage({
                 <form className="flex w-full items-center gap-2 lg:w-[420px]" method="get">
                   <input name="tab" type="hidden" value="profiles" />
                   <label className="sr-only" htmlFor="profileSearch">Search homes and programs</label>
-                  <div className="focus-within:ring-ring flex min-h-10 flex-1 items-center gap-2 rounded-full border border-border bg-white px-4 focus-within:ring-2">
+                  <div className="focus-within:ring-ring flex min-h-10 flex-1 items-center gap-2 rounded-full border border-border bg-white px-4 shadow-sm focus-within:ring-2">
                     <Search aria-hidden="true" className="shrink-0 text-muted-foreground" size={16} />
                     <input
-                      className="min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-sm font-medium shadow-none outline-none placeholder:text-muted-foreground focus:ring-0"
+                      className="!min-h-0 min-w-0 flex-1 appearance-none !border-0 !bg-transparent !p-0 text-sm font-medium !shadow-none outline-none placeholder:text-muted-foreground focus:!border-0 focus:!shadow-none focus:ring-0"
                       defaultValue={profileSearchTerm}
                       id="profileSearch"
                       name="profileSearch"

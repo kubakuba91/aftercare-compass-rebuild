@@ -610,7 +610,6 @@ export default async function PublicProfilePage({
                           />
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
-                          <Badge>Continued Care</Badge>
                           {continuedCareProfile.acceptingNewPatients ? (
                             <Badge tone="success">Accepting patients</Badge>
                           ) : null}

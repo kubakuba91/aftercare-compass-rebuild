@@ -252,8 +252,6 @@ export default async function AftercareProfileDetailPage({
         <div>
           <div className="flex flex-wrap gap-2">
             <Badge tone={profile.status === "published" ? "success" : "warning"}>{profile.status}</Badge>
-            <Badge>{isSoberLiving ? "Sober Living" : "Continued Care"}</Badge>
-            <Badge tone="verified">Tier {profile.verificationTier}</Badge>
           </div>
           <h1 className="mt-4 text-3xl font-semibold">{profile.programName}</h1>
           <p className="mt-2 text-sm text-muted-foreground">

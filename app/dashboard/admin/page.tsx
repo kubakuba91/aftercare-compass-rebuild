@@ -627,7 +627,6 @@ export default async function AdminDashboardPage({
                     <td className="py-4 pr-4">
                       <Badge tone={statusTone(profile.status)}>{formatValue(profile.status)}</Badge>
                     </td>
-                    <td className="py-4 pr-4">Tier {profile.verificationTier}</td>
                     <td className="py-4 pr-4">{availabilityText(profile)}</td>
                     <td className="py-4 pr-4">{profile._count.referrals + profile._count.leads}</td>
                     <td className="py-4 pr-4 text-muted-foreground">{formatDate(profile.updatedAt)}</td>
@@ -874,7 +873,7 @@ export default async function AdminDashboardPage({
                           )}
                           <p className="mt-1 text-xs text-muted-foreground">
                             {reviewSubjectLabel(review.subjectType)}
-                            {review.profile ? ` · ${profileLabel(review.profile.type)} · Tier ${review.profile.verificationTier}` : ""}
+                            {review.profile ? ` · ${profileLabel(review.profile.type)}` : ""}
                           </p>
                           {review.profile ? (
                             <p className="mt-1 text-xs text-muted-foreground">
@@ -964,7 +963,7 @@ export default async function AdminDashboardPage({
                           {document.profile.programName}
                         </Link>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {document.profile.organization.name} · Tier {document.profile.verificationTier}
+                          {document.profile.organization.name}
                         </p>
                       </td>
                       <td className="py-4 pr-4">{document.documentType}</td>

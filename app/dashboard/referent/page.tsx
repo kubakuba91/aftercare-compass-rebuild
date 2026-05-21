@@ -657,7 +657,6 @@ export default async function ReferentDashboardPage({
                     </Badge>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge>{favorite.profile.type === ProfileType.sober_living ? "Sober Living" : "Continued Care"}</Badge>
                     <Badge tone={favorite.profile.bedsAvailable || favorite.profile.acceptingNewPatients ? "success" : "warning"}>
                       {formatAvailability(favorite.profile)}
                     </Badge>

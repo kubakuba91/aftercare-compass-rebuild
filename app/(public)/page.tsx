@@ -1,7 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { Search } from "lucide-react";
 import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 
@@ -40,8 +39,7 @@ export default async function HomePage() {
             <div className="absolute inset-0 bg-black/35" aria-hidden="true" />
 
             <div className="relative max-w-3xl px-6 py-20 md:px-20 md:py-28">
-              <Badge tone="verified">Aftercare marketplace</Badge>
-              <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-normal text-white md:text-6xl">
+              <h1 className="text-4xl font-semibold leading-tight tracking-normal text-white md:text-6xl">
                 Navigate Recovery Together
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-white">

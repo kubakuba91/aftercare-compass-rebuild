@@ -561,7 +561,7 @@ export default async function AdminDashboardPage({
                       <p className="font-semibold">{organization.name}</p>
                       <p className="mt-1 text-muted-foreground">{organizationLabel(organization.type)}</p>
                     </div>
-                    <Badge tone={statusTone(organization.subscriptionStatus || "draft")}>
+                    <Badge className="self-start justify-self-start" tone={statusTone(organization.subscriptionStatus || "draft")}>
                       {formatValue(organization.subscriptionStatus || "No subscription")}
                     </Badge>
                     <p className="text-muted-foreground">{organization._count.users} users</p>

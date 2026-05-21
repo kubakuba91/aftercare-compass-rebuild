@@ -247,7 +247,7 @@ function ClaimProfileCard({
     submitted: { tone: "border-emerald-200 bg-emerald-50 text-emerald-800", message: "Claim request submitted. Our team will review it before transferring access." },
     pending: { tone: "border-emerald-200 bg-emerald-50 text-emerald-800", message: "Your claim is already in review." },
     under_review: { tone: "border-accent/30 bg-accent/10", message: "A claim is already under review for this profile." },
-    invalid: { tone: "border-accent/30 bg-accent/10", message: "Please complete the required claim fields." },
+    invalid: { tone: "border-accent/30 bg-accent/10", message: "Please complete your role, organization, and relationship to this program before submitting." },
     provider_required: { tone: "border-accent/30 bg-accent/10", message: "Use an aftercare provider account to claim this profile." },
     provider_type: { tone: "border-accent/30 bg-accent/10", message: "This profile type does not match your provider account." },
     unavailable: { tone: "border-accent/30 bg-accent/10", message: "This profile has already been claimed." }
@@ -292,7 +292,7 @@ function ClaimProfileCard({
           <input name="slug" type="hidden" value={profile.slug} />
           <label className="grid gap-2 text-sm font-medium">
             Your name
-            <input className="min-h-10 rounded-md border border-border px-3" defaultValue={userName} name="claimantName" required />
+            <input className="min-h-10 rounded-md border border-border px-3" defaultValue={userName} minLength={2} name="claimantName" required />
           </label>
           <label className="grid gap-2 text-sm font-medium">
             Work email
@@ -304,15 +304,15 @@ function ClaimProfileCard({
           </label>
           <label className="grid gap-2 text-sm font-medium">
             Your role
-            <input className="min-h-10 rounded-md border border-border px-3" name="claimantRole" placeholder="Owner, director, manager..." required />
+            <input className="min-h-10 rounded-md border border-border px-3" minLength={2} name="claimantRole" placeholder="Owner, director, manager..." required />
           </label>
           <label className="grid gap-2 text-sm font-medium">
             Organization
-            <input className="min-h-10 rounded-md border border-border px-3" defaultValue={organizationName} name="claimantOrganization" required />
+            <input className="min-h-10 rounded-md border border-border px-3" defaultValue={organizationName} minLength={2} name="claimantOrganization" required />
           </label>
           <label className="grid gap-2 text-sm font-medium">
             Relationship to this program
-            <textarea className="min-h-24 rounded-md border border-border p-3" name="relationshipToProgram" required />
+            <textarea className="min-h-24 rounded-md border border-border p-3" minLength={2} name="relationshipToProgram" required />
           </label>
           <label className="grid gap-2 text-sm font-medium">
             Notes

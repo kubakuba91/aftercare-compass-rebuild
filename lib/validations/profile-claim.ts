@@ -8,6 +8,6 @@ export const profileClaimRequestSchema = z.object({
   claimantPhone: z.string().trim().max(40).optional(),
   claimantRole: z.string().trim().min(2, "Role is required").max(120),
   claimantOrganization: z.string().trim().min(2, "Organization is required").max(160),
-  relationshipToProgram: z.string().trim().min(10, "Relationship details are required").max(600),
+  relationshipToProgram: z.string().trim().min(2, "Relationship details are required").max(600),
   notes: z.string().trim().max(1200).optional()
 });

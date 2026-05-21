@@ -610,9 +610,35 @@ export default async function AdminDashboardPage({
           />
           <Card>
             <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-              <div className="flex items-center gap-3">
-                <Home className="text-primary" size={24} />
-                <h2 className="text-xl font-semibold">Homes & programs</h2>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="flex items-center gap-3">
+                  <Home className="text-primary" size={24} />
+                  <h2 className="text-xl font-semibold">Homes & programs</h2>
+                </div>
+                <form className="flex w-full items-center gap-2 lg:w-[420px]" method="get">
+                  <input name="tab" type="hidden" value="profiles" />
+                  <label className="sr-only" htmlFor="profileSearch">Search homes and programs</label>
+                  <div className="focus-within:ring-ring flex min-h-10 flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 shadow-sm focus-within:ring-2">
+                    <Search aria-hidden="true" className="shrink-0 text-muted-foreground" size={16} />
+                    <input
+                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium outline-none placeholder:text-muted-foreground"
+                      defaultValue={profileSearchTerm}
+                      id="profileSearch"
+                      name="profileSearch"
+                      placeholder="Search homes"
+                      type="search"
+                    />
+                  </div>
+                  <button className="sr-only" type="submit">Search</button>
+                  {profileSearchTerm ? (
+                    <Link
+                      className="focus-ring inline-flex min-h-10 items-center justify-center rounded-full border border-border bg-white px-3 text-sm font-semibold shadow-sm"
+                      href="/dashboard/admin?tab=profiles"
+                    >
+                      Clear
+                    </Link>
+                  ) : null}
+                </form>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {reviewMessage ? <Badge tone="success">{reviewMessage}</Badge> : null}
@@ -625,39 +651,6 @@ export default async function AdminDashboardPage({
                 </Link>
               </div>
             </div>
-            <form className="mt-5 grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_auto]" method="get">
-              <input name="tab" type="hidden" value="profiles" />
-              <label className="sr-only" htmlFor="profileSearch">Search homes and programs</label>
-              <div className="relative">
-                <Search
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  size={18}
-                />
-                <input
-                  className="focus-ring min-h-12 w-full rounded-2xl border border-border bg-white py-3 pl-11 pr-4 text-sm font-medium shadow-sm"
-                  defaultValue={profileSearchTerm}
-                  id="profileSearch"
-                  name="profileSearch"
-                  placeholder="Search by home, city, state, or organization"
-                  type="search"
-                />
-              </div>
-              <button
-                className="focus-ring inline-flex min-h-12 items-center justify-center rounded-2xl bg-primary px-5 text-sm font-semibold text-white shadow-sm"
-                type="submit"
-              >
-                Search
-              </button>
-              {profileSearchTerm ? (
-                <Link
-                  className="focus-ring inline-flex min-h-12 items-center justify-center rounded-2xl border border-border bg-white px-5 text-sm font-semibold shadow-sm"
-                  href="/dashboard/admin?tab=profiles"
-                >
-                  Clear
-                </Link>
-              ) : null}
-            </form>
             {profileSearchTerm ? (
               <p className="mt-3 text-sm text-muted-foreground">
                 Showing {profiles.length} {profiles.length === 1 ? "result" : "results"} for &quot;{profileSearchTerm}&quot;.

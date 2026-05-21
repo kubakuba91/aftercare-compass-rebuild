@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Building2, ClipboardCheck, FileCheck2, Flag, Handshake, Home, Inbox, PlusCircle } from "lucide-react";
+import { Building2, ClipboardCheck, FileCheck2, Flag, Handshake, Home, Inbox, PlusCircle, Search } from "lucide-react";
 import {
   AdminReviewStatus,
   AdminReviewSubjectType,
   LeadStatus,
   OrganizationType,
+  Prisma,
   ProfileStatus,
   ProfileType,
   ReferralStatus,
@@ -116,7 +117,11 @@ function SummaryCards({ items }: { items: Array<[string, string]> }) {
 export default async function AdminDashboardPage({
   searchParams
 }: {
-  searchParams: Promise<{ tab?: string | string[]; reviewMessage?: string | string[] }>;
+  searchParams: Promise<{
+    tab?: string | string[];
+    reviewMessage?: string | string[];
+    profileSearch?: string | string[];
+  }>;
 }) {
   const [query, appUser] = await Promise.all([
     searchParams,
@@ -124,6 +129,8 @@ export default async function AdminDashboardPage({
   ]);
   const activeTab = asAdminTab(query.tab);
   const reviewMessage = Array.isArray(query.reviewMessage) ? query.reviewMessage[0] : query.reviewMessage;
+  const profileSearchValue = Array.isArray(query.profileSearch) ? query.profileSearch[0] : query.profileSearch;
+  const profileSearchTerm = profileSearchValue?.trim() ?? "";
 
   if (appUser.role !== Role.system_admin) {
     redirect("/dashboard");
@@ -205,6 +212,16 @@ export default async function AdminDashboardPage({
       }
     }),
     prisma.aftercareProfile.findMany({
+      where: profileSearchTerm
+        ? {
+            OR: [
+              { programName: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } },
+              { publicCity: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } },
+              { publicState: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } },
+              { organization: { name: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } } }
+            ]
+          }
+        : undefined,
       orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
       take: 75,
       select: {
@@ -608,6 +625,44 @@ export default async function AdminDashboardPage({
                 </Link>
               </div>
             </div>
+            <form className="mt-5 grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_auto]" method="get">
+              <input name="tab" type="hidden" value="profiles" />
+              <label className="sr-only" htmlFor="profileSearch">Search homes and programs</label>
+              <div className="relative">
+                <Search
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  size={18}
+                />
+                <input
+                  className="focus-ring min-h-12 w-full rounded-2xl border border-border bg-white py-3 pl-11 pr-4 text-sm font-medium shadow-sm"
+                  defaultValue={profileSearchTerm}
+                  id="profileSearch"
+                  name="profileSearch"
+                  placeholder="Search by home, city, state, or organization"
+                  type="search"
+                />
+              </div>
+              <button
+                className="focus-ring inline-flex min-h-12 items-center justify-center rounded-2xl bg-primary px-5 text-sm font-semibold text-white shadow-sm"
+                type="submit"
+              >
+                Search
+              </button>
+              {profileSearchTerm ? (
+                <Link
+                  className="focus-ring inline-flex min-h-12 items-center justify-center rounded-2xl border border-border bg-white px-5 text-sm font-semibold shadow-sm"
+                  href="/dashboard/admin?tab=profiles"
+                >
+                  Clear
+                </Link>
+              ) : null}
+            </form>
+            {profileSearchTerm ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Showing {profiles.length} {profiles.length === 1 ? "result" : "results"} for &quot;{profileSearchTerm}&quot;.
+              </p>
+            ) : null}
             <div className="mt-5 overflow-x-auto">
               <table className="w-full min-w-[980px] text-left text-sm">
               <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
@@ -622,7 +677,7 @@ export default async function AdminDashboardPage({
                 </tr>
               </thead>
               <tbody>
-                {profiles.map((profile) => (
+                {profiles.length ? profiles.map((profile) => (
                   <tr className="border-b border-border last:border-0" key={profile.id}>
                     <td className="py-4 pr-4">
                       <Link className="font-semibold underline-offset-4 hover:underline" href={`/profiles/${profile.slug}?preview=1`}>
@@ -642,7 +697,13 @@ export default async function AdminDashboardPage({
                     <td className="py-4 pr-4">{profile._count.referrals + profile._count.leads}</td>
                     <td className="py-4 pr-4 text-muted-foreground">{formatDate(profile.updatedAt)}</td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td className="py-8 text-center text-sm text-muted-foreground" colSpan={7}>
+                      No homes or programs found.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
             </div>

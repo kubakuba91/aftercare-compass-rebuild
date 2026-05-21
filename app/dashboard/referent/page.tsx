@@ -20,7 +20,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { billingPlans, formatBillingStatus, formatPlanPrice, getBillingPlan } from "@/lib/billing";
+import { formatBillingStatus, getBillingPlan, getBillingPlansWithStripePrices } from "@/lib/billing";
 import { canDisplayVerifiedBadge, canReceiveDirectReferrals, getReferentTeamLimit } from "@/lib/feature-gates";
 import {
   formatPhoneScreeningDateTime,
@@ -293,6 +293,10 @@ export default async function ReferentDashboardPage({
   const canInviteMore = teamLimit === "unlimited" || teamUsage < teamLimit;
   const canManageTeam = appUser.role === Role.referent_admin;
   const referentBillingPlan = getBillingPlan("referent", organization?.subscriptionPlan);
+  const referentBillingPlans = await getBillingPlansWithStripePrices("referent");
+  const referentBillingCycle = organization?.subscriptionBillingCycle === "annual" ? "annual" : "monthly";
+  const referentCurrentPriceLabel =
+    referentBillingPlans.find((plan) => plan.key === referentBillingPlan.key)?.priceLabels[referentBillingCycle] ?? "Custom";
 
   return (
     <main className="shell py-8">
@@ -401,7 +405,7 @@ export default async function ReferentDashboardPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {billingPlans.referent.map((plan) => {
+                    {referentBillingPlans.map((plan) => {
                       const isCurrentPlan = referentBillingPlan.key === plan.key;
 
                       return (
@@ -412,7 +416,7 @@ export default async function ReferentDashboardPage({
                               {isCurrentPlan ? <Badge tone="success">Current</Badge> : null}
                             </div>
                           </td>
-                          <td className="px-4 py-4 align-top font-semibold">{formatPlanPrice(plan.monthlyPrice, "monthly")}</td>
+                          <td className="px-4 py-4 align-top font-semibold">{plan.priceLabels.monthly}</td>
                           <td className="px-4 py-4 align-top">{formatPlanLimit(planTeamLimit(plan.key))}</td>
                           <td className="px-4 py-4 align-top text-muted-foreground">
                             <ul className="grid gap-1">
@@ -454,7 +458,7 @@ export default async function ReferentDashboardPage({
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Current plan</p>
                     <h3 className="mt-1 text-2xl font-semibold">{referentBillingPlan.label}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {formatPlanPrice(referentBillingPlan.monthlyPrice, organization?.subscriptionBillingCycle === "annual" ? "annual" : "monthly")}
+                      {referentCurrentPriceLabel}
                     </p>
                   </div>
                   <Badge tone={organization?.subscriptionStatus === "active" ? "success" : "warning"}>

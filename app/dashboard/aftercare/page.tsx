@@ -30,7 +30,7 @@ import {
   RowActionsMenuLabel,
   RowActionsMenuLink
 } from "@/components/ui/row-actions-menu";
-import { billingPlans, formatBillingStatus, formatPlanPrice, getBillingPlan } from "@/lib/billing";
+import { billingPlans, formatBillingStatus, getBillingPlan, getBillingPlansWithStripePrices } from "@/lib/billing";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
 import {
   canReceiveDirectReferrals,
@@ -605,6 +605,7 @@ export default async function AftercareDashboardPage({
   ]);
 
   const planCountedProfiles = profiles.filter((profile) => profile.status !== "unpublished");
+  const aftercareBillingPlans = await getBillingPlansWithStripePrices("aftercare");
   const selectedProfile = profiles.find((profile) => profile.id === query.profileId) ?? null;
   const scopedProfiles = selectedProfile ? [selectedProfile] : planCountedProfiles;
   const scopedLeads = selectedProfile
@@ -665,6 +666,9 @@ export default async function AftercareDashboardPage({
   const canAddProfiles = canAddAnotherProfile(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
   const nextProfilePlan = nextProfileCapacityPlan(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
   const aftercareBillingPlan = getBillingPlan("aftercare", appUser.organization?.subscriptionPlan);
+  const aftercareBillingCycle = appUser.organization?.subscriptionBillingCycle === "annual" ? "annual" : "monthly";
+  const aftercareCurrentPriceLabel =
+    aftercareBillingPlans.find((plan) => plan.key === aftercareBillingPlan.key)?.priceLabels[aftercareBillingCycle] ?? "Custom";
 
   return (
     <main className="shell py-8">
@@ -1676,7 +1680,7 @@ export default async function AftercareDashboardPage({
                         </tr>
                       </thead>
                       <tbody>
-                        {billingPlans.aftercare.map((plan) => {
+                        {aftercareBillingPlans.map((plan) => {
                           const planLimits = currentAftercarePlan(plan.key);
                           const isCurrentPlan = aftercareBillingPlan.key === plan.key;
 
@@ -1688,7 +1692,7 @@ export default async function AftercareDashboardPage({
                                   {isCurrentPlan ? <Badge tone="success">Current</Badge> : null}
                                 </div>
                               </td>
-                              <td className="px-4 py-4 align-top font-semibold">{formatPlanPrice(plan.monthlyPrice, "monthly")}</td>
+                              <td className="px-4 py-4 align-top font-semibold">{plan.priceLabels.monthly}</td>
                               <td className="px-4 py-4 align-top">{formatPlanLimit(planLimits.profiles)}</td>
                               <td className="px-4 py-4 align-top">{formatPlanLimit(planLimits.managers)}</td>
                               <td className="px-4 py-4 align-top text-muted-foreground">
@@ -1733,7 +1737,7 @@ export default async function AftercareDashboardPage({
                         {aftercareBillingPlan.label}
                       </h3>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {formatPlanPrice(aftercareBillingPlan.monthlyPrice, appUser.organization?.subscriptionBillingCycle === "annual" ? "annual" : "monthly")}
+                        {aftercareCurrentPriceLabel}
                       </p>
                     </div>
                     <Badge tone={appUser.organization?.subscriptionStatus === "active" ? "success" : "warning"}>

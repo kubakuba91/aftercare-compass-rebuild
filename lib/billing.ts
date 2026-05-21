@@ -1,6 +1,8 @@
 import { OrganizationType, SubscriptionStatus } from "@prisma/client";
+import { unstable_cache } from "next/cache";
 import { normalizeAftercarePlanKey, normalizeReferentPlanKey } from "@/lib/feature-gates";
 import { aftercarePlans, referentPlans } from "@/lib/plans";
+import { getStripe, hasStripeConfig } from "@/lib/stripe";
 
 export const billingCycleOptions = ["monthly", "annual"] as const;
 
@@ -10,7 +12,7 @@ export type ReferentPlanKey = keyof typeof referentPlans;
 export type AftercarePlanKey = keyof typeof aftercarePlans;
 export type BillingPlanKey = ReferentPlanKey | AftercarePlanKey;
 
-type BillingPlan = {
+export type BillingPlan = {
   key: BillingPlanKey;
   label: string;
   monthlyPrice: number | null;
@@ -20,6 +22,10 @@ type BillingPlan = {
   fallbackMonthlyEnv?: string;
   fallbackAnnualEnv?: string;
   features: string[];
+};
+
+export type BillingPlanWithPrices = BillingPlan & {
+  priceLabels: Record<BillingCycle, string>;
 };
 
 export const billingPlans: Record<BillingPlanAudience, BillingPlan[]> = {
@@ -143,6 +149,87 @@ export function getStripePriceId(audience: BillingPlanAudience, planKey: string,
   };
 }
 
+function formatStripePrice(unitAmount: number | null, currency: string | null | undefined, cycle: BillingCycle) {
+  if (unitAmount === null) {
+    return "Custom";
+  }
+
+  const formattedAmount = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency || "usd",
+    maximumFractionDigits: unitAmount % 100 === 0 ? 0 : 2
+  }).format(unitAmount / 100);
+
+  return `${formattedAmount}/${cycle === "annual" ? "yr" : "mo"}`;
+}
+
+const retrieveStripePrice = unstable_cache(
+  async (priceId: string) => {
+    if (!hasStripeConfig()) {
+      return null;
+    }
+
+    try {
+      const price = await getStripe().prices.retrieve(priceId);
+
+      return {
+        currency: price.currency,
+        unitAmount: price.unit_amount
+      };
+    } catch (error) {
+      console.error("Stripe price lookup failed", priceId, error);
+      return null;
+    }
+  },
+  ["stripe-price-display"],
+  { revalidate: 60 * 60 }
+);
+
+export function formatPlanPrice(monthlyPrice: number | null, cycle: BillingCycle) {
+  if (!monthlyPrice) {
+    return "Custom";
+  }
+
+  if (cycle === "annual") {
+    return `$${monthlyPrice * 10}/yr`;
+  }
+
+  return `$${monthlyPrice}/mo`;
+}
+
+export async function getBillingPlansWithStripePrices(audience: BillingPlanAudience): Promise<BillingPlanWithPrices[]> {
+  return Promise.all(
+    billingPlans[audience].map(async (plan) => {
+      const priceLabels = {
+        monthly: formatPlanPrice(plan.monthlyPrice, "monthly"),
+        annual: formatPlanPrice(plan.monthlyPrice, "annual")
+      };
+
+      if (plan.monthlyPrice === null || plan.monthlyPrice === 0) {
+        return { ...plan, priceLabels };
+      }
+
+      await Promise.all(
+        billingCycleOptions.map(async (cycle) => {
+          const { priceId } = getStripePriceId(audience, plan.key, cycle);
+
+          if (!priceId) {
+            return;
+          }
+
+          const stripePrice = await retrieveStripePrice(priceId);
+
+          if (stripePrice) {
+            priceLabels[cycle] = formatStripePrice(stripePrice.unitAmount, stripePrice.currency, cycle);
+          }
+        })
+      );
+
+      return { ...plan, priceLabels };
+    })
+  );
+}
+
 export function planKeyFromPriceId(priceId: string | null | undefined) {
   if (!priceId) {
     return null;
@@ -211,16 +298,4 @@ export function formatBillingStatus(status: string | null | undefined) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-}
-
-export function formatPlanPrice(monthlyPrice: number | null, cycle: BillingCycle) {
-  if (!monthlyPrice) {
-    return "Custom";
-  }
-
-  if (cycle === "annual") {
-    return `$${monthlyPrice * 10}/yr`;
-  }
-
-  return `$${monthlyPrice}/mo`;
 }

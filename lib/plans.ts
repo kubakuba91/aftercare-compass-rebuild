@@ -67,7 +67,7 @@ export const aftercarePlans = {
   },
   verified: {
     label: "Verified",
-    monthlyPrice: 499,
+    monthlyPrice: 349,
     profiles: 5,
     managers: 10,
     directReferralIntake: true,
@@ -82,7 +82,7 @@ export const aftercarePlans = {
   },
   network: {
     label: "Network",
-    monthlyPrice: 999,
+    monthlyPrice: 699,
     profiles: "unlimited",
     managers: "unlimited",
     directReferralIntake: true,

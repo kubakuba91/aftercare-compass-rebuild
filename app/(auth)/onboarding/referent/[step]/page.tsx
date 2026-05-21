@@ -4,6 +4,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recovery-card";
 import { Card } from "@/components/ui/card";
+import { getBillingPlansWithStripePrices } from "@/lib/billing";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { referentPlans } from "@/lib/plans";
@@ -126,6 +127,7 @@ export default async function ReferentStepPage({
 
   const step = referentSteps[currentStep - 1];
   const action = saveReferentOnboardingStep.bind(null, currentStep);
+  const referentBillingPlans = currentStep === 3 ? await getBillingPlansWithStripePrices("referent") : [];
   const selected = (values?: string[] | null) => values ?? [];
   const invitedTeamEmails = Array.isArray(referentDetails?.invitedTeamEmails)
     ? referentDetails.invitedTeamEmails.map(String)
@@ -252,7 +254,7 @@ export default async function ReferentStepPage({
                   <div className="grid gap-3">
                     {referentPlanOptions.map((planKey) => {
                       const plan = referentPlans[planKey];
-                      const price = plan.monthlyPrice ? `$${plan.monthlyPrice}/mo` : "Custom";
+                      const price = referentBillingPlans.find((billingPlan) => billingPlan.key === planKey)?.priceLabels.monthly ?? "Custom";
 
                       return (
                         <label key={planKey} className="ac-panel-card grid gap-2 p-4">

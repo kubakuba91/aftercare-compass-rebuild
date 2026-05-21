@@ -472,6 +472,30 @@ export default async function AdminDashboardPage({
   const pendingApplicationCount = applicationReviews.filter((review) => review.status === AdminReviewStatus.pending).length;
   const pendingClaimCount = profileClaims.filter((claim) => claim.status === "pending").length;
   const openFlagCount = flags.filter((flag) => flag.status === "open").length;
+  const recentRequests = [
+    ...referrals.map((referral) => ({
+      id: referral.id,
+      kind: "Referral" as const,
+      status: referral.status,
+      requester: referral.referentOrg.name,
+      requesterDetail: `Case manager: ${referral.caseManagerName || referral.caseManagerOrganization || "Not set"}`,
+      profileName: referral.aftercareProfile.programName,
+      profileHref: `/profiles/${referral.aftercareProfile.slug}?preview=1`,
+      details: `${formatValue(referral.clientAgeRange)} · ${formatValue(referral.preferredStartWindow)}`,
+      submittedAt: referral.createdAt
+    })),
+    ...leads.map((lead) => ({
+      id: lead.id,
+      kind: "Lead" as const,
+      status: lead.status,
+      requester: lead.name,
+      requesterDetail: lead.email,
+      profileName: lead.profile.programName,
+      profileHref: `/profiles/${lead.profile.slug}?preview=1`,
+      details: `To ${lead.aftercareOrg.name}`,
+      submittedAt: lead.createdAt
+    }))
+  ].sort((first, second) => second.submittedAt.getTime() - first.submittedAt.getTime());
 
   return (
     <main className="shell py-8">
@@ -791,49 +815,52 @@ export default async function AdminDashboardPage({
               ["Total public leads", countLeads().toString()]
             ]}
           />
-          <div className="grid gap-4 xl:grid-cols-2">
           <Card>
-            <h2 className="text-xl font-semibold">Recent referrals</h2>
-            <div className="mt-4 grid gap-3">
-              {referrals.map((referral) => (
-                <div className="ac-panel-card p-4 text-sm" key={referral.id}>
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold">{referral.referentOrg.name}</p>
-                      <p className="mt-1 text-muted-foreground">
-                        To {referral.aftercareProfile.programName} · {formatValue(referral.clientAgeRange)} · {formatValue(referral.preferredStartWindow)}
-                      </p>
-                    </div>
-                    <Badge tone={statusTone(referral.status)}>{formatValue(referral.status)}</Badge>
-                  </div>
-                  <p className="mt-3 text-muted-foreground">Case manager: {referral.caseManagerName || referral.caseManagerOrganization}</p>
-                  <p className="mt-2 text-xs text-muted-foreground">Submitted {formatDate(referral.createdAt)}</p>
-                </div>
-              ))}
-              {!referrals.length ? <p className="text-sm text-muted-foreground">No referrals yet.</p> : null}
+            <h2 className="text-xl font-semibold">Recent requests</h2>
+            <div className="mt-5 overflow-x-auto">
+              <table className="w-full min-w-[900px] text-left text-sm">
+                <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="py-3 pr-4">Type</th>
+                    <th className="py-3 pr-4">Requester</th>
+                    <th className="py-3 pr-4">Profile</th>
+                    <th className="py-3 pr-4">Details</th>
+                    <th className="py-3 pr-4">Status</th>
+                    <th className="py-3 pr-4">Submitted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentRequests.length ? recentRequests.map((request) => (
+                    <tr className="border-b border-border last:border-0" key={`${request.kind}-${request.id}`}>
+                      <td className="py-4 pr-4">
+                        <Badge tone={request.kind === "Referral" ? "verified" : "neutral"}>{request.kind}</Badge>
+                      </td>
+                      <td className="py-4 pr-4">
+                        <p className="font-semibold">{request.requester}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{request.requesterDetail}</p>
+                      </td>
+                      <td className="py-4 pr-4">
+                        <Link className="font-medium underline-offset-4 hover:underline" href={request.profileHref}>
+                          {request.profileName}
+                        </Link>
+                      </td>
+                      <td className="py-4 pr-4 text-muted-foreground">{request.details}</td>
+                      <td className="py-4 pr-4">
+                        <Badge tone={statusTone(request.status)}>{formatValue(request.status)}</Badge>
+                      </td>
+                      <td className="py-4 pr-4 text-muted-foreground">{formatDate(request.submittedAt)}</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td className="py-8 text-center text-sm text-muted-foreground" colSpan={6}>
+                        No referrals or public leads yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </Card>
-          <Card>
-            <h2 className="text-xl font-semibold">Recent public leads</h2>
-            <div className="mt-4 grid gap-3">
-              {leads.map((lead) => (
-                <div className="ac-panel-card p-4 text-sm" key={lead.id}>
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold">{lead.name}</p>
-                      <p className="mt-1 text-muted-foreground">
-                        {lead.email} · {lead.profile.programName}
-                      </p>
-                    </div>
-                    <Badge tone={statusTone(lead.status)}>{formatValue(lead.status)}</Badge>
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">Submitted {formatDate(lead.createdAt)} to {lead.aftercareOrg.name}</p>
-                </div>
-              ))}
-              {!leads.length ? <p className="text-sm text-muted-foreground">No public leads yet.</p> : null}
-            </div>
-          </Card>
-          </div>
         </div>
       ) : null}
 

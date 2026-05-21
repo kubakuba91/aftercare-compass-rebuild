@@ -11,7 +11,8 @@ import {
   ProfileStatus,
   ProfileType,
   ReferralStatus,
-  Role
+  Role,
+  SubscriptionStatus
 } from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Badge } from "@/components/ui/badge";
@@ -121,6 +122,7 @@ export default async function AdminDashboardPage({
   searchParams: Promise<{
     tab?: string | string[];
     reviewMessage?: string | string[];
+    organizationSearch?: string | string[];
     profileSearch?: string | string[];
   }>;
 }) {
@@ -130,8 +132,23 @@ export default async function AdminDashboardPage({
   ]);
   const activeTab = asAdminTab(query.tab);
   const reviewMessage = Array.isArray(query.reviewMessage) ? query.reviewMessage[0] : query.reviewMessage;
+  const organizationSearchValue = Array.isArray(query.organizationSearch) ? query.organizationSearch[0] : query.organizationSearch;
+  const organizationSearchTerm = organizationSearchValue?.trim() ?? "";
+  const organizationSearchLower = organizationSearchTerm.toLowerCase();
   const profileSearchValue = Array.isArray(query.profileSearch) ? query.profileSearch[0] : query.profileSearch;
   const profileSearchTerm = profileSearchValue?.trim() ?? "";
+  const organizationSearchTypes = organizationSearchTerm
+    ? [
+        organizationSearchLower.includes("referent") ? OrganizationType.referent : null,
+        organizationSearchLower.includes("sober") ? OrganizationType.aftercare_sober_living : null,
+        organizationSearchLower.includes("continued") || organizationSearchLower.includes("care")
+          ? OrganizationType.aftercare_continued_care
+          : null
+      ].filter((type): type is OrganizationType => Boolean(type))
+    : [];
+  const organizationSearchStatuses = organizationSearchTerm
+    ? Object.values(SubscriptionStatus).filter((status) => formatValue(status).toLowerCase().includes(organizationSearchLower))
+    : [];
 
   if (appUser.role !== Role.system_admin) {
     redirect("/dashboard");
@@ -190,6 +207,18 @@ export default async function AdminDashboardPage({
       }
     }),
     prisma.organization.findMany({
+      where: organizationSearchTerm
+        ? {
+            OR: [
+              { name: { contains: organizationSearchTerm, mode: Prisma.QueryMode.insensitive } },
+              { email: { contains: organizationSearchTerm, mode: Prisma.QueryMode.insensitive } },
+              { phone: { contains: organizationSearchTerm, mode: Prisma.QueryMode.insensitive } },
+              { subscriptionPlan: { contains: organizationSearchTerm, mode: Prisma.QueryMode.insensitive } },
+              ...(organizationSearchStatuses.length ? [{ subscriptionStatus: { in: organizationSearchStatuses } }] : []),
+              ...(organizationSearchTypes.length ? [{ type: { in: organizationSearchTypes } }] : [])
+            ]
+          }
+        : undefined,
       orderBy: [{ type: "asc" }, { name: "asc" }],
       take: 50,
       select: {
@@ -562,10 +591,41 @@ export default async function AdminDashboardPage({
             ]}
           />
           <Card>
-            <div className="flex items-center gap-3">
-              <Building2 className="text-primary" size={24} />
-              <h2 className="text-xl font-semibold">Organizations</h2>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <div className="flex items-center gap-3">
+                <Building2 className="text-primary" size={24} />
+                <h2 className="text-xl font-semibold">Organizations</h2>
+              </div>
+              <form className="flex w-full items-center gap-2 lg:w-[420px]" method="get">
+                <input name="tab" type="hidden" value="organizations" />
+                <label className="sr-only" htmlFor="organizationSearch">Search organizations</label>
+                <div className="focus-within:ring-ring flex min-h-10 flex-1 items-center gap-2 rounded-full border border-border bg-white px-4 shadow-sm focus-within:ring-2">
+                  <Search aria-hidden="true" className="shrink-0 text-muted-foreground" size={16} />
+                  <input
+                    className="!min-h-0 min-w-0 flex-1 appearance-none !border-0 !bg-transparent !p-0 text-sm font-medium !shadow-none outline-none placeholder:text-muted-foreground focus:!border-0 focus:!shadow-none focus:ring-0"
+                    defaultValue={organizationSearchTerm}
+                    id="organizationSearch"
+                    name="organizationSearch"
+                    placeholder="Search organizations"
+                    type="search"
+                  />
+                </div>
+                <button className="sr-only" type="submit">Search</button>
+                {organizationSearchTerm ? (
+                  <Link
+                    className="focus-ring inline-flex min-h-10 items-center justify-center rounded-full border border-border bg-white px-3 text-sm font-semibold shadow-sm"
+                    href="/dashboard/admin?tab=organizations"
+                  >
+                    Clear
+                  </Link>
+                ) : null}
+              </form>
             </div>
+            {organizationSearchTerm ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Showing {organizations.length} {organizations.length === 1 ? "result" : "results"} for &quot;{organizationSearchTerm}&quot;.
+              </p>
+            ) : null}
             <div className="mt-5 overflow-x-auto">
               <table className="w-full min-w-[920px] text-left text-sm">
               <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
@@ -580,7 +640,7 @@ export default async function AdminDashboardPage({
                 </tr>
               </thead>
               <tbody>
-                {organizations.map((organization) => {
+                {organizations.length ? organizations.map((organization) => {
                   const requestCount = organization._count.leads + organization._count.aftercareReferrals + organization._count.referentReferrals;
 
                   return (
@@ -601,7 +661,13 @@ export default async function AdminDashboardPage({
                       <td className="py-4 pr-4 text-muted-foreground">{formatDate(organization.createdAt)}</td>
                     </tr>
                   );
-                })}
+                }) : (
+                  <tr>
+                    <td className="py-8 text-center text-sm text-muted-foreground" colSpan={7}>
+                      No organizations found.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
             </div>

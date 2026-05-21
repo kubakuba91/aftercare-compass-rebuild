@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Building2, ClipboardCheck, FileCheck2, Flag, Handshake, Home, Inbox } from "lucide-react";
+import { Building2, ClipboardCheck, FileCheck2, Flag, Handshake, Home, Inbox, PlusCircle } from "lucide-react";
 import {
   AdminReviewStatus,
   AdminReviewSubjectType,
@@ -16,7 +16,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
-import { reviewOnboardingSubmission, reviewProfileClaimRequest } from "./actions";
+import {
+  createUnclaimedAftercareProfile,
+  reviewOnboardingSubmission,
+  reviewProfileClaimRequest
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -592,6 +596,83 @@ export default async function AdminDashboardPage({
             ]}
           />
           <Card>
+            <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+              <div>
+                <div className="flex items-center gap-3">
+                  <PlusCircle className="text-primary" size={24} />
+                  <h2 className="text-xl font-semibold">Add unclaimed listing</h2>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Add a home or program to the public directory before the provider claims it.
+                </p>
+              </div>
+              {reviewMessage ? <Badge tone="success">{reviewMessage}</Badge> : null}
+            </div>
+            <form action={createUnclaimedAftercareProfile} className="mt-5 grid gap-4">
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="grid gap-1 text-sm font-semibold">
+                  Listing type
+                  <select className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" name="type">
+                    <option value={ProfileType.sober_living}>Sober living home</option>
+                    <option value={ProfileType.continued_care}>Continued care program</option>
+                  </select>
+                </label>
+                <label className="grid gap-1 text-sm font-semibold md:col-span-2">
+                  Program name
+                  <input className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" name="programName" required />
+                </label>
+              </div>
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_120px_140px]">
+                <label className="grid gap-1 text-sm font-semibold">
+                  Street address
+                  <input className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" name="streetAddress" />
+                </label>
+                <label className="grid gap-1 text-sm font-semibold">
+                  City
+                  <input className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" name="city" required />
+                </label>
+                <label className="grid gap-1 text-sm font-semibold">
+                  State
+                  <input className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" maxLength={2} name="state" required />
+                </label>
+                <label className="grid gap-1 text-sm font-semibold">
+                  ZIP
+                  <input className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" name="zip" />
+                </label>
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="grid gap-1 text-sm font-semibold">
+                  Admissions email
+                  <input className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" name="admissionsContactEmail" type="email" />
+                </label>
+                <label className="grid gap-1 text-sm font-semibold">
+                  Admissions phone
+                  <input className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" name="admissionsContactPhone" />
+                </label>
+                <label className="grid gap-1 text-sm font-semibold">
+                  Website
+                  <input className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" name="websiteUrl" type="url" />
+                </label>
+              </div>
+              <label className="grid gap-1 text-sm font-semibold">
+                Short description
+                <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm leading-6" name="description" />
+              </label>
+              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
+                <label className="grid gap-1 text-sm font-semibold">
+                  Initial status
+                  <select className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" name="status">
+                    <option value={ProfileStatus.published}>Published</option>
+                    <option value={ProfileStatus.draft}>Draft</option>
+                  </select>
+                </label>
+                <button className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                  Add listing
+                </button>
+              </div>
+            </form>
+          </Card>
+          <Card>
             <div className="flex items-center gap-3">
               <Home className="text-primary" size={24} />
               <h2 className="text-xl font-semibold">Homes & programs</h2>
@@ -604,7 +685,6 @@ export default async function AdminDashboardPage({
                   <th className="py-3 pr-4">Organization</th>
                   <th className="py-3 pr-4">Type</th>
                   <th className="py-3 pr-4">Status</th>
-                  <th className="py-3 pr-4">Trust</th>
                   <th className="py-3 pr-4">Availability</th>
                   <th className="py-3 pr-4">Requests</th>
                   <th className="py-3 pr-4">Updated</th>

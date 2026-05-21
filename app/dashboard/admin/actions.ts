@@ -2,10 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { AdminReviewStatus, AdminReviewSubjectType, OrganizationType, Role } from "@prisma/client";
+import {
+  AdminReviewStatus,
+  AdminReviewSubjectType,
+  OrganizationType,
+  ProfileOwnershipStatus,
+  ProfileStatus,
+  ProfileType,
+  Role,
+  SubscriptionStatus
+} from "@prisma/client";
 import { notifyProfileClaimApproved, notifyProfileClaimRejected } from "@/lib/email-notifications";
+import { geocodeProfileAddress } from "@/lib/geocoding";
 import { prisma } from "@/lib/prisma";
 import { getProtectedAppUser } from "@/lib/protected-routing";
+import { slugify } from "@/lib/slug";
 
 function adminReviewHref(message: string) {
   const params = new URLSearchParams({
@@ -23,6 +34,156 @@ function adminClaimHref(message: string) {
   });
 
   return `/dashboard/admin?${params.toString()}`;
+}
+
+function adminProfileHref(message: string) {
+  const params = new URLSearchParams({
+    tab: "profiles",
+    reviewMessage: message
+  });
+
+  return `/dashboard/admin?${params.toString()}`;
+}
+
+function nullableText(value: FormDataEntryValue | null) {
+  const text = String(value || "").trim();
+  return text || null;
+}
+
+async function uniqueProfileSlug(programName: string) {
+  const baseSlug = slugify(programName) || "aftercare-profile";
+  let slug = baseSlug;
+  let suffix = 2;
+
+  while (await prisma.aftercareProfile.findUnique({ where: { slug }, select: { id: true } })) {
+    slug = `${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
+
+  return slug;
+}
+
+function systemSeedOrgId(type: ProfileType) {
+  return type === ProfileType.sober_living
+    ? "system-unclaimed-sober-living"
+    : "system-unclaimed-continued-care";
+}
+
+async function getOrCreateSystemSeedOrg(type: ProfileType) {
+  const orgType = type === ProfileType.sober_living
+    ? OrganizationType.aftercare_sober_living
+    : OrganizationType.aftercare_continued_care;
+  const name = type === ProfileType.sober_living
+    ? "Unclaimed Sober Living Listings"
+    : "Unclaimed Continued Care Listings";
+
+  return prisma.organization.upsert({
+    where: { id: systemSeedOrgId(type) },
+    update: {},
+    create: {
+      id: systemSeedOrgId(type),
+      type: orgType,
+      name,
+      subscriptionPlan: "claimed_listing",
+      subscriptionStatus: SubscriptionStatus.active
+    },
+    select: { id: true }
+  });
+}
+
+export async function createUnclaimedAftercareProfile(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const typeValue = String(formData.get("type") || "");
+  const type = typeValue === ProfileType.continued_care ? ProfileType.continued_care : ProfileType.sober_living;
+  const programName = String(formData.get("programName") || "").trim();
+  const streetAddress = nullableText(formData.get("streetAddress"));
+  const city = String(formData.get("city") || "").trim();
+  const state = String(formData.get("state") || "").trim();
+  const zip = nullableText(formData.get("zip"));
+  const status = String(formData.get("status") || "") === ProfileStatus.draft
+    ? ProfileStatus.draft
+    : ProfileStatus.published;
+
+  if (!programName || !city || !state) {
+    redirect(adminProfileHref("Program name, city, and state are required."));
+  }
+
+  const [org, slug] = await Promise.all([
+    getOrCreateSystemSeedOrg(type),
+    uniqueProfileSlug(programName)
+  ]);
+  const coordinates = await geocodeProfileAddress({
+    idSeed: slug,
+    streetAddress,
+    city,
+    state,
+    zip
+  });
+
+  const profile = await prisma.aftercareProfile.create({
+    data: {
+      orgId: org.id,
+      type,
+      programName,
+      slug,
+      status,
+      ownershipStatus: ProfileOwnershipStatus.unclaimed,
+      seededByUserId: appUser.id,
+      streetAddress,
+      city,
+      state,
+      zip,
+      publicCity: city,
+      publicState: state,
+      admissionsContactPhone: nullableText(formData.get("admissionsContactPhone")),
+      admissionsContactEmail: nullableText(formData.get("admissionsContactEmail")),
+      websiteUrl: nullableText(formData.get("websiteUrl")),
+      description: nullableText(formData.get("description")),
+      onboardingCompletedAt: new Date(),
+      publishedAt: status === ProfileStatus.published ? new Date() : null,
+      ...(type === ProfileType.continued_care
+        ? { acceptingNewPatients: null }
+        : {
+            bedsMen: 0,
+            bedsWomen: 0,
+            bedsLgbtq: 0,
+            bedsMenAvailable: 0,
+            bedsWomenAvailable: 0,
+            bedsLgbtqAvailable: 0,
+            totalBeds: 0,
+            bedsAvailable: 0
+          }),
+      ...(coordinates ?? {})
+    }
+  });
+
+  await prisma.adminAuditLog.create({
+    data: {
+      actorUserId: appUser.id,
+      action: "unclaimed_profile_created",
+      entityType: "AftercareProfile",
+      entityId: profile.id,
+      metadata: {
+        profileName: profile.programName,
+        profileType: profile.type,
+        status: profile.status
+      }
+    }
+  });
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+  redirect(adminProfileHref(`${profile.programName} was added as an unclaimed ${profileLabelForMessage(type)} profile.`));
+}
+
+function profileLabelForMessage(type: ProfileType) {
+  return type === ProfileType.sober_living ? "sober living" : "continued care";
 }
 
 export async function reviewOnboardingSubmission(formData: FormData) {

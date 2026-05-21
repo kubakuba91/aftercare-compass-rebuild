@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
+  CalendarClock,
   CreditCard,
   Heart,
   MailPlus,
@@ -20,7 +21,11 @@ import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-butto
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { billingPlans, formatBillingStatus, formatPlanPrice, getBillingPlan } from "@/lib/billing";
-import { canDisplayVerifiedBadge, getReferentTeamLimit } from "@/lib/feature-gates";
+import { canDisplayVerifiedBadge, canReceiveDirectReferrals, getReferentTeamLimit } from "@/lib/feature-gates";
+import {
+  formatPhoneScreeningDateTime,
+  generatePhoneScreeningSlots
+} from "@/lib/phone-screening";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
 import { maxReferentStep } from "@/lib/referent-onboarding";
@@ -28,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { cancelBillingSubscription, changeBillingPlan, createBillingPortalSession } from "../billing/actions";
 import {
   inviteReferentManagers,
+  bookPhoneScreeningSlot,
   removePendingReferentInvite,
   removeReferentManager,
   updateReferentDisplayName
@@ -115,6 +121,7 @@ export default async function ReferentDashboardPage({
     teamMessage?: string | string[];
     billingMessage?: string | string[];
     billingView?: string | string[];
+    referralMessage?: string | string[];
   }>;
 }) {
   const query = await searchParams;
@@ -126,6 +133,7 @@ export default async function ReferentDashboardPage({
   const isEditingDisplayName = activeTab === "account" && edit === "displayName";
   const teamMessage = Array.isArray(query.teamMessage) ? query.teamMessage[0] : query.teamMessage;
   const billingMessage = Array.isArray(query.billingMessage) ? query.billingMessage[0] : query.billingMessage;
+  const referralMessage = Array.isArray(query.referralMessage) ? query.referralMessage[0] : query.referralMessage;
   const billingView = Array.isArray(query.billingView) ? query.billingView[0] : query.billingView;
   const isPlanSelectionOpen = activeTab === "subscription" && billingView === "plans";
   const appUser = await getProtectedAppUser("/dashboard/referent");
@@ -170,10 +178,44 @@ export default async function ReferentDashboardPage({
         statusUpdatedAt: true,
         aftercareProfile: {
           select: {
+            id: true,
             programName: true,
             slug: true,
             publicCity: true,
-            publicState: true
+            publicState: true,
+            ownershipStatus: true,
+            verificationTier: true,
+            organization: {
+              select: {
+                type: true,
+                subscriptionPlan: true,
+                subscriptionStatus: true
+              }
+            },
+            phoneScreeningWindows: {
+              where: { isActive: true },
+              orderBy: [{ dayOfWeek: "asc" }, { startMinute: "asc" }]
+            },
+            phoneScreeningAppointments: {
+              where: {
+                status: "scheduled",
+                startsAt: { gte: new Date() }
+              },
+              select: {
+                startsAt: true,
+                endsAt: true,
+                status: true
+              }
+            }
+          }
+        },
+        phoneScreeningAppointments: {
+          where: { status: "scheduled" },
+          orderBy: { startsAt: "asc" },
+          take: 1,
+          select: {
+            startsAt: true,
+            timezone: true
           }
         }
       }
@@ -498,12 +540,31 @@ export default async function ReferentDashboardPage({
               Start referral
             </Link>
           </div>
+          {referralMessage ? (
+            <div className="mt-4 rounded-md border border-border bg-surface p-3 text-sm font-semibold">
+              {referralMessage}
+            </div>
+          ) : null}
           {referrals.length ? (
             <div className="mt-5 overflow-hidden rounded-md border border-border">
-              {referrals.map((referral) => (
+              {referrals.map((referral) => {
+                const bookedScreening = referral.phoneScreeningAppointments[0] ?? null;
+                const canBookScreening =
+                  referral.status === "accepted" &&
+                  !bookedScreening &&
+                  canReceiveDirectReferrals(referral.aftercareProfile.organization, referral.aftercareProfile);
+                const slots = canBookScreening
+                  ? generatePhoneScreeningSlots({
+                      windows: referral.aftercareProfile.phoneScreeningWindows,
+                      appointments: referral.aftercareProfile.phoneScreeningAppointments,
+                      maxSlots: 5
+                    })
+                  : [];
+
+                return (
                 <div
                   key={referral.id}
-                  className="grid gap-3 border-b border-border p-3 text-sm last:border-b-0 md:grid-cols-[minmax(0,1.2fr)_160px_minmax(0,1fr)_110px] md:items-center"
+                  className="grid gap-3 border-b border-border p-3 text-sm last:border-b-0 md:grid-cols-[minmax(0,1.2fr)_160px_minmax(0,1fr)_minmax(160px,0.8fr)] md:items-center"
                 >
                   <div>
                     <Link className="font-semibold underline-offset-4 hover:underline" href={`/profiles/${referral.aftercareProfile.slug}`}>
@@ -523,10 +584,35 @@ export default async function ReferentDashboardPage({
                     <p className="mt-1 line-clamp-1">{referral.reasonForReferral}</p>
                   </div>
                   <div className="text-xs text-muted-foreground md:text-right">
-                    {referral.statusUpdatedAt.toLocaleDateString()}
+                    {bookedScreening ? (
+                      <div className="rounded-md border border-border bg-white p-2 text-left">
+                        <p className="flex items-center gap-1 font-semibold text-foreground">
+                          <CalendarClock size={14} />
+                          Screening booked
+                        </p>
+                        <p className="mt-1">{formatPhoneScreeningDateTime(bookedScreening.startsAt, bookedScreening.timezone)}</p>
+                      </div>
+                    ) : canBookScreening && slots.length ? (
+                      <form action={bookPhoneScreeningSlot} className="grid gap-2 text-left">
+                        <input name="referralId" type="hidden" value={referral.id} />
+                        <select className="min-h-9 rounded-md border border-border bg-white px-2 text-xs" name="slot" required>
+                          {slots.map((slot) => (
+                            <option key={slot.startsAt.toISOString()} value={slot.startsAt.toISOString()}>
+                              {slot.label}
+                            </option>
+                          ))}
+                        </select>
+                        <button className="focus-ring min-h-8 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground">
+                          Book call
+                        </button>
+                      </form>
+                    ) : (
+                      referral.statusUpdatedAt.toLocaleDateString()
+                    )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="ac-panel-card mt-5 p-4 text-sm leading-6 text-muted-foreground">

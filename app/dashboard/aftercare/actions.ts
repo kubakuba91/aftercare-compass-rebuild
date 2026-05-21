@@ -7,12 +7,14 @@ import { z } from "zod";
 import { availabilityReplyExample } from "@/lib/availability-sms";
 import { notifyReferralStatusChanged, sendOrganizationInviteEmail } from "@/lib/email-notifications";
 import {
+  canReceiveDirectReferrals,
   canUsePlacementTracking,
   canUseLiveAvailability,
   getAftercareManagerLimit,
   isWithinPlanLimit
 } from "@/lib/feature-gates";
 import { normalizePhoneNumber } from "@/lib/phone";
+import { phoneScreeningTimezone } from "@/lib/phone-screening";
 import { canTransitionReferral, referralStatuses } from "@/lib/product-rules";
 import { prisma } from "@/lib/prisma";
 import { getAftercareDashboardUser } from "@/lib/protected-routing";
@@ -27,6 +29,24 @@ function numberFromForm(value: FormDataEntryValue | null) {
   return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null;
 }
 
+function minuteFromTime(value: FormDataEntryValue | null) {
+  const text = String(value || "");
+  const match = text.match(/^(\d{2}):(\d{2})$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+
+  return hours * 60 + minutes;
+}
+
 function overviewHref(profileId: string, error?: string) {
   const params = new URLSearchParams({
     tab: "overview",
@@ -35,6 +55,19 @@ function overviewHref(profileId: string, error?: string) {
 
   if (error) {
     params.set("availabilityError", error);
+  }
+
+  return `/dashboard/aftercare?${params.toString()}`;
+}
+
+function screeningHref(profileId: string, message?: string) {
+  const params = new URLSearchParams({
+    tab: "overview",
+    profileId
+  });
+
+  if (message) {
+    params.set("screeningMessage", message);
   }
 
   return `/dashboard/aftercare?${params.toString()}`;
@@ -577,6 +610,98 @@ export async function sendBedAvailabilityTextCheck(formData: FormData) {
 
   revalidatePath("/dashboard/aftercare");
   redirect(smsHref(profile.id, "Bed check text sent."));
+}
+
+export async function addPhoneScreeningWindow(formData: FormData) {
+  const appUser = await getAftercareDashboardUser("/dashboard/aftercare");
+  const profileId = String(formData.get("profileId") || "");
+  const dayOfWeek = numberFromForm(formData.get("dayOfWeek"));
+  const startMinute = minuteFromTime(formData.get("startTime"));
+  const endMinute = minuteFromTime(formData.get("endTime"));
+
+  const profile = await prisma.aftercareProfile.findFirst({
+    where: {
+      id: profileId,
+      orgId: appUser.orgId
+    },
+    select: {
+      id: true,
+      organization: {
+        select: {
+          type: true,
+          subscriptionPlan: true,
+          subscriptionStatus: true
+        }
+      },
+      ownershipStatus: true,
+      verificationTier: true
+    }
+  });
+
+  if (!profile) {
+    redirect("/dashboard/aftercare?availabilityError=Profile not found");
+  }
+
+  if (!canReceiveDirectReferrals(profile.organization, profile)) {
+    redirect(screeningHref(profile.id, "Phone screening windows are available on paid plans with direct referral intake."));
+  }
+
+  if (
+    dayOfWeek === null ||
+    dayOfWeek < 0 ||
+    dayOfWeek > 6 ||
+    startMinute === null ||
+    endMinute === null ||
+    endMinute <= startMinute ||
+    endMinute - startMinute < 30
+  ) {
+    redirect(screeningHref(profile.id, "Choose a valid weekday and at least a 30-minute window."));
+  }
+
+  await prisma.phoneScreeningWindow.create({
+    data: {
+      profileId: profile.id,
+      dayOfWeek,
+      startMinute,
+      endMinute,
+      slotMinutes: 30,
+      timezone: phoneScreeningTimezone
+    }
+  });
+
+  revalidatePath("/dashboard/aftercare");
+  revalidatePath("/dashboard/referent");
+  redirect(screeningHref(profile.id, "Phone screening window added."));
+}
+
+export async function deletePhoneScreeningWindow(formData: FormData) {
+  const appUser = await getAftercareDashboardUser("/dashboard/aftercare");
+  const windowId = String(formData.get("windowId") || "");
+
+  const window = await prisma.phoneScreeningWindow.findFirst({
+    where: {
+      id: windowId,
+      profile: {
+        orgId: appUser.orgId
+      }
+    },
+    select: {
+      id: true,
+      profileId: true
+    }
+  });
+
+  if (!window) {
+    redirect("/dashboard/aftercare?availabilityError=Screening window not found");
+  }
+
+  await prisma.phoneScreeningWindow.delete({
+    where: { id: window.id }
+  });
+
+  revalidatePath("/dashboard/aftercare");
+  revalidatePath("/dashboard/referent");
+  redirect(screeningHref(window.profileId, "Phone screening window removed."));
 }
 
 export async function updateReferralStatus(formData: FormData) {

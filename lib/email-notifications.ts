@@ -1,5 +1,6 @@
 import { Role } from "@prisma/client";
 import { appUrl, emailButton, emailField, emailShell, escapeHtml, sendTransactionalEmail, uniqueEmailRecipients } from "@/lib/email";
+import { formatPhoneScreeningDateTime } from "@/lib/phone-screening";
 import { prisma } from "@/lib/prisma";
 
 function formatValue(value: string | null | undefined) {
@@ -413,6 +414,108 @@ export async function notifyReferralStatusChanged(referralId: string) {
       `Open dashboard: ${dashboardLink}`
     ].join("\n")
   });
+}
+
+export async function notifyPhoneScreeningBooked(appointmentId: string) {
+  const appointment = await prisma.phoneScreeningAppointment.findUnique({
+    where: { id: appointmentId },
+    include: {
+      referral: {
+        select: {
+          caseManagerName: true,
+          caseManagerEmail: true,
+          caseManagerPhone: true,
+          caseManagerOrganization: true,
+          clientAgeRange: true,
+          preferredStartWindow: true
+        }
+      },
+      aftercareProfile: {
+        select: {
+          programName: true,
+          admissionsContactEmail: true,
+          admissionsContactPhone: true
+        }
+      },
+      aftercareOrg: {
+        select: {
+          users: {
+            where: {
+              isActive: true,
+              role: { in: [Role.aftercare_admin, Role.aftercare_manager] }
+            },
+            select: { id: true, email: true }
+          }
+        }
+      }
+    }
+  });
+
+  if (!appointment) {
+    return;
+  }
+
+  const scheduledFor = formatPhoneScreeningDateTime(appointment.startsAt, appointment.timezone);
+  const aftercareDashboardLink = appUrl(`/dashboard/aftercare?tab=overview&profileId=${appointment.aftercareProfileId}&referralId=${appointment.referralId}`);
+  const referentDashboardLink = appUrl("/dashboard/referent?tab=referrals");
+
+  await createUserNotifications({
+    users: appointment.aftercareOrg.users,
+    type: "phone_screening.booked",
+    title: `Phone screening booked for ${appointment.aftercareProfile.programName}`,
+    body: `${appointment.referral.caseManagerOrganization} booked ${scheduledFor}.`
+  });
+
+  const providerEmail = sendTransactionalEmail({
+    to: aftercareTeamRecipients(appointment.aftercareOrg.users, appointment.aftercareProfile.admissionsContactEmail),
+    subject: `Phone screening booked: ${appointment.aftercareProfile.programName}`,
+    html: emailShell(
+      "Phone screening booked",
+      `
+        <p style="margin:0 0 18px;font-size:16px;line-height:1.6;">A referral phone screening was scheduled for ${escapeHtml(appointment.aftercareProfile.programName)}.</p>
+        ${emailField("Scheduled for", scheduledFor)}
+        ${emailField("Case manager", appointment.referral.caseManagerName)}
+        ${emailField("Organization", appointment.referral.caseManagerOrganization)}
+        ${emailField("Case manager email", appointment.referral.caseManagerEmail)}
+        ${emailField("Case manager phone", appointment.referral.caseManagerPhone)}
+        ${emailField("Provider phone", appointment.aftercareProfile.admissionsContactPhone)}
+        ${emailButton("View referral", aftercareDashboardLink)}
+      `
+    ),
+    text: [
+      `Phone screening booked for ${appointment.aftercareProfile.programName}`,
+      `Scheduled for: ${scheduledFor}`,
+      `Case manager: ${appointment.referral.caseManagerName}`,
+      `Organization: ${appointment.referral.caseManagerOrganization}`,
+      `Email: ${appointment.referral.caseManagerEmail}`,
+      `Phone: ${appointment.referral.caseManagerPhone}`,
+      appointment.aftercareProfile.admissionsContactPhone ? `Provider phone: ${appointment.aftercareProfile.admissionsContactPhone}` : "",
+      `View referral: ${aftercareDashboardLink}`
+    ].filter(Boolean).join("\n")
+  });
+
+  const referentEmail = sendTransactionalEmail({
+    to: appointment.referral.caseManagerEmail,
+    subject: `Phone screening confirmed: ${appointment.aftercareProfile.programName}`,
+    html: emailShell(
+      "Phone screening confirmed",
+      `
+        <p style="margin:0 0 18px;font-size:16px;line-height:1.6;">Your phone screening with ${escapeHtml(appointment.aftercareProfile.programName)} is confirmed.</p>
+        ${emailField("Scheduled for", scheduledFor)}
+        ${emailField("Provider phone", appointment.aftercareProfile.admissionsContactPhone)}
+        ${emailField("Case manager phone", appointment.referral.caseManagerPhone)}
+        ${emailButton("Open referrals", referentDashboardLink)}
+      `
+    ),
+    text: [
+      `Phone screening confirmed with ${appointment.aftercareProfile.programName}`,
+      `Scheduled for: ${scheduledFor}`,
+      appointment.aftercareProfile.admissionsContactPhone ? `Provider phone: ${appointment.aftercareProfile.admissionsContactPhone}` : "",
+      `Open referrals: ${referentDashboardLink}`
+    ].filter(Boolean).join("\n")
+  });
+
+  return Promise.all([providerEmail, referentEmail]);
 }
 
 export async function sendOrganizationInviteEmail(input: {

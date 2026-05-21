@@ -115,21 +115,22 @@ model User {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  sentMessages Message[]
-  referrals    Referral[] @relation("ReferentUserReferrals")
-  favorites    Favorite[]
-  flagsReported Flag[]    @relation("FlagReporter")
-  flagsResolved Flag[]    @relation("FlagResolver")
-  notifications Notification[]
-  handledLeads Lead[]     @relation("LeadHandler")
-  onboardingDraft OnboardingDraft?
-  sentOrganizationInvites OrganizationInvite[] @relation("OrganizationInviteSender")
-  acceptedOrganizationInvites OrganizationInvite[] @relation("OrganizationInviteAcceptedUser")
-  availabilitySmsChecks AvailabilitySmsCheck[]
-  reviewedAdminReviews AdminReview[] @relation("AdminReviewReviewer")
-  submittedProfileClaimRequests ProfileClaimRequest[] @relation("ProfileClaimRequester")
-  reviewedProfileClaimRequests ProfileClaimRequest[] @relation("ProfileClaimReviewer")
-  adminAuditLogs AdminAuditLog[] @relation("AdminAuditLogActor")
+  sentMessages                  Message[]
+  referrals                     Referral[]                  @relation("ReferentUserReferrals")
+  favorites                     Favorite[]
+  flagsReported                 Flag[]                      @relation("FlagReporter")
+  flagsResolved                 Flag[]                      @relation("FlagResolver")
+  notifications                 Notification[]
+  handledLeads                  Lead[]                      @relation("LeadHandler")
+  onboardingDraft               OnboardingDraft?
+  sentOrganizationInvites       OrganizationInvite[]        @relation("OrganizationInviteSender")
+  acceptedOrganizationInvites   OrganizationInvite[]        @relation("OrganizationInviteAcceptedUser")
+  availabilitySmsChecks         AvailabilitySmsCheck[]
+  bookedPhoneScreenings         PhoneScreeningAppointment[] @relation("PhoneScreeningBookedBy")
+  reviewedAdminReviews          AdminReview[]               @relation("AdminReviewReviewer")
+  submittedProfileClaimRequests ProfileClaimRequest[]       @relation("ProfileClaimRequester")
+  reviewedProfileClaimRequests  ProfileClaimRequest[]       @relation("ProfileClaimReviewer")
+  adminAuditLogs                AdminAuditLog[]             @relation("AdminAuditLogActor")
 
   @@index([orgId])
 }
@@ -149,30 +150,31 @@ model OnboardingDraft {
 }
 
 model Organization {
-  id                        String             @id @default(cuid())
-  type                      OrganizationType
-  name                      String
-  phone                     String?
-  email                     String?
-  website                   String?
-  subscriptionPlan          String?
-  subscriptionStatus        SubscriptionStatus?
-  subscriptionBillingCycle  String?
-  stripeCustomerId          String?
-  stripeSubscriptionId      String?
-  subscriptionRenewsAt      DateTime?
-  createdAt                 DateTime           @default(now())
-  updatedAt                 DateTime           @updatedAt
+  id                       String              @id @default(cuid())
+  type                     OrganizationType
+  name                     String
+  phone                    String?
+  email                    String?
+  website                  String?
+  subscriptionPlan         String?
+  subscriptionStatus       SubscriptionStatus?
+  subscriptionBillingCycle String?
+  stripeCustomerId         String?
+  stripeSubscriptionId     String?
+  subscriptionRenewsAt     DateTime?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
 
-  users              User[]
-  referentDetails    ReferentOrganization?
-  profiles           AftercareProfile[]
-  leads              Lead[]
-  referentReferrals  Referral[] @relation("ReferentOrgReferrals")
-  aftercareReferrals Referral[] @relation("AftercareOrgReferrals")
-  favorites          Favorite[]
-  invites            OrganizationInvite[]
-  adminReviews        AdminReview[]
+  users                      User[]
+  referentDetails            ReferentOrganization?
+  profiles                   AftercareProfile[]
+  leads                      Lead[]
+  referentReferrals          Referral[]                  @relation("ReferentOrgReferrals")
+  aftercareReferrals         Referral[]                  @relation("AftercareOrgReferrals")
+  phoneScreeningAppointments PhoneScreeningAppointment[]
+  favorites                  Favorite[]
+  invites                    OrganizationInvite[]
+  adminReviews               AdminReview[]
 
   @@index([type])
   @@index([subscriptionStatus])
@@ -199,125 +201,127 @@ model OrganizationInvite {
 }
 
 model ReferentOrganization {
-  id                       String       @id @default(cuid())
-  orgId                    String       @unique
-  organization             Organization @relation(fields: [orgId], references: [id])
-  orgTypeDetail            String
-  streetAddress            String?
-  city                     String?
-  state                    String?
-  zip                      String?
-  healthSystemAffiliation  String?
-  medicalRecordsFax        String?
-  npiNumber                String?
-  stateLicenseNumber       String?
-  ehrSystem                String?
-  statesOperatedIn         String[] @default([])
-  levelsOfCare             String[] @default([])
-  currentPlacementMethods  String[] @default([])
-  avgMonthlyReferrals      String?
-  invitedTeamEmails        String[] @default([])
-  onboardingStep           Int      @default(1)
-  onboardingCompletedAt    DateTime?
+  id                      String       @id @default(cuid())
+  orgId                   String       @unique
+  organization            Organization @relation(fields: [orgId], references: [id])
+  orgTypeDetail           String
+  streetAddress           String?
+  city                    String?
+  state                   String?
+  zip                     String?
+  healthSystemAffiliation String?
+  medicalRecordsFax       String?
+  npiNumber               String?
+  stateLicenseNumber      String?
+  ehrSystem               String?
+  statesOperatedIn        String[]     @default([])
+  levelsOfCare            String[]     @default([])
+  currentPlacementMethods String[]     @default([])
+  avgMonthlyReferrals     String?
+  invitedTeamEmails       String[]     @default([])
+  onboardingStep          Int          @default(1)
+  onboardingCompletedAt   DateTime?
 }
 
 model AftercareProfile {
-  id                              String        @id @default(cuid())
-  orgId                           String
-  organization                    Organization  @relation(fields: [orgId], references: [id])
-  type                            ProfileType
-  programName                     String
-  slug                            String        @unique
-  status                          ProfileStatus @default(draft)
-  unpublishedAt                   DateTime?
-  unpublishedByUserId             String?
-  verificationTier                Int           @default(1)
-  ownershipStatus                 ProfileOwnershipStatus @default(claimed)
-  claimedAt                       DateTime?
-  claimedByUserId                 String?
-  seededByUserId                  String?
-  streetAddress                   String?
-  city                            String
-  state                           String
-  zip                             String?
-  publicCity                      String
-  publicState                     String
-  latitude                        Decimal?
-  longitude                       Decimal?
-  publicLatitude                  Decimal?
-  publicLongitude                 Decimal?
-  geocodedAt                      DateTime?
-  admissionsContactPhone          String?
-  admissionsContactEmail          String?
-  preferredContactMethod          String?
-  websiteUrl                      String?
-  programTypes                    String[]      @default([])
-  telehealthAvailable             Boolean?
-  telehealthMode                  String?
-  additionalLocations             String?
-  stateLicenseNumber              String?
-  levelsOfCare                    String[]      @default([])
-  hoursOfOperation                String?
-  matServicesOffered              Boolean?
-  coOccurringTreatment            Boolean?
-  intakeContactName               String?
-  referralProcessDescription      String?
-  affiliatedSoberLivingHomes      String?
-  populationServed                String?
-  populationServedOptions         String[]      @default([])
-  specialtyPopulations            String[]      @default([])
-  certificationsHeld              String[]      @default([])
-  totalBeds                       Int?
-  bedsMen                         Int?
-  bedsWomen                       Int?
-  bedsLgbtq                       Int?
-  bedsMenAvailable                Int?
-  bedsWomenAvailable              Int?
-  bedsLgbtqAvailable              Int?
-  roomTypes                       String[]      @default([])
-  bedsReservedNotes               String?
-  wheelchairAccessibleBeds        Int?
-  averageLengthOfStay             String?
-  bedsAvailable                   Int?
-  bedsAvailableUpdatedAt          DateTime?
-  acceptingNewPatients            Boolean?
-  acceptingNewPatientsUpdatedAt   DateTime?
-  nextAvailableDate               DateTime?
-  availabilityNotes               String?
-  pricePerWeek                    Int?
-  fundingAvailable                Boolean?
-  fundingNotes                    String?
-  insuranceAccepted               String[]      @default([])
-  supportServices                 String[]      @default([])
-  amenities                       String[]      @default([])
-  medicationAdministration        String?
-  matAccepted                     String[]      @default([])
-  medicationRestrictions          String?
-  drugTestingPolicy               String?
-  description                     String?
-  houseRulesUrl                   String?
-  houseRulesText                  String?
-  photoReadiness                  String[]      @default([])
-  videoUrls                       String[]      @default([])
-  goodNeighborPolicyAcknowledged  Boolean       @default(false)
-  referralFitNotes                String?
-  onboardingStep                  Int           @default(1)
-  onboardingCompletedAt           DateTime?
-  publishedAt                     DateTime?
-  createdAt                       DateTime      @default(now())
-  updatedAt                       DateTime      @updatedAt
+  id                             String                 @id @default(cuid())
+  orgId                          String
+  organization                   Organization           @relation(fields: [orgId], references: [id])
+  type                           ProfileType
+  programName                    String
+  slug                           String                 @unique
+  status                         ProfileStatus          @default(draft)
+  unpublishedAt                  DateTime?
+  unpublishedByUserId            String?
+  verificationTier               Int                    @default(1)
+  ownershipStatus                ProfileOwnershipStatus @default(claimed)
+  claimedAt                      DateTime?
+  claimedByUserId                String?
+  seededByUserId                 String?
+  streetAddress                  String?
+  city                           String
+  state                          String
+  zip                            String?
+  publicCity                     String
+  publicState                    String
+  latitude                       Decimal?
+  longitude                      Decimal?
+  publicLatitude                 Decimal?
+  publicLongitude                Decimal?
+  geocodedAt                     DateTime?
+  admissionsContactPhone         String?
+  admissionsContactEmail         String?
+  preferredContactMethod         String?
+  websiteUrl                     String?
+  programTypes                   String[]               @default([])
+  telehealthAvailable            Boolean?
+  telehealthMode                 String?
+  additionalLocations            String?
+  stateLicenseNumber             String?
+  levelsOfCare                   String[]               @default([])
+  hoursOfOperation               String?
+  matServicesOffered             Boolean?
+  coOccurringTreatment           Boolean?
+  intakeContactName              String?
+  referralProcessDescription     String?
+  affiliatedSoberLivingHomes     String?
+  populationServed               String?
+  populationServedOptions        String[]               @default([])
+  specialtyPopulations           String[]               @default([])
+  certificationsHeld             String[]               @default([])
+  totalBeds                      Int?
+  bedsMen                        Int?
+  bedsWomen                      Int?
+  bedsLgbtq                      Int?
+  bedsMenAvailable               Int?
+  bedsWomenAvailable             Int?
+  bedsLgbtqAvailable             Int?
+  roomTypes                      String[]               @default([])
+  bedsReservedNotes              String?
+  wheelchairAccessibleBeds       Int?
+  averageLengthOfStay            String?
+  bedsAvailable                  Int?
+  bedsAvailableUpdatedAt         DateTime?
+  acceptingNewPatients           Boolean?
+  acceptingNewPatientsUpdatedAt  DateTime?
+  nextAvailableDate              DateTime?
+  availabilityNotes              String?
+  pricePerWeek                   Int?
+  fundingAvailable               Boolean?
+  fundingNotes                   String?
+  insuranceAccepted              String[]               @default([])
+  supportServices                String[]               @default([])
+  amenities                      String[]               @default([])
+  medicationAdministration       String?
+  matAccepted                    String[]               @default([])
+  medicationRestrictions         String?
+  drugTestingPolicy              String?
+  description                    String?
+  houseRulesUrl                  String?
+  houseRulesText                 String?
+  photoReadiness                 String[]               @default([])
+  videoUrls                      String[]               @default([])
+  goodNeighborPolicyAcknowledged Boolean                @default(false)
+  referralFitNotes               String?
+  onboardingStep                 Int                    @default(1)
+  onboardingCompletedAt          DateTime?
+  publishedAt                    DateTime?
+  createdAt                      DateTime               @default(now())
+  updatedAt                      DateTime               @updatedAt
 
-  certifications VerificationDocument[]
-  images         ProfileImage[]
-  referrals      Referral[]
-  leads          Lead[]
-  flags          Flag[]
-  favorites      Favorite[]
-  availabilitySmsChecks AvailabilitySmsCheck[]
-  adminReviews   AdminReview[]
-  claimRequests  ProfileClaimRequest[]
-  continuedCareAssociations ProfileAssociation[] @relation("SoberLivingAssociations")
-  soberLivingAssociations ProfileAssociation[] @relation("ContinuedCareAssociations")
+  certifications             VerificationDocument[]
+  images                     ProfileImage[]
+  referrals                  Referral[]
+  leads                      Lead[]
+  flags                      Flag[]
+  favorites                  Favorite[]
+  availabilitySmsChecks      AvailabilitySmsCheck[]
+  phoneScreeningWindows      PhoneScreeningWindow[]
+  phoneScreeningAppointments PhoneScreeningAppointment[]
+  adminReviews               AdminReview[]
+  claimRequests              ProfileClaimRequest[]
+  continuedCareAssociations  ProfileAssociation[]        @relation("SoberLivingAssociations")
+  soberLivingAssociations    ProfileAssociation[]        @relation("ContinuedCareAssociations")
 
   @@index([orgId])
   @@index([type, status])
@@ -327,13 +331,13 @@ model AftercareProfile {
 }
 
 model ProfileAssociation {
-  id                       String           @id @default(cuid())
-  soberLivingProfileId     String
-  continuedCareProfileId   String
-  createdAt                DateTime         @default(now())
+  id                     String   @id @default(cuid())
+  soberLivingProfileId   String
+  continuedCareProfileId String
+  createdAt              DateTime @default(now())
 
-  soberLivingProfile       AftercareProfile @relation("SoberLivingAssociations", fields: [soberLivingProfileId], references: [id], onDelete: Cascade)
-  continuedCareProfile     AftercareProfile @relation("ContinuedCareAssociations", fields: [continuedCareProfileId], references: [id], onDelete: Cascade)
+  soberLivingProfile   AftercareProfile @relation("SoberLivingAssociations", fields: [soberLivingProfileId], references: [id], onDelete: Cascade)
+  continuedCareProfile AftercareProfile @relation("ContinuedCareAssociations", fields: [continuedCareProfileId], references: [id], onDelete: Cascade)
 
   @@unique([soberLivingProfileId, continuedCareProfileId])
   @@index([continuedCareProfileId])
@@ -343,23 +347,23 @@ model ProfileClaimRequest {
   id                    String             @id @default(cuid())
   profileId             String
   profile               AftercareProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  claimantUserId         String?
-  claimantUser           User?              @relation("ProfileClaimRequester", fields: [claimantUserId], references: [id], onDelete: SetNull)
-  claimantName           String
-  claimantEmail          String
-  claimantPhone          String?
-  claimantRole           String?
-  claimantOrganization   String?
-  relationshipToProgram  String?
-  notes                  String?
-  status                 ProfileClaimStatus @default(pending)
-  reviewedByUserId       String?
-  reviewedByUser         User?              @relation("ProfileClaimReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
-  reviewerNotes          String?
-  submittedAt            DateTime           @default(now())
-  reviewedAt             DateTime?
-  createdAt              DateTime           @default(now())
-  updatedAt              DateTime           @updatedAt
+  claimantUserId        String?
+  claimantUser          User?              @relation("ProfileClaimRequester", fields: [claimantUserId], references: [id], onDelete: SetNull)
+  claimantName          String
+  claimantEmail         String
+  claimantPhone         String?
+  claimantRole          String?
+  claimantOrganization  String?
+  relationshipToProgram String?
+  notes                 String?
+  status                ProfileClaimStatus @default(pending)
+  reviewedByUserId      String?
+  reviewedByUser        User?              @relation("ProfileClaimReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  reviewerNotes         String?
+  submittedAt           DateTime           @default(now())
+  reviewedAt            DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 
   @@index([profileId, status])
   @@index([claimantUserId])
@@ -415,22 +419,22 @@ model Favorite {
 }
 
 model AvailabilitySmsCheck {
-  id            String           @id @default(cuid())
-  token         String           @unique
-  orgId         String
-  profileId     String
-  profile       AftercareProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  userId        String
-  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  phone         String
-  status        String           @default("pending")
-  outboundBody  String
-  inboundBody   String?
-  errorMessage  String?
-  sentAt        DateTime?
-  respondedAt   DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id           String           @id @default(cuid())
+  token        String           @unique
+  orgId        String
+  profileId    String
+  profile      AftercareProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone        String
+  status       String           @default("pending")
+  outboundBody String
+  inboundBody  String?
+  errorMessage String?
+  sentAt       DateTime?
+  respondedAt  DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   @@index([phone, status, createdAt])
   @@index([profileId, status])
@@ -477,34 +481,35 @@ model AdminReview {
 }
 
 model Referral {
-  id                    String           @id @default(cuid())
-  referentUserId         String
-  referentUser           User             @relation("ReferentUserReferrals", fields: [referentUserId], references: [id])
-  referentOrgId          String
-  referentOrg            Organization     @relation("ReferentOrgReferrals", fields: [referentOrgId], references: [id])
-  aftercareOrgId         String
-  aftercareOrg           Organization     @relation("AftercareOrgReferrals", fields: [aftercareOrgId], references: [id])
-  aftercareProfileId     String
-  aftercareProfile       AftercareProfile @relation(fields: [aftercareProfileId], references: [id])
-  caseManagerName        String
-  caseManagerEmail       String
-  caseManagerPhone       String
-  caseManagerOrganization String
-  clientAgeRange         String
-  supportCategory        String
-  insuranceCategory      String
-  preferredStartWindow   String
-  specialNeeds           String[]         @default([])
-  reasonForReferral      String
-  status                 ReferralStatus   @default(pending)
-  statusUpdatedAt        DateTime         @default(now())
-  waitlistPosition       Int?
+  id                       String           @id @default(cuid())
+  referentUserId           String
+  referentUser             User             @relation("ReferentUserReferrals", fields: [referentUserId], references: [id])
+  referentOrgId            String
+  referentOrg              Organization     @relation("ReferentOrgReferrals", fields: [referentOrgId], references: [id])
+  aftercareOrgId           String
+  aftercareOrg             Organization     @relation("AftercareOrgReferrals", fields: [aftercareOrgId], references: [id])
+  aftercareProfileId       String
+  aftercareProfile         AftercareProfile @relation(fields: [aftercareProfileId], references: [id])
+  caseManagerName          String
+  caseManagerEmail         String
+  caseManagerPhone         String
+  caseManagerOrganization  String
+  clientAgeRange           String
+  supportCategory          String
+  insuranceCategory        String
+  preferredStartWindow     String
+  specialNeeds             String[]         @default([])
+  reasonForReferral        String
+  status                   ReferralStatus   @default(pending)
+  statusUpdatedAt          DateTime         @default(now())
+  waitlistPosition         Int?
   expectedAvailabilityDate DateTime?
-  declineReason          String?
-  createdAt              DateTime         @default(now())
-  updatedAt              DateTime         @updatedAt
+  declineReason            String?
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
 
-  messages Message[]
+  messages                   Message[]
+  phoneScreeningAppointments PhoneScreeningAppointment[]
 
   @@index([referentOrgId, status])
   @@index([aftercareOrgId, status])
@@ -512,16 +517,58 @@ model Referral {
   @@index([createdAt])
 }
 
+model PhoneScreeningWindow {
+  id          String           @id @default(cuid())
+  profileId   String
+  profile     AftercareProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int
+  startMinute Int
+  endMinute   Int
+  slotMinutes Int              @default(30)
+  timezone    String           @default("America/New_York")
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([profileId, isActive])
+  @@index([dayOfWeek])
+}
+
+model PhoneScreeningAppointment {
+  id                 String           @id @default(cuid())
+  referralId         String
+  referral           Referral         @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  aftercareProfileId String
+  aftercareProfile   AftercareProfile @relation(fields: [aftercareProfileId], references: [id], onDelete: Cascade)
+  aftercareOrgId     String
+  aftercareOrg       Organization     @relation(fields: [aftercareOrgId], references: [id], onDelete: Cascade)
+  bookedByUserId     String
+  bookedByUser       User             @relation("PhoneScreeningBookedBy", fields: [bookedByUserId], references: [id], onDelete: Cascade)
+  startsAt           DateTime
+  endsAt             DateTime
+  timezone           String           @default("America/New_York")
+  status             String           @default("scheduled")
+  cancellationReason String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@unique([referralId, status])
+  @@index([aftercareProfileId, startsAt])
+  @@index([aftercareOrgId, startsAt])
+  @@index([bookedByUserId, startsAt])
+  @@index([status, startsAt])
+}
+
 model Message {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   referralId   String
-  referral     Referral @relation(fields: [referralId], references: [id])
+  referral     Referral  @relation(fields: [referralId], references: [id])
   senderUserId String
-  senderUser   User     @relation(fields: [senderUserId], references: [id])
+  senderUser   User      @relation(fields: [senderUserId], references: [id])
   senderRole   Role
   body         String
   readAt       DateTime?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
 
   @@index([referralId, createdAt])
   @@index([senderUserId])
@@ -569,14 +616,14 @@ model Flag {
 }
 
 model Notification {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
   type      String
   title     String
   body      String
   readAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([userId, readAt])
   @@index([createdAt])

@@ -72,6 +72,14 @@ function profileHref(profileId: string, message?: string) {
   return `/dashboard/aftercare/profiles/${profileId}${params.size ? `?${params.toString()}` : ""}`;
 }
 
+function savedMessageWithCoordinates(message: string, coordinates: Awaited<ReturnType<typeof geocodeProfileAddress>>) {
+  if (coordinates) {
+    return message;
+  }
+
+  return `${message} Google could not create map coordinates from this address, so the public map pin is still hidden.`;
+}
+
 export async function updateAftercareProfileBasics(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
   const profile = await getOwnedProfile(profileId);
@@ -116,7 +124,7 @@ export async function updateAftercareProfileBasics(formData: FormData) {
 
   revalidatePath("/dashboard/aftercare");
   revalidatePath(profileHref(profile.id));
-  redirect(profileHref(profile.id, "Basics saved."));
+  redirect(profileHref(profile.id, savedMessageWithCoordinates("Basics saved.", coordinates)));
 }
 
 export async function updateAftercareProfileDetails(formData: FormData) {
@@ -239,7 +247,7 @@ export async function updateAftercareProfileDetails(formData: FormData) {
   revalidatePath("/dashboard/aftercare");
   revalidatePath(profileHref(profile.id));
   revalidatePath(`/profiles/${profile.slug}`);
-  redirect(profileHref(profile.id, "Profile changes saved."));
+  redirect(profileHref(profile.id, savedMessageWithCoordinates("Profile changes saved.", coordinates)));
 }
 
 export async function updateAftercareProfileAvailability(formData: FormData) {

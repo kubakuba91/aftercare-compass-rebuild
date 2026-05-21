@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Role } from "@prisma/client";
+import { ReferralStatus, Role } from "@prisma/client";
 import { z } from "zod";
-import { sendOrganizationInviteEmail } from "@/lib/email-notifications";
-import { getReferentTeamLimit, isWithinPlanLimit } from "@/lib/feature-gates";
+import { notifyPhoneScreeningBooked, sendOrganizationInviteEmail } from "@/lib/email-notifications";
+import { canReceiveDirectReferrals, canSubmitReferrals, getReferentTeamLimit, isWithinPlanLimit } from "@/lib/feature-gates";
+import { generatePhoneScreeningSlots, phoneScreeningTimezone } from "@/lib/phone-screening";
 import { prisma } from "@/lib/prisma";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 
@@ -28,6 +29,16 @@ function teamHref(message?: string, invite = false) {
   }
 
   return `/dashboard/referent${params.size ? `?${params.toString()}` : ""}`;
+}
+
+function referralsHref(message?: string) {
+  const params = new URLSearchParams({ tab: "referrals" });
+
+  if (message) {
+    params.set("referralMessage", message);
+  }
+
+  return `/dashboard/referent?${params.toString()}`;
 }
 
 function emailsFromText(value: string) {
@@ -261,6 +272,111 @@ export async function removeReferentManager(formData: FormData) {
   revalidatePath("/dashboard/referent");
   const managerName = [manager.firstName, manager.lastName].filter(Boolean).join(" ") || manager.email;
   redirect(teamHref(`${managerName} was removed from this account.`));
+}
+
+export async function bookPhoneScreeningSlot(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/referent");
+
+  if (!appUser.orgId || !canSubmitReferrals(appUser.organization)) {
+    redirect(referralsHref("Your plan does not allow referral scheduling."));
+  }
+
+  const referralId = String(formData.get("referralId") || "");
+  const slotValue = String(formData.get("slot") || "");
+  const requestedStart = new Date(slotValue);
+
+  if (!referralId || Number.isNaN(requestedStart.getTime())) {
+    redirect(referralsHref("Choose a valid phone screening slot."));
+  }
+
+  const referral = await prisma.referral.findFirst({
+    where: {
+      id: referralId,
+      referentOrgId: appUser.orgId
+    },
+    include: {
+      aftercareProfile: {
+        select: {
+          id: true,
+          orgId: true,
+          ownershipStatus: true,
+          verificationTier: true,
+          phoneScreeningWindows: {
+            where: { isActive: true },
+            orderBy: [{ dayOfWeek: "asc" }, { startMinute: "asc" }]
+          },
+          phoneScreeningAppointments: {
+            where: {
+              status: "scheduled",
+              startsAt: { gte: new Date() }
+            },
+            select: {
+              startsAt: true,
+              endsAt: true,
+              status: true
+            }
+          },
+          organization: {
+            select: {
+              type: true,
+              subscriptionPlan: true,
+              subscriptionStatus: true
+            }
+          }
+        }
+      },
+      phoneScreeningAppointments: {
+        where: { status: "scheduled" },
+        select: { id: true },
+        take: 1
+      }
+    }
+  });
+
+  if (!referral) {
+    redirect(referralsHref("Referral not found."));
+  }
+
+  if (referral.status !== ReferralStatus.accepted) {
+    redirect(referralsHref("Phone screening can be booked after the provider accepts the referral."));
+  }
+
+  if (referral.phoneScreeningAppointments.length) {
+    redirect(referralsHref("This referral already has a scheduled phone screening."));
+  }
+
+  if (!canReceiveDirectReferrals(referral.aftercareProfile.organization, referral.aftercareProfile)) {
+    redirect(referralsHref("This provider plan does not allow phone screening scheduling."));
+  }
+
+  const availableSlots = generatePhoneScreeningSlots({
+    windows: referral.aftercareProfile.phoneScreeningWindows,
+    appointments: referral.aftercareProfile.phoneScreeningAppointments,
+    maxSlots: 20
+  });
+  const selectedSlot = availableSlots.find((slot) => slot.startsAt.toISOString() === requestedStart.toISOString());
+
+  if (!selectedSlot) {
+    redirect(referralsHref("That phone screening slot is no longer available."));
+  }
+
+  const appointment = await prisma.phoneScreeningAppointment.create({
+    data: {
+      referralId: referral.id,
+      aftercareProfileId: referral.aftercareProfile.id,
+      aftercareOrgId: referral.aftercareProfile.orgId,
+      bookedByUserId: appUser.id,
+      startsAt: selectedSlot.startsAt,
+      endsAt: selectedSlot.endsAt,
+      timezone: phoneScreeningTimezone
+    }
+  });
+
+  await notifyPhoneScreeningBooked(appointment.id);
+
+  revalidatePath("/dashboard/referent");
+  revalidatePath("/dashboard/aftercare");
+  redirect(referralsHref("Phone screening booked."));
 }
 
 export async function updateReferentDisplayName(formData: FormData) {

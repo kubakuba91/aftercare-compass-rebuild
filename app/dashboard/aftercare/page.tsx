@@ -3,6 +3,7 @@ import Image from "next/image";
 import {
   BedDouble,
   Building2,
+  CalendarClock,
   CreditCard,
   Home,
   Info,
@@ -32,12 +33,18 @@ import {
 import { billingPlans, formatBillingStatus, formatPlanPrice, getBillingPlan } from "@/lib/billing";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
 import {
+  canReceiveDirectReferrals,
   canUseLiveAvailability,
   canUseOperationalAnalytics,
   canUsePlacementTracking,
   getAftercarePlan
 } from "@/lib/feature-gates";
 import { formatPhoneForDisplay } from "@/lib/phone";
+import {
+  formatPhoneScreeningDateTime,
+  formatPhoneScreeningWindow,
+  phoneScreeningDayOptions
+} from "@/lib/phone-screening";
 import { prisma } from "@/lib/prisma";
 import {
   getAftercareDashboardUser,
@@ -46,6 +53,8 @@ import {
 import { cn } from "@/lib/utils";
 import {
   inviteAftercareManagers,
+  addPhoneScreeningWindow,
+  deletePhoneScreeningWindow,
   removeAftercareManager,
   removeAftercareManagerInvite,
   sendBedAvailabilityTextCheck,
@@ -414,6 +423,7 @@ export default async function AftercareDashboardPage({
     profileId?: string;
     referralError?: string;
     referralId?: string;
+    screeningMessage?: string;
     invite?: string;
     managerMessage?: string;
     billingMessage?: string;
@@ -469,6 +479,37 @@ export default async function AftercareDashboardPage({
         acceptingNewPatientsUpdatedAt: true,
         availabilityNotes: true,
         updatedAt: true,
+        phoneScreeningWindows: {
+          where: { isActive: true },
+          orderBy: [{ dayOfWeek: "asc" }, { startMinute: "asc" }],
+          select: {
+            id: true,
+            dayOfWeek: true,
+            startMinute: true,
+            endMinute: true,
+            slotMinutes: true,
+            timezone: true
+          }
+        },
+        phoneScreeningAppointments: {
+          where: {
+            status: "scheduled",
+            startsAt: { gte: new Date() }
+          },
+          orderBy: { startsAt: "asc" },
+          take: 5,
+          select: {
+            id: true,
+            startsAt: true,
+            timezone: true,
+            referral: {
+              select: {
+                caseManagerName: true,
+                caseManagerOrganization: true
+              }
+            }
+          }
+        },
         _count: {
           select: {
             leads: true,
@@ -514,7 +555,16 @@ export default async function AftercareDashboardPage({
         reasonForReferral: true,
         statusUpdatedAt: true,
         createdAt: true,
-        aftercareProfile: { select: { programName: true } }
+        aftercareProfile: { select: { programName: true } },
+        phoneScreeningAppointments: {
+          where: { status: "scheduled" },
+          orderBy: { startsAt: "asc" },
+          take: 1,
+          select: {
+            startsAt: true,
+            timezone: true
+          }
+        }
       }
     }),
     prisma.verificationDocument.findMany({
@@ -607,6 +657,9 @@ export default async function AftercareDashboardPage({
   const allowPlacementTracking = canUsePlacementTracking(appUser.organization);
   const selectedProfileCanUseLiveAvailability = selectedProfile
     ? canUseLiveAvailability(appUser.organization, selectedProfile)
+    : false;
+  const selectedProfileCanUsePhoneScreening = selectedProfile
+    ? canReceiveDirectReferrals(appUser.organization, selectedProfile)
     : false;
   const liveBedCountLockedMessage = "upgrade plan to unlock live bed count";
   const canAddProfiles = canAddAnotherProfile(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
@@ -938,6 +991,94 @@ export default async function AftercareDashboardPage({
                       ) : null}
                     </form>
                   ) : null}
+                  <div className="ac-callout mt-4 grid gap-4 p-4">
+                    <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <CalendarClock className="text-primary" size={20} />
+                          <h3 className="font-semibold">Phone screening windows</h3>
+                        </div>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                          Set recurring weekly intake-call times that accepted referrals can book.
+                        </p>
+                      </div>
+                      {selectedProfileCanUsePhoneScreening ? (
+                        <Badge tone="success">Enabled</Badge>
+                      ) : (
+                        <Badge tone="warning">Plan locked</Badge>
+                      )}
+                    </div>
+                    {query.screeningMessage ? (
+                      <div className="rounded-md border border-border bg-white p-3 text-sm font-semibold">
+                        {query.screeningMessage}
+                      </div>
+                    ) : null}
+                    {selectedProfileCanUsePhoneScreening ? (
+                      <>
+                        <form action={addPhoneScreeningWindow} className="grid gap-3 md:grid-cols-[1fr_140px_140px_auto] md:items-end">
+                          <input name="profileId" type="hidden" value={selectedProfile.id} />
+                          <label className="grid gap-1 text-sm font-semibold">
+                            Weekday
+                            <select className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" name="dayOfWeek" required>
+                              {phoneScreeningDayOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label className="grid gap-1 text-sm font-semibold">
+                            Start
+                            <input className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" defaultValue="09:00" name="startTime" required type="time" />
+                          </label>
+                          <label className="grid gap-1 text-sm font-semibold">
+                            End
+                            <input className="min-h-10 rounded-md border border-border bg-white px-3 text-sm" defaultValue="12:00" name="endTime" required type="time" />
+                          </label>
+                          <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                            Add window
+                          </button>
+                        </form>
+                        <div className="grid gap-2">
+                          {selectedProfile.phoneScreeningWindows.map((window) => (
+                            <div key={window.id} className="flex flex-col justify-between gap-2 rounded-md border border-border bg-white p-3 text-sm sm:flex-row sm:items-center">
+                              <span className="font-semibold">{formatPhoneScreeningWindow(window)}</span>
+                              <form action={deletePhoneScreeningWindow}>
+                                <input name="windowId" type="hidden" value={window.id} />
+                                <button className="focus-ring min-h-8 rounded-md border border-border bg-white px-3 text-xs font-semibold text-destructive">
+                                  Remove
+                                </button>
+                              </form>
+                            </div>
+                          ))}
+                          {!selectedProfile.phoneScreeningWindows.length ? (
+                            <p className="rounded-md border border-dashed border-border bg-white p-3 text-sm text-muted-foreground">
+                              No screening windows yet.
+                            </p>
+                          ) : null}
+                        </div>
+                        {selectedProfile.phoneScreeningAppointments.length ? (
+                          <div className="border-t border-border pt-3">
+                            <p className="text-sm font-semibold">Upcoming booked screenings</p>
+                            <div className="mt-2 grid gap-2">
+                              {selectedProfile.phoneScreeningAppointments.map((appointment) => (
+                                <div key={appointment.id} className="rounded-md bg-white p-3 text-sm">
+                                  <p className="font-semibold">{formatPhoneScreeningDateTime(appointment.startsAt, appointment.timezone)}</p>
+                                  <p className="mt-1 text-muted-foreground">
+                                    {appointment.referral.caseManagerName} · {appointment.referral.caseManagerOrganization}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </>
+                    ) : (
+                      <p className="rounded-md border border-dashed border-border bg-white p-3 text-sm text-muted-foreground">
+                        Phone screening scheduling is available on paid plans that receive direct referrals.
+                      </p>
+                    )}
+                  </div>
                 </div>
                 ) : (
                   <div className="ac-callout mt-5 p-4 text-sm text-muted-foreground">
@@ -993,6 +1134,14 @@ export default async function AftercareDashboardPage({
                                 <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
                                   {referral.reasonForReferral}
                                 </p>
+                                {referral.phoneScreeningAppointments[0] ? (
+                                  <p className="mt-1 text-xs font-semibold text-primary">
+                                    Phone screening {formatPhoneScreeningDateTime(
+                                      referral.phoneScreeningAppointments[0].startsAt,
+                                      referral.phoneScreeningAppointments[0].timezone
+                                    )}
+                                  </p>
+                                ) : null}
                               </td>
                               <td className="py-4 pr-4">
                                 <Badge tone={["accepted", "placed"].includes(referral.status) ? "success" : "warning"}>

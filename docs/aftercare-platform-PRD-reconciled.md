@@ -159,6 +159,18 @@ Referral workflow must support:
 - Email notifications for new referrals and status changes.
 - Dashboard visibility for referents and aftercare organizations.
 
+### Phone Screening Scheduling
+
+Paid aftercare plans that can receive direct referrals can set recurring weekly intake-call windows on each managed profile.
+
+Phone screening workflow must support:
+
+- Aftercare managers creating and removing recurring weekly call windows.
+- Referents booking one available slot after the provider accepts a referral.
+- One scheduled phone screening per referral in the first release.
+- Email notifications to the provider team and the case manager when a slot is booked.
+- Server-side plan gating so free, unclaimed, or non-referral-eligible profiles cannot expose scheduling.
+
 ### Messaging
 
 Basic in-app messaging is an MVP feature for eligible plans.
@@ -693,6 +705,7 @@ Email notifications should cover:
 - Public lead submitted.
 - New referral submitted.
 - Referral status changed.
+- Phone screening booked.
 - New message.
 - Manager invitation sent.
 - Manager removed.

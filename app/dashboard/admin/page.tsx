@@ -116,6 +116,57 @@ function SummaryCards({ items }: { items: Array<[string, string]> }) {
   );
 }
 
+function trendLabel(current: number, previous: number, suffix = "") {
+  const difference = current - previous;
+
+  if (difference === 0) {
+    return {
+      label: "No change",
+      tone: "neutral" as const
+    };
+  }
+
+  if (previous === 0) {
+    return {
+      label: `${difference > 0 ? "+" : ""}${difference}${suffix}`,
+      tone: difference > 0 ? "success" as const : "warning" as const
+    };
+  }
+
+  const percentChange = Math.round((difference / previous) * 100);
+
+  return {
+    label: `${percentChange > 0 ? "+" : ""}${percentChange}%`,
+    tone: percentChange > 0 ? "success" as const : "warning" as const
+  };
+}
+
+function AnalyticsCards({
+  items
+}: {
+  items: Array<{
+    label: string;
+    value: string;
+    detail: string;
+    trend: ReturnType<typeof trendLabel>;
+  }>;
+}) {
+  return (
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      {items.map((item) => (
+        <Card className="p-4" key={item.label}>
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{item.label}</p>
+            <Badge className="shrink-0" tone={item.trend.tone}>{item.trend.label}</Badge>
+          </div>
+          <p className="mt-3 text-3xl font-semibold">{item.value}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{item.detail}</p>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export default async function AdminDashboardPage({
   searchParams
 }: {
@@ -149,6 +200,10 @@ export default async function AdminDashboardPage({
   const organizationSearchStatuses = organizationSearchTerm
     ? Object.values(SubscriptionStatus).filter((status) => formatValue(status).toLowerCase().includes(organizationSearchLower))
     : [];
+  const currentPeriodStart = new Date();
+  currentPeriodStart.setDate(currentPeriodStart.getDate() - 30);
+  const previousPeriodStart = new Date();
+  previousPeriodStart.setDate(previousPeriodStart.getDate() - 60);
 
   if (appUser.role !== Role.system_admin) {
     redirect("/dashboard");
@@ -159,7 +214,14 @@ export default async function AdminDashboardPage({
     profileCounts,
     referralCounts,
     leadCounts,
-    recentOrganizations,
+    currentNewProfiles,
+    previousNewProfiles,
+    currentReferrals,
+    previousReferrals,
+    currentLeads,
+    previousLeads,
+    currentReferralResponses,
+    previousReferralResponses,
     organizations,
     profiles,
     referrals,
@@ -185,25 +247,34 @@ export default async function AdminDashboardPage({
       by: ["status"],
       _count: { _all: true }
     }),
-    prisma.organization.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 6,
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        subscriptionPlan: true,
-        subscriptionStatus: true,
-        createdAt: true,
-        _count: {
-          select: {
-            users: true,
-            profiles: true,
-            leads: true,
-            aftercareReferrals: true,
-            referentReferrals: true
-          }
-        }
+    prisma.aftercareProfile.count({
+      where: { createdAt: { gte: currentPeriodStart } }
+    }),
+    prisma.aftercareProfile.count({
+      where: { createdAt: { gte: previousPeriodStart, lt: currentPeriodStart } }
+    }),
+    prisma.referral.count({
+      where: { createdAt: { gte: currentPeriodStart } }
+    }),
+    prisma.referral.count({
+      where: { createdAt: { gte: previousPeriodStart, lt: currentPeriodStart } }
+    }),
+    prisma.lead.count({
+      where: { createdAt: { gte: currentPeriodStart } }
+    }),
+    prisma.lead.count({
+      where: { createdAt: { gte: previousPeriodStart, lt: currentPeriodStart } }
+    }),
+    prisma.referral.count({
+      where: {
+        createdAt: { gte: currentPeriodStart },
+        NOT: { status: ReferralStatus.pending }
+      }
+    }),
+    prisma.referral.count({
+      where: {
+        createdAt: { gte: previousPeriodStart, lt: currentPeriodStart },
+        NOT: { status: ReferralStatus.pending }
       }
     }),
     prisma.organization.findMany({
@@ -472,6 +543,8 @@ export default async function AdminDashboardPage({
   const pendingApplicationCount = applicationReviews.filter((review) => review.status === AdminReviewStatus.pending).length;
   const pendingClaimCount = profileClaims.filter((claim) => claim.status === "pending").length;
   const openFlagCount = flags.filter((flag) => flag.status === "open").length;
+  const currentReferralResponseRate = currentReferrals ? Math.round((currentReferralResponses / currentReferrals) * 100) : 0;
+  const previousReferralResponseRate = previousReferrals ? Math.round((previousReferralResponses / previousReferrals) * 100) : 0;
   const recentRequests = [
     ...referrals.map((referral) => ({
       id: referral.id,
@@ -542,65 +615,94 @@ export default async function AdminDashboardPage({
 
       {activeTab === "overview" ? (
         <div className="mt-6 grid gap-6">
-          <SummaryCards
+          <AnalyticsCards
             items={[
-              ["Aftercare orgs", (countOrganizations(OrganizationType.aftercare_sober_living) + countOrganizations(OrganizationType.aftercare_continued_care)).toString()],
-              ["Referent orgs", countOrganizations(OrganizationType.referent).toString()],
-              ["Published profiles", countProfiles(ProfileStatus.published).toString()],
-              ["Total requests", (countReferrals() + countLeads()).toString()]
+              {
+                label: "New homes/programs",
+                value: currentNewProfiles.toString(),
+                detail: "Last 30 days",
+                trend: trendLabel(currentNewProfiles, previousNewProfiles)
+              },
+              {
+                label: "Total referrals",
+                value: currentReferrals.toString(),
+                detail: "Last 30 days",
+                trend: trendLabel(currentReferrals, previousReferrals)
+              },
+              {
+                label: "Public leads",
+                value: currentLeads.toString(),
+                detail: "Last 30 days",
+                trend: trendLabel(currentLeads, previousLeads)
+              },
+              {
+                label: "Referral response rate",
+                value: `${currentReferralResponseRate}%`,
+                detail: `${currentReferralResponses} of ${currentReferrals} referrals responded`,
+                trend: trendLabel(currentReferralResponseRate, previousReferralResponseRate, " pts")
+              }
             ]}
           />
 
-          <div className="grid gap-4 xl:grid-cols-2">
-            <Card>
-              <h2 className="text-xl font-semibold">Recent organizations</h2>
-              <div className="mt-4 overflow-hidden rounded-md border border-border">
-                {recentOrganizations.map((organization) => (
-                  <div className="grid gap-3 border-b border-border p-3 text-sm last:border-0 md:grid-cols-[minmax(0,1fr)_150px_120px_120px]" key={organization.id}>
-                    <div>
-                      <p className="font-semibold">{organization.name}</p>
-                      <p className="mt-1 text-muted-foreground">{organizationLabel(organization.type)}</p>
-                    </div>
-                    <Badge className="self-start justify-self-start" tone={statusTone(organization.subscriptionStatus || "draft")}>
-                      {formatValue(organization.subscriptionStatus || "No subscription")}
-                    </Badge>
-                    <p className="text-muted-foreground">{organization._count.users} users</p>
-                    <p className="text-muted-foreground">{formatDate(organization.createdAt)}</p>
+          <Card>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-semibold">Admin queue</h2>
+                <p className="mt-2 text-sm text-muted-foreground">Work that needs system admin attention.</p>
+              </div>
+              <Badge tone="warning">
+                {pendingApplicationCount + pendingVerificationCount + pendingClaimCount + countReferrals(ReferralStatus.pending) + countLeads(LeadStatus.new) + openFlagCount} open
+              </Badge>
+            </div>
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {[
+                {
+                  title: "Application review",
+                  count: pendingApplicationCount,
+                  description: "Onboarding submissions need approval.",
+                  href: "/dashboard/admin?tab=verification"
+                },
+                {
+                  title: "Verification review",
+                  count: pendingVerificationCount,
+                  description: "Document reviews are pending.",
+                  href: "/dashboard/admin?tab=verification"
+                },
+                {
+                  title: "Referral response",
+                  count: countReferrals(ReferralStatus.pending),
+                  description: "Referrals still need provider action.",
+                  href: "/dashboard/admin?tab=requests"
+                },
+                {
+                  title: "Public lead follow-up",
+                  count: countLeads(LeadStatus.new),
+                  description: "New public leads are in provider inboxes.",
+                  href: "/dashboard/admin?tab=requests"
+                },
+                {
+                  title: "Profile claims",
+                  count: pendingClaimCount,
+                  description: "Ownership claims need review.",
+                  href: "/dashboard/admin?tab=claims"
+                },
+                {
+                  title: "Marketplace quality",
+                  count: openFlagCount,
+                  description: "Open profile flags need review.",
+                  href: "/dashboard/admin?tab=verification"
+                }
+              ].map((item) => (
+                <Link className="focus-ring ac-panel-card block p-4 transition hover:border-primary/40 hover:bg-surface" href={item.href} key={item.title}>
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-semibold">{item.title}</p>
+                    <Badge tone={item.count ? "warning" : "success"}>{item.count.toString()}</Badge>
                   </div>
-                ))}
-              </div>
-            </Card>
-
-            <Card>
-              <h2 className="text-xl font-semibold">Operational queue</h2>
-              <div className="mt-4 grid gap-3">
-                <div className="ac-panel-card p-4">
-                  <p className="font-semibold">Application review</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{pendingApplicationCount} onboarding submissions need approval.</p>
-                </div>
-                <div className="ac-panel-card p-4">
-                  <p className="font-semibold">Verification review</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{pendingVerificationCount} pending document reviews.</p>
-                </div>
-                <div className="ac-panel-card p-4">
-                  <p className="font-semibold">Referral response</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{countReferrals(ReferralStatus.pending)} referrals still pending provider action.</p>
-                </div>
-                <div className="ac-panel-card p-4">
-                  <p className="font-semibold">Public lead follow-up</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{countLeads(LeadStatus.new)} new public leads in provider inboxes.</p>
-                </div>
-                <div className="ac-panel-card p-4">
-                  <p className="font-semibold">Profile claims</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{pendingClaimCount} ownership claims need review.</p>
-                </div>
-                <div className="ac-panel-card p-4">
-                  <p className="font-semibold">Marketplace quality</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{openFlagCount} open profile flags.</p>
-                </div>
-              </div>
-            </Card>
-          </div>
+                  <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>
+                </Link>
+              ))}
+            </div>
+          </Card>
         </div>
       ) : null}
 

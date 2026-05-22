@@ -35,7 +35,11 @@ export async function selectAccountType(formData: FormData) {
     redirect("/sign-in");
   }
 
-  redirect(draftDestinationForAccountType(accountType));
+  if (accountType === "referent") {
+    redirect(draftDestinationForAccountType(accountType));
+  }
+
+  redirect("/onboarding/aftercare/find-existing");
 }
 
 export async function restartCurrentOnboarding() {

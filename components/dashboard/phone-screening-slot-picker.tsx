@@ -81,12 +81,7 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
       >
         <CalendarDays size={14} />
         {selectedSlot ? (
-          <>
-            <span>{selectedSlotLabel}</span>
-            <span className="rounded-full border border-[#13205d]/25 bg-white px-2 py-0.5 text-[11px] font-semibold text-[#13205d]">
-              Reschedule call
-            </span>
-          </>
+          selectedSlotLabel
         ) : (
           "Schedule intake call"
         )}

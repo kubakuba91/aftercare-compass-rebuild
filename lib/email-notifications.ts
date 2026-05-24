@@ -1,4 +1,5 @@
 import { Role } from "@prisma/client";
+import { createCalendarEvent } from "@/lib/calendar";
 import { appUrl, emailButton, emailField, emailShell, escapeHtml, sendTransactionalEmail, uniqueEmailRecipients } from "@/lib/email";
 import { formatPhoneScreeningDateTime } from "@/lib/phone-screening";
 import { prisma } from "@/lib/prisma";
@@ -458,6 +459,28 @@ export async function notifyPhoneScreeningBooked(appointmentId: string) {
   const scheduledFor = formatPhoneScreeningDateTime(appointment.startsAt, appointment.timezone);
   const aftercareDashboardLink = appUrl(`/dashboard/aftercare?tab=overview&profileId=${appointment.aftercareProfileId}&referralId=${appointment.referralId}`);
   const referentDashboardLink = appUrl("/dashboard/referent?tab=referrals");
+  const calendarInvite = createCalendarEvent({
+    uid: `phone-screening-${appointment.id}@aftercarecompass.com`,
+    title: `Phone screening: ${appointment.aftercareProfile.programName}`,
+    startsAt: appointment.startsAt,
+    endsAt: appointment.endsAt,
+    location: "Phone call",
+    description: [
+      `Phone screening with ${appointment.aftercareProfile.programName}`,
+      `Case manager: ${appointment.referral.caseManagerName}`,
+      `Organization: ${appointment.referral.caseManagerOrganization}`,
+      `Case manager email: ${appointment.referral.caseManagerEmail}`,
+      appointment.referral.caseManagerPhone ? `Case manager phone: ${appointment.referral.caseManagerPhone}` : "",
+      appointment.aftercareProfile.admissionsContactPhone ? `Provider phone: ${appointment.aftercareProfile.admissionsContactPhone}` : "",
+      `Provider dashboard: ${aftercareDashboardLink}`,
+      `Referent dashboard: ${referentDashboardLink}`
+    ].filter(Boolean).join("\n")
+  });
+  const calendarAttachment = {
+    filename: "phone-screening.ics",
+    content: calendarInvite,
+    contentType: "text/calendar; charset=utf-8; method=PUBLISH"
+  };
 
   await createUserNotifications({
     users: appointment.aftercareOrg.users,
@@ -479,6 +502,7 @@ export async function notifyPhoneScreeningBooked(appointmentId: string) {
         ${emailField("Case manager email", appointment.referral.caseManagerEmail)}
         ${emailField("Case manager phone", appointment.referral.caseManagerPhone)}
         ${emailField("Provider phone", appointment.aftercareProfile.admissionsContactPhone)}
+        <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">A calendar invite is attached to this email.</p>
         ${emailButton("View referral", aftercareDashboardLink)}
       `
     ),
@@ -490,8 +514,10 @@ export async function notifyPhoneScreeningBooked(appointmentId: string) {
       `Email: ${appointment.referral.caseManagerEmail}`,
       `Phone: ${appointment.referral.caseManagerPhone}`,
       appointment.aftercareProfile.admissionsContactPhone ? `Provider phone: ${appointment.aftercareProfile.admissionsContactPhone}` : "",
+      "A calendar invite is attached to this email.",
       `View referral: ${aftercareDashboardLink}`
-    ].filter(Boolean).join("\n")
+    ].filter(Boolean).join("\n"),
+    attachments: [calendarAttachment]
   });
 
   const referentEmail = sendTransactionalEmail({
@@ -504,6 +530,7 @@ export async function notifyPhoneScreeningBooked(appointmentId: string) {
         ${emailField("Scheduled for", scheduledFor)}
         ${emailField("Provider phone", appointment.aftercareProfile.admissionsContactPhone)}
         ${emailField("Case manager phone", appointment.referral.caseManagerPhone)}
+        <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">A calendar invite is attached to this email.</p>
         ${emailButton("Open referrals", referentDashboardLink)}
       `
     ),
@@ -511,8 +538,10 @@ export async function notifyPhoneScreeningBooked(appointmentId: string) {
       `Phone screening confirmed with ${appointment.aftercareProfile.programName}`,
       `Scheduled for: ${scheduledFor}`,
       appointment.aftercareProfile.admissionsContactPhone ? `Provider phone: ${appointment.aftercareProfile.admissionsContactPhone}` : "",
+      "A calendar invite is attached to this email.",
       `Open referrals: ${referentDashboardLink}`
-    ].filter(Boolean).join("\n")
+    ].filter(Boolean).join("\n"),
+    attachments: [calendarAttachment]
   });
 
   return Promise.all([providerEmail, referentEmail]);

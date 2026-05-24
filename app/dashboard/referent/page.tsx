@@ -605,9 +605,6 @@ export default async function ReferentDashboardPage({
                       <form action={bookPhoneScreeningSlot} className="grid gap-2 text-left">
                         <input name="referralId" type="hidden" value={referral.id} />
                         <PhoneScreeningSlotPicker slots={slotOptions} />
-                        <button className="focus-ring min-h-8 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground">
-                          Book call
-                        </button>
                       </form>
                     ) : (
                       referral.statusUpdatedAt.toLocaleDateString()

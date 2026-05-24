@@ -3,6 +3,13 @@ type EmailInput = {
   subject: string;
   html: string;
   text: string;
+  attachments?: EmailAttachment[];
+};
+
+type EmailAttachment = {
+  filename: string;
+  content: string;
+  contentType: string;
 };
 
 const resendApiKey = process.env.RESEND_API_KEY;
@@ -123,6 +130,13 @@ async function sendMailgunEmail(input: EmailInput & { to: string[] }) {
   formData.set("subject", input.subject);
   formData.set("text", input.text);
   formData.set("html", input.html);
+  input.attachments?.forEach((attachment) => {
+    formData.append(
+      "attachment",
+      new Blob([attachment.content], { type: attachment.contentType }),
+      attachment.filename
+    );
+  });
 
   try {
     const response = await fetch(`${mailgunBaseUrl}/${mailgunDomain}/messages`, {
@@ -163,7 +177,12 @@ async function sendResendEmail(input: EmailInput & { to: string[] }) {
         to: input.to,
         subject: input.subject,
         html: input.html,
-        text: input.text
+        text: input.text,
+        attachments: input.attachments?.map((attachment) => ({
+          filename: attachment.filename,
+          content: Buffer.from(attachment.content).toString("base64"),
+          content_type: attachment.contentType
+        }))
       })
     });
 

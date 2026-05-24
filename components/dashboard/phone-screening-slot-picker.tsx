@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Check, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type PhoneScreeningSlotOption = {
@@ -63,6 +63,7 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
   const [selectedDay, setSelectedDay] = useState(dayGroups[0]?.key ?? "");
   const [selectedSlot, setSelectedSlot] = useState(dayGroups[0]?.slots[0]?.startsAtIso ?? "");
   const activeDay = dayGroups.find((group) => group.key === selectedDay) ?? dayGroups[0];
+  const selectedSlotLabel = selectedSlot ? timeFormatter.format(new Date(selectedSlot)) : "Choose a call time";
 
   if (!dayGroups.length) {
     return null;
@@ -70,18 +71,27 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
 
   return (
     <details className="group relative">
-      <summary className="focus-ring flex min-h-9 cursor-pointer list-none items-center justify-center gap-2 rounded-md border border-border bg-white px-3 text-xs font-semibold text-foreground shadow-sm transition hover:border-primary/60">
+      <summary className="focus-ring flex min-h-9 cursor-pointer list-none items-center justify-center gap-2 rounded-md border border-border bg-white px-3 text-xs font-semibold text-foreground shadow-sm transition hover:border-primary/60 group-open:border-primary group-open:bg-primary/5 group-open:text-primary">
         <CalendarDays size={14} />
-        Select call time
+        {selectedSlotLabel}
       </summary>
-      <div className="absolute right-0 z-20 mt-2 w-[min(340px,calc(100vw-2rem))] rounded-md border border-border bg-white p-3 text-left shadow-lg">
-        <p className="text-xs font-semibold text-muted-foreground">Choose a day</p>
-        <div className="mt-2 grid grid-cols-3 gap-2">
+      <div className="absolute right-0 z-20 mt-2 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border bg-white text-left shadow-xl">
+        <div className="border-b border-border bg-surface px-4 py-3">
+          <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <CalendarDays size={16} className="text-primary" />
+            Schedule phone screening
+          </p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">Select a day and available call block.</p>
+        </div>
+
+        <div className="p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Choose a day</p>
+        <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
           {dayGroups.map((group) => (
             <button
               className={cn(
-                "focus-ring rounded-md border border-border bg-white p-2 text-center text-xs transition hover:border-primary/70",
-                selectedDay === group.key && "border-primary bg-primary/5 text-primary"
+                "focus-ring rounded-md border border-border bg-white p-2 text-center text-xs shadow-sm transition hover:border-primary/70 hover:bg-primary/5",
+                selectedDay === group.key && "border-primary bg-primary text-primary-foreground shadow-md"
               )}
               key={group.key}
               onClick={() => {
@@ -92,38 +102,59 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
             >
               <span className="block font-semibold">{group.weekday}</span>
               <span className="mt-1 block text-lg font-semibold leading-none">{group.day}</span>
-              <span className="mt-1 block text-muted-foreground">{group.month}</span>
+              <span className={cn("mt-1 block text-muted-foreground", selectedDay === group.key && "text-primary-foreground/85")}>{group.month}</span>
             </button>
           ))}
         </div>
 
         {activeDay ? (
           <div className="mt-3">
-            <p className="text-xs font-semibold text-muted-foreground">Available call blocks</p>
-            <div className="mt-2 grid gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Available call blocks</p>
+            <div className="mt-2 grid max-h-64 gap-2 overflow-y-auto pr-1">
               {activeDay.slots.map((slot) => (
                 <label
                   className={cn(
-                    "flex cursor-pointer items-center justify-between gap-2 rounded-md border border-border bg-white px-3 py-2 text-xs font-semibold transition hover:border-primary/70",
-                    selectedSlot === slot.startsAtIso && "border-primary bg-primary/5 text-primary"
+                    "flex cursor-pointer items-center justify-between gap-3 rounded-md border border-border bg-white px-3 py-2 text-xs font-semibold shadow-sm transition hover:border-primary/70 hover:bg-primary/5",
+                    selectedSlot === slot.startsAtIso && "border-primary bg-primary/5 text-primary shadow-md"
                   )}
                   key={slot.startsAtIso}
                 >
-                  <span>{timeFormatter.format(new Date(slot.startsAtIso))}</span>
+                  <span className="flex items-center gap-2">
+                    <Clock size={14} className="text-muted-foreground" />
+                    {timeFormatter.format(new Date(slot.startsAtIso))}
+                  </span>
                   <input
                     checked={selectedSlot === slot.startsAtIso}
-                    className="h-4 w-4 accent-primary"
+                    className="sr-only"
                     name="slot"
                     onChange={() => setSelectedSlot(slot.startsAtIso)}
                     required
                     type="radio"
                     value={slot.startsAtIso}
                   />
+                  <span
+                    className={cn(
+                      "flex h-5 w-5 items-center justify-center rounded-full border border-border bg-white text-white",
+                      selectedSlot === slot.startsAtIso && "border-primary bg-primary"
+                    )}
+                  >
+                    {selectedSlot === slot.startsAtIso ? <Check size={13} /> : null}
+                  </span>
                 </label>
               ))}
             </div>
           </div>
         ) : null}
+        </div>
+
+        <div className="border-t border-border bg-white p-3 shadow-[0_-8px_20px_rgba(15,23,42,0.05)]">
+          <button
+            className="focus-ring min-h-10 w-full rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+            type="submit"
+          >
+            Book call
+          </button>
+        </div>
       </div>
     </details>
   );

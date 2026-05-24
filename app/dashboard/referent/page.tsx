@@ -18,6 +18,7 @@ import { redirect } from "next/navigation";
 import { ProfileType, Role } from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
+import { PhoneScreeningSlotPicker } from "@/components/dashboard/phone-screening-slot-picker";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatBillingStatus, getBillingPlan, getBillingPlansWithStripePrices } from "@/lib/billing";
@@ -550,7 +551,7 @@ export default async function ReferentDashboardPage({
             </div>
           ) : null}
           {referrals.length ? (
-            <div className="mt-5 overflow-hidden rounded-md border border-border">
+            <div className="mt-5 rounded-md border border-border">
               {referrals.map((referral) => {
                 const bookedScreening = referral.phoneScreeningAppointments[0] ?? null;
                 const canBookScreening =
@@ -561,9 +562,13 @@ export default async function ReferentDashboardPage({
                   ? generatePhoneScreeningSlots({
                       windows: referral.aftercareProfile.phoneScreeningWindows,
                       appointments: referral.aftercareProfile.phoneScreeningAppointments,
-                      maxSlots: 5
+                      maxSlots: 18
                     })
                   : [];
+                const slotOptions = slots.map((slot) => ({
+                  startsAtIso: slot.startsAt.toISOString(),
+                  label: slot.label
+                }));
 
                 return (
                 <div
@@ -599,13 +604,7 @@ export default async function ReferentDashboardPage({
                     ) : canBookScreening && slots.length ? (
                       <form action={bookPhoneScreeningSlot} className="grid gap-2 text-left">
                         <input name="referralId" type="hidden" value={referral.id} />
-                        <select className="min-h-9 rounded-md border border-border bg-white px-2 text-xs" name="slot" required>
-                          {slots.map((slot) => (
-                            <option key={slot.startsAt.toISOString()} value={slot.startsAt.toISOString()}>
-                              {slot.label}
-                            </option>
-                          ))}
-                        </select>
+                        <PhoneScreeningSlotPicker slots={slotOptions} />
                         <button className="focus-ring min-h-8 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground">
                           Book call
                         </button>

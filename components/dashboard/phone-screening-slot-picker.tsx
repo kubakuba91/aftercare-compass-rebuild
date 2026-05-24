@@ -71,7 +71,7 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
 
   return (
     <details className="group relative">
-      <summary className="focus-ring flex min-h-9 cursor-pointer list-none items-center justify-center gap-2 rounded-md border border-border bg-white px-3 text-xs font-semibold text-foreground shadow-sm transition hover:border-primary/60 group-open:border-primary group-open:bg-primary/5 group-open:text-primary">
+      <summary className="focus-ring flex min-h-9 cursor-pointer list-none items-center justify-center gap-2 rounded-md border border-border bg-white px-3 text-xs font-semibold text-foreground shadow-sm transition hover:border-[#13205d] group-open:border-[#13205d] group-open:bg-[#eef3ff] group-open:text-[#13205d]">
         <CalendarDays size={14} />
         {selectedSlotLabel}
       </summary>
@@ -85,71 +85,79 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
         </div>
 
         <div className="p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Choose a day</p>
-        <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {dayGroups.map((group) => (
-            <button
-              className={cn(
-                "focus-ring rounded-md border border-border bg-white p-2 text-center text-xs shadow-sm transition hover:border-primary/70 hover:bg-primary/5",
-                selectedDay === group.key && "border-primary bg-primary text-primary-foreground shadow-md"
-              )}
-              key={group.key}
-              onClick={() => {
-                setSelectedDay(group.key);
-                setSelectedSlot(group.slots[0]?.startsAtIso ?? "");
-              }}
-              type="button"
-            >
-              <span className="block font-semibold">{group.weekday}</span>
-              <span className="mt-1 block text-lg font-semibold leading-none">{group.day}</span>
-              <span className={cn("mt-1 block text-muted-foreground", selectedDay === group.key && "text-primary-foreground/85")}>{group.month}</span>
-            </button>
-          ))}
-        </div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Choose a day</p>
+          <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {dayGroups.map((group) => {
+              const isSelected = selectedDay === group.key;
 
-        {activeDay ? (
-          <div className="mt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Available call blocks</p>
-            <div className="mt-2 grid max-h-64 gap-2 overflow-y-auto pr-1">
-              {activeDay.slots.map((slot) => (
-                <label
+              return (
+                <button
                   className={cn(
-                    "flex cursor-pointer items-center justify-between gap-3 rounded-md border border-border bg-white px-3 py-2 text-xs font-semibold shadow-sm transition hover:border-primary/70 hover:bg-primary/5",
-                    selectedSlot === slot.startsAtIso && "border-primary bg-primary/5 text-primary shadow-md"
+                    "focus-ring rounded-md border border-border bg-white p-2 text-center text-xs shadow-sm transition hover:border-[#13205d] hover:bg-[#eef3ff]",
+                    isSelected && "border-[#13205d] bg-[#13205d] text-white shadow-md ring-2 ring-[#7fb2ff]"
                   )}
-                  key={slot.startsAtIso}
+                  key={group.key}
+                  onClick={() => {
+                    setSelectedDay(group.key);
+                    setSelectedSlot(group.slots[0]?.startsAtIso ?? "");
+                  }}
+                  type="button"
                 >
-                  <span className="flex items-center gap-2">
-                    <Clock size={14} className="text-muted-foreground" />
-                    {timeFormatter.format(new Date(slot.startsAtIso))}
-                  </span>
-                  <input
-                    checked={selectedSlot === slot.startsAtIso}
-                    className="sr-only"
-                    name="slot"
-                    onChange={() => setSelectedSlot(slot.startsAtIso)}
-                    required
-                    type="radio"
-                    value={slot.startsAtIso}
-                  />
-                  <span
-                    className={cn(
-                      "flex h-5 w-5 items-center justify-center rounded-full border border-border bg-white text-white",
-                      selectedSlot === slot.startsAtIso && "border-primary bg-primary"
-                    )}
-                  >
-                    {selectedSlot === slot.startsAtIso ? <Check size={13} /> : null}
-                  </span>
-                </label>
-              ))}
-            </div>
+                  <span className="block font-semibold">{group.weekday}</span>
+                  <span className="mt-1 block text-lg font-semibold leading-none">{group.day}</span>
+                  <span className={cn("mt-1 block text-muted-foreground", isSelected && "text-white/85")}>{group.month}</span>
+                </button>
+              );
+            })}
           </div>
-        ) : null}
+
+          {activeDay ? (
+            <div className="mt-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Available call blocks</p>
+              <div className="mt-2 grid max-h-64 gap-2 overflow-y-auto pr-1">
+                {activeDay.slots.map((slot) => {
+                  const isSelected = selectedSlot === slot.startsAtIso;
+
+                  return (
+                    <label
+                      className={cn(
+                        "flex cursor-pointer items-center justify-between gap-3 rounded-md border border-border bg-white px-3 py-2 text-xs font-semibold shadow-sm transition hover:border-[#13205d] hover:bg-[#eef3ff]",
+                        isSelected && "border-[#13205d] bg-[#eef3ff] text-[#13205d] shadow-md ring-2 ring-[#7fb2ff]"
+                      )}
+                      key={slot.startsAtIso}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Clock size={14} className={cn("text-muted-foreground", isSelected && "text-[#13205d]")} />
+                        {timeFormatter.format(new Date(slot.startsAtIso))}
+                      </span>
+                      <input
+                        checked={isSelected}
+                        className="sr-only"
+                        name="slot"
+                        onChange={() => setSelectedSlot(slot.startsAtIso)}
+                        required
+                        type="radio"
+                        value={slot.startsAtIso}
+                      />
+                      <span
+                        className={cn(
+                          "flex h-5 w-5 items-center justify-center rounded-full border border-border bg-white text-white",
+                          isSelected && "border-[#13205d] bg-[#13205d]"
+                        )}
+                      >
+                        {isSelected ? <Check size={13} /> : null}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
 
-        <div className="border-t border-border bg-white p-3 shadow-[0_-8px_20px_rgba(15,23,42,0.05)]">
+        <div className="border-t border-border bg-white p-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)]">
           <button
-            className="focus-ring min-h-10 w-full rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+            className="focus-ring min-h-11 w-full rounded-md bg-[#13205d] px-4 text-sm font-semibold text-white shadow-md transition hover:bg-[#0f1848]"
             type="submit"
           >
             Book call

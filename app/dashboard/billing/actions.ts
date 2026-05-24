@@ -97,56 +97,73 @@ export async function createBillingCheckoutSession(formData: FormData) {
   }
 
   const stripe = getStripe();
-  let customerId = organization.stripeCustomerId;
+  let checkoutUrl: string | null = null;
 
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: organization.email || appUser.email,
-      name: organization.name,
-      metadata: {
-        organizationId: organization.id,
-        organizationType: organization.type
-      }
-    });
+  try {
+    let customerId = organization.stripeCustomerId;
 
-    customerId = customer.id;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: organization.email || appUser.email,
+        name: organization.name,
+        metadata: {
+          organizationId: organization.id,
+          organizationType: organization.type
+        }
+      });
 
-    await prisma.organization.update({
-      where: { id: organization.id },
-      data: { stripeCustomerId: customerId }
-    });
-  }
+      customerId = customer.id;
 
-  const successUrl = `${appUrl()}${billingReturnPath(audience, "Subscription updated.")}`;
-  const cancelUrl = `${appUrl()}${billingReturnPath(audience, "Checkout cancelled.")}`;
+      await prisma.organization.update({
+        where: { id: organization.id },
+        data: { stripeCustomerId: customerId }
+      });
+    }
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer: customerId,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: successUrl,
-    cancel_url: cancelUrl,
-    metadata: {
-      organizationId: organization.id,
-      audience,
-      plan: plan.key,
-      billingCycle: cycle
-    },
-    subscription_data: {
+    const successUrl = `${appUrl()}${billingReturnPath(audience, "Subscription updated.")}`;
+    const cancelUrl = `${appUrl()}${billingReturnPath(audience, "Checkout cancelled.")}`;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       metadata: {
         organizationId: organization.id,
         audience,
         plan: plan.key,
         billingCycle: cycle
+      },
+      subscription_data: {
+        metadata: {
+          organizationId: organization.id,
+          audience,
+          plan: plan.key,
+          billingCycle: cycle
+        }
       }
-    }
-  });
+    });
 
-  if (!session.url) {
+    checkoutUrl = session.url;
+  } catch (error) {
+    console.error("Stripe checkout session failed", {
+      organizationId: organization.id,
+      audience,
+      plan: plan.key,
+      cycle,
+      priceId,
+      error
+    });
+
+    redirect(billingReturnPath(audience, "Stripe checkout could not be started. Check the plan price configuration."));
+  }
+
+  if (!checkoutUrl) {
     redirect(billingReturnPath(audience, "Stripe checkout could not be started."));
   }
 
-  redirect(session.url);
+  redirect(checkoutUrl);
 }
 
 export async function changeBillingPlan(formData: FormData) {
@@ -191,25 +208,41 @@ export async function changeBillingPlan(formData: FormData) {
   }
 
   const stripe = getStripe();
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  const subscriptionItemId = subscription.items.data[0]?.id;
 
-  if (!subscriptionItemId) {
-    redirect(billingReturnPath(audience, "Stripe subscription item could not be found."));
-  }
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscriptionItemId = subscription.items.data[0]?.id;
 
-  await stripe.subscriptions.update(subscription.id, {
-    cancel_at_period_end: false,
-    items: [{ id: subscriptionItemId, price: priceId }],
-    metadata: {
-      ...subscription.metadata,
+    if (!subscriptionItemId) {
+      redirect(billingReturnPath(audience, "Stripe subscription item could not be found."));
+    }
+
+    await stripe.subscriptions.update(subscription.id, {
+      cancel_at_period_end: false,
+      items: [{ id: subscriptionItemId, price: priceId }],
+      metadata: {
+        ...subscription.metadata,
+        organizationId: organization.id,
+        audience,
+        plan: plan.key,
+        billingCycle: cycle
+      },
+      proration_behavior: "create_prorations"
+    }
+    );
+  } catch (error) {
+    console.error("Stripe subscription update failed", {
       organizationId: organization.id,
       audience,
       plan: plan.key,
-      billingCycle: cycle
-    },
-    proration_behavior: "create_prorations"
-  });
+      cycle,
+      priceId,
+      subscriptionId,
+      error
+    });
+
+    redirect(billingReturnPath(audience, "Stripe subscription could not be updated. Check the plan price configuration."));
+  }
 
   await prisma.organization.update({
     where: { id: organization.id },

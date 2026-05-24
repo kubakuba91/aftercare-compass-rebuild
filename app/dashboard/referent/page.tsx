@@ -562,7 +562,7 @@ export default async function ReferentDashboardPage({
                   ? generatePhoneScreeningSlots({
                       windows: referral.aftercareProfile.phoneScreeningWindows,
                       appointments: referral.aftercareProfile.phoneScreeningAppointments,
-                      maxSlots: 18
+                      maxSlots: null
                     })
                   : [];
                 const slotOptions = slots.map((slot) => ({

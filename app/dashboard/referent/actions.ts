@@ -352,7 +352,7 @@ export async function bookPhoneScreeningSlot(formData: FormData) {
   const availableSlots = generatePhoneScreeningSlots({
     windows: referral.aftercareProfile.phoneScreeningWindows,
     appointments: referral.aftercareProfile.phoneScreeningAppointments,
-    maxSlots: 20
+    maxSlots: null
   });
   const selectedSlot = availableSlots.find((slot) => slot.startsAt.toISOString() === requestedStart.toISOString());
 

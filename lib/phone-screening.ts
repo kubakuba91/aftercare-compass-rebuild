@@ -132,10 +132,10 @@ export function generatePhoneScreeningSlots(input: {
   windows: PhoneScreeningWindowInput[];
   appointments: PhoneScreeningAppointmentInput[];
   daysAhead?: number;
-  maxSlots?: number;
+  maxSlots?: number | null;
 }) {
   const daysAhead = input.daysAhead ?? 21;
-  const maxSlots = input.maxSlots ?? 12;
+  const maxSlots = input.maxSlots === undefined ? 12 : input.maxSlots;
   const now = new Date();
   const earliest = new Date(now.getTime() + 60 * 60 * 1000);
   const slots: PhoneScreeningSlot[] = [];
@@ -173,7 +173,7 @@ export function generatePhoneScreeningSlots(input: {
     }
   }
 
-  return slots
-    .sort((first, second) => first.startsAt.getTime() - second.startsAt.getTime())
-    .slice(0, maxSlots);
+  const sortedSlots = slots.sort((first, second) => first.startsAt.getTime() - second.startsAt.getTime());
+
+  return maxSlots === null ? sortedSlots : sortedSlots.slice(0, maxSlots);
 }

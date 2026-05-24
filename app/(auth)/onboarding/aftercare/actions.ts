@@ -95,7 +95,7 @@ async function profileLimitMessageForExistingOrg(orgId: string | null) {
   const planCountedProfileCount = await prisma.aftercareProfile.count({
     where: {
       orgId,
-      status: { not: ProfileStatus.unpublished }
+      status: ProfileStatus.published
     }
   });
 

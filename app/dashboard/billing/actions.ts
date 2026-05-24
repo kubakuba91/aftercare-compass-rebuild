@@ -52,6 +52,25 @@ async function getBillingContext(returnTo: string) {
   };
 }
 
+function isStripeMissingResourceError(error: unknown, param?: string) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const stripeError = error as {
+    code?: string;
+    param?: string;
+    raw?: {
+      code?: string;
+      param?: string;
+    };
+  };
+  const code = stripeError.code ?? stripeError.raw?.code;
+  const errorParam = stripeError.param ?? stripeError.raw?.param;
+
+  return code === "resource_missing" && (!param || errorParam === param);
+}
+
 export async function createBillingCheckoutSession(formData: FormData) {
   const returnTo = String(formData.get("returnTo") || "/dashboard");
   const planKey = String(formData.get("plan") || "");
@@ -101,8 +120,7 @@ export async function createBillingCheckoutSession(formData: FormData) {
 
   try {
     let customerId = organization.stripeCustomerId;
-
-    if (!customerId) {
+    const createCustomer = async () => {
       const customer = await stripe.customers.create({
         email: organization.email || appUser.email,
         name: organization.name,
@@ -112,12 +130,32 @@ export async function createBillingCheckoutSession(formData: FormData) {
         }
       });
 
-      customerId = customer.id;
-
       await prisma.organization.update({
         where: { id: organization.id },
-        data: { stripeCustomerId: customerId }
+        data: { stripeCustomerId: customer.id }
       });
+
+      return customer.id;
+    };
+
+    if (customerId) {
+      try {
+        const customer = await stripe.customers.retrieve(customerId);
+
+        if ("deleted" in customer && customer.deleted) {
+          customerId = null;
+        }
+      } catch (error) {
+        if (!isStripeMissingResourceError(error, "customer")) {
+          throw error;
+        }
+
+        customerId = null;
+      }
+    }
+
+    if (!customerId) {
+      customerId = await createCustomer();
     }
 
     const successUrl = `${appUrl()}${billingReturnPath(audience, "Subscription updated.")}`;
@@ -231,6 +269,18 @@ export async function changeBillingPlan(formData: FormData) {
     }
     );
   } catch (error) {
+    if (isStripeMissingResourceError(error)) {
+      await prisma.organization.update({
+        where: { id: organization.id },
+        data: {
+          stripeSubscriptionId: null,
+          subscriptionRenewsAt: null
+        }
+      });
+
+      return createBillingCheckoutSession(formData);
+    }
+
     console.error("Stripe subscription update failed", {
       organizationId: organization.id,
       audience,

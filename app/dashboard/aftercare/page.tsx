@@ -604,7 +604,7 @@ export default async function AftercareDashboardPage({
     })
   ]);
 
-  const planCountedProfiles = profiles.filter((profile) => profile.status !== "unpublished");
+  const planCountedProfiles = profiles.filter((profile) => profile.status === "published");
   const aftercareBillingPlans = await getBillingPlansWithStripePrices("aftercare");
   const selectedProfile = profiles.find((profile) => profile.id === query.profileId) ?? null;
   const scopedProfiles = selectedProfile ? [selectedProfile] : planCountedProfiles;
@@ -1366,7 +1366,7 @@ export default async function AftercareDashboardPage({
                       <p className="mt-1 text-sm text-muted-foreground">
                         {planCountedProfiles.length} of{" "}
                         {formatPlanLimit(currentAftercarePlan(appUser.organization?.subscriptionPlan).profiles)}{" "}
-                        published or draft homes/programs used.
+                        published homes/programs used.
                         {nextProfilePlan
                           ? ` Upgrade to ${nextProfilePlan.label} to add another.`
                           : " Contact support to add more homes or programs."}

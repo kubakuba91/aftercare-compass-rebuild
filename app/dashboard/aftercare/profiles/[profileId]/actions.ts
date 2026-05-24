@@ -518,10 +518,10 @@ export async function updateAftercareProfileStatus(formData: FormData) {
     const planCountedProfileCount = await prisma.aftercareProfile.count({
       where: {
         orgId: profile.orgId,
-        status: { not: ProfileStatus.unpublished }
+        status: ProfileStatus.published
       }
     });
-    const addedCount = profile.status === ProfileStatus.unpublished ? 1 : 0;
+    const addedCount = profile.status === ProfileStatus.published ? 0 : 1;
 
     if (!isWithinPlanLimit(profileLimit, planCountedProfileCount, addedCount)) {
       redirect(

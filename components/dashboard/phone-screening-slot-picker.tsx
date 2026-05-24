@@ -86,8 +86,8 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
           "Schedule intake call"
         )}
       </summary>
-      <div className="absolute right-0 z-20 mt-2 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border bg-white text-left shadow-xl">
-        <div className="border-b border-border bg-surface px-4 py-3">
+      <div className="fixed bottom-4 right-4 top-20 z-50 flex w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-border bg-white text-left shadow-xl">
+        <div className="shrink-0 border-b border-border bg-surface px-4 py-3">
           <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <CalendarDays size={16} className="text-primary" />
             Schedule phone screening
@@ -95,7 +95,7 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
           <p className="mt-1 text-xs leading-5 text-muted-foreground">Select a day and available call block.</p>
         </div>
 
-        <div className="p-4">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Choose a day</p>
           <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
             {dayGroups.map((group) => {
@@ -104,7 +104,7 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
               return (
                 <button
                   className={cn(
-                    "focus-ring rounded-md border border-border bg-white p-2 text-center text-xs shadow-sm transition hover:border-[#13205d] hover:bg-[#eef3ff]",
+                    "focus-ring rounded-md border border-border bg-white px-2 py-1.5 text-center text-xs shadow-sm transition hover:border-[#13205d] hover:bg-[#eef3ff]",
                     isSelected && "border-[#13205d] bg-[#13205d] text-white shadow-md ring-2 ring-[#7fb2ff]"
                   )}
                   key={group.key}
@@ -114,24 +114,24 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
                   type="button"
                 >
                   <span className="block font-semibold">{group.weekday}</span>
-                  <span className="mt-1 block text-lg font-semibold leading-none">{group.day}</span>
-                  <span className={cn("mt-1 block text-muted-foreground", isSelected && "text-white/85")}>{group.month}</span>
+                  <span className="mt-0.5 block text-base font-semibold leading-none">{group.day}</span>
+                  <span className={cn("mt-0.5 block text-muted-foreground", isSelected && "text-white/85")}>{group.month}</span>
                 </button>
               );
             })}
           </div>
 
           {activeDay ? (
-            <div className="mt-3">
+            <div className="mt-3 flex min-h-0 flex-1 flex-col">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Available call blocks</p>
-              <div className="mt-2 grid max-h-64 gap-2 overflow-y-auto pr-1">
+              <div className="mt-2 grid min-h-0 flex-1 gap-1.5 overflow-y-auto pr-1">
                 {activeDay.slots.map((slot) => {
                   const isSelected = selectedSlot === slot.startsAtIso;
 
                   return (
                     <label
                       className={cn(
-                        "flex cursor-pointer items-center justify-between gap-3 rounded-md border border-border bg-white px-3 py-2 text-xs font-semibold shadow-sm transition hover:border-[#13205d] hover:bg-[#eef3ff]",
+                        "flex min-h-9 cursor-pointer items-center justify-between gap-3 rounded-md border border-border bg-white px-3 py-1.5 text-xs font-semibold shadow-sm transition hover:border-[#13205d] hover:bg-[#eef3ff]",
                         isSelected && "border-[#13205d] bg-[#eef3ff] text-[#13205d] shadow-md ring-2 ring-[#7fb2ff]"
                       )}
                       key={slot.startsAtIso}
@@ -151,11 +151,11 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
                       />
                       <span
                         className={cn(
-                          "flex h-5 w-5 items-center justify-center rounded-full border border-border bg-white text-white",
+                          "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-border bg-white text-white",
                           isSelected && "border-[#13205d] bg-[#13205d]"
                         )}
                       >
-                        {isSelected ? <Check size={13} /> : null}
+                        {isSelected ? <Check size={12} /> : null}
                       </span>
                     </label>
                   );
@@ -165,9 +165,9 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
           ) : null}
         </div>
 
-        <div className="border-t border-border bg-white p-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)]">
+        <div className="shrink-0 border-t border-border bg-white p-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)]">
           <button
-            className="focus-ring min-h-11 w-full rounded-md bg-[#13205d] px-4 text-sm font-semibold text-white shadow-md transition hover:bg-[#0f1848] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
+            className="focus-ring min-h-10 w-full rounded-md bg-[#13205d] px-4 text-sm font-semibold text-white shadow-md transition hover:bg-[#0f1848] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
             disabled={!selectedSlot}
             type="submit"
           >

@@ -71,6 +71,22 @@ function isStripeMissingResourceError(error: unknown, param?: string) {
   return code === "resource_missing" && (!param || errorParam === param);
 }
 
+function isStripeMissingCustomerError(error: unknown) {
+  if (!isStripeMissingResourceError(error)) {
+    return false;
+  }
+
+  const stripeError = error as {
+    param?: string;
+    raw?: {
+      param?: string;
+    };
+  };
+  const errorParam = stripeError.param ?? stripeError.raw?.param;
+
+  return !errorParam || errorParam === "customer" || errorParam === "id";
+}
+
 export async function createBillingCheckoutSession(formData: FormData) {
   const returnTo = String(formData.get("returnTo") || "/dashboard");
   const planKey = String(formData.get("plan") || "");
@@ -146,7 +162,7 @@ export async function createBillingCheckoutSession(formData: FormData) {
           customerId = null;
         }
       } catch (error) {
-        if (!isStripeMissingResourceError(error, "customer")) {
+        if (!isStripeMissingCustomerError(error)) {
           throw error;
         }
 

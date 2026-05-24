@@ -61,9 +61,9 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
     return Array.from(groups.values());
   }, [slots]);
   const [selectedDay, setSelectedDay] = useState(dayGroups[0]?.key ?? "");
-  const [selectedSlot, setSelectedSlot] = useState(dayGroups[0]?.slots[0]?.startsAtIso ?? "");
+  const [selectedSlot, setSelectedSlot] = useState("");
   const activeDay = dayGroups.find((group) => group.key === selectedDay) ?? dayGroups[0];
-  const selectedSlotLabel = selectedSlot ? timeFormatter.format(new Date(selectedSlot)) : "Choose a call time";
+  const selectedSlotLabel = selectedSlot ? timeFormatter.format(new Date(selectedSlot)) : "";
 
   if (!dayGroups.length) {
     return null;
@@ -71,9 +71,25 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
 
   return (
     <details className="group relative">
-      <summary className="focus-ring flex min-h-9 cursor-pointer list-none items-center justify-center gap-2 rounded-md border border-border bg-white px-3 text-xs font-semibold text-foreground shadow-sm transition hover:border-[#13205d] group-open:border-[#13205d] group-open:bg-[#eef3ff] group-open:text-[#13205d]">
+      <summary
+        className={cn(
+          "focus-ring flex min-h-9 cursor-pointer list-none items-center justify-center gap-2 rounded-full border px-3 text-xs font-semibold shadow-sm transition group-open:border-[#13205d] group-open:bg-[#eef3ff] group-open:text-[#13205d]",
+          selectedSlot
+            ? "border-[#13205d] bg-[#eef3ff] text-[#13205d]"
+            : "border-[#13205d] bg-[#13205d] text-white hover:bg-[#0f1848]"
+        )}
+      >
         <CalendarDays size={14} />
-        {selectedSlotLabel}
+        {selectedSlot ? (
+          <>
+            <span>{selectedSlotLabel}</span>
+            <span className="rounded-full border border-[#13205d]/25 bg-white px-2 py-0.5 text-[11px] font-semibold text-[#13205d]">
+              Reschedule call
+            </span>
+          </>
+        ) : (
+          "Schedule intake call"
+        )}
       </summary>
       <div className="absolute right-0 z-20 mt-2 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border bg-white text-left shadow-xl">
         <div className="border-b border-border bg-surface px-4 py-3">
@@ -99,7 +115,6 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
                   key={group.key}
                   onClick={() => {
                     setSelectedDay(group.key);
-                    setSelectedSlot(group.slots[0]?.startsAtIso ?? "");
                   }}
                   type="button"
                 >
@@ -157,7 +172,8 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
 
         <div className="border-t border-border bg-white p-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)]">
           <button
-            className="focus-ring min-h-11 w-full rounded-md bg-[#13205d] px-4 text-sm font-semibold text-white shadow-md transition hover:bg-[#0f1848]"
+            className="focus-ring min-h-11 w-full rounded-md bg-[#13205d] px-4 text-sm font-semibold text-white shadow-md transition hover:bg-[#0f1848] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
+            disabled={!selectedSlot}
             type="submit"
           >
             Book call

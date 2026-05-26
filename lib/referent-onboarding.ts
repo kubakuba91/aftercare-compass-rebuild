@@ -20,7 +20,7 @@ export const referentOrgTypeOptions = [
   "Other"
 ] as const;
 
-export const ehrSystemOptions = ["Epic", "Cerner", "Athena", "eClinicalWorks", "Other", "None"] as const;
+export const ehrSystemOptions = ["Epic", "Cerner", "Athena", "Kipu", "eClinicalWorks", "Other", "None"] as const;
 
 export const statesOperatedOptions = [
   "Alabama",
@@ -77,13 +77,16 @@ export const statesOperatedOptions = [
 ] as const;
 
 export const levelsOfCareOptions = [
-  "Detox",
+  "Detox/ Medical Withdrawal Management",
+  "Inpatient Psychiatric Unit",
+  "Emergency Department",
   "Residential (RTC)",
   "Partial Hospitalization (PHP)",
   "Intensive Outpatient (IOP)",
   "Outpatient",
   "Crisis Stabilization",
-  "Community Outreach"
+  "Community Outreach",
+  "Other"
 ] as const;
 
 export const placementMethodOptions = [

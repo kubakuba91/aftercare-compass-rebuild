@@ -224,7 +224,7 @@ export default async function ReferentStepPage({
               {currentStep === 2 ? (
                 <>
                   <div className="grid gap-2 text-sm font-medium">
-                    {requiredLabel("Level of care provided")}
+                    {requiredLabel("Levels of care provided")}
                     <MultiSelectDropdown name="levelsOfCare" options={levelsOfCareOptions} selected={selected(referentDetails?.levelsOfCare)} />
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
@@ -236,7 +236,7 @@ export default async function ReferentStepPage({
                     />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
-                    {requiredLabel("Average patients referred to aftercare per month")}
+                    {requiredLabel("Referred to outpatient programming and/or supportive housing per month")}
                     <select name="avgMonthlyReferrals" required defaultValue={referentDetails?.avgMonthlyReferrals ?? ""} className={fieldClassName()}>
                       <option value="" disabled>Select one</option>
                       {avgMonthlyReferralOptions.map((option) => <option key={option}>{option}</option>)}

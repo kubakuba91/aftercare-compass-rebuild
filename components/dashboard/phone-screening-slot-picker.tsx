@@ -86,7 +86,7 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
           "Schedule intake call"
         )}
       </summary>
-      <div className="fixed bottom-4 right-4 top-20 z-50 flex w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-border bg-white text-left shadow-xl">
+      <div className="absolute right-0 z-20 mt-2 flex max-h-[min(620px,calc(100vh-7rem))] w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-border bg-white text-left shadow-xl">
         <div className="shrink-0 border-b border-border bg-surface px-4 py-3">
           <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <CalendarDays size={16} className="text-primary" />
@@ -124,7 +124,7 @@ export function PhoneScreeningSlotPicker({ slots }: { slots: PhoneScreeningSlotO
           {activeDay ? (
             <div className="mt-3 flex min-h-0 flex-1 flex-col">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Available call blocks</p>
-              <div className="mt-2 grid min-h-0 flex-1 gap-1.5 overflow-y-auto pr-1">
+              <div className="mt-2 grid max-h-[min(220px,calc(100vh-31rem))] gap-1.5 overflow-y-auto pr-1">
                 {activeDay.slots.map((slot) => {
                   const isSelected = selectedSlot === slot.startsAtIso;
 

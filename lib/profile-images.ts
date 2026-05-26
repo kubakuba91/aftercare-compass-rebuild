@@ -3,6 +3,8 @@ import { formatPhotoLimit, getAftercarePhotoLimit, isWithinPlanLimit } from "@/l
 import { prisma } from "@/lib/prisma";
 import { ensureProfileMediaBucket, profileMediaBucket } from "@/lib/supabase-storage";
 
+const maxUploadImageSize = 10 * 1024 * 1024;
+
 type ProfileImageUploadTarget = {
   id: string;
   orgId: string;
@@ -58,10 +60,10 @@ export async function uploadProfileImagesForProfile(profile: ProfileImageUploadT
     );
   }
 
-  const invalidFile = files.find((file) => !file.type.startsWith("image/") || file.size > 10 * 1024 * 1024);
+  const invalidFile = files.find((file) => !file.type.startsWith("image/") || file.size > maxUploadImageSize);
 
   if (invalidFile) {
-    throw new Error("Upload image files only, up to 10 MB each.");
+    throw new Error("Upload image files only, up to 10 MB each. Try a smaller image or export it as JPG/WebP before uploading.");
   }
 
   const supabase = await ensureProfileMediaBucket();

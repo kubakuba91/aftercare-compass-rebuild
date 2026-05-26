@@ -14,6 +14,8 @@ type PhotoLimit = number | "unlimited";
 
 const maxDimension = 1600;
 const compressionQuality = 0.82;
+const maxOriginalImageSize = 25 * 1024 * 1024;
+const maxUploadImageSize = 10 * 1024 * 1024;
 
 function formatFileSize(size: number) {
   if (size < 1024 * 1024) {
@@ -166,12 +168,27 @@ export function ProfileImageUploader({
       return;
     }
 
+    const oversizedOriginalFile = selectedFiles.find((file) => file.size > maxOriginalImageSize);
+
+    if (oversizedOriginalFile) {
+      setError(
+        `${oversizedOriginalFile.name} is ${formatFileSize(oversizedOriginalFile.size)}. Upload photos up to ${formatFileSize(maxOriginalImageSize)}.`
+      );
+      setImages([]);
+      syncInputFiles([]);
+      return;
+    }
+
     setIsOptimizing(true);
 
     try {
       const optimizedImages = await Promise.all(
         selectedFiles.map(async (file) => {
           const optimizedFile = await optimizeImage(file);
+
+          if (optimizedFile.size > maxUploadImageSize) {
+            throw new Error(`${file.name} is still too large after optimization.`);
+          }
 
           return {
             id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
@@ -188,8 +205,12 @@ export function ProfileImageUploader({
         previousImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
         return optimizedImages;
       });
-    } catch {
-      setError("One of the images could not be optimized. Try a different file.");
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? `${uploadError.message} Try a smaller image or export it as JPG/WebP before uploading.`
+          : "One of the images could not be optimized. Try a smaller image."
+      );
       setImages([]);
       syncInputFiles([]);
     } finally {
@@ -229,7 +250,7 @@ export function ProfileImageUploader({
       </label>
 
       <p className="text-xs leading-5 text-muted-foreground">
-        Images are optimized in your browser before upload. Large photos are resized to 1600px max and saved as lightweight WebP when possible.
+        Images are optimized in your browser before upload. Upload photos up to {formatFileSize(maxOriginalImageSize)}; large photos are resized to 1600px max and saved as lightweight WebP when possible.
       </p>
       <p className="text-xs leading-5 text-muted-foreground">{galleryLimitText}</p>
       {!canSelectMoreImages ? (

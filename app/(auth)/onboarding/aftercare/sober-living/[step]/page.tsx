@@ -242,13 +242,20 @@ export default async function SoberLivingStepPage({
         }
       })
     : [];
-  const organization = draft.user.orgId
-    ? await prisma.organization.findUnique({
+  let photoLimit = getAftercarePhotoLimit(undefined);
+
+  if (draft.user.orgId) {
+    try {
+      const organization = await prisma.organization.findUnique({
         where: { id: draft.user.orgId },
         select: { subscriptionPlan: true }
-      })
-    : null;
-  const photoLimit = getAftercarePhotoLimit(organization?.subscriptionPlan);
+      });
+
+      photoLimit = getAftercarePhotoLimit(organization?.subscriptionPlan);
+    } catch (error) {
+      console.error("Unable to load onboarding photo limit", error);
+    }
+  }
 
   return (
     <main className="grid min-h-screen lg:grid-cols-[320px_1fr]">

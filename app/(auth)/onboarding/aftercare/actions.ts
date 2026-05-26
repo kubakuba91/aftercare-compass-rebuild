@@ -89,6 +89,13 @@ function onboardingSaveErrorMessage(error: unknown) {
     return "This save took a little too long. Your information is still on this page. Please try again, or upload fewer/smaller images first.";
   }
 
+  if (
+    error instanceof Error &&
+    error.message.includes("Timed out fetching a new connection from the connection pool")
+  ) {
+    return "The upload service was busy for a moment. Your information is still on this page. Please try again.";
+  }
+
   return "Please check the highlighted fields and try again.";
 }
 
@@ -747,17 +754,18 @@ export async function uploadSoberLivingOnboardingImages(formData: FormData) {
   let destination = stepRedirect(4);
 
   try {
-    const draft = await getOrCreateOnboardingDraft("sober_living", false);
-    const currentDraft =
-      draft.soberLivingDraft && typeof draft.soberLivingDraft === "object" && !Array.isArray(draft.soberLivingDraft)
-        ? (draft.soberLivingDraft as Record<string, unknown>)
-        : {};
     const files = imagesFromFormData(formData);
 
     if (!files.length) {
       destination = stepRedirect(4, "Choose at least one image to upload.");
     } else {
       validateProfileImageFiles(files);
+
+      const draft = await getOrCreateOnboardingDraft("sober_living", false);
+      const currentDraft =
+        draft.soberLivingDraft && typeof draft.soberLivingDraft === "object" && !Array.isArray(draft.soberLivingDraft)
+          ? (draft.soberLivingDraft as Record<string, unknown>)
+          : {};
       const uploadTarget = await prisma.$transaction(
         (tx) => upsertSoberLivingDraftProfile(tx, draft, currentDraft, 4),
         onboardingTransactionOptions
@@ -773,10 +781,13 @@ export async function uploadSoberLivingOnboardingImages(formData: FormData) {
     }
   } catch (error) {
     console.error("Sober living onboarding image upload failed", error);
-    destination = stepRedirect(
-      4,
-      error instanceof Error ? error.message : "Image upload failed. Please try again."
-    );
+    const message =
+      error instanceof Error &&
+      !error.message.includes("Timed out fetching a new connection from the connection pool")
+        ? error.message
+        : onboardingSaveErrorMessage(error);
+
+    destination = stepRedirect(4, message);
   }
 
   redirect(destination);

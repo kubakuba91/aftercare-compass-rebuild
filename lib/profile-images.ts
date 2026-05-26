@@ -22,10 +22,20 @@ export function imagesFromFormData(formData: FormData) {
     .filter((item): item is File => item instanceof File && item.size > 0);
 }
 
+export function validateProfileImageFiles(files: File[]) {
+  const invalidFile = files.find((file) => !file.type.startsWith("image/") || file.size > maxUploadImageSize);
+
+  if (invalidFile) {
+    throw new Error("Upload image files only, up to 10 MB each. Try a smaller image or export it as JPG/WebP before uploading.");
+  }
+}
+
 export async function uploadProfileImagesForProfile(profile: ProfileImageUploadTarget, files: File[]) {
   if (!files.length) {
     return 0;
   }
+
+  validateProfileImageFiles(files);
 
   const profileRecord = await prisma.aftercareProfile.findFirst({
     where: {
@@ -58,12 +68,6 @@ export async function uploadProfileImagesForProfile(profile: ProfileImageUploadT
     throw new Error(
       `Your current plan includes ${formatPhotoLimit(photoLimit)}. Remove a photo or upgrade to add more.`
     );
-  }
-
-  const invalidFile = files.find((file) => !file.type.startsWith("image/") || file.size > maxUploadImageSize);
-
-  if (invalidFile) {
-    throw new Error("Upload image files only, up to 10 MB each. Try a smaller image or export it as JPG/WebP before uploading.");
   }
 
   const supabase = await ensureProfileMediaBucket();

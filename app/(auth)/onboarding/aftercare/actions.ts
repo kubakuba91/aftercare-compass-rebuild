@@ -6,7 +6,7 @@ import { Prisma, ProfileStatus, ProfileType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getAftercareProfileLimit, isWithinPlanLimit } from "@/lib/feature-gates";
 import { geocodeProfileAddress } from "@/lib/geocoding";
-import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
+import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile, validateProfileImageFiles } from "@/lib/profile-images";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
@@ -30,6 +30,11 @@ import {
   valuesFromForm
 } from "@/lib/sober-living-onboarding";
 import { aftercareProfileDraftSchema } from "@/lib/validations/onboarding";
+
+const onboardingTransactionOptions = {
+  maxWait: 5000,
+  timeout: 15000
+};
 
 function mergeDraft(currentDraft: unknown, nextValues: Record<string, unknown>) {
   return {
@@ -73,6 +78,18 @@ function aftercareSubscriptionRedirect(message: string) {
   });
 
   return `/dashboard/aftercare?${params.toString()}`;
+}
+
+function onboardingSaveErrorMessage(error: unknown) {
+  if (
+    error instanceof Error &&
+    error.message.includes("Transaction already closed") &&
+    error.message.includes("expired transaction")
+  ) {
+    return "This save took a little too long. Your information is still on this page. Please try again, or upload fewer/smaller images first.";
+  }
+
+  return "Please check the highlighted fields and try again.";
 }
 
 async function profileLimitMessageForExistingOrg(orgId: string | null) {
@@ -405,7 +422,7 @@ export async function createAftercareProfileDraft(formData: FormData) {
           completedAt: new Date()
         }
       });
-    });
+    }, onboardingTransactionOptions);
   } catch (error) {
     console.error("Aftercare profile draft creation failed", error);
     redirect("/setup?missing=database&from=aftercare-profile");
@@ -705,14 +722,14 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
               completedAt: new Date()
             }
           });
-        });
+        }, onboardingTransactionOptions);
 
         destination = "/dashboard/aftercare";
       }
     }
   } catch (error) {
     console.error("Sober living onboarding step save failed", error);
-    destination = stepRedirect(step, "Please check the highlighted fields and try again.");
+    destination = stepRedirect(step, onboardingSaveErrorMessage(error));
   }
 
   if (geocodeTarget) {
@@ -740,8 +757,10 @@ export async function uploadSoberLivingOnboardingImages(formData: FormData) {
     if (!files.length) {
       destination = stepRedirect(4, "Choose at least one image to upload.");
     } else {
-      const uploadTarget = await prisma.$transaction((tx) =>
-        upsertSoberLivingDraftProfile(tx, draft, currentDraft, 4)
+      validateProfileImageFiles(files);
+      const uploadTarget = await prisma.$transaction(
+        (tx) => upsertSoberLivingDraftProfile(tx, draft, currentDraft, 4),
+        onboardingTransactionOptions
       );
       const uploadedCount = await uploadProfileImagesForProfile(uploadTarget, files);
 
@@ -937,6 +956,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
         videoUrls: valuesFromForm(formData, "videoUrls")
       });
       const files = imagesFromFormData(formData);
+      validateProfileImageFiles(files);
       const finalDraft = mergeDraft(currentDraft, {
         acceptingNewPatients: parsed.acceptingNewPatients === "yes",
         availabilityNotes: nullableText(parsed.availabilityNotes),
@@ -953,11 +973,11 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
         destination = aftercareSubscriptionRedirect(profileLimitMessage);
       } else {
         await prisma.$transaction(async (tx) => {
-        const orgId = await getOrCreateAftercareOrganization(tx, draft, {
-          accountType: "continued_care",
-          admissionsContactPhone: String(finalDraft.admissionsContactPhone || ""),
-          programName
-        });
+          const orgId = await getOrCreateAftercareOrganization(tx, draft, {
+            accountType: "continued_care",
+            admissionsContactPhone: String(finalDraft.admissionsContactPhone || ""),
+            programName
+          });
 
         const profile = await tx.aftercareProfile.create({
           data: {
@@ -1034,7 +1054,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
             completedAt: new Date()
           }
         });
-        });
+        }, onboardingTransactionOptions);
 
         if (uploadTarget && files.length) {
           try {
@@ -1051,7 +1071,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
     }
   } catch (error) {
     console.error("Continued care onboarding step save failed", error);
-    destination = continuedCareStepRedirect(step, "Please check the highlighted fields and try again.");
+    destination = continuedCareStepRedirect(step, onboardingSaveErrorMessage(error));
   }
 
   if (geocodeTarget) {

@@ -11,6 +11,15 @@ type ProfileImageUploadTarget = {
   programName: string;
 };
 
+export type StagedProfileImage = {
+  id: string;
+  url: string;
+  storagePath: string;
+  altText: string;
+  sortOrder: number;
+  isCover: boolean;
+};
+
 function safeFileName(value: string) {
   const extension = value.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
   return `${randomUUID()}.${extension}`;
@@ -28,6 +37,92 @@ export function validateProfileImageFiles(files: File[]) {
   if (invalidFile) {
     throw new Error("Upload image files only, up to 10 MB each. Try a smaller image or export it as JPG/WebP before uploading.");
   }
+}
+
+export function stagedProfileImagesFromDraft(value: unknown): StagedProfileImage[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item): StagedProfileImage | null => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) {
+        return null;
+      }
+
+      const image = item as Record<string, unknown>;
+      const id = typeof image.id === "string" ? image.id : "";
+      const url = typeof image.url === "string" ? image.url : "";
+      const storagePath = typeof image.storagePath === "string" ? image.storagePath : "";
+
+      if (!id || !url || !storagePath) {
+        return null;
+      }
+
+      return {
+        id,
+        url,
+        storagePath,
+        altText: typeof image.altText === "string" ? image.altText : "Profile image",
+        sortOrder: Number(image.sortOrder || 0),
+        isCover: Boolean(image.isCover)
+      };
+    })
+    .filter((image): image is StagedProfileImage => Boolean(image));
+}
+
+export async function uploadOnboardingProfileImages(input: {
+  draftId: string;
+  altText: string;
+  currentImages: StagedProfileImage[];
+  files: File[];
+}) {
+  if (!input.files.length) {
+    return [];
+  }
+
+  validateProfileImageFiles(input.files);
+
+  const supabase = await ensureProfileMediaBucket();
+  const createdImages: StagedProfileImage[] = [];
+  const currentImageCount = input.currentImages.length;
+
+  for (const [index, file] of input.files.entries()) {
+    const storagePath = `onboarding/${input.draftId}/${Date.now()}-${index}-${safeFileName(file.name)}`;
+    const bytes = await file.arrayBuffer();
+    const { error } = await supabase.storage
+      .from(profileMediaBucket)
+      .upload(storagePath, bytes, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (error) {
+      throw new Error(`Image upload failed: ${error.message}`);
+    }
+
+    const { data } = supabase.storage.from(profileMediaBucket).getPublicUrl(storagePath);
+
+    createdImages.push({
+      id: randomUUID(),
+      url: data.publicUrl,
+      storagePath,
+      altText: input.altText,
+      sortOrder: currentImageCount + index,
+      isCover: currentImageCount === 0 && index === 0
+    });
+  }
+
+  return createdImages;
+}
+
+export async function removeStoredProfileImage(storagePath: string) {
+  if (!storagePath) {
+    return;
+  }
+
+  const supabase = await ensureProfileMediaBucket();
+  await supabase.storage.from(profileMediaBucket).remove([storagePath]);
 }
 
 export async function uploadProfileImagesForProfile(profile: ProfileImageUploadTarget, files: File[]) {

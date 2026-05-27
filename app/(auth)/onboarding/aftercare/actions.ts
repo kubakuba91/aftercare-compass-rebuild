@@ -6,7 +6,15 @@ import { Prisma, ProfileStatus, ProfileType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getAftercareProfileLimit, isWithinPlanLimit } from "@/lib/feature-gates";
 import { geocodeProfileAddress } from "@/lib/geocoding";
-import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile, validateProfileImageFiles } from "@/lib/profile-images";
+import {
+  imagesFromFormData,
+  removeProfileImageForProfile,
+  removeStoredProfileImage,
+  stagedProfileImagesFromDraft,
+  uploadOnboardingProfileImages,
+  uploadProfileImagesForProfile,
+  validateProfileImageFiles
+} from "@/lib/profile-images";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
@@ -49,6 +57,10 @@ function jsonDraft(value: Record<string, unknown>) {
 
 function arrayFromDraft(value: unknown) {
   return Array.isArray(value) ? value.map(String) : [];
+}
+
+function stagedImagesJson(value: unknown) {
+  return stagedProfileImagesFromDraft(value).map((image) => ({ ...image }));
 }
 
 function stepRedirect(step: number, error?: string) {
@@ -713,6 +725,25 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             zip: String(finalDraft.zip || "")
           };
 
+          const stagedImages = stagedProfileImagesFromDraft(finalDraft.profileImages);
+
+          if (stagedImages.length) {
+            const existingImageCount = await tx.profileImage.count({
+              where: { profileId: profile.id }
+            });
+
+            await tx.profileImage.createMany({
+              data: stagedImages.map((image, index) => ({
+                profileId: profile.id,
+                url: image.url,
+                storagePath: image.storagePath,
+                altText: image.altText,
+                sortOrder: existingImageCount + index,
+                isCover: existingImageCount === 0 && index === 0
+              }))
+            });
+          }
+
           await createProfileAdminReview(tx, {
             orgId,
             profileId: profile.id,
@@ -723,7 +754,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
           await tx.onboardingDraft.update({
             where: { id: draft.id },
             data: {
-              soberLivingDraft: jsonDraft({ ...finalDraft, profileId: profile.id }),
+              soberLivingDraft: jsonDraft({ ...finalDraft, profileId: profile.id, profileImages: [] }),
               selectedAccountType: "sober_living",
               activeStep: maxSoberLivingStep,
               completedAt: new Date()
@@ -766,18 +797,27 @@ export async function uploadSoberLivingOnboardingImages(formData: FormData) {
         draft.soberLivingDraft && typeof draft.soberLivingDraft === "object" && !Array.isArray(draft.soberLivingDraft)
           ? (draft.soberLivingDraft as Record<string, unknown>)
           : {};
-      const uploadTarget = await prisma.$transaction(
-        (tx) => upsertSoberLivingDraftProfile(tx, draft, currentDraft, 4),
-        onboardingTransactionOptions
-      );
-      const uploadedCount = await uploadProfileImagesForProfile(uploadTarget, files);
+      const currentImages = stagedProfileImagesFromDraft(currentDraft.profileImages);
+      const nextImages = await uploadOnboardingProfileImages({
+        draftId: draft.id,
+        altText: String(currentDraft.programName || "Profile image"),
+        currentImages,
+        files
+      });
+
+      await prisma.onboardingDraft.update({
+        where: { id: draft.id },
+        data: {
+          soberLivingDraft: jsonDraft({
+            ...currentDraft,
+            profileImages: [...stagedImagesJson(currentImages), ...stagedImagesJson(nextImages)]
+          })
+        }
+      });
 
       revalidatePath("/onboarding/aftercare/sober-living/4");
-      revalidatePath("/dashboard/aftercare");
-      revalidatePath("/search");
-      revalidatePath(`/profiles/${uploadTarget.slug}`);
 
-      destination = stepRedirect(4, `${uploadedCount} image${uploadedCount === 1 ? "" : "s"} uploaded.`);
+      destination = stepRedirect(4, `${nextImages.length} image${nextImages.length === 1 ? "" : "s"} uploaded.`);
     }
   } catch (error) {
     console.error("Sober living onboarding image upload failed", error);
@@ -797,7 +837,7 @@ export async function removeSoberLivingOnboardingImage(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
   const imageId = String(formData.get("imageId") || "");
 
-  if (!profileId || !imageId) {
+  if (!imageId) {
     redirect(stepRedirect(4, "Image not found."));
   }
 
@@ -807,6 +847,33 @@ export async function removeSoberLivingOnboardingImage(formData: FormData) {
     draft = await getOrCreateOnboardingDraft("sober_living", false);
   } catch {
     redirect("/sign-in");
+  }
+
+  const currentDraft =
+    draft.soberLivingDraft && typeof draft.soberLivingDraft === "object" && !Array.isArray(draft.soberLivingDraft)
+      ? (draft.soberLivingDraft as Record<string, unknown>)
+      : {};
+  const stagedImages = stagedProfileImagesFromDraft(currentDraft.profileImages);
+  const stagedImage = stagedImages.find((image) => image.id === imageId);
+
+  if (stagedImage) {
+    await removeStoredProfileImage(stagedImage.storagePath);
+    await prisma.onboardingDraft.update({
+      where: { id: draft.id },
+      data: {
+        soberLivingDraft: jsonDraft({
+          ...currentDraft,
+          profileImages: stagedImagesJson(stagedImages.filter((image) => image.id !== imageId))
+        })
+      }
+    });
+
+    revalidatePath("/onboarding/aftercare/sober-living/4");
+    redirect(stepRedirect(4));
+  }
+
+  if (!profileId) {
+    redirect(stepRedirect(4, "Image not found."));
   }
 
   const profile = await prisma.aftercareProfile.findFirst({

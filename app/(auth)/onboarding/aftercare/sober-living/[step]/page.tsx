@@ -11,6 +11,7 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getAftercarePhotoLimit } from "@/lib/feature-gates";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
+import { stagedProfileImagesFromDraft } from "@/lib/profile-images";
 import { prisma } from "@/lib/prisma";
 import { richTextHtml } from "@/lib/rich-text";
 import { cn } from "@/lib/utils";
@@ -227,7 +228,8 @@ export default async function SoberLivingStepPage({
   const videoUrls = Array.isArray(profile?.videoUrls) ? profile.videoUrls : [];
   const onboardingProfileId = typeof profile?.profileId === "string" ? profile.profileId : "";
   const photoUploadFormId = "sober-living-photo-upload-form";
-  const uploadedImages = onboardingProfileId
+  const stagedImages = stagedProfileImagesFromDraft(profile?.profileImages);
+  const savedImages = onboardingProfileId
     ? await prisma.profileImage.findMany({
         where: {
           profileId: onboardingProfileId,
@@ -242,6 +244,15 @@ export default async function SoberLivingStepPage({
         }
       })
     : [];
+  const uploadedImages = [
+    ...savedImages,
+    ...stagedImages.map((image) => ({
+      id: image.id,
+      altText: image.altText,
+      isCover: image.isCover,
+      url: image.url
+    }))
+  ];
   let photoLimit = getAftercarePhotoLimit(undefined);
 
   if (draft.user.orgId) {

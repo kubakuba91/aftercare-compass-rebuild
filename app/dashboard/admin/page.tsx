@@ -539,8 +539,13 @@ export default async function AdminDashboardPage({
     leadCounts
       .filter((item) => status ? item.status === status : true)
       .reduce((sum, item) => sum + item._count._all, 0);
-  const pendingVerificationCount = verificationDocuments.filter((document) => document.status === "pending").length;
-  const pendingApplicationCount = applicationReviews.filter((review) => review.status === AdminReviewStatus.pending).length;
+  const pendingDocumentVerificationCount = verificationDocuments.filter((document) => document.status === "pending").length;
+  const pendingProfileVerificationCount = applicationReviews.filter(
+    (review) =>
+      review.status === AdminReviewStatus.pending &&
+      review.subjectType === AdminReviewSubjectType.aftercare_profile
+  ).length;
+  const pendingVerificationCount = pendingDocumentVerificationCount + pendingProfileVerificationCount;
   const pendingClaimCount = profileClaims.filter((claim) => claim.status === "pending").length;
   const openFlagCount = flags.filter((flag) => flag.status === "open").length;
   const currentReferralResponseRate = currentReferrals ? Math.round((currentReferralResponses / currentReferrals) * 100) : 0;
@@ -651,21 +656,15 @@ export default async function AdminDashboardPage({
                 <p className="mt-2 text-sm text-muted-foreground">Work that needs system admin attention.</p>
               </div>
               <Badge tone="warning">
-                {pendingApplicationCount + pendingVerificationCount + pendingClaimCount + countReferrals(ReferralStatus.pending) + countLeads(LeadStatus.new) + openFlagCount} open
+                {pendingVerificationCount + pendingClaimCount + countReferrals(ReferralStatus.pending) + countLeads(LeadStatus.new) + openFlagCount} open
               </Badge>
             </div>
             <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {[
                 {
-                  title: "Application review",
-                  count: pendingApplicationCount,
-                  description: "Onboarding submissions need approval.",
-                  href: "/dashboard/admin?tab=verification"
-                },
-                {
                   title: "Verification review",
                   count: pendingVerificationCount,
-                  description: "Document reviews are pending.",
+                  description: "Profile verification requests and documents need review.",
                   href: "/dashboard/admin?tab=verification"
                 },
                 {
@@ -1091,10 +1090,10 @@ export default async function AdminDashboardPage({
         <div className="mt-6 grid gap-4">
           <SummaryCards
             items={[
-              ["Pending applications", pendingApplicationCount.toString()],
-              ["Verification queue", pendingVerificationCount.toString()],
+              ["Profile verification", pendingProfileVerificationCount.toString()],
+              ["Document verification", pendingDocumentVerificationCount.toString()],
               ["Open flags", openFlagCount.toString()],
-              ["Total reviews", applicationReviews.length.toString()]
+              ["Total verification reviews", applicationReviews.length.toString()]
             ]}
           />
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
@@ -1103,13 +1102,13 @@ export default async function AdminDashboardPage({
               <div>
                 <div className="flex items-center gap-3">
                   <FileCheck2 className="text-primary" size={24} />
-                  <h2 className="text-xl font-semibold">Onboarding applications</h2>
+                  <h2 className="text-xl font-semibold">Verification reviews</h2>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Review submitted referent, home, and program applications. Approving homes and programs gives them the verified badge.
+                  Review profile verification requests. Approving homes and programs gives them the verified badge.
                 </p>
               </div>
-              <Badge tone="warning">{pendingApplicationCount} pending</Badge>
+              <Badge tone="warning">{pendingProfileVerificationCount} pending</Badge>
             </div>
             {reviewMessage ? (
               <p className="ac-panel-card mt-4 p-3 text-sm font-semibold text-primary">
@@ -1120,7 +1119,7 @@ export default async function AdminDashboardPage({
               <table className="w-full min-w-[980px] text-left text-sm">
                 <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>
-                    <th className="py-3 pr-4">Application</th>
+                    <th className="py-3 pr-4">Verification request</th>
                     <th className="py-3 pr-4">Organization</th>
                     <th className="py-3 pr-4">Submitted by</th>
                     <th className="py-3 pr-4">Status</th>
@@ -1204,7 +1203,7 @@ export default async function AdminDashboardPage({
               </table>
               {!applicationReviews.length ? (
                 <p className="ac-panel-card mt-4 p-4 text-sm text-muted-foreground">
-                  No onboarding applications have been submitted yet.
+                  No profile verification requests have been submitted yet.
                 </p>
               ) : null}
             </div>

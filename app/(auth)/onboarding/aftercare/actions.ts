@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Prisma, ProfileStatus, ProfileType, Role } from "@prisma/client";
+import { Prisma, ProfileStatus, ProfileType } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getAftercareProfileLimit, isWithinPlanLimit } from "@/lib/feature-gates";
 import { geocodeProfileAddress } from "@/lib/geocoding";
@@ -170,26 +170,6 @@ async function getOrCreateAftercareOrganization(tx: Prisma.TransactionClient, dr
   });
 
   return organization.id;
-}
-
-async function createProfileAdminReview(tx: Prisma.TransactionClient, input: {
-  orgId: string;
-  profileId: string;
-  submittedByEmail: string;
-  submittedByRole: Role;
-}) {
-  if (input.submittedByRole === Role.system_admin) {
-    return;
-  }
-
-  await tx.adminReview.create({
-    data: {
-      subjectType: "aftercare_profile",
-      orgId: input.orgId,
-      profileId: input.profileId,
-      submittedByEmail: input.submittedByEmail
-    }
-  });
 }
 
 async function updateProfileCoordinatesForAddress(input: {
@@ -423,13 +403,6 @@ export async function createAftercareProfileDraft(formData: FormData) {
         state: parsed.state,
         zip: parsed.zip
       };
-
-      await createProfileAdminReview(tx, {
-        orgId: organization.id,
-        profileId: profile.id,
-        submittedByEmail: draft.user.email,
-        submittedByRole: draft.user.role
-      });
 
       await tx.onboardingDraft.update({
         where: { id: draft.id },
@@ -743,13 +716,6 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
               }))
             });
           }
-
-          await createProfileAdminReview(tx, {
-            orgId,
-            profileId: profile.id,
-            submittedByEmail: draft.user.email,
-            submittedByRole: draft.user.role
-          });
 
           await tx.onboardingDraft.update({
             where: { id: draft.id },
@@ -1115,13 +1081,6 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
           state: String(finalDraft.state || ""),
           zip: String(finalDraft.zip || "")
         };
-
-        await createProfileAdminReview(tx, {
-          orgId,
-          profileId: profile.id,
-          submittedByEmail: draft.user.email,
-          submittedByRole: draft.user.role
-        });
 
         await tx.onboardingDraft.update({
           where: { id: draft.id },

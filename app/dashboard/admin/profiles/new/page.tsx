@@ -2,8 +2,28 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Save, ShieldCheck } from "lucide-react";
 import { ProfileStatus, ProfileType, Role } from "@prisma/client";
+import { PopulationBedFields } from "@/components/dashboard/population-bed-fields";
+import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import {
+  amenityOptions,
+  certificationOptions,
+  drugTestingPolicyOptions,
+  insuranceOptions,
+  matOptions,
+  medicationAdministrationOptions,
+  populationOptions,
+  preferredContactOptions,
+  roomTypeOptions,
+  specialtyPopulationOptions,
+  supportServiceOptions
+} from "@/lib/sober-living-onboarding";
+import {
+  levelOfCareOptions,
+  programTypeOptions,
+  telehealthModeOptions
+} from "@/lib/continued-care-onboarding";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { createUnclaimedAftercareProfile } from "../../actions";
 
@@ -13,6 +33,10 @@ function fieldClassName() {
 
 function labelClassName() {
   return "grid gap-2 text-sm font-medium";
+}
+
+function textareaClassName(size: "sm" | "lg" = "sm") {
+  return `${size === "lg" ? "min-h-44" : "min-h-24"} rounded-md border border-border bg-white p-3 text-sm leading-6`;
 }
 
 function SectionIntro({
@@ -27,6 +51,28 @@ function SectionIntro({
       <h2 className="text-lg font-semibold">{title}</h2>
       {children ? <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">{children}</p> : null}
     </div>
+  );
+}
+
+function CheckboxGroup({
+  label,
+  name,
+  options
+}: {
+  label: string;
+  name: string;
+  options: readonly string[];
+}) {
+  return (
+    <fieldset className="grid gap-2">
+      <legend className="text-sm font-medium">{label}</legend>
+      <MultiSelectDropdown
+        name={name}
+        options={options}
+        placeholder={`Select ${label.toLowerCase()}...`}
+        selected={[]}
+      />
+    </fieldset>
   );
 }
 
@@ -77,6 +123,23 @@ export default async function AdminCreateProfilePage() {
                     <input className={fieldClassName()} name="programName" required />
                   </label>
                   <label className={labelClassName()}>
+                    Preferred contact method
+                    <select className={fieldClassName()} name="preferredContactMethod">
+                      <option value="">Select one</option>
+                      {preferredContactOptions.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className={labelClassName()}>
+                    Intake contact name
+                    <input className={fieldClassName()} name="intakeContactName" />
+                  </label>
+                  <label className={labelClassName()}>
+                    License number
+                    <input className={fieldClassName()} name="stateLicenseNumber" />
+                  </label>
+                  <label className={labelClassName()}>
                     Street address
                     <input className={fieldClassName()} name="streetAddress" />
                   </label>
@@ -108,14 +171,157 @@ export default async function AdminCreateProfilePage() {
               </div>
             </Card>
 
+            <Card className="overflow-hidden p-0" id="availability">
+              <SectionIntro title="Availability">
+                Capture the same bed, pricing, program, and intake details that appear on provider edit screens.
+              </SectionIntro>
+              <div className="grid gap-5 p-5">
+                <div className="grid gap-2">
+                  <p className="text-sm font-semibold">Sober living availability</p>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    Used when the listing type is Sober living home.
+                  </p>
+                </div>
+                <CheckboxGroup label="Population served" name="populationServedOptions" options={populationOptions} />
+                <PopulationBedFields
+                  initialPopulations={[]}
+                  values={{
+                    bedsLgbtq: 0,
+                    bedsLgbtqAvailable: 0,
+                    bedsMen: 0,
+                    bedsMenAvailable: 0,
+                    bedsWomen: 0,
+                    bedsWomenAvailable: 0
+                  }}
+                />
+                <CheckboxGroup label="Room types" name="roomTypes" options={roomTypeOptions} />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className={labelClassName()}>
+                    Price per week
+                    <input className={fieldClassName()} min="0" name="pricePerWeek" type="number" />
+                  </label>
+                  <label className={labelClassName()}>
+                    Cost to move in
+                    <input className={fieldClassName()} name="moveInCost" placeholder="$600 intake fee" />
+                  </label>
+                  <label className={labelClassName()}>
+                    Wheelchair accessible bed count
+                    <input className={fieldClassName()} min="0" name="wheelchairAccessibleBeds" type="number" />
+                  </label>
+                </div>
+                <label className={labelClassName()}>
+                  Reserved beds notes
+                  <textarea className={textareaClassName()} name="bedsReservedNotes" />
+                </label>
+
+                <div className="border-t border-border pt-5">
+                  <div className="grid gap-2">
+                    <p className="text-sm font-semibold">Continued care availability</p>
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      Used when the listing type is Continued care program.
+                    </p>
+                  </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <label className={labelClassName()}>
+                      Accepting new patients
+                      <select className={fieldClassName()} name="acceptingNewPatients">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </label>
+                    <label className={labelClassName()}>
+                      Telehealth mode
+                      <select className={fieldClassName()} name="telehealthMode">
+                        <option value="">Select one</option>
+                        {telehealthModeOptions.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <div className="mt-4 grid gap-4">
+                    <CheckboxGroup label="Program types" name="programTypes" options={programTypeOptions} />
+                    <CheckboxGroup label="Levels of care" name="levelsOfCare" options={levelOfCareOptions} />
+                    <label className={labelClassName()}>
+                      Hours of operation
+                      <textarea className={textareaClassName()} name="hoursOfOperation" />
+                    </label>
+                  </div>
+                </div>
+
+                <label className={labelClassName()}>
+                  Availability notes
+                  <textarea className={textareaClassName()} name="availabilityNotes" />
+                </label>
+              </div>
+            </Card>
+
             <Card className="overflow-hidden p-0" id="content">
               <SectionIntro title="Profile content">
                 Add enough context for the public profile to feel useful before the provider claims it.
               </SectionIntro>
-              <div className="grid gap-4 p-5">
+              <div className="grid gap-5 p-5">
                 <label className={labelClassName()}>
-                  Short description
-                  <textarea className="min-h-44 rounded-md border border-border bg-white p-3 text-sm leading-6" name="description" />
+                  Description
+                  <textarea className={textareaClassName("lg")} name="description" />
+                </label>
+                <label className={labelClassName()}>
+                  House rules
+                  <textarea className={textareaClassName("lg")} name="houseRulesText" />
+                </label>
+                <label className={labelClassName()}>
+                  Referral fit notes
+                  <textarea className={textareaClassName("lg")} name="referralFitNotes" />
+                </label>
+                <label className={labelClassName()}>
+                  Referral process
+                  <textarea className={textareaClassName("lg")} name="referralProcessDescription" />
+                </label>
+                <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={specialtyPopulationOptions} />
+                <CheckboxGroup label="Certifications held" name="certificationsHeld" options={certificationOptions} />
+                <CheckboxGroup label="Support services" name="supportServices" options={supportServiceOptions} />
+                <CheckboxGroup label="Amenities" name="amenities" options={amenityOptions} />
+                <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={insuranceOptions} />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className={labelClassName()}>
+                    Funding available
+                    <select className={fieldClassName()} name="fundingAvailable">
+                      <option value="">Not set</option>
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </select>
+                  </label>
+                  <label className={labelClassName()}>
+                    Medication administration
+                    <select className={fieldClassName()} name="medicationAdministration">
+                      <option value="">Not set</option>
+                      {medicationAdministrationOptions.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <label className={labelClassName()}>
+                  Funding notes
+                  <textarea className={textareaClassName()} name="fundingNotes" />
+                </label>
+                <CheckboxGroup label="MAT accepted" name="matAccepted" options={matOptions} />
+                <label className={labelClassName()}>
+                  Medication restrictions
+                  <textarea className={textareaClassName()} name="medicationRestrictions" />
+                </label>
+                <label className={labelClassName()}>
+                  Drug testing policy
+                  <select className={fieldClassName()} name="drugTestingPolicy">
+                    <option value="">Not set</option>
+                    {drugTestingPolicyOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="ac-panel-card flex items-start gap-3 p-4 text-sm">
+                  <input name="goodNeighborPolicyAcknowledged" type="checkbox" value="yes" />
+                  Good Neighbor Policy acknowledged
                 </label>
               </div>
             </Card>

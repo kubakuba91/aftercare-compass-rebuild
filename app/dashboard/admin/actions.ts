@@ -15,6 +15,8 @@ import {
 import { notifyProfileClaimApproved, notifyProfileClaimRejected } from "@/lib/email-notifications";
 import { geocodeProfileAddress } from "@/lib/geocoding";
 import { prisma } from "@/lib/prisma";
+import { sanitizeRichText } from "@/lib/rich-text";
+import { valuesFromForm } from "@/lib/sober-living-onboarding";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { slugify } from "@/lib/slug";
 
@@ -48,6 +50,15 @@ function adminProfileHref(message: string) {
 function nullableText(value: FormDataEntryValue | null) {
   const text = String(value || "").trim();
   return text || null;
+}
+
+function numberFromForm(value: FormDataEntryValue | null) {
+  if (value === null || value === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null;
 }
 
 async function uniqueProfileSlug(programName: string) {
@@ -125,6 +136,23 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
     zip
   });
 
+  const populationServedOptions = valuesFromForm(formData, "populationServedOptions");
+  const selectedPopulations = new Set(populationServedOptions);
+  const bedsMen = selectedPopulations.has("Men") ? numberFromForm(formData.get("bedsMen")) ?? 0 : 0;
+  const bedsMenAvailable = selectedPopulations.has("Men") ? numberFromForm(formData.get("bedsMenAvailable")) ?? 0 : 0;
+  const bedsWomen = selectedPopulations.has("Women") ? numberFromForm(formData.get("bedsWomen")) ?? 0 : 0;
+  const bedsWomenAvailable = selectedPopulations.has("Women") ? numberFromForm(formData.get("bedsWomenAvailable")) ?? 0 : 0;
+  const bedsLgbtq = selectedPopulations.has("LGBTQ+") ? numberFromForm(formData.get("bedsLgbtq")) ?? 0 : 0;
+  const bedsLgbtqAvailable = selectedPopulations.has("LGBTQ+") ? numberFromForm(formData.get("bedsLgbtqAvailable")) ?? 0 : 0;
+
+  if (
+    bedsMenAvailable > bedsMen ||
+    bedsWomenAvailable > bedsWomen ||
+    bedsLgbtqAvailable > bedsLgbtq
+  ) {
+    redirect(adminProfileHref("Available beds cannot exceed total beds."));
+  }
+
   const profile = await prisma.aftercareProfile.create({
     data: {
       orgId: org.id,
@@ -142,21 +170,57 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
       publicState: state,
       admissionsContactPhone: nullableText(formData.get("admissionsContactPhone")),
       admissionsContactEmail: nullableText(formData.get("admissionsContactEmail")),
+      preferredContactMethod: nullableText(formData.get("preferredContactMethod")),
+      intakeContactName: nullableText(formData.get("intakeContactName")),
+      stateLicenseNumber: nullableText(formData.get("stateLicenseNumber")),
       websiteUrl: nullableText(formData.get("websiteUrl")),
-      description: nullableText(formData.get("description")),
+      description: sanitizeRichText(String(formData.get("description") || "")) || null,
+      houseRulesText: sanitizeRichText(nullableText(formData.get("houseRulesText"))),
+      referralFitNotes: nullableText(formData.get("referralFitNotes")),
+      referralProcessDescription: nullableText(formData.get("referralProcessDescription")),
+      specialtyPopulations: valuesFromForm(formData, "specialtyPopulations"),
+      certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
+      supportServices: valuesFromForm(formData, "supportServices"),
+      amenities: valuesFromForm(formData, "amenities"),
+      insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
+      fundingAvailable: formData.get("fundingAvailable")
+        ? formData.get("fundingAvailable") === "yes"
+        : null,
+      fundingNotes: nullableText(formData.get("fundingNotes")),
+      medicationAdministration: nullableText(formData.get("medicationAdministration")),
+      matAccepted: valuesFromForm(formData, "matAccepted"),
+      medicationRestrictions: nullableText(formData.get("medicationRestrictions")),
+      drugTestingPolicy: nullableText(formData.get("drugTestingPolicy")),
+      availabilityNotes: nullableText(formData.get("availabilityNotes")),
+      goodNeighborPolicyAcknowledged: formData.get("goodNeighborPolicyAcknowledged") === "yes",
       onboardingCompletedAt: new Date(),
       publishedAt: status === ProfileStatus.published ? new Date() : null,
       ...(type === ProfileType.continued_care
-        ? { acceptingNewPatients: null }
+        ? {
+            acceptingNewPatients: formData.get("acceptingNewPatients") === "yes",
+            acceptingNewPatientsUpdatedAt: new Date(),
+            programTypes: valuesFromForm(formData, "programTypes"),
+            levelsOfCare: valuesFromForm(formData, "levelsOfCare"),
+            telehealthMode: nullableText(formData.get("telehealthMode")),
+            hoursOfOperation: nullableText(formData.get("hoursOfOperation"))
+          }
         : {
-            bedsMen: 0,
-            bedsWomen: 0,
-            bedsLgbtq: 0,
-            bedsMenAvailable: 0,
-            bedsWomenAvailable: 0,
-            bedsLgbtqAvailable: 0,
-            totalBeds: 0,
-            bedsAvailable: 0
+            populationServedOptions,
+            populationServed: populationServedOptions.join(", ") || null,
+            bedsMen,
+            bedsWomen,
+            bedsLgbtq,
+            bedsMenAvailable,
+            bedsWomenAvailable,
+            bedsLgbtqAvailable,
+            totalBeds: bedsMen + bedsWomen + bedsLgbtq,
+            bedsAvailable: bedsMenAvailable + bedsWomenAvailable + bedsLgbtqAvailable,
+            bedsAvailableUpdatedAt: new Date(),
+            roomTypes: valuesFromForm(formData, "roomTypes"),
+            bedsReservedNotes: nullableText(formData.get("bedsReservedNotes")),
+            wheelchairAccessibleBeds: numberFromForm(formData.get("wheelchairAccessibleBeds")),
+            pricePerWeek: numberFromForm(formData.get("pricePerWeek")),
+            moveInCost: nullableText(formData.get("moveInCost"))
           }),
       ...(coordinates ?? {})
     }

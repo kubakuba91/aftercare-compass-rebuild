@@ -159,7 +159,8 @@ export default async function FindExistingAftercareProfilePage({
         <SignOutButton />
       </div>
 
-      <Card className="mt-8 overflow-hidden p-0">
+      <div className="mt-8 max-w-6xl">
+        <Card className="overflow-hidden p-0">
         <div className="border-b border-border bg-muted/20 px-5 py-4">
           <div className="flex items-center gap-2">
             <Search className="text-primary" size={20} />
@@ -225,9 +226,10 @@ export default async function FindExistingAftercareProfilePage({
             </div>
           ) : null}
         </div>
-      </Card>
+        </Card>
+      </div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
+      <div className="mt-6 flex max-w-6xl flex-wrap items-center justify-between gap-3">
         <Link
           className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-white px-5 text-sm font-semibold"
           href="/onboarding/account-type"
@@ -235,7 +237,7 @@ export default async function FindExistingAftercareProfilePage({
           Back to account type
         </Link>
         <Link
-          className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm"
+          className="focus-ring ac-button ac-button--primary min-h-11 px-5"
           href={continueHref}
         >
           {copy.continueLabel}

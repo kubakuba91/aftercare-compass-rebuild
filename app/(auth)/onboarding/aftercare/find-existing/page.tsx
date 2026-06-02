@@ -49,7 +49,7 @@ function pageCopy(accountType: string) {
     description: "Search existing sober living listings before creating a new profile. If your home is already listed as unclaimed, you can request access for admin review.",
     placeholder: "Search by home, city, state, or website",
     empty: "No sober living homes matched your search.",
-    continueLabel: "Create a new sober living profile"
+    continueLabel: "Continue to sober living profile creation"
   };
 }
 
@@ -147,7 +147,9 @@ export default async function FindExistingAftercareProfilePage({
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="max-w-2xl">
           <div className="flex items-center gap-3">
-            <Icon className="text-primary" size={28} />
+            <span className="inline-flex size-11 items-center justify-center rounded-full border border-primary/20 bg-primary/10 shadow-sm">
+              <Icon className="text-primary" size={24} />
+            </span>
             <h1 className="text-3xl font-semibold">{copy.title}</h1>
           </div>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
@@ -227,16 +229,16 @@ export default async function FindExistingAftercareProfilePage({
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
-          className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground"
-          href={continueHref}
-        >
-          {copy.continueLabel}
-        </Link>
-        <Link
           className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-white px-5 text-sm font-semibold"
           href="/onboarding/account-type"
         >
           Back to account type
+        </Link>
+        <Link
+          className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm"
+          href={continueHref}
+        >
+          {copy.continueLabel}
         </Link>
       </div>
     </main>

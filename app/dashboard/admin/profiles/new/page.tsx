@@ -76,8 +76,16 @@ function CheckboxGroup({
   );
 }
 
-export default async function AdminCreateProfilePage() {
-  const appUser = await getProtectedAppUser("/dashboard/admin/profiles/new");
+export default async function AdminCreateProfilePage({
+  searchParams
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
+  const [appUser, query] = await Promise.all([
+    getProtectedAppUser("/dashboard/admin/profiles/new"),
+    searchParams
+  ]);
+  const initialType = query.type === ProfileType.continued_care ? ProfileType.continued_care : ProfileType.sober_living;
 
   if (appUser.role !== Role.system_admin) {
     redirect("/dashboard");
@@ -113,7 +121,7 @@ export default async function AdminCreateProfilePage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className={labelClassName()}>
                     Listing type
-                    <select className={fieldClassName()} name="type">
+                    <select className={fieldClassName()} defaultValue={initialType} name="type">
                       <option value={ProfileType.sober_living}>Sober living home</option>
                       <option value={ProfileType.continued_care}>Continued care program</option>
                     </select>

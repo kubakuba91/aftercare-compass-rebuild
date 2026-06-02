@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { Building2, ClipboardCheck, FileCheck2, Flag, Handshake, Home, Inbox, PlusCircle, Search } from "lucide-react";
+import { Building2, ChevronDown, ClipboardCheck, FileCheck2, Flag, Handshake, Home, Inbox, PlusCircle, Search } from "lucide-react";
 import {
   AdminReviewStatus,
   AdminReviewSubjectType,
@@ -844,13 +844,21 @@ export default async function AdminDashboardPage({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {reviewMessage ? <Badge tone="success">{reviewMessage}</Badge> : null}
-                <Link
-                  className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-border bg-white px-4 text-sm font-semibold"
-                  href="/dashboard/admin/profiles/new"
-                >
-                  <PlusCircle size={16} />
-                  Add new home
-                </Link>
+                <details className="group relative">
+                  <summary className="focus-ring inline-flex min-h-10 cursor-pointer list-none items-center justify-center gap-2 rounded-full border border-border bg-white px-4 text-sm font-semibold shadow-sm transition hover:border-primary/40">
+                    <PlusCircle size={16} />
+                    Add listing
+                    <ChevronDown className="transition group-open:rotate-180" size={16} />
+                  </summary>
+                  <div className="absolute right-0 z-20 mt-2 grid min-w-64 overflow-hidden rounded-md border border-border bg-white p-1 text-sm font-semibold shadow-lg">
+                    <Link className="rounded-sm px-3 py-2 transition hover:bg-surface-secondary" href="/dashboard/admin/profiles/new?type=sober_living">
+                      Sober Living Home
+                    </Link>
+                    <Link className="rounded-sm px-3 py-2 transition hover:bg-surface-secondary" href="/dashboard/admin/profiles/new?type=continued_care">
+                      Continued Care Program
+                    </Link>
+                  </div>
+                </details>
               </div>
             </div>
             {profileSearchTerm ? (

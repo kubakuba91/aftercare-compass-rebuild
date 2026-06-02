@@ -86,6 +86,10 @@ export default async function FindExistingAftercareProfilePage({
     searchParams
   ]);
 
+  if (appUser?.role === "system_admin") {
+    redirect("/dashboard/admin");
+  }
+
   if (appUser?.orgId) {
     if (appUser.role.startsWith("aftercare")) {
       redirect("/dashboard/aftercare");

@@ -31,6 +31,10 @@ export const dynamic = "force-dynamic";
 export default async function AccountTypePage() {
   const appUser = await getCurrentAppUser();
 
+  if (appUser?.role === "system_admin") {
+    redirect("/dashboard/admin");
+  }
+
   if (appUser?.orgId) {
     if (appUser.role.startsWith("referent")) {
       redirect("/dashboard/referent");

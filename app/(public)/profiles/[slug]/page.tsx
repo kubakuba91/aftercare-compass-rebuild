@@ -482,10 +482,19 @@ export default async function PublicProfilePage({
                   programName={profile.programName}
                 />
               </div>
-              {priceLabel ? (
+              {priceLabel || profile.moveInCost ? (
                 <div className="shrink-0 text-right">
-                  <p className="text-xs font-semibold uppercase text-muted-foreground">Price</p>
-                  <p className="text-lg font-semibold">{priceLabel}</p>
+                  {priceLabel ? (
+                    <>
+                      <p className="text-xs font-semibold uppercase text-muted-foreground">Price</p>
+                      <p className="text-lg font-semibold">{priceLabel}</p>
+                    </>
+                  ) : null}
+                  {profile.moveInCost ? (
+                    <p className="mt-1 text-sm font-medium text-muted-foreground">
+                      Move-in: {profile.moveInCost}
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
             </div>

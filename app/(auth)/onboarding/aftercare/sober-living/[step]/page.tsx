@@ -410,6 +410,10 @@ export default async function SoberLivingStepPage({
                     Price per week
                     <input name="pricePerWeek" type="number" min="0" defaultValue={profile?.pricePerWeek ?? ""} className={fieldClassName()} />
                   </label>
+                  <label className="grid gap-2 text-sm font-medium">
+                    Cost to move in
+                    <input name="moveInCost" placeholder="$600 intake fee" defaultValue={profile?.moveInCost ?? ""} className={fieldClassName()} />
+                  </label>
                 </>
               ) : null}
 

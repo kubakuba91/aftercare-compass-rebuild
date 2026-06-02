@@ -168,7 +168,8 @@ export const stepTwoSchema = z.object({
   bedsReservedNotes: optionalText,
   wheelchairAccessible: z.enum(["yes", "no"]),
   wheelchairAccessibleBeds: z.coerce.number().int().nonnegative().optional(),
-  pricePerWeek: z.coerce.number().int().nonnegative().optional()
+  pricePerWeek: z.coerce.number().int().nonnegative().optional(),
+  moveInCost: z.string().trim().max(120).optional()
 });
 
 export const stepThreeSchema = z.object({

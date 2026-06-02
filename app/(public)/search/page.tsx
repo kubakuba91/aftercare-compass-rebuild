@@ -383,6 +383,7 @@ export default async function SearchPage({
       specialtyPopulations: true,
       averageLengthOfStay: true,
       pricePerWeek: true,
+      moveInCost: true,
       programTypes: true,
       levelsOfCare: true,
       amenities: true,
@@ -582,6 +583,9 @@ export default async function SearchPage({
 
                         <div className="grid shrink-0 gap-2 md:justify-items-end">
                           <p className="text-base font-semibold">{formatPricePerWeek(profile.pricePerWeek)}</p>
+                          {profile.moveInCost ? (
+                            <p className="text-xs font-medium text-muted-foreground">Move-in: {profile.moveInCost}</p>
+                          ) : null}
                         </div>
                       </div>
                     </div>

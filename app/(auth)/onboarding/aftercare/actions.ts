@@ -286,6 +286,7 @@ async function upsertSoberLivingDraftProfile(
       wheelchairAccessibleBeds:
         draftData.wheelchairAccessibleBeds === null ? null : Number(draftData.wheelchairAccessibleBeds || 0),
       pricePerWeek: draftData.pricePerWeek === undefined ? null : Number(draftData.pricePerWeek || 0),
+      moveInCost: nullableText(String(draftData.moveInCost || "")),
       supportServices: arrayFromDraft(draftData.supportServices),
       amenities: arrayFromDraft(draftData.amenities),
       insuranceAccepted: arrayFromDraft(draftData.insuranceAccepted),
@@ -486,7 +487,8 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         bedsReservedNotes: formData.get("bedsReservedNotes") || undefined,
         wheelchairAccessible: formData.get("wheelchairAccessible"),
         wheelchairAccessibleBeds: formData.get("wheelchairAccessibleBeds") || undefined,
-        pricePerWeek: formData.get("pricePerWeek") || undefined
+        pricePerWeek: formData.get("pricePerWeek") || undefined,
+        moveInCost: formData.get("moveInCost") || undefined
       });
 
       const totalBeds = parsed.bedsMen + parsed.bedsWomen + parsed.bedsLgbtq;
@@ -509,7 +511,8 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             bedsReservedNotes: nullableText(parsed.bedsReservedNotes),
             wheelchairAccessibleBeds:
               parsed.wheelchairAccessible === "yes" ? parsed.wheelchairAccessibleBeds ?? 0 : null,
-            pricePerWeek: parsed.pricePerWeek
+            pricePerWeek: parsed.pricePerWeek,
+            moveInCost: nullableText(parsed.moveInCost)
           })),
           selectedAccountType: "sober_living",
           activeStep: 3,
@@ -647,6 +650,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             wheelchairAccessibleBeds:
               finalDraft.wheelchairAccessibleBeds === null ? null : Number(finalDraft.wheelchairAccessibleBeds || 0),
             pricePerWeek: finalDraft.pricePerWeek === undefined ? null : Number(finalDraft.pricePerWeek || 0),
+            moveInCost: nullableText(String(finalDraft.moveInCost || "")),
             supportServices: arrayFromDraft(finalDraft.supportServices),
             amenities: arrayFromDraft(finalDraft.amenities),
             insuranceAccepted: arrayFromDraft(finalDraft.insuranceAccepted),

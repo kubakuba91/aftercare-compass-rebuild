@@ -369,6 +369,12 @@ export default async function AftercareProfileDetailPage({
                       <input className={fieldClassName()} defaultValue={profile.pricePerWeek ?? ""} min="0" name="pricePerWeek" type="number" />
                     </label>
                     <label className={labelClassName()}>
+                      Cost to move in
+                      <input className={fieldClassName()} defaultValue={profile.moveInCost ?? ""} name="moveInCost" placeholder="$600 intake fee" />
+                    </label>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className={labelClassName()}>
                       Wheelchair accessible bed count
                       <input className={fieldClassName()} defaultValue={profile.wheelchairAccessibleBeds ?? ""} min="0" name="wheelchairAccessibleBeds" type="number" />
                     </label>

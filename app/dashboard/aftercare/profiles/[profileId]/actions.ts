@@ -222,6 +222,7 @@ export async function updateAftercareProfileDetails(formData: FormData) {
         bedsLgbtqAvailable,
         bedsAvailableUpdatedAt: new Date(),
         pricePerWeek: numberFromForm(formData.get("pricePerWeek")),
+        moveInCost: nullableText(formData.get("moveInCost")),
         wheelchairAccessibleBeds: numberFromForm(formData.get("wheelchairAccessibleBeds")),
         roomTypes: valuesFromForm(formData, "roomTypes"),
         bedsReservedNotes: nullableText(formData.get("bedsReservedNotes"))
@@ -291,6 +292,7 @@ export async function updateAftercareProfileAvailability(formData: FormData) {
         bedsLgbtqAvailable,
         bedsAvailableUpdatedAt: new Date(),
         pricePerWeek: numberFromForm(formData.get("pricePerWeek")),
+        moveInCost: nullableText(formData.get("moveInCost")),
         wheelchairAccessibleBeds: numberFromForm(formData.get("wheelchairAccessibleBeds")),
         roomTypes: valuesFromForm(formData, "roomTypes"),
         bedsReservedNotes: nullableText(formData.get("bedsReservedNotes")),

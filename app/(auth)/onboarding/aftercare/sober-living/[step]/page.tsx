@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import {
   amenityOptions,
   averageLengthOptions,
+  bedTypeOptions,
   certificationOptions,
   drugTestingPolicyOptions,
   insuranceOptions,
@@ -388,6 +389,10 @@ export default async function SoberLivingStepPage({
                   <div className="grid gap-2 text-sm font-medium">
                     Room types
                     {checkboxGroup("roomTypes", roomTypeOptions, selected(profile?.roomTypes))}
+                  </div>
+                  <div className="grid gap-2 text-sm font-medium">
+                    Bed types
+                    {checkboxGroup("bedTypes", bedTypeOptions, selected(profile?.bedTypes))}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     Reserved beds notes

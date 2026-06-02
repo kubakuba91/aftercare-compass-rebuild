@@ -282,6 +282,7 @@ async function upsertSoberLivingDraftProfile(
       bedsLgbtq: Number(draftData.bedsLgbtq || 0),
       bedsLgbtqAvailable: Number(draftData.bedsLgbtqAvailable || 0),
       roomTypes: arrayFromDraft(draftData.roomTypes),
+      bedTypes: arrayFromDraft(draftData.bedTypes),
       bedsReservedNotes: nullableText(String(draftData.bedsReservedNotes || "")),
       wheelchairAccessibleBeds:
         draftData.wheelchairAccessibleBeds === null ? null : Number(draftData.wheelchairAccessibleBeds || 0),
@@ -484,6 +485,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         bedsLgbtq: formData.get("bedsLgbtq") || "0",
         bedsLgbtqAvailable: formData.get("bedsLgbtqAvailable") || "0",
         roomTypes: valuesFromForm(formData, "roomTypes"),
+        bedTypes: valuesFromForm(formData, "bedTypes"),
         bedsReservedNotes: formData.get("bedsReservedNotes") || undefined,
         wheelchairAccessible: formData.get("wheelchairAccessible"),
         wheelchairAccessibleBeds: formData.get("wheelchairAccessibleBeds") || undefined,
@@ -508,6 +510,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             bedsLgbtq: parsed.bedsLgbtq,
             bedsLgbtqAvailable: parsed.bedsLgbtqAvailable,
             roomTypes: parsed.roomTypes,
+            bedTypes: parsed.bedTypes,
             bedsReservedNotes: nullableText(parsed.bedsReservedNotes),
             wheelchairAccessibleBeds:
               parsed.wheelchairAccessible === "yes" ? parsed.wheelchairAccessibleBeds ?? 0 : null,
@@ -646,6 +649,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             bedsLgbtq: Number(finalDraft.bedsLgbtq || 0),
             bedsLgbtqAvailable: Number(finalDraft.bedsLgbtqAvailable || 0),
             roomTypes: arrayFromDraft(finalDraft.roomTypes),
+            bedTypes: arrayFromDraft(finalDraft.bedTypes),
             bedsReservedNotes: nullableText(String(finalDraft.bedsReservedNotes || "")),
             wheelchairAccessibleBeds:
               finalDraft.wheelchairAccessibleBeds === null ? null : Number(finalDraft.wheelchairAccessibleBeds || 0),

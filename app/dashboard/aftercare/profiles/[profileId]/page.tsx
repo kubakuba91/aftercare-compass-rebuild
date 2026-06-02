@@ -10,6 +10,7 @@ import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdo
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
 import {
   amenityOptions,
+  bedTypeOptions,
   certificationOptions,
   drugTestingPolicyOptions,
   insuranceOptions,
@@ -363,6 +364,7 @@ export default async function AftercareProfileDetailPage({
                     }}
                   />
                   <CheckboxGroup label="Room types" name="roomTypes" options={roomTypeOptions} selected={profile.roomTypes} />
+                  <CheckboxGroup label="Bed types" name="bedTypes" options={bedTypeOptions} selected={profile.bedTypes} />
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className={labelClassName()}>
                       Price per week

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {
   amenityOptions,
+  bedTypeOptions,
   certificationOptions,
   drugTestingPolicyOptions,
   insuranceOptions,
@@ -204,6 +205,7 @@ export default async function AdminCreateProfilePage({
                     }}
                   />
                   <CheckboxGroup label="Room types" name="roomTypes" options={roomTypeOptions} />
+                  <CheckboxGroup label="Bed types" name="bedTypes" options={bedTypeOptions} />
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className={labelClassName()}>
                       Price per week

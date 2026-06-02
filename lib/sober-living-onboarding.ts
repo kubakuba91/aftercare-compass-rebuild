@@ -47,6 +47,8 @@ export const averageLengthOptions = [
 
 export const roomTypeOptions = ["Private", "Double occupancy", "Triple occupancy", "Dormitory"] as const;
 
+export const bedTypeOptions = ["Twin", "Full", "Bunk", "Queen"] as const;
+
 export const supportServiceOptions = [
   "12-Step Meetings",
   "AA/NA on-site",
@@ -165,6 +167,7 @@ export const stepTwoSchema = z.object({
   bedsLgbtq: z.coerce.number().int().nonnegative(),
   bedsLgbtqAvailable: z.coerce.number().int().nonnegative(),
   roomTypes: z.array(z.string()).default([]),
+  bedTypes: z.array(z.string()).default([]),
   bedsReservedNotes: optionalText,
   wheelchairAccessible: z.enum(["yes", "no"]),
   wheelchairAccessibleBeds: z.coerce.number().int().nonnegative().optional(),

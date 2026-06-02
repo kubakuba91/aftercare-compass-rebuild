@@ -217,6 +217,7 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
             bedsAvailable: bedsMenAvailable + bedsWomenAvailable + bedsLgbtqAvailable,
             bedsAvailableUpdatedAt: new Date(),
             roomTypes: valuesFromForm(formData, "roomTypes"),
+            bedTypes: valuesFromForm(formData, "bedTypes"),
             bedsReservedNotes: nullableText(formData.get("bedsReservedNotes")),
             wheelchairAccessibleBeds: numberFromForm(formData.get("wheelchairAccessibleBeds")),
             pricePerWeek: numberFromForm(formData.get("pricePerWeek")),

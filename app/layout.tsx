@@ -40,7 +40,13 @@ export default function RootLayout({
   }
 
   return (
-    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+    <ClerkProvider
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      signInForceRedirectUrl="/auth/complete"
+      signInFallbackRedirectUrl="/auth/complete"
+      signUpForceRedirectUrl="/auth/complete"
+      signUpFallbackRedirectUrl="/auth/complete"
+    >
       {body}
     </ClerkProvider>
   );

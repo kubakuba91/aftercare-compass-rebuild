@@ -242,7 +242,7 @@ export default async function FindExistingAftercareProfilePage({
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold text-muted-foreground">or</span>
           <Link
-            className="focus-ring ac-button min-h-11 bg-[#151761] px-5 text-white shadow-sm hover:bg-[#10124f]"
+            className="focus-ring ac-button min-h-11 bg-[#151761] px-5 !text-white shadow-sm hover:bg-[#10124f]"
             href={continueHref}
           >
             {copy.continueLabel}

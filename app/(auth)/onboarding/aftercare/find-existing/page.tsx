@@ -144,8 +144,12 @@ export default async function FindExistingAftercareProfilePage({
 
   return (
     <main className="shell py-10">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <div className="max-w-2xl">
+      <div className="flex justify-end">
+        <SignOutButton />
+      </div>
+
+      <div className="mx-auto max-w-5xl">
+        <div>
           <div className="flex items-center gap-3">
             <span className="inline-flex size-11 items-center justify-center rounded-full border border-primary/20 bg-primary/10 shadow-sm">
               <Icon className="text-primary" size={24} />
@@ -156,10 +160,9 @@ export default async function FindExistingAftercareProfilePage({
             {copy.description}
           </p>
         </div>
-        <SignOutButton />
       </div>
 
-      <div className="mt-8 max-w-6xl">
+      <div className="mx-auto mt-8 max-w-5xl">
         <Card className="overflow-hidden p-0">
         <div className="border-b border-border bg-muted/20 px-5 py-4">
           <div className="flex items-center gap-2">
@@ -229,7 +232,7 @@ export default async function FindExistingAftercareProfilePage({
         </Card>
       </div>
 
-      <div className="mt-6 flex max-w-6xl flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto mt-6 flex max-w-5xl flex-wrap items-center justify-between gap-3">
         <Link
           className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-white px-5 text-sm font-semibold"
           href="/onboarding/account-type"

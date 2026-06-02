@@ -497,3 +497,15 @@ input[type="checkbox"] {
   background: rgb(from var(--primary) r g b / 0.1);
   color: var(--primary);
 }
+
+.admin-create-profile-form .admin-profile-type-section--continued-care {
+  display: none;
+}
+
+.admin-create-profile-form:has(select[name="type"] option[value="continued_care"]:checked) .admin-profile-type-section--continued-care {
+  display: block;
+}
+
+.admin-create-profile-form:has(select[name="type"] option[value="continued_care"]:checked) .admin-profile-type-section--sober-living {
+  display: none;
+}

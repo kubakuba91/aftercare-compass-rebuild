@@ -104,7 +104,7 @@ export default async function AdminCreateProfilePage() {
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_360px]">
         <section>
-          <form action={createUnclaimedAftercareProfile} className="grid gap-5" id="admin-create-profile-form">
+          <form action={createUnclaimedAftercareProfile} className="admin-create-profile-form grid gap-5" id="admin-create-profile-form">
             <Card className="overflow-hidden p-0" id="basics">
               <SectionIntro title="Program basics">
                 Public identity, listing type, location, and admissions contact information.
@@ -176,45 +176,47 @@ export default async function AdminCreateProfilePage() {
                 Capture the same bed, pricing, program, and intake details that appear on provider edit screens.
               </SectionIntro>
               <div className="grid gap-5 p-5">
-                <div className="grid gap-2">
-                  <p className="text-sm font-semibold">Sober living availability</p>
-                  <p className="text-xs leading-5 text-muted-foreground">
-                    Used when the listing type is Sober living home.
-                  </p>
-                </div>
-                <CheckboxGroup label="Population served" name="populationServedOptions" options={populationOptions} />
-                <PopulationBedFields
-                  initialPopulations={[]}
-                  values={{
+                <div className="admin-profile-type-section admin-profile-type-section--sober-living grid gap-5">
+                  <div className="grid gap-2">
+                    <p className="text-sm font-semibold">Sober living availability</p>
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      Used when the listing type is Sober living home.
+                    </p>
+                  </div>
+                    <CheckboxGroup label="Population served" name="populationServedOptions" options={populationOptions} />
+                  <PopulationBedFields
+                    initialPopulations={[]}
+                    values={{
                     bedsLgbtq: 0,
                     bedsLgbtqAvailable: 0,
                     bedsMen: 0,
                     bedsMenAvailable: 0,
                     bedsWomen: 0,
                     bedsWomenAvailable: 0
-                  }}
-                />
-                <CheckboxGroup label="Room types" name="roomTypes" options={roomTypeOptions} />
-                <div className="grid gap-4 md:grid-cols-2">
+                    }}
+                  />
+                  <CheckboxGroup label="Room types" name="roomTypes" options={roomTypeOptions} />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className={labelClassName()}>
+                      Price per week
+                      <input className={fieldClassName()} min="0" name="pricePerWeek" type="number" />
+                    </label>
+                    <label className={labelClassName()}>
+                      Cost to move in
+                      <input className={fieldClassName()} name="moveInCost" placeholder="$600 intake fee" />
+                    </label>
+                    <label className={labelClassName()}>
+                      Wheelchair accessible bed count
+                      <input className={fieldClassName()} min="0" name="wheelchairAccessibleBeds" type="number" />
+                    </label>
+                  </div>
                   <label className={labelClassName()}>
-                    Price per week
-                    <input className={fieldClassName()} min="0" name="pricePerWeek" type="number" />
-                  </label>
-                  <label className={labelClassName()}>
-                    Cost to move in
-                    <input className={fieldClassName()} name="moveInCost" placeholder="$600 intake fee" />
-                  </label>
-                  <label className={labelClassName()}>
-                    Wheelchair accessible bed count
-                    <input className={fieldClassName()} min="0" name="wheelchairAccessibleBeds" type="number" />
+                    Reserved beds notes
+                    <textarea className={textareaClassName()} name="bedsReservedNotes" />
                   </label>
                 </div>
-                <label className={labelClassName()}>
-                  Reserved beds notes
-                  <textarea className={textareaClassName()} name="bedsReservedNotes" />
-                </label>
 
-                <div className="border-t border-border pt-5">
+                <div className="admin-profile-type-section admin-profile-type-section--continued-care border-t border-border pt-5">
                   <div className="grid gap-2">
                     <p className="text-sm font-semibold">Continued care availability</p>
                     <p className="text-xs leading-5 text-muted-foreground">
@@ -273,14 +275,18 @@ export default async function AdminCreateProfilePage() {
                   Referral fit notes
                   <textarea className={textareaClassName("lg")} name="referralFitNotes" />
                 </label>
-                <label className={labelClassName()}>
-                  Referral process
-                  <textarea className={textareaClassName("lg")} name="referralProcessDescription" />
-                </label>
+                <div className="admin-profile-type-section admin-profile-type-section--continued-care">
+                  <label className={labelClassName()}>
+                    Referral process
+                    <textarea className={textareaClassName("lg")} name="referralProcessDescription" />
+                  </label>
+                </div>
                 <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={specialtyPopulationOptions} />
                 <CheckboxGroup label="Certifications held" name="certificationsHeld" options={certificationOptions} />
                 <CheckboxGroup label="Support services" name="supportServices" options={supportServiceOptions} />
-                <CheckboxGroup label="Amenities" name="amenities" options={amenityOptions} />
+                <div className="admin-profile-type-section admin-profile-type-section--sober-living">
+                  <CheckboxGroup label="Amenities" name="amenities" options={amenityOptions} />
+                </div>
                 <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={insuranceOptions} />
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className={labelClassName()}>
@@ -319,10 +325,12 @@ export default async function AdminCreateProfilePage() {
                     ))}
                   </select>
                 </label>
-                <label className="ac-panel-card flex items-start gap-3 p-4 text-sm">
-                  <input name="goodNeighborPolicyAcknowledged" type="checkbox" value="yes" />
-                  Good Neighbor Policy acknowledged
-                </label>
+                <div className="admin-profile-type-section admin-profile-type-section--sober-living">
+                  <label className="ac-panel-card flex items-start gap-3 p-4 text-sm">
+                    <input name="goodNeighborPolicyAcknowledged" type="checkbox" value="yes" />
+                    Good Neighbor Policy acknowledged
+                  </label>
+                </div>
               </div>
             </Card>
           </form>

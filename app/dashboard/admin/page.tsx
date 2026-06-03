@@ -877,6 +877,7 @@ export default async function AdminDashboardPage({
                   <th className="py-3 pr-4">Availability</th>
                   <th className="py-3 pr-4">Requests</th>
                   <th className="py-3 pr-4">Updated</th>
+                  <th className="py-3 pr-4">Manage</th>
                 </tr>
               </thead>
               <tbody>
@@ -899,10 +900,18 @@ export default async function AdminDashboardPage({
                     <td className="py-4 pr-4">{availabilityText(profile)}</td>
                     <td className="py-4 pr-4">{profile._count.referrals + profile._count.leads}</td>
                     <td className="py-4 pr-4 text-muted-foreground">{formatDate(profile.updatedAt)}</td>
+                    <td className="py-4 pr-4">
+                      <Link
+                        className="focus-ring inline-flex min-h-9 items-center rounded-full border border-border bg-white px-3 text-xs font-semibold shadow-sm transition hover:border-primary/40"
+                        href={`/dashboard/admin/profiles/${profile.id}/images`}
+                      >
+                        Images
+                      </Link>
+                    </td>
                   </tr>
                 )) : (
                   <tr>
-                    <td className="py-8 text-center text-sm text-muted-foreground" colSpan={7}>
+                    <td className="py-8 text-center text-sm text-muted-foreground" colSpan={8}>
                       No homes or programs found.
                     </td>
                   </tr>

@@ -491,9 +491,9 @@ export default async function PublicProfilePage({
                     </>
                   ) : null}
                   {profile.moveInCost ? (
-                    <p className="mt-1 text-sm font-medium text-muted-foreground">
-                      Move-in: {profile.moveInCost}
-                    </p>
+                    <span className="mt-2 inline-flex min-h-8 items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-800">
+                      {profile.moveInCost}
+                    </span>
                   ) : null}
                 </div>
               ) : null}

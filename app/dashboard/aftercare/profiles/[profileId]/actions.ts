@@ -22,12 +22,29 @@ function nullableText(value: FormDataEntryValue | null) {
   return text || null;
 }
 
-function numberFromForm(value: FormDataEntryValue | null) {
-  if (value === null || value === "") {
+function currencyText(value: FormDataEntryValue | null) {
+  return String(value || "").replace(/^\s*\$\s*/, "").trim();
+}
+
+function moveInCostText(value: FormDataEntryValue | null) {
+  const text = currencyText(value);
+  const match = text.match(/^\d+/);
+
+  if (!match) {
     return null;
   }
 
-  const parsed = Number(value);
+  return `$${match[0]}`;
+}
+
+function numberFromForm(value: FormDataEntryValue | null) {
+  const text = currencyText(value);
+
+  if (!text) {
+    return null;
+  }
+
+  const parsed = Number(text);
   return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null;
 }
 
@@ -222,7 +239,7 @@ export async function updateAftercareProfileDetails(formData: FormData) {
         bedsLgbtqAvailable,
         bedsAvailableUpdatedAt: new Date(),
         pricePerWeek: numberFromForm(formData.get("pricePerWeek")),
-        moveInCost: nullableText(formData.get("moveInCost")),
+        moveInCost: moveInCostText(formData.get("moveInCost")),
         wheelchairAccessibleBeds: numberFromForm(formData.get("wheelchairAccessibleBeds")),
         roomTypes: valuesFromForm(formData, "roomTypes"),
         bedTypes: valuesFromForm(formData, "bedTypes"),
@@ -293,7 +310,7 @@ export async function updateAftercareProfileAvailability(formData: FormData) {
         bedsLgbtqAvailable,
         bedsAvailableUpdatedAt: new Date(),
         pricePerWeek: numberFromForm(formData.get("pricePerWeek")),
-        moveInCost: nullableText(formData.get("moveInCost")),
+        moveInCost: moveInCostText(formData.get("moveInCost")),
         wheelchairAccessibleBeds: numberFromForm(formData.get("wheelchairAccessibleBeds")),
         roomTypes: valuesFromForm(formData, "roomTypes"),
         bedTypes: valuesFromForm(formData, "bedTypes"),

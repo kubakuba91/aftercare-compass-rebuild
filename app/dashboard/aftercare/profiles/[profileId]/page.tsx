@@ -59,12 +59,26 @@ function fieldClassName() {
   return "min-h-11 rounded-md border border-border bg-white px-3 text-sm";
 }
 
+function moneyFieldClassName() {
+  return "flex min-h-11 items-center rounded-md border border-border bg-white px-3 text-sm focus-within:ring-2 focus-within:ring-ring";
+}
+
+function moneyInputClassName() {
+  return "min-h-10 flex-1 border-0 bg-transparent px-2 text-sm outline-none";
+}
+
 function labelClassName() {
   return "grid gap-2 text-sm font-medium";
 }
 
 function textValue(value: string | null | undefined) {
   return value ?? "";
+}
+
+function moneyValue(value: string | number | null | undefined) {
+  const text = String(value ?? "").replace(/^\s*\$\s*/, "").trim();
+  const match = text.match(/^\d+/);
+  return match?.[0] ?? "";
 }
 
 function selectedPopulation(values?: string[] | null, legacyValue?: string | null) {
@@ -368,11 +382,17 @@ export default async function AftercareProfileDetailPage({
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className={labelClassName()}>
                       Price per week
-                      <input className={fieldClassName()} defaultValue={profile.pricePerWeek ?? ""} min="0" name="pricePerWeek" type="number" />
+                      <span className={moneyFieldClassName()}>
+                        <span className="font-semibold text-muted-foreground">$</span>
+                        <input className={moneyInputClassName()} defaultValue={moneyValue(profile.pricePerWeek)} inputMode="numeric" min="0" name="pricePerWeek" type="number" />
+                      </span>
                     </label>
                     <label className={labelClassName()}>
                       Cost to move in
-                      <input className={fieldClassName()} defaultValue={profile.moveInCost ?? ""} name="moveInCost" placeholder="$600 intake fee" />
+                      <span className={moneyFieldClassName()}>
+                        <span className="font-semibold text-muted-foreground">$</span>
+                        <input className={moneyInputClassName()} defaultValue={moneyValue(profile.moveInCost)} inputMode="numeric" min="0" name="moveInCost" placeholder="600" type="number" />
+                      </span>
                     </label>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">

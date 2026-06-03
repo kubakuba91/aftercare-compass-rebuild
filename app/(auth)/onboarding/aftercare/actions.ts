@@ -48,6 +48,21 @@ function jsonDraft(value: Record<string, unknown>) {
   return value as Prisma.InputJsonValue;
 }
 
+function currencyText(value: FormDataEntryValue | null) {
+  return String(value || "").replace(/^\s*\$\s*/, "").trim();
+}
+
+function moveInCostText(value: string | FormDataEntryValue | null | undefined) {
+  const text = String(value || "").replace(/^\s*\$\s*/, "").trim();
+  const match = text.match(/^\d+/);
+
+  if (!match) {
+    return null;
+  }
+
+  return `$${match[0]}`;
+}
+
 function arrayFromDraft(value: unknown) {
   return Array.isArray(value) ? value.map(String) : [];
 }
@@ -277,7 +292,7 @@ async function upsertSoberLivingDraftProfile(
       wheelchairAccessibleBeds:
         draftData.wheelchairAccessibleBeds === null ? null : Number(draftData.wheelchairAccessibleBeds || 0),
       pricePerWeek: draftData.pricePerWeek === undefined ? null : Number(draftData.pricePerWeek || 0),
-      moveInCost: nullableText(String(draftData.moveInCost || "")),
+      moveInCost: moveInCostText(String(draftData.moveInCost || "")),
       supportServices: arrayFromDraft(draftData.supportServices),
       amenities: arrayFromDraft(draftData.amenities),
       insuranceAccepted: arrayFromDraft(draftData.insuranceAccepted),
@@ -480,8 +495,8 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         bedsReservedNotes: formData.get("bedsReservedNotes") || undefined,
         wheelchairAccessible: formData.get("wheelchairAccessible"),
         wheelchairAccessibleBeds: formData.get("wheelchairAccessibleBeds") || undefined,
-        pricePerWeek: formData.get("pricePerWeek") || undefined,
-        moveInCost: formData.get("moveInCost") || undefined
+        pricePerWeek: currencyText(formData.get("pricePerWeek")) || undefined,
+        moveInCost: currencyText(formData.get("moveInCost")) || undefined
       });
 
       const totalBeds = parsed.bedsMen + parsed.bedsWomen + parsed.bedsLgbtq;
@@ -506,7 +521,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             wheelchairAccessibleBeds:
               parsed.wheelchairAccessible === "yes" ? parsed.wheelchairAccessibleBeds ?? 0 : null,
             pricePerWeek: parsed.pricePerWeek,
-            moveInCost: nullableText(parsed.moveInCost)
+            moveInCost: moveInCostText(parsed.moveInCost)
           })),
           selectedAccountType: "sober_living",
           activeStep: 3,
@@ -645,7 +660,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             wheelchairAccessibleBeds:
               finalDraft.wheelchairAccessibleBeds === null ? null : Number(finalDraft.wheelchairAccessibleBeds || 0),
             pricePerWeek: finalDraft.pricePerWeek === undefined ? null : Number(finalDraft.pricePerWeek || 0),
-            moveInCost: nullableText(String(finalDraft.moveInCost || "")),
+            moveInCost: moveInCostText(String(finalDraft.moveInCost || "")),
             supportServices: arrayFromDraft(finalDraft.supportServices),
             amenities: arrayFromDraft(finalDraft.amenities),
             insuranceAccepted: arrayFromDraft(finalDraft.insuranceAccepted),

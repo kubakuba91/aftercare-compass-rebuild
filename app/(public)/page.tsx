@@ -40,11 +40,11 @@ export default async function HomePage() {
 
             <div className="relative max-w-3xl px-6 py-20 md:px-20 md:py-28">
               <h1 className="text-4xl font-semibold leading-tight tracking-normal text-white md:text-6xl">
-                Navigate Recovery Together
+                Close the gap. Change the outcome.
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-white">
-                Find sober living homes and continued care programs with referral-ready
-                availability, privacy-safe profiles, and simple next steps for connection.
+                Finding the right next step for your client shouldn&apos;t take the whole day. Aftercare Compass connects your
+                team with real-time availability across every level of aftercare — for the next chapter in their journey.
               </p>
 
               <form action="/search" className="mt-8 grid max-w-4xl gap-3">

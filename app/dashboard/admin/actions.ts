@@ -53,12 +53,29 @@ function nullableText(value: FormDataEntryValue | null) {
   return text || null;
 }
 
-function numberFromForm(value: FormDataEntryValue | null) {
-  if (value === null || value === "") {
+function currencyText(value: FormDataEntryValue | null) {
+  return String(value || "").replace(/^\s*\$\s*/, "").trim();
+}
+
+function moveInCostText(value: FormDataEntryValue | null) {
+  const text = currencyText(value);
+  const match = text.match(/^\d+/);
+
+  if (!match) {
     return null;
   }
 
-  const parsed = Number(value);
+  return `$${match[0]}`;
+}
+
+function numberFromForm(value: FormDataEntryValue | null) {
+  const text = currencyText(value);
+
+  if (!text) {
+    return null;
+  }
+
+  const parsed = Number(text);
   return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null;
 }
 
@@ -222,7 +239,7 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
             bedsReservedNotes: nullableText(formData.get("bedsReservedNotes")),
             wheelchairAccessibleBeds: numberFromForm(formData.get("wheelchairAccessibleBeds")),
             pricePerWeek: numberFromForm(formData.get("pricePerWeek")),
-            moveInCost: nullableText(formData.get("moveInCost"))
+            moveInCost: moveInCostText(formData.get("moveInCost"))
           }),
       ...(coordinates ?? {})
     }
@@ -262,6 +279,192 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
 
 function profileLabelForMessage(type: ProfileType) {
   return type === ProfileType.sober_living ? "sober living" : "continued care";
+}
+
+export async function updateAdminProfileStatus(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const profileId = String(formData.get("profileId") || "");
+  const requestedStatus = String(formData.get("status") || "");
+
+  if (
+    !profileId ||
+    (requestedStatus !== ProfileStatus.unpublished && requestedStatus !== ProfileStatus.draft)
+  ) {
+    redirect(adminProfileHref("Choose a valid listing action."));
+  }
+
+  const profile = await prisma.aftercareProfile.findUnique({
+    where: { id: profileId },
+    select: {
+      id: true,
+      programName: true,
+      slug: true,
+      status: true
+    }
+  });
+
+  if (!profile) {
+    redirect(adminProfileHref("Listing was not found."));
+  }
+
+  const status =
+    requestedStatus === ProfileStatus.unpublished ? ProfileStatus.unpublished : ProfileStatus.draft;
+
+  await prisma.aftercareProfile.update({
+    where: { id: profile.id },
+    data: {
+      status,
+      publishedAt: null,
+      unpublishedAt: status === ProfileStatus.unpublished ? new Date() : null,
+      unpublishedByUserId: status === ProfileStatus.unpublished ? appUser.id : null
+    }
+  });
+
+  await prisma.adminAuditLog.create({
+    data: {
+      actorUserId: appUser.id,
+      action: status === ProfileStatus.unpublished ? "profile_unpublished" : "profile_restored_to_draft",
+      entityType: "AftercareProfile",
+      entityId: profile.id,
+      metadata: {
+        previousStatus: profile.status,
+        nextStatus: status,
+        profileName: profile.programName
+      }
+    }
+  });
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+
+  redirect(
+    adminProfileHref(
+      status === ProfileStatus.unpublished
+        ? `${profile.programName} was unpublished.`
+        : `${profile.programName} was restored as a draft.`
+    )
+  );
+}
+
+export async function updateAdminAftercareProfile(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const profileId = String(formData.get("profileId") || "");
+  const programName = String(formData.get("programName") || "").trim();
+  const city = String(formData.get("city") || "").trim();
+  const state = String(formData.get("state") || "").trim();
+
+  if (!profileId || !programName || !city || !state) {
+    redirect(adminProfileHref("Program name, city, and state are required."));
+  }
+
+  const profile = await prisma.aftercareProfile.findUnique({
+    where: { id: profileId },
+    select: {
+      id: true,
+      type: true,
+      slug: true,
+      programName: true,
+      status: true
+    }
+  });
+
+  if (!profile) {
+    redirect(adminProfileHref("Listing was not found."));
+  }
+
+  const requestedStatus = String(formData.get("status") || "");
+  const status =
+    requestedStatus === ProfileStatus.draft
+      ? ProfileStatus.draft
+      : requestedStatus === ProfileStatus.unpublished
+        ? ProfileStatus.unpublished
+        : ProfileStatus.published;
+
+  const streetAddress = nullableText(formData.get("streetAddress"));
+  const zip = nullableText(formData.get("zip"));
+  const coordinates = await geocodeProfileAddress({
+    idSeed: profile.slug,
+    streetAddress,
+    city,
+    state,
+    zip
+  });
+
+  const updatedProfile = await prisma.aftercareProfile.update({
+    where: { id: profile.id },
+    data: {
+      programName,
+      streetAddress,
+      city,
+      state,
+      zip,
+      publicCity: city,
+      publicState: state,
+      admissionsContactPhone: nullableText(formData.get("admissionsContactPhone")),
+      admissionsContactEmail: nullableText(formData.get("admissionsContactEmail")),
+      websiteUrl: nullableText(formData.get("websiteUrl")),
+      description: sanitizeRichText(String(formData.get("description") || "")) || null,
+      availabilityNotes: nullableText(formData.get("availabilityNotes")),
+      status,
+      publishedAt: status === ProfileStatus.published ? new Date() : null,
+      unpublishedAt: status === ProfileStatus.unpublished ? new Date() : null,
+      unpublishedByUserId: status === ProfileStatus.unpublished ? appUser.id : null,
+      ...(profile.type === ProfileType.continued_care
+        ? {
+            acceptingNewPatients: formData.get("acceptingNewPatients") === "yes",
+            acceptingNewPatientsUpdatedAt: new Date()
+          }
+        : {
+            pricePerWeek: numberFromForm(formData.get("pricePerWeek")),
+            moveInCost: moveInCostText(formData.get("moveInCost"))
+          }),
+      ...(coordinates ?? {})
+    }
+  });
+
+  const imageFiles = imagesFromFormData(formData);
+  let imageUploadMessage = "";
+
+  if (imageFiles.length) {
+    try {
+      const uploadedCount = await uploadProfileImagesForProfile(updatedProfile, imageFiles);
+      imageUploadMessage = ` ${uploadedCount} image${uploadedCount === 1 ? "" : "s"} uploaded.`;
+    } catch (error) {
+      imageUploadMessage = ` Image upload failed: ${error instanceof Error ? error.message : "Unknown upload error."}`;
+    }
+  }
+
+  await prisma.adminAuditLog.create({
+    data: {
+      actorUserId: appUser.id,
+      action: "profile_updated",
+      entityType: "AftercareProfile",
+      entityId: profile.id,
+      metadata: {
+        previousStatus: profile.status,
+        nextStatus: status,
+        previousName: profile.programName,
+        nextName: programName
+      }
+    }
+  });
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+
+  redirect(adminProfileHref(`${programName} was updated.${imageUploadMessage}`));
 }
 
 export async function reviewOnboardingSubmission(formData: FormData) {

@@ -129,7 +129,7 @@ export default async function AftercareOnboardingImagesPage({
             Manage profile
           </Link>
           <Link
-            className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#121b57] px-5 text-sm font-semibold text-white shadow-sm"
+            className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#121b57] px-5 text-sm font-semibold text-white shadow-sm [&_svg]:text-white"
             href="/dashboard/aftercare"
           >
             <CheckCircle2 size={16} />

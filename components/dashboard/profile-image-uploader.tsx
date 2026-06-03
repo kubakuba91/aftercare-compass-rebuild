@@ -283,11 +283,18 @@ export function ProfileImageUploader({
         </button>
       </div>
 
-      <p className="text-xs leading-5 text-muted-foreground">{galleryLimitText}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex min-h-8 items-center rounded-full border border-primary/20 bg-primary/10 px-3 text-xs font-semibold text-primary">
+          {galleryLimitText}
+        </span>
+        {!canSelectMoreImages ? (
+          <span className="inline-flex min-h-8 items-center rounded-full border border-accent/30 bg-accent/10 px-3 text-xs font-semibold text-foreground">
+            Remove a photo or upgrade to add more.
+          </span>
+        ) : null}
+      </div>
       {!canSelectMoreImages ? (
-        <p className="text-xs leading-5 text-muted-foreground">
-          Remove a photo or upgrade to add more.
-        </p>
+        <p className="sr-only">Remove a photo or upgrade to add more.</p>
       ) : null}
 
       {isOpen ? (

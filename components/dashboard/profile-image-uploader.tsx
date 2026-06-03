@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, UploadCloud, X } from "lucide-react";
 
 type PreparedImage = {
   id: string;
@@ -104,6 +104,7 @@ export function ProfileImageUploader({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [images, setImages] = useState<PreparedImage[]>([]);
   const [error, setError] = useState("");
   const hasUnlimitedPhotos = photoLimit === "unlimited";
@@ -218,6 +219,23 @@ export function ProfileImageUploader({
     }
   }
 
+  function openPicker() {
+    setIsOpen(true);
+    setError("");
+  }
+
+  function closePicker() {
+    setIsOpen(false);
+  }
+
+  function handleDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    if (!canSelectMoreImages || isOptimizing) {
+      return;
+    }
+    prepareFiles(event.dataTransfer.files);
+  }
+
   function removePreparedImage(imageId: string) {
     setImages((currentImages) => {
       const nextImages = currentImages.filter((image) => image.id !== imageId);
@@ -234,24 +252,37 @@ export function ProfileImageUploader({
 
   return (
     <div className="grid gap-3">
-      <label className="grid gap-2 text-sm font-medium">
-        Add images
-        <input
-          ref={inputRef}
-          accept="image/*"
-          className="min-h-11 rounded-md border border-border bg-white px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={!canSelectMoreImages || isOptimizing}
-          form={inputFormId}
-          multiple
-          name="images"
-          onChange={(event) => prepareFiles(event.currentTarget.files)}
-          type="file"
-        />
-      </label>
+      <input
+        ref={inputRef}
+        accept="image/*"
+        className="sr-only"
+        disabled={!canSelectMoreImages || isOptimizing}
+        form={inputFormId}
+        multiple
+        name="images"
+        onChange={(event) => prepareFiles(event.currentTarget.files)}
+        type="file"
+      />
 
-      <p className="text-xs leading-5 text-muted-foreground">
-        Images are optimized in your browser before upload. Upload photos up to {formatFileSize(maxOriginalImageSize)}; large photos are resized to 1600px max and saved as lightweight WebP when possible.
-      </p>
+      <div className="rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-6 text-center">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-white text-primary shadow-sm">
+          <ImagePlus size={26} />
+        </div>
+        <h3 className="mt-4 text-lg font-semibold">Add profile photos</h3>
+        <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+          Choose photos, preview them, then upload. Large photos are optimized before they are saved.
+        </p>
+        <button
+          className="focus-ring mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#121b57] px-5 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!canSelectMoreImages || isOptimizing}
+          onClick={openPicker}
+          type="button"
+        >
+          <ImagePlus size={17} />
+          Add Photos
+        </button>
+      </div>
+
       <p className="text-xs leading-5 text-muted-foreground">{galleryLimitText}</p>
       {!canSelectMoreImages ? (
         <p className="text-xs leading-5 text-muted-foreground">
@@ -259,58 +290,126 @@ export function ProfileImageUploader({
         </p>
       ) : null}
 
-      {isOptimizing ? (
-        <div className="ac-panel-card p-3 text-sm font-semibold">
-          Optimizing images...
-        </div>
-      ) : null}
+      {isOpen ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/45 px-4 py-6"
+          role="dialog"
+        >
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-hidden rounded-lg border border-border bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+              <div>
+                <h3 className="text-xl font-semibold">Upload profile photos</h3>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  Drag and drop photos, or browse from your device.
+                </p>
+              </div>
+              <button
+                aria-label="Close photo upload"
+                className="focus-ring inline-flex size-9 items-center justify-center rounded-md border border-border"
+                onClick={closePicker}
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            </div>
 
-      {error ? (
-        <div className="rounded-md border border-accent/30 bg-accent/10 p-3 text-sm font-semibold">
-          {error}
-        </div>
-      ) : null}
-
-      {images.length ? (
-        <div className="grid gap-3 md:grid-cols-3">
-          {images.map((image) => (
-            <div key={image.id} className="overflow-hidden rounded-md border border-border bg-white">
-              {/* eslint-disable-next-line @next/next/no-img-element -- Blob previews cannot be optimized by next/image. */}
-              <img
-                alt=""
-                className="aspect-[4/3] w-full object-cover"
-                src={image.previewUrl}
-              />
-              <div className="grid gap-2 p-2 text-xs leading-5 text-muted-foreground">
-                <div>
-                  <p>{image.file.name}</p>
-                  <p>
-                    {formatFileSize(image.originalSize)} to {formatFileSize(image.file.size)}
-                  </p>
+            <div className="max-h-[62vh] overflow-y-auto px-5 py-5">
+              <div
+                className="rounded-lg border-2 border-dashed border-primary/35 bg-primary/5 p-8 text-center"
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={handleDrop}
+              >
+                <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-white text-primary shadow-sm">
+                  <UploadCloud size={30} />
                 </div>
+                <p className="mt-4 text-lg font-semibold">Drag and drop</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Upload photos up to {formatFileSize(maxOriginalImageSize)}. Large photos are resized automatically.
+                </p>
                 <button
-                  className="focus-ring inline-flex min-h-8 w-fit items-center gap-1 rounded-md border border-border px-2 font-semibold text-destructive"
-                  onClick={() => removePreparedImage(image.id)}
+                  className="focus-ring mt-5 inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-white px-5 text-sm font-semibold shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!canSelectMoreImages || isOptimizing}
+                  onClick={() => inputRef.current?.click()}
                   type="button"
                 >
-                  <X size={14} />
-                  Remove
+                  Browse
                 </button>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
 
-      {showSubmitButton ? (
-        <button
-          className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 md:w-fit"
-          disabled={isOptimizing || isOverPhotoLimit}
-          form={inputFormId}
-        >
-          <ImagePlus size={16} />
-          Upload images
-        </button>
+              {isOptimizing ? (
+                <div className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-sm font-semibold">
+                  Optimizing images...
+                </div>
+              ) : null}
+
+              {error ? (
+                <div className="mt-4 rounded-md border border-accent/30 bg-accent/10 p-3 text-sm font-semibold">
+                  {error}
+                </div>
+              ) : null}
+
+              {images.length ? (
+                <div className="mt-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold">
+                      {images.length} selected photo{images.length === 1 ? "" : "s"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{galleryLimitText}</p>
+                  </div>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    {images.map((image) => (
+                      <div key={image.id} className="overflow-hidden rounded-md border border-border bg-white">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- Blob previews cannot be optimized by next/image. */}
+                        <img
+                          alt=""
+                          className="aspect-[4/3] w-full object-cover"
+                          src={image.previewUrl}
+                        />
+                        <div className="grid gap-2 p-3 text-xs leading-5 text-muted-foreground">
+                          <div>
+                            <p className="truncate font-semibold text-foreground">{image.file.name}</p>
+                            <p>
+                              {formatFileSize(image.originalSize)} to {formatFileSize(image.file.size)}
+                            </p>
+                          </div>
+                          <button
+                            className="focus-ring inline-flex min-h-8 w-fit items-center gap-1 rounded-md border border-border px-2 font-semibold text-destructive"
+                            onClick={() => removePreparedImage(image.id)}
+                            type="button"
+                          >
+                            <X size={14} />
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-border bg-white px-5 py-4 sm:flex-row sm:justify-end">
+              <button
+                className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-white px-5 text-sm font-semibold shadow-sm"
+                onClick={closePicker}
+                type="button"
+              >
+                Cancel
+              </button>
+              {showSubmitButton ? (
+                <button
+                  className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#121b57] px-5 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={isOptimizing || isOverPhotoLimit || !images.length}
+                  form={inputFormId}
+                >
+                  <UploadCloud size={16} />
+                  Upload
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

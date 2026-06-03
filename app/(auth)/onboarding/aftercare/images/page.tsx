@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { ArrowRight, CheckCircle2, ImagePlus, Sparkles } from "lucide-react";
 import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
@@ -30,6 +31,9 @@ export default async function AftercareOnboardingImagesPage({
       },
       _count: {
         select: { images: true }
+      },
+      images: {
+        orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }]
       }
     }
   });
@@ -77,6 +81,44 @@ export default async function AftercareOnboardingImagesPage({
             <input name="profileId" type="hidden" value={profile.id} />
             <ProfileImageUploader currentImageCount={profile._count.images} photoLimit={photoLimit} />
           </form>
+        </Card>
+
+        <Card className="overflow-hidden p-0">
+          <div className="border-b border-border bg-white px-5 py-4">
+            <h2 className="text-lg font-semibold">Uploaded photos</h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              These photos are saved to the profile.
+            </p>
+          </div>
+          <div className="p-5">
+            {profile.images.length ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {profile.images.map((image) => (
+                  <div key={image.id} className="overflow-hidden rounded-md border border-border bg-white">
+                    <div className="relative aspect-[4/3] bg-muted">
+                      <Image
+                        alt={image.altText || profile.programName}
+                        className="object-cover"
+                        fill
+                        sizes="(min-width: 768px) 360px, 100vw"
+                        src={image.url}
+                        unoptimized
+                      />
+                      {image.isCover ? (
+                        <Badge className="absolute left-3 top-3" tone="verified">
+                          Cover
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-md border border-dashed border-border bg-muted/30 p-5 text-center text-sm text-muted-foreground">
+                No photos uploaded yet.
+              </div>
+            )}
+          </div>
         </Card>
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">

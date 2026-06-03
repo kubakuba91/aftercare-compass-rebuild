@@ -14,7 +14,7 @@ import {
 } from "@prisma/client";
 import { notifyProfileClaimApproved, notifyProfileClaimRejected } from "@/lib/email-notifications";
 import { geocodeProfileAddress } from "@/lib/geocoding";
-import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
+import { imagesFromFormData, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { valuesFromForm } from "@/lib/sober-living-onboarding";
@@ -46,17 +46,6 @@ function adminProfileHref(message: string) {
   });
 
   return `/dashboard/admin?${params.toString()}`;
-}
-
-function adminProfileImagesHref(profileId: string, message?: string) {
-  const params = new URLSearchParams();
-
-  if (message) {
-    params.set("message", message);
-  }
-
-  const query = params.toString();
-  return `/dashboard/admin/profiles/${profileId}/images${query ? `?${query}` : ""}`;
 }
 
 function nullableText(value: FormDataEntryValue | null) {
@@ -239,6 +228,18 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
     }
   });
 
+  const imageFiles = imagesFromFormData(formData);
+  let imageUploadMessage = "";
+
+  if (imageFiles.length) {
+    try {
+      const uploadedCount = await uploadProfileImagesForProfile(profile, imageFiles);
+      imageUploadMessage = ` ${uploadedCount} image${uploadedCount === 1 ? "" : "s"} uploaded.`;
+    } catch (error) {
+      imageUploadMessage = ` Image upload failed: ${error instanceof Error ? error.message : "Unknown upload error."}`;
+    }
+  }
+
   await prisma.adminAuditLog.create({
     data: {
       actorUserId: appUser.id,
@@ -256,129 +257,7 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
   revalidatePath("/dashboard/admin");
   revalidatePath("/search");
   revalidatePath(`/profiles/${profile.slug}`);
-  redirect(adminProfileHref(`${profile.programName} was added as an unclaimed ${profileLabelForMessage(type)} profile.`));
-}
-
-export async function uploadAdminProfileImages(formData: FormData) {
-  const appUser = await getProtectedAppUser("/dashboard/admin");
-
-  if (appUser.role !== Role.system_admin) {
-    redirect("/dashboard");
-  }
-
-  const profileId = String(formData.get("profileId") || "");
-  const profile = await prisma.aftercareProfile.findUnique({
-    where: { id: profileId },
-    select: {
-      id: true,
-      orgId: true,
-      programName: true,
-      slug: true
-    }
-  });
-
-  if (!profile) {
-    redirect(adminProfileHref("Profile not found."));
-  }
-
-  const files = imagesFromFormData(formData);
-
-  if (!files.length) {
-    redirect(adminProfileImagesHref(profile.id, "Choose at least one image to upload."));
-  }
-
-  let uploadedCount = 0;
-
-  try {
-    uploadedCount = await uploadProfileImagesForProfile(profile, files);
-  } catch (error) {
-    redirect(adminProfileImagesHref(profile.id, error instanceof Error ? error.message : "Image upload failed."));
-  }
-
-  revalidatePath("/dashboard/admin");
-  revalidatePath(adminProfileImagesHref(profile.id));
-  revalidatePath("/search");
-  revalidatePath(`/profiles/${profile.slug}`);
-  redirect(adminProfileImagesHref(profile.id, `${uploadedCount} image${uploadedCount === 1 ? "" : "s"} uploaded.`));
-}
-
-export async function setAdminProfileCoverImage(formData: FormData) {
-  const appUser = await getProtectedAppUser("/dashboard/admin");
-
-  if (appUser.role !== Role.system_admin) {
-    redirect("/dashboard");
-  }
-
-  const profileId = String(formData.get("profileId") || "");
-  const imageId = String(formData.get("imageId") || "");
-  const profile = await prisma.aftercareProfile.findUnique({
-    where: { id: profileId },
-    select: { id: true, slug: true }
-  });
-
-  if (!profile) {
-    redirect(adminProfileHref("Profile not found."));
-  }
-
-  const image = await prisma.profileImage.findFirst({
-    where: {
-      id: imageId,
-      profileId: profile.id
-    },
-    select: { id: true }
-  });
-
-  if (!image) {
-    redirect(adminProfileImagesHref(profile.id, "Image not found."));
-  }
-
-  await prisma.$transaction([
-    prisma.profileImage.updateMany({
-      where: { profileId: profile.id },
-      data: { isCover: false }
-    }),
-    prisma.profileImage.update({
-      where: { id: image.id },
-      data: { isCover: true }
-    })
-  ]);
-
-  revalidatePath("/dashboard/admin");
-  revalidatePath(adminProfileImagesHref(profile.id));
-  revalidatePath("/search");
-  revalidatePath(`/profiles/${profile.slug}`);
-  redirect(adminProfileImagesHref(profile.id, "Cover image updated."));
-}
-
-export async function removeAdminProfileImage(formData: FormData) {
-  const appUser = await getProtectedAppUser("/dashboard/admin");
-
-  if (appUser.role !== Role.system_admin) {
-    redirect("/dashboard");
-  }
-
-  const profileId = String(formData.get("profileId") || "");
-  const imageId = String(formData.get("imageId") || "");
-  const profile = await prisma.aftercareProfile.findUnique({
-    where: { id: profileId },
-    select: { id: true, slug: true }
-  });
-
-  if (!profile) {
-    redirect(adminProfileHref("Profile not found."));
-  }
-
-  const removed = await removeProfileImageForProfile(profile.id, imageId);
-
-  if (!removed) {
-    redirect(adminProfileImagesHref(profile.id, "Image not found."));
-  }
-
-  revalidatePath("/dashboard/admin");
-  revalidatePath(adminProfileImagesHref(profile.id));
-  revalidatePath("/search");
-  revalidatePath(`/profiles/${profile.slug}`);
-  redirect(adminProfileImagesHref(profile.id, "Image removed."));
+  redirect(adminProfileHref(`${profile.programName} was added as an unclaimed ${profileLabelForMessage(type)} profile.${imageUploadMessage}`));
 }
 
 function profileLabelForMessage(type: ProfileType) {

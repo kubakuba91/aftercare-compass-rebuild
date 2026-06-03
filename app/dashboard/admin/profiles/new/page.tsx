@@ -113,7 +113,7 @@ export default async function AdminCreateProfilePage({
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_360px]">
         <section>
-          <form action={createUnclaimedAftercareProfile} className="admin-create-profile-form grid gap-5" id="admin-create-profile-form">
+          <form action={createUnclaimedAftercareProfile} className="admin-create-profile-form grid gap-5" encType="multipart/form-data" id="admin-create-profile-form">
             <Card className="overflow-hidden p-0" id="basics">
               <SectionIntro title="Program basics">
                 Public identity, listing type, location, and admissions contact information.
@@ -341,6 +341,29 @@ export default async function AdminCreateProfilePage({
                     Good Neighbor Policy acknowledged
                   </label>
                 </div>
+              </div>
+            </Card>
+
+            <Card className="overflow-hidden p-0" id="images">
+              <SectionIntro title="Profile images">
+                Optional images for public search cards and profile pages.
+              </SectionIntro>
+              <div className="grid gap-3 p-5">
+                <label className={labelClassName()}>
+                  Upload images
+                  <div className="rounded-md border border-dashed border-border bg-muted/20 p-4">
+                    <input
+                      accept="image/*"
+                      className="block w-full text-sm font-medium text-muted-foreground file:mr-4 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground"
+                      multiple
+                      name="images"
+                      type="file"
+                    />
+                  </div>
+                </label>
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Images are uploaded after the listing is created. Use image files up to 10 MB each.
+                </p>
               </div>
             </Card>
           </form>

@@ -1,17 +1,12 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
-import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
-import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recovery-card";
 import { Card } from "@/components/ui/card";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { isClerkIdentityError } from "@/lib/current-user";
-import { getAftercarePhotoLimit } from "@/lib/feature-gates";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
-import { stagedProfileImagesFromDraft } from "@/lib/profile-images";
 import { prisma } from "@/lib/prisma";
 import { richTextHtml } from "@/lib/rich-text";
 import { cn } from "@/lib/utils";
@@ -32,11 +27,7 @@ import {
   specialtyPopulationOptions,
   supportServiceOptions
 } from "@/lib/sober-living-onboarding";
-import {
-  removeSoberLivingOnboardingImage,
-  saveSoberLivingOnboardingStep,
-  uploadSoberLivingOnboardingImages
-} from "../../actions";
+import { saveSoberLivingOnboardingStep } from "../../actions";
 
 const photoReadinessOptions = ["Exterior", "Common areas", "Bedrooms", "Kitchen"];
 
@@ -227,47 +218,6 @@ export default async function SoberLivingStepPage({
   const selected = (values?: string[] | null) => values ?? [];
   const servedPopulations = selectedPopulation(profile?.populationServedOptions, profile?.populationServed);
   const videoUrls = Array.isArray(profile?.videoUrls) ? profile.videoUrls : [];
-  const onboardingProfileId = typeof profile?.profileId === "string" ? profile.profileId : "";
-  const photoUploadFormId = "sober-living-photo-upload-form";
-  const stagedImages = stagedProfileImagesFromDraft(profile?.profileImages);
-  const savedImages = onboardingProfileId
-    ? await prisma.profileImage.findMany({
-        where: {
-          profileId: onboardingProfileId,
-          profile: { orgId: draft.user.orgId ?? undefined }
-        },
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-        select: {
-          id: true,
-          altText: true,
-          isCover: true,
-          url: true
-        }
-      })
-    : [];
-  const uploadedImages = [
-    ...savedImages,
-    ...stagedImages.map((image) => ({
-      id: image.id,
-      altText: image.altText,
-      isCover: image.isCover,
-      url: image.url
-    }))
-  ];
-  let photoLimit = getAftercarePhotoLimit(undefined);
-
-  if (draft.user.orgId) {
-    try {
-      const organization = await prisma.organization.findUnique({
-        where: { id: draft.user.orgId },
-        select: { subscriptionPlan: true }
-      });
-
-      photoLimit = getAftercarePhotoLimit(organization?.subscriptionPlan);
-    } catch (error) {
-      console.error("Unable to load onboarding photo limit", error);
-    }
-  }
 
   return (
     <main className="grid min-h-screen lg:grid-cols-[320px_1fr]">
@@ -284,13 +234,6 @@ export default async function SoberLivingStepPage({
             </div>
           ) : null}
           <Card className="mt-8">
-            {currentStep === 4 ? (
-              <form
-                action={uploadSoberLivingOnboardingImages}
-                encType="multipart/form-data"
-                id={photoUploadFormId}
-              />
-            ) : null}
             <form action={action} className="grid gap-5" encType="multipart/form-data">
               {currentStep === 1 ? (
                 <>
@@ -486,49 +429,8 @@ export default async function SoberLivingStepPage({
                     Photo checklist
                     {checkboxGroup("photoReadiness", photoReadinessOptions, selected(profile?.photoReadiness))}
                   </div>
-                  <div className="grid gap-2 rounded-md border border-dashed border-border bg-muted/30 p-4 text-sm font-medium">
-                    Profile photos
-                    {onboardingProfileId ? <input name="profileId" type="hidden" value={onboardingProfileId} /> : null}
-                    {uploadedImages.length ? (
-                      <div className="grid gap-3 md:grid-cols-3">
-                        {uploadedImages.map((image) => (
-                          <div key={image.id} className="overflow-hidden rounded-md border border-border bg-white">
-                            <div className="relative aspect-[4/3] bg-muted">
-                              <Image
-                                alt={image.altText || "Profile image"}
-                                className="object-cover"
-                                fill
-                                sizes="(min-width: 1024px) 220px, 100vw"
-                                src={image.url}
-                                unoptimized
-                              />
-                              {image.isCover ? (
-                                <span className="absolute left-2 top-2 rounded-full bg-white px-2 py-1 text-xs font-semibold">
-                                  Cover
-                                </span>
-                              ) : null}
-                            </div>
-                            <div className="p-2">
-                              <ConfirmSubmitButton
-                                className="focus-ring inline-flex min-h-8 items-center rounded-md border border-border px-2 text-xs font-semibold text-destructive"
-                                formAction={removeSoberLivingOnboardingImage}
-                                formNoValidate
-                                message="Remove this photo from onboarding?"
-                                name="imageId"
-                                value={image.id}
-                              >
-                                Remove
-                              </ConfirmSubmitButton>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                    <ProfileImageUploader
-                      currentImageCount={uploadedImages.length}
-                      inputFormId={photoUploadFormId}
-                      photoLimit={photoLimit}
-                    />
+                  <div className="rounded-md border border-dashed border-border bg-muted/30 p-4 text-sm leading-6 text-muted-foreground">
+                    You will add profile images after this form is complete, once the profile has been created.
                   </div>
                   {[0, 1, 2].map((index) => (
                     <label key={index} className="grid gap-2 text-sm font-medium">

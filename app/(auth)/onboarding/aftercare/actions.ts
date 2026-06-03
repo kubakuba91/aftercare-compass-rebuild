@@ -2,20 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Prisma, ProfileStatus, ProfileType } from "@prisma/client";
+import { Prisma, ProfileStatus, ProfileType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getAftercareProfileLimit, isWithinPlanLimit } from "@/lib/feature-gates";
 import { geocodeProfileAddress } from "@/lib/geocoding";
-import {
-  imagesFromFormData,
-  removeProfileImageForProfile,
-  removeStoredProfileImage,
-  stagedProfileImagesFromDraft,
-  uploadOnboardingProfileImages,
-  uploadProfileImagesForProfile,
-  validateProfileImageFiles
-} from "@/lib/profile-images";
+import { imagesFromFormData, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
+import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { slugify } from "@/lib/slug";
@@ -59,9 +52,6 @@ function arrayFromDraft(value: unknown) {
   return Array.isArray(value) ? value.map(String) : [];
 }
 
-function stagedImagesJson(value: unknown) {
-  return stagedProfileImagesFromDraft(value).map((image) => ({ ...image }));
-}
 
 function stepRedirect(step: number, error?: string) {
   const params = new URLSearchParams();
@@ -436,6 +426,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
 
   let destination = stepRedirect(step);
   let geocodeTarget: { profileId: string; streetAddress: string; city: string; state: string; zip: string } | null = null;
+  let completedProfileId = "";
 
   try {
     const draft = await getOrCreateOnboardingDraft("sober_living", false);
@@ -706,24 +697,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             zip: String(finalDraft.zip || "")
           };
 
-          const stagedImages = stagedProfileImagesFromDraft(finalDraft.profileImages);
-
-          if (stagedImages.length) {
-            const existingImageCount = await tx.profileImage.count({
-              where: { profileId: profile.id }
-            });
-
-            await tx.profileImage.createMany({
-              data: stagedImages.map((image, index) => ({
-                profileId: profile.id,
-                url: image.url,
-                storagePath: image.storagePath,
-                altText: image.altText,
-                sortOrder: existingImageCount + index,
-                isCover: existingImageCount === 0 && index === 0
-              }))
-            });
-          }
+          completedProfileId = profile.id;
 
           await tx.onboardingDraft.update({
             where: { id: draft.id },
@@ -736,7 +710,9 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
           });
         }, onboardingTransactionOptions);
 
-        destination = "/dashboard/aftercare";
+        destination = completedProfileId
+          ? `/onboarding/aftercare/images?profileId=${completedProfileId}`
+          : "/dashboard/aftercare";
       }
     }
   } catch (error) {
@@ -751,127 +727,60 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
   redirect(destination);
 }
 
-export async function uploadSoberLivingOnboardingImages(formData: FormData) {
+export async function uploadCompletedAftercareOnboardingImages(formData: FormData) {
   if (!hasDatabaseConfig()) {
     redirect("/setup?missing=database");
   }
 
-  let destination = stepRedirect(4);
+  const appUser = await getProtectedAppUser("/onboarding/aftercare/images");
+
+  if (appUser.role !== Role.aftercare_admin && appUser.role !== Role.aftercare_manager) {
+    redirect("/dashboard");
+  }
+
+  if (!appUser.orgId) {
+    redirect("/onboarding/account-type");
+  }
+
+  const profileId = String(formData.get("profileId") || "");
+  const profile = await prisma.aftercareProfile.findFirst({
+    where: {
+      id: profileId,
+      orgId: appUser.orgId
+    },
+    select: {
+      id: true,
+      orgId: true,
+      programName: true,
+      slug: true
+    }
+  });
+
+  if (!profile) {
+    redirect("/dashboard/aftercare");
+  }
+
+  const params = new URLSearchParams({ profileId: profile.id });
 
   try {
     const files = imagesFromFormData(formData);
 
     if (!files.length) {
-      destination = stepRedirect(4, "Choose at least one image to upload.");
-    } else {
-      validateProfileImageFiles(files);
-
-      const draft = await getOrCreateOnboardingDraft("sober_living", false);
-      const currentDraft =
-        draft.soberLivingDraft && typeof draft.soberLivingDraft === "object" && !Array.isArray(draft.soberLivingDraft)
-          ? (draft.soberLivingDraft as Record<string, unknown>)
-          : {};
-      const currentImages = stagedProfileImagesFromDraft(currentDraft.profileImages);
-      const nextImages = await uploadOnboardingProfileImages({
-        draftId: draft.id,
-        altText: String(currentDraft.programName || "Profile image"),
-        currentImages,
-        files
-      });
-
-      await prisma.onboardingDraft.update({
-        where: { id: draft.id },
-        data: {
-          soberLivingDraft: jsonDraft({
-            ...currentDraft,
-            profileImages: [...stagedImagesJson(currentImages), ...stagedImagesJson(nextImages)]
-          })
-        }
-      });
-
-      revalidatePath("/onboarding/aftercare/sober-living/4");
-
-      destination = stepRedirect(4, `${nextImages.length} image${nextImages.length === 1 ? "" : "s"} uploaded.`);
+      params.set("message", "Choose at least one image to upload.");
+      redirect("/onboarding/aftercare/images?" + params.toString());
     }
+
+    const uploadedCount = await uploadProfileImagesForProfile(profile, files);
+    params.set("message", `${uploadedCount} image${uploadedCount === 1 ? "" : "s"} uploaded.`);
   } catch (error) {
-    console.error("Sober living onboarding image upload failed", error);
-    const message =
-      error instanceof Error &&
-      !error.message.includes("Timed out fetching a new connection from the connection pool")
-        ? error.message
-        : onboardingSaveErrorMessage(error);
-
-    destination = stepRedirect(4, message);
+    params.set("message", error instanceof Error ? error.message : "Image upload failed.");
   }
 
-  redirect(destination);
-}
-
-export async function removeSoberLivingOnboardingImage(formData: FormData) {
-  const profileId = String(formData.get("profileId") || "");
-  const imageId = String(formData.get("imageId") || "");
-
-  if (!imageId) {
-    redirect(stepRedirect(4, "Image not found."));
-  }
-
-  let draft: Awaited<ReturnType<typeof getOrCreateOnboardingDraft>>;
-
-  try {
-    draft = await getOrCreateOnboardingDraft("sober_living", false);
-  } catch {
-    redirect("/sign-in");
-  }
-
-  const currentDraft =
-    draft.soberLivingDraft && typeof draft.soberLivingDraft === "object" && !Array.isArray(draft.soberLivingDraft)
-      ? (draft.soberLivingDraft as Record<string, unknown>)
-      : {};
-  const stagedImages = stagedProfileImagesFromDraft(currentDraft.profileImages);
-  const stagedImage = stagedImages.find((image) => image.id === imageId);
-
-  if (stagedImage) {
-    await removeStoredProfileImage(stagedImage.storagePath);
-    await prisma.onboardingDraft.update({
-      where: { id: draft.id },
-      data: {
-        soberLivingDraft: jsonDraft({
-          ...currentDraft,
-          profileImages: stagedImagesJson(stagedImages.filter((image) => image.id !== imageId))
-        })
-      }
-    });
-
-    revalidatePath("/onboarding/aftercare/sober-living/4");
-    redirect(stepRedirect(4));
-  }
-
-  if (!profileId) {
-    redirect(stepRedirect(4, "Image not found."));
-  }
-
-  const profile = await prisma.aftercareProfile.findFirst({
-    where: {
-      id: profileId,
-      orgId: draft.user.orgId ?? undefined
-    },
-    select: {
-      id: true
-    }
-  });
-
-  if (!profile) {
-    redirect(stepRedirect(4, "Image not found."));
-  }
-
-  const removed = await removeProfileImageForProfile(profile.id, imageId);
-
-  if (!removed) {
-    redirect(stepRedirect(4, "Image not found."));
-  }
-
-  revalidatePath("/onboarding/aftercare/sober-living/4");
-  redirect(stepRedirect(4));
+  revalidatePath("/dashboard/aftercare");
+  revalidatePath(`/dashboard/aftercare/profiles/${profile.id}`);
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+  redirect("/onboarding/aftercare/images?" + params.toString());
 }
 
 export async function saveContinuedCareOnboardingStep(step: number, formData: FormData) {
@@ -881,6 +790,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
 
   let destination = continuedCareStepRedirect(step);
   let geocodeTarget: { profileId: string; streetAddress: string; city: string; state: string; zip: string } | null = null;
+  let completedProfileId = "";
 
   try {
     const draft = await getOrCreateOnboardingDraft("continued_care", false);
@@ -1007,8 +917,6 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
         photoReadiness: valuesFromForm(formData, "photoReadiness"),
         videoUrls: valuesFromForm(formData, "videoUrls")
       });
-      const files = imagesFromFormData(formData);
-      validateProfileImageFiles(files);
       const finalDraft = mergeDraft(currentDraft, {
         acceptingNewPatients: parsed.acceptingNewPatients === "yes",
         availabilityNotes: nullableText(parsed.availabilityNotes),
@@ -1017,8 +925,6 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
       }) as Record<string, unknown>;
       const programName = String(finalDraft.programName || "Continued Care Program");
       const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
-      let uploadTarget: { id: string; orgId: string; programName: string } | null = null;
-
       const profileLimitMessage = await profileLimitMessageForExistingOrg(draft.user.orgId);
 
       if (profileLimitMessage) {
@@ -1081,7 +987,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
           },
           select: { id: true, orgId: true, programName: true }
         });
-        uploadTarget = profile;
+        completedProfileId = profile.id;
         geocodeTarget = {
           profileId: profile.id,
           streetAddress: String(finalDraft.streetAddress || ""),
@@ -1101,16 +1007,10 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
         });
         }, onboardingTransactionOptions);
 
-        if (uploadTarget && files.length) {
-          try {
-            await uploadProfileImagesForProfile(uploadTarget, files);
-          } catch (error) {
-            destination = continuedCareStepRedirect(5, error instanceof Error ? error.message : "Image upload failed.");
-          }
-        }
-
         if (destination === continuedCareStepRedirect(step)) {
-          destination = "/dashboard/aftercare";
+          destination = completedProfileId
+            ? `/onboarding/aftercare/images?profileId=${completedProfileId}`
+            : "/dashboard/aftercare";
         }
       }
     }

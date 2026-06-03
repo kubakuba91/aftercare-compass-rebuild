@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
-import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recovery-card";
 import { Card } from "@/components/ui/card";
@@ -15,7 +14,6 @@ import {
   telehealthModeOptions
 } from "@/lib/continued-care-onboarding";
 import { isClerkIdentityError } from "@/lib/current-user";
-import { getAftercarePhotoLimit } from "@/lib/feature-gates";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
@@ -147,13 +145,6 @@ export default async function ContinuedCareStepPage({
   const action = saveContinuedCareOnboardingStep.bind(null, currentStep);
   const selected = (values?: string[] | null) => values ?? [];
   const videoUrls = Array.isArray(profile?.videoUrls) ? profile.videoUrls : [];
-  const organization = draft.user.orgId
-    ? await prisma.organization.findUnique({
-        where: { id: draft.user.orgId },
-        select: { subscriptionPlan: true }
-      })
-    : null;
-  const photoLimit = getAftercarePhotoLimit(organization?.subscriptionPlan);
 
   return (
     <main className="grid min-h-screen lg:grid-cols-[320px_1fr]">
@@ -354,9 +345,8 @@ export default async function ContinuedCareStepPage({
                     Photo checklist
                     {checkboxGroup("photoReadiness", photoReadinessOptions, selected(profile?.photoReadiness))}
                   </div>
-                  <div className="grid gap-2 rounded-md border border-dashed border-border bg-muted/30 p-4 text-sm font-medium">
-                    Profile photos
-                    <ProfileImageUploader currentImageCount={0} photoLimit={photoLimit} showSubmitButton={false} />
+                  <div className="rounded-md border border-dashed border-border bg-muted/30 p-4 text-sm leading-6 text-muted-foreground">
+                    You will add profile images after this form is complete, once the profile has been created.
                   </div>
                   {[0, 1, 2].map((index) => (
                     <label key={index} className="grid gap-2 text-sm font-medium">

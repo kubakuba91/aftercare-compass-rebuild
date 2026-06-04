@@ -3,7 +3,6 @@ import Image from "next/image";
 import { Search, SlidersHorizontal, UserCircle } from "lucide-react";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import {
-  amenityOptions,
   averageLengthOptions,
   matOptions,
   populationOptions,
@@ -25,6 +24,7 @@ type PublicSearchHeaderProps = {
   radiusMiles?: number;
   duration?: string;
   amenities?: string[];
+  amenityOptions?: string[];
   mat?: string[];
   verified?: boolean;
 };
@@ -44,6 +44,7 @@ export function PublicSearchHeader({
   radiusMiles,
   duration = "",
   amenities = [],
+  amenityOptions = [],
   mat = [],
   verified = false
 }: PublicSearchHeaderProps) {

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
+import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { richTextHtml } from "@/lib/rich-text";
 import { cn } from "@/lib/utils";
@@ -229,6 +230,7 @@ export default async function SoberLivingStepPage({
 
   const step = soberLivingSteps[currentStep - 1];
   const action = saveSoberLivingOnboardingStep.bind(null, currentStep);
+  const profileOptions = await getActiveProfileOptionValues();
   const selected = (values?: string[] | null) => values ?? [];
   const servedPopulations = selectedPopulation(profile?.populationServedOptions, profile?.populationServed);
   const videoUrls = Array.isArray(profile?.videoUrls) ? profile.videoUrls : [];
@@ -301,7 +303,11 @@ export default async function SoberLivingStepPage({
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Accreditations held
-                    <MultiSelectDropdown name="certificationsHeld" options={certificationOptions} selected={selected(profile?.certificationsHeld)} />
+                    <MultiSelectDropdown
+                      name="certificationsHeld"
+                      options={mergeOptionValues(profileOptions.certificationsHeld, selected(profile?.certificationsHeld))}
+                      selected={selected(profile?.certificationsHeld)}
+                    />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Average length of stay")}
@@ -389,15 +395,27 @@ export default async function SoberLivingStepPage({
                 <>
                   <div className="grid gap-2 text-sm font-medium">
                     Support services
-                    <MultiSelectDropdown name="supportServices" options={supportServiceOptions} selected={selected(profile?.supportServices)} />
+                    <MultiSelectDropdown
+                      name="supportServices"
+                      options={mergeOptionValues(profileOptions.supportServices, selected(profile?.supportServices))}
+                      selected={selected(profile?.supportServices)}
+                    />
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Amenities
-                    <MultiSelectDropdown name="amenities" options={amenityOptions} selected={selected(profile?.amenities)} />
+                    <MultiSelectDropdown
+                      name="amenities"
+                      options={mergeOptionValues(profileOptions.amenities, selected(profile?.amenities))}
+                      selected={selected(profile?.amenities)}
+                    />
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Insurance/payment accepted
-                    <MultiSelectDropdown name="insuranceAccepted" options={insuranceOptions} selected={selected(profile?.insuranceAccepted)} />
+                    <MultiSelectDropdown
+                      name="insuranceAccepted"
+                      options={mergeOptionValues(profileOptions.insuranceAccepted, selected(profile?.insuranceAccepted))}
+                      selected={selected(profile?.insuranceAccepted)}
+                    />
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">

@@ -8,6 +8,7 @@ import { ProfileEditorTabs } from "@/components/dashboard/profile-editor-tabs";
 import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
+import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-options";
 import {
   amenityOptions,
   bedTypeOptions,
@@ -238,23 +239,26 @@ export default async function AftercareProfileDetailPage({
   const associatedContinuedCareIds = new Set(
     profile.continuedCareAssociations.map((association) => association.continuedCareProfileId)
   );
-  const continuedCareOptions = isSoberLiving
-    ? await prisma.aftercareProfile.findMany({
-        where: {
-          orgId: appUser.orgId,
-          type: "continued_care",
-          id: { notIn: Array.from(associatedContinuedCareIds) }
-        },
-        orderBy: { programName: "asc" },
-        select: {
-          id: true,
-          programName: true,
-          status: true,
-          publicCity: true,
-          publicState: true
-        }
-      })
-    : [];
+  const [profileOptions, continuedCareOptions] = await Promise.all([
+    getActiveProfileOptionValues(),
+    isSoberLiving
+      ? prisma.aftercareProfile.findMany({
+          where: {
+            orgId: appUser.orgId,
+            type: "continued_care",
+            id: { notIn: Array.from(associatedContinuedCareIds) }
+          },
+          orderBy: { programName: "asc" },
+          select: {
+            id: true,
+            programName: true,
+            status: true,
+            publicCity: true,
+            publicState: true
+          }
+        })
+      : Promise.resolve([])
+  ]);
 
   return (
     <main className="shell py-8">
@@ -469,12 +473,12 @@ export default async function AftercareProfileDetailPage({
                 <CheckboxGroup label="Population served" name="populationServedOptions" options={populationOptions} selected={profile.populationServedOptions} />
               ) : null}
               <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={specialtyPopulationOptions} selected={profile.specialtyPopulations} />
-              <CheckboxGroup label="Certifications held" name="certificationsHeld" options={certificationOptions} selected={profile.certificationsHeld} />
-              <CheckboxGroup label="Support services" name="supportServices" options={supportServiceOptions} selected={profile.supportServices} />
+              <CheckboxGroup label="Certifications held" name="certificationsHeld" options={mergeOptionValues(profileOptions.certificationsHeld, profile.certificationsHeld)} selected={profile.certificationsHeld} />
+              <CheckboxGroup label="Support services" name="supportServices" options={mergeOptionValues(profileOptions.supportServices, profile.supportServices)} selected={profile.supportServices} />
               {isSoberLiving ? (
-                <CheckboxGroup label="Amenities" name="amenities" options={amenityOptions} selected={profile.amenities} />
+                <CheckboxGroup label="Amenities" name="amenities" options={mergeOptionValues(profileOptions.amenities, profile.amenities)} selected={profile.amenities} />
               ) : null}
-              <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={insuranceOptions} selected={profile.insuranceAccepted} />
+              <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
               <div className="grid gap-4 md:grid-cols-2">
                 <label className={labelClassName()}>
                   Funding available

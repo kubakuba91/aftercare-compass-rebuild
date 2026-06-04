@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { Building2, ChevronDown, ClipboardCheck, FileCheck2, Flag, Handshake, Home, Inbox, PlusCircle, Search } from "lucide-react";
+import { Building2, ChevronDown, ClipboardCheck, FileCheck2, Flag, Handshake, Home, Inbox, ListChecks, PlusCircle, Search } from "lucide-react";
 import {
   AdminReviewStatus,
   AdminReviewSubjectType,
@@ -15,11 +15,20 @@ import {
   SubscriptionStatus
 } from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import {
+  RowActionsMenu,
+  RowActionsMenuButton,
+  RowActionsMenuDivider,
+  RowActionsMenuLabel,
+  RowActionsMenuLink
+} from "@/components/ui/row-actions-menu";
 import { getProtectedAppUser } from "@/lib/protected-routing";
+import { getProfileOptionGroups, profileOptionCategories, profileOptionCategoryKeys } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
-import { reviewOnboardingSubmission, reviewProfileClaimRequest } from "./actions";
+import { addProfileOption, reviewOnboardingSubmission, reviewProfileClaimRequest, updateAdminProfileStatus, updateProfileOptionStatus } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +38,8 @@ const adminTabs = [
   { key: "profiles", label: "Homes & Programs", icon: Home },
   { key: "requests", label: "Referrals & Leads", icon: Inbox },
   { key: "claims", label: "Claims", icon: Handshake },
-  { key: "verification", label: "Verification", icon: FileCheck2 }
+  { key: "verification", label: "Verification", icon: FileCheck2 },
+  { key: "data-settings", label: "Data Settings", icon: ListChecks }
 ] as const;
 
 type AdminTab = (typeof adminTabs)[number]["key"];
@@ -229,7 +239,8 @@ export default async function AdminDashboardPage({
     profileClaims,
     applicationReviews,
     verificationDocuments,
-    flags
+    flags,
+    profileOptionGroups
   ] = await Promise.all([
     prisma.organization.groupBy({
       by: ["type"],
@@ -522,7 +533,8 @@ export default async function AdminDashboardPage({
           }
         }
       }
-    })
+    }),
+    getProfileOptionGroups({ includeInactive: true })
   ]);
 
   const countOrganizations = (type: OrganizationType) =>
@@ -877,6 +889,7 @@ export default async function AdminDashboardPage({
                   <th className="py-3 pr-4">Availability</th>
                   <th className="py-3 pr-4">Requests</th>
                   <th className="py-3 pr-4">Updated</th>
+                  <th className="py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -899,16 +912,145 @@ export default async function AdminDashboardPage({
                     <td className="py-4 pr-4">{availabilityText(profile)}</td>
                     <td className="py-4 pr-4">{profile._count.referrals + profile._count.leads}</td>
                     <td className="py-4 pr-4 text-muted-foreground">{formatDate(profile.updatedAt)}</td>
+                    <td className="py-4 text-right">
+                      <RowActionsMenu label={`${profile.programName} actions`}>
+                        <RowActionsMenuLabel>Listing actions</RowActionsMenuLabel>
+                        <RowActionsMenuLink
+                          description="Open the public profile in admin preview mode."
+                          href={`/profiles/${profile.slug}?preview=1`}
+                        >
+                          View profile
+                        </RowActionsMenuLink>
+                        <RowActionsMenuLink
+                          description="Update this listing's profile details."
+                          href={`/dashboard/admin/profiles/${profile.id}/edit`}
+                        >
+                          Edit listing
+                        </RowActionsMenuLink>
+                        <RowActionsMenuDivider />
+                        {profile.status === ProfileStatus.unpublished ? (
+                          <form action={updateAdminProfileStatus}>
+                            <input name="profileId" type="hidden" value={profile.id} />
+                            <RowActionsMenuButton
+                              description="Move this listing back to draft status."
+                              name="status"
+                              value={ProfileStatus.draft}
+                            >
+                              Restore as draft
+                            </RowActionsMenuButton>
+                          </form>
+                        ) : (
+                          <form action={updateAdminProfileStatus}>
+                            <input name="profileId" type="hidden" value={profile.id} />
+                            <ConfirmSubmitButton
+                              className="block w-full rounded-md px-3 py-2 text-left text-sm text-destructive transition hover:bg-surface-secondary"
+                              message="Unpublish this home/program? It will be removed from public search without deleting its data."
+                              name="status"
+                              value={ProfileStatus.unpublished}
+                            >
+                              <span className="font-semibold">Unpublish listing</span>
+                              <span className="mt-0.5 block text-xs text-muted-foreground">
+                                Hide this listing from the public marketplace.
+                              </span>
+                            </ConfirmSubmitButton>
+                          </form>
+                        )}
+                      </RowActionsMenu>
+                    </td>
                   </tr>
                 )) : (
                   <tr>
-                    <td className="py-8 text-center text-sm text-muted-foreground" colSpan={7}>
+                    <td className="py-8 text-center text-sm text-muted-foreground" colSpan={8}>
                       No homes or programs found.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
+            </div>
+          </Card>
+        </div>
+      ) : null}
+
+      {activeTab === "data-settings" ? (
+        <div className="mt-6 grid gap-4">
+          <SummaryCards
+            items={profileOptionCategoryKeys().map((category) => [
+              profileOptionCategories[category].label,
+              profileOptionGroups[category].filter((option) => option.isActive).length.toString()
+            ])}
+          />
+          <Card>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-3">
+                  <ListChecks className="text-primary" size={24} />
+                  <h2 className="text-xl font-semibold">Data settings</h2>
+                </div>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                  Manage the dropdown options used in onboarding, profile editing, and system admin listing creation.
+                  Disabled values stay on existing profiles but stop showing as new choices.
+                </p>
+              </div>
+              {reviewMessage ? <Badge tone="success">{reviewMessage}</Badge> : null}
+            </div>
+            <div className="mt-6 grid gap-4 xl:grid-cols-2">
+              {profileOptionCategoryKeys().map((category) => {
+                const meta = profileOptionCategories[category];
+                const options = profileOptionGroups[category];
+
+                return (
+                  <section className="ac-panel-card p-4" key={category}>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-semibold">{meta.label}</h3>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">{meta.description}</p>
+                      </div>
+                      <Badge tone="neutral">
+                        {options.filter((option) => option.isActive).length} active
+                      </Badge>
+                    </div>
+                    <form action={addProfileOption} className="mt-4 flex flex-col gap-2 sm:flex-row">
+                      <input name="category" type="hidden" value={category} />
+                      <label className="sr-only" htmlFor={`${category}-label`}>Add {meta.label}</label>
+                      <input
+                        className="min-h-10 flex-1 rounded-md border border-border bg-white px-3 text-sm"
+                        id={`${category}-label`}
+                        name="label"
+                        placeholder={`Add ${meta.label.toLowerCase()} option`}
+                        required
+                      />
+                      <button className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground" type="submit">
+                        Add option
+                      </button>
+                    </form>
+                    <div className="mt-4 divide-y divide-border overflow-hidden rounded-md border border-border bg-white">
+                      {options.map((option) => (
+                        <div className="flex flex-wrap items-center justify-between gap-3 p-3" key={option.id}>
+                          <div>
+                            <p className="text-sm font-semibold">{option.label}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {option.isActive ? "Available in dropdowns" : "Disabled for new selections"}
+                            </p>
+                          </div>
+                          <form action={updateProfileOptionStatus}>
+                            <input name="optionId" type="hidden" value={option.id} />
+                            <button
+                              className="focus-ring min-h-9 rounded-md border border-border bg-white px-3 text-sm font-semibold shadow-sm"
+                              disabled={option.id.startsWith("default-")}
+                              name="isActive"
+                              type="submit"
+                              value={option.isActive ? "false" : "true"}
+                            >
+                              {option.isActive ? "Disable" : "Enable"}
+                            </button>
+                          </form>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
             </div>
           </Card>
         </div>

@@ -15,6 +15,7 @@ import {
 } from "@/lib/continued-care-onboarding";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
+import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { saveContinuedCareOnboardingStep } from "../../actions";
@@ -143,6 +144,7 @@ export default async function ContinuedCareStepPage({
 
   const step = continuedCareSteps[currentStep - 1];
   const action = saveContinuedCareOnboardingStep.bind(null, currentStep);
+  const profileOptions = await getActiveProfileOptionValues();
   const selected = (values?: string[] | null) => values ?? [];
   const videoUrls = Array.isArray(profile?.videoUrls) ? profile.videoUrls : [];
 
@@ -212,7 +214,7 @@ export default async function ContinuedCareStepPage({
                     Accreditations
                     <MultiSelectDropdown
                       name="certificationsHeld"
-                      options={continuedCareOptionGroups.certifications}
+                      options={mergeOptionValues(profileOptions.certificationsHeld, selected(profile?.certificationsHeld))}
                       selected={selected(profile?.certificationsHeld)}
                     />
                   </div>
@@ -286,7 +288,7 @@ export default async function ContinuedCareStepPage({
                     Insurance accepted
                     <MultiSelectDropdown
                       name="insuranceAccepted"
-                      options={continuedCareOptionGroups.insurance}
+                      options={mergeOptionValues(profileOptions.insuranceAccepted, selected(profile?.insuranceAccepted))}
                       selected={selected(profile?.insuranceAccepted)}
                     />
                   </div>
@@ -315,7 +317,7 @@ export default async function ContinuedCareStepPage({
                     Support services
                     <MultiSelectDropdown
                       name="supportServices"
-                      options={continuedCareOptionGroups.support}
+                      options={mergeOptionValues(profileOptions.supportServices, selected(profile?.supportServices))}
                       selected={selected(profile?.supportServices)}
                     />
                   </div>

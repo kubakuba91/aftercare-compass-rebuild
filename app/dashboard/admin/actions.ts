@@ -15,6 +15,7 @@ import {
 import { notifyProfileClaimApproved, notifyProfileClaimRejected } from "@/lib/email-notifications";
 import { geocodeProfileAddress } from "@/lib/geocoding";
 import { imagesFromFormData, uploadProfileImagesForProfile } from "@/lib/profile-images";
+import { profileOptionCategories, profileOptionCategoryKeys, type ProfileOptionCategory } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { valuesFromForm } from "@/lib/sober-living-onboarding";
@@ -46,6 +47,23 @@ function adminProfileHref(message: string) {
   });
 
   return `/dashboard/admin?${params.toString()}`;
+}
+
+function adminDataSettingsHref(message: string) {
+  const params = new URLSearchParams({
+    tab: "data-settings",
+    reviewMessage: message
+  });
+
+  return `/dashboard/admin?${params.toString()}`;
+}
+
+function profileOptionCategory(value: FormDataEntryValue | null): ProfileOptionCategory | null {
+  const category = String(value || "");
+
+  return profileOptionCategoryKeys().includes(category as ProfileOptionCategory)
+    ? category as ProfileOptionCategory
+    : null;
 }
 
 function nullableText(value: FormDataEntryValue | null) {
@@ -678,4 +696,105 @@ export async function reviewProfileClaimRequest(formData: FormData) {
   revalidatePath(`/profiles/${claim.profile.slug}`);
 
   redirect(adminClaimHref(`${claim.profile.programName} claim ${decision}.`));
+}
+
+export async function addProfileOption(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const category = profileOptionCategory(formData.get("category"));
+  const label = String(formData.get("label") || "").trim().replace(/\s+/g, " ");
+
+  if (!category || !label) {
+    redirect(adminDataSettingsHref("Choose a category and enter an option label."));
+  }
+
+  const lastOption = await prisma.profileOption.findFirst({
+    where: { category },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true }
+  });
+
+  await prisma.profileOption.upsert({
+    where: {
+      category_label: {
+        category,
+        label
+      }
+    },
+    update: {
+      isActive: true
+    },
+    create: {
+      category,
+      label,
+      isActive: true,
+      sortOrder: (lastOption?.sortOrder ?? 0) + 10
+    }
+  });
+
+  await prisma.adminAuditLog.create({
+    data: {
+      actorUserId: appUser.id,
+      action: "profile_option_added",
+      entityType: "ProfileOption",
+      entityId: `${category}:${label}`,
+      metadata: {
+        category,
+        label,
+        categoryLabel: profileOptionCategories[category].label
+      }
+    }
+  });
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/dashboard/aftercare");
+  redirect(adminDataSettingsHref(`${label} is available in ${profileOptionCategories[category].label}.`));
+}
+
+export async function updateProfileOptionStatus(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const optionId = String(formData.get("optionId") || "");
+  const isActive = String(formData.get("isActive") || "") === "true";
+
+  const option = await prisma.profileOption.update({
+    where: { id: optionId },
+    data: { isActive },
+    select: {
+      id: true,
+      category: true,
+      label: true
+    }
+  });
+  const category = profileOptionCategory(option.category);
+
+  if (!category) {
+    redirect(adminDataSettingsHref("Option category is no longer supported."));
+  }
+
+  await prisma.adminAuditLog.create({
+    data: {
+      actorUserId: appUser.id,
+      action: isActive ? "profile_option_enabled" : "profile_option_disabled",
+      entityType: "ProfileOption",
+      entityId: option.id,
+      metadata: {
+        category,
+        label: option.label,
+        categoryLabel: profileOptionCategories[category].label
+      }
+    }
+  });
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/dashboard/aftercare");
+  redirect(adminDataSettingsHref(`${option.label} was ${isActive ? "enabled" : "disabled"}.`));
 }

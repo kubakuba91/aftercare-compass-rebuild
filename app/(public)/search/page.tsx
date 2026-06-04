@@ -12,10 +12,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { canDisplayVerifiedBadge, canUseLiveAvailability } from "@/lib/feature-gates";
 import { geocodeSearchQuery } from "@/lib/geocoding";
+import { getActiveProfileOptionValues } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { approximatePublicPoint, milesBetween, searchCenterFromQuery } from "@/lib/public-location";
 import { richTextToPlainText } from "@/lib/rich-text";
-import { amenityOptions, matOptions, populationOptions, specialtyPopulationOptions } from "@/lib/sober-living-onboarding";
+import { matOptions, populationOptions, specialtyPopulationOptions } from "@/lib/sober-living-onboarding";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -235,6 +236,7 @@ export default async function SearchPage({
     appUser?.role === Role.referent_admin || appUser?.role === Role.referent_manager;
   const favoriteProfileIds = new Set(appUser?.favorites.map((favorite) => favorite.profileId) ?? []);
   const q = firstFromQuery(query.q)?.trim() || "";
+  const profileOptions = await getActiveProfileOptionValues();
   const rawType = firstFromQuery(query.type);
   const type = rawType === "continued_care" ? "continued_care" : "sober_living";
   const population = valuesFromQuery(query.population).filter((value) =>
@@ -248,7 +250,7 @@ export default async function SearchPage({
   const radiusMiles = numberFromQuery(query.radius);
   const duration = firstFromQuery(query.duration) || "";
   const amenities = valuesFromQuery(query.amenity).filter((value) =>
-    amenityOptions.includes(value as never)
+    profileOptions.amenities.includes(value)
   );
   const mat = valuesFromQuery(query.mat).filter((value) => matOptions.includes(value as never));
   const verified = firstFromQuery(query.verified) === "yes";
@@ -439,6 +441,7 @@ export default async function SearchPage({
     <>
       <PublicSearchHeader
         amenities={amenities}
+        amenityOptions={profileOptions.amenities}
         clearHref="/search"
         defaultAvailability={availability}
         defaultLocation={q}

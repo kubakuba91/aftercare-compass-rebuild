@@ -98,6 +98,19 @@ enum ProfileClaimStatus {
   cancelled
 }
 
+model ProfileOption {
+  id        String   @id @default(cuid())
+  category  String
+  label     String
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([category, label])
+  @@index([category, isActive, sortOrder])
+}
+
 model User {
   id              String        @id @default(cuid())
   clerkUserId     String        @unique

@@ -25,6 +25,7 @@ import {
   programTypeOptions,
   telehealthModeOptions
 } from "@/lib/continued-care-onboarding";
+import { getActiveProfileOptionValues } from "@/lib/profile-options";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { createUnclaimedAftercareProfile } from "../../actions";
 
@@ -99,6 +100,8 @@ export default async function AdminCreateProfilePage({
   if (appUser.role !== Role.system_admin) {
     redirect("/dashboard");
   }
+
+  const profileOptions = await getActiveProfileOptionValues();
 
   return (
     <main className="shell py-8">
@@ -306,12 +309,12 @@ export default async function AdminCreateProfilePage({
                   </label>
                 </div>
                 <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={specialtyPopulationOptions} />
-                <CheckboxGroup label="Certifications held" name="certificationsHeld" options={certificationOptions} />
-                <CheckboxGroup label="Support services" name="supportServices" options={supportServiceOptions} />
+                <CheckboxGroup label="Certifications held" name="certificationsHeld" options={profileOptions.certificationsHeld} />
+                <CheckboxGroup label="Support services" name="supportServices" options={profileOptions.supportServices} />
                 <div className="admin-profile-type-section admin-profile-type-section--sober-living">
-                  <CheckboxGroup label="Amenities" name="amenities" options={amenityOptions} />
+                  <CheckboxGroup label="Amenities" name="amenities" options={profileOptions.amenities} />
                 </div>
-                <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={insuranceOptions} />
+                <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={profileOptions.insuranceAccepted} />
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className={labelClassName()}>
                     Funding available

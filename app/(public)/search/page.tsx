@@ -104,6 +104,18 @@ function formatPricePerWeek(value: number | null) {
   return `$${value}/week`;
 }
 
+function formatMoveInCost(value: string | null) {
+  const text = value?.trim();
+
+  if (!text) {
+    return null;
+  }
+
+  const amount = text.match(/\d[\d,]*/)?.[0];
+
+  return amount ? `$${amount} Move-in fee` : `${text} Move-in fee`;
+}
+
 function valuesFromQuery(value: string | string[] | undefined) {
   if (!value) {
     return [];
@@ -586,9 +598,9 @@ export default async function SearchPage({
 
                         <div className="grid shrink-0 gap-2 md:justify-items-end">
                           <p className="text-base font-semibold">{formatPricePerWeek(profile.pricePerWeek)}</p>
-                          {profile.moveInCost ? (
+                          {formatMoveInCost(profile.moveInCost) ? (
                             <span className="inline-flex min-h-7 items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-800">
-                              {profile.moveInCost}
+                              {formatMoveInCost(profile.moveInCost)}
                             </span>
                           ) : null}
                         </div>

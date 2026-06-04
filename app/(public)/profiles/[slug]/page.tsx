@@ -46,6 +46,18 @@ function formatPricePerWeek(value: number | null) {
   return `$${value}/week`;
 }
 
+function formatMoveInCost(value: string | null) {
+  const text = value?.trim();
+
+  if (!text) {
+    return null;
+  }
+
+  const amount = text.match(/\d[\d,]*/)?.[0];
+
+  return amount ? `$${amount} Move-in fee` : `${text} Move-in fee`;
+}
+
 function telHref(value: string) {
   const normalized = normalizePhoneNumber(value);
   const fallback = value.replace(/[^\d+]/g, "");
@@ -410,6 +422,7 @@ export default async function PublicProfilePage({
   const profileShowsVerifiedBadge = canDisplayVerifiedBadge(profile.organization, profile);
   const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
   const priceLabel = formatPricePerWeek(profile.pricePerWeek);
+  const moveInCostLabel = formatMoveInCost(profile.moveInCost);
   const admissionsPhone = profile.admissionsContactPhone?.trim() ?? "";
   const isReferent = appUser?.role.startsWith("referent") ?? false;
   const isAftercareUser = appUser?.role.startsWith("aftercare") ?? false;
@@ -482,7 +495,7 @@ export default async function PublicProfilePage({
                   programName={profile.programName}
                 />
               </div>
-              {priceLabel || profile.moveInCost ? (
+              {priceLabel || moveInCostLabel ? (
                 <div className="shrink-0 text-right">
                   {priceLabel ? (
                     <>
@@ -490,9 +503,9 @@ export default async function PublicProfilePage({
                       <p className="text-lg font-semibold">{priceLabel}</p>
                     </>
                   ) : null}
-                  {profile.moveInCost ? (
+                  {moveInCostLabel ? (
                     <span className="mt-2 inline-flex min-h-8 items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-800">
-                      {profile.moveInCost}
+                      {moveInCostLabel}
                     </span>
                   ) : null}
                 </div>

@@ -7,18 +7,14 @@ import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdo
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {
-  amenityOptions,
   bedTypeOptions,
-  certificationOptions,
   drugTestingPolicyOptions,
-  insuranceOptions,
   matOptions,
   medicationAdministrationOptions,
   populationOptions,
   preferredContactOptions,
   roomTypeOptions,
-  specialtyPopulationOptions,
-  supportServiceOptions
+  specialtyPopulationOptions
 } from "@/lib/sober-living-onboarding";
 import {
   levelOfCareOptions,

@@ -207,8 +207,8 @@ export default async function ContinuedCareStepPage({
                     <textarea name="additionalLocations" defaultValue={profile?.additionalLocations ?? ""} className={textAreaClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
-                    {requiredLabel("State license number")}
-                    <input name="stateLicenseNumber" required defaultValue={profile?.stateLicenseNumber ?? ""} className={fieldClassName()} />
+                    State license number
+                    <input name="stateLicenseNumber" defaultValue={profile?.stateLicenseNumber ?? ""} className={fieldClassName()} />
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     Accreditations

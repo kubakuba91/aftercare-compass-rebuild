@@ -10,18 +10,14 @@ import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdo
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
 import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-options";
 import {
-  amenityOptions,
   bedTypeOptions,
-  certificationOptions,
   drugTestingPolicyOptions,
-  insuranceOptions,
   matOptions,
   medicationAdministrationOptions,
   populationOptions,
   preferredContactOptions,
   roomTypeOptions,
-  specialtyPopulationOptions,
-  supportServiceOptions
+  specialtyPopulationOptions
 } from "@/lib/sober-living-onboarding";
 import {
   levelOfCareOptions,

@@ -1,17 +1,16 @@
 import { z } from "zod";
 import {
-  certificationOptions,
-  insuranceOptions,
   matOptions,
   nullableText,
   populationOptions,
   preferredContactOptions,
   specialtyPopulationOptions,
-  supportServiceOptions,
   valuesFromForm
 } from "@/lib/sober-living-onboarding";
+import { levelsOfCareOptions } from "@/lib/levels-of-care";
 
 export { nullableText, valuesFromForm };
+export { levelsOfCareOptions as levelOfCareOptions };
 
 export const continuedCareSteps = [
   { number: 1, slug: "program-info", label: "Program Info", title: "Tell us about your program" },
@@ -32,7 +31,6 @@ export const programTypeOptions = [
 ] as const;
 
 export const telehealthModeOptions = ["In-person only", "Telehealth only", "Hybrid"] as const;
-export const levelOfCareOptions = ["PHP", "IOP", "OP"] as const;
 export const continuedCareDurationOptions = [
   "30 days",
   "30-60 days",
@@ -59,12 +57,12 @@ export const continuedCareStepOneSchema = z.object({
   websiteUrl: optionalUrl,
   telehealthMode: z.enum(telehealthModeOptions),
   additionalLocations: optionalText,
-  stateLicenseNumber: requiredText.max(120),
+  stateLicenseNumber: optionalText,
   certificationsHeld: z.array(z.string()).default([])
 });
 
 export const continuedCareStepTwoSchema = z.object({
-  levelsOfCare: z.array(z.enum(levelOfCareOptions)).min(1),
+  levelsOfCare: z.array(z.enum(levelsOfCareOptions)).min(1),
   hoursOfOperation: requiredText.max(500),
   populationServed: z.array(z.enum(populationOptions)).min(1),
   specialtyPopulations: z.array(z.string()).default([]),
@@ -98,11 +96,8 @@ export const continuedCareStepFiveSchema = z.object({
 });
 
 export const continuedCareOptionGroups = {
-  certifications: certificationOptions,
-  insurance: insuranceOptions,
   mat: matOptions,
   population: populationOptions,
   specialty: specialtyPopulationOptions,
-  support: supportServiceOptions,
   contact: preferredContactOptions
 } as const;

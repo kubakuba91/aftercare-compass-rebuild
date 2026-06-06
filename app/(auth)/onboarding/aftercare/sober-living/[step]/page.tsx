@@ -12,12 +12,9 @@ import { prisma } from "@/lib/prisma";
 import { richTextHtml } from "@/lib/rich-text";
 import { cn } from "@/lib/utils";
 import {
-  amenityOptions,
   averageLengthOptions,
   bedTypeOptions,
-  certificationOptions,
   drugTestingPolicyOptions,
-  insuranceOptions,
   matOptions,
   maxSoberLivingStep,
   medicationAdministrationOptions,
@@ -25,8 +22,7 @@ import {
   preferredContactOptions,
   roomTypeOptions,
   soberLivingSteps,
-  specialtyPopulationOptions,
-  supportServiceOptions
+  specialtyPopulationOptions
 } from "@/lib/sober-living-onboarding";
 import { saveSoberLivingOnboardingStep } from "../../actions";
 

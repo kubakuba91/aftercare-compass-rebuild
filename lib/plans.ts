@@ -51,7 +51,7 @@ export const aftercarePlans = {
     badge: "Self-Reported"
   },
   professional: {
-    label: "Professional",
+    label: "Aftercare Basic",
     monthlyPrice: 149,
     profiles: 1,
     managers: 3,
@@ -66,7 +66,7 @@ export const aftercarePlans = {
     badge: "Self-Reported"
   },
   verified: {
-    label: "Verified",
+    label: "Aftercare Verified",
     monthlyPrice: 349,
     profiles: 5,
     managers: 10,
@@ -81,7 +81,7 @@ export const aftercarePlans = {
     badge: "Aftercare Compass Verified"
   },
   network: {
-    label: "Network",
+    label: "Aftercare Network",
     monthlyPrice: 699,
     profiles: "unlimited",
     managers: "unlimited",

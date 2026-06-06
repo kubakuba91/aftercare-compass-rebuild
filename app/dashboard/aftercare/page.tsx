@@ -665,6 +665,10 @@ export default async function AftercareDashboardPage({
   const liveBedCountLockedMessage = "upgrade plan to unlock live bed count";
   const canAddProfiles = canAddAnotherProfile(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
   const nextProfilePlan = nextProfileCapacityPlan(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
+  const isContinuedCareOrganization = appUser.organization?.type === "aftercare_continued_care";
+  const profileNoun = isContinuedCareOrganization ? "program" : "home";
+  const profileNounPlural = isContinuedCareOrganization ? "programs" : "homes";
+  const profileTitle = isContinuedCareOrganization ? "Programs" : "Homes";
   const aftercareBillingPlan = getBillingPlan("aftercare", appUser.organization?.subscriptionPlan);
   const aftercareBillingCycle = appUser.organization?.subscriptionBillingCycle === "annual" ? "annual" : "monthly";
   const aftercareCurrentPriceLabel =
@@ -798,6 +802,7 @@ export default async function AftercareDashboardPage({
             {dashboardTabs.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.key;
+              const label = item.key === "homes" ? profileTitle : item.label;
 
               return (
                 <Link
@@ -807,7 +812,7 @@ export default async function AftercareDashboardPage({
                   href={`/dashboard/aftercare?tab=${item.key}`}
                 >
                   <Icon size={18} />
-                  {item.label}
+                  {label}
                 </Link>
               );
             })}
@@ -1341,9 +1346,9 @@ export default async function AftercareDashboardPage({
             <Card>
               <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                 <div>
-                  <h2 className="text-xl font-semibold">Homes</h2>
+                  <h2 className="text-xl font-semibold">{profileTitle}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    List view of every home/program under this account.
+                    List view of every {profileNoun} under this account.
                   </p>
                 </div>
                 {canAddProfiles ? (
@@ -1351,7 +1356,7 @@ export default async function AftercareDashboardPage({
                     className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
                     href={addProfileHref(appUser.organization?.type)}
                   >
-                    Add home
+                    Add {profileNoun}
                   </Link>
                 ) : null}
               </div>
@@ -1362,14 +1367,14 @@ export default async function AftercareDashboardPage({
                       <Info className="size-4" aria-hidden="true" />
                     </span>
                     <div>
-                      <p className="font-semibold">You are at your current home/program limit.</p>
+                      <p className="font-semibold">You are at your current {profileNoun} limit.</p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         {planCountedProfiles.length} of{" "}
                         {formatPlanLimit(currentAftercarePlan(appUser.organization?.subscriptionPlan).profiles)}{" "}
-                        published homes/programs used.
+                        published {profileNounPlural} used.
                         {nextProfilePlan
                           ? ` Upgrade to ${nextProfilePlan.label} to add another.`
-                          : " Contact support to add more homes or programs."}
+                          : ` Contact support to add more ${profileNounPlural}.`}
                       </p>
                     </div>
                   </div>
@@ -1481,10 +1486,10 @@ export default async function AftercareDashboardPage({
                                 <RowActionsMenu label={`${profile.programName} actions`}>
                                   <RowActionsMenuLabel>Actions</RowActionsMenuLabel>
                                   <RowActionsMenuLink
-                                    description="Update home details, availability, media, and profile content."
+                                    description={`Update ${profileNoun} details, availability, media, and profile content.`}
                                     href={`/dashboard/aftercare/profiles/${profile.id}`}
                                   >
-                                    Edit home
+                                    Edit {profileNoun}
                                   </RowActionsMenuLink>
                                   <RowActionsMenuDivider />
                                   {profile.status === "unpublished" ? (
@@ -1503,11 +1508,11 @@ export default async function AftercareDashboardPage({
                                       <input name="profileId" type="hidden" value={profile.id} />
                                       <ConfirmSubmitButton
                                         className="block w-full rounded-md px-3 py-2 text-left text-sm text-destructive transition hover:bg-surface-secondary"
-                                        message="Unpublish this home/program? It will be removed from marketplace search and will no longer count toward your plan limit."
+                                        message={`Unpublish this ${profileNoun}? It will be removed from marketplace search and will no longer count toward your plan limit.`}
                                         name="status"
                                         value="unpublished"
                                       >
-                                        <span className="font-semibold">Unpublish home</span>
+                                        <span className="font-semibold">Unpublish {profileNoun}</span>
                                         <span className="mt-0.5 block text-xs text-muted-foreground">
                                           Hide this listing from search without deleting its data.
                                         </span>

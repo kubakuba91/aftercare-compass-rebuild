@@ -45,7 +45,7 @@ export const dynamic = "force-dynamic";
 const dashboardTabs = [
   { key: "overview", label: "Overview", icon: Send },
   { key: "referrals", label: "Referrals", icon: Send },
-  { key: "favorites", label: "Favorites", icon: Heart },
+  { key: "favorites", label: "Programs", icon: Heart },
   { key: "managers", label: "Managers", icon: Users },
   { key: "subscription", label: "Subscription", icon: CreditCard },
   { key: "account", label: "Account", icon: Settings }
@@ -316,7 +316,7 @@ export default async function ReferentDashboardPage({
             <Badge tone="warning">Referent workspace</Badge>
             <h1 className="mt-3 text-3xl font-semibold">Referral workspace</h1>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Track active referrals and keep a shortlist of providers for placement decisions.
+              Track active referrals and keep a shortlist of programs for placement decisions.
             </p>
             <p className="mt-1 text-sm font-semibold">{organization?.name}</p>
           </div>
@@ -327,7 +327,7 @@ export default async function ReferentDashboardPage({
             href="/search"
           >
             <Search size={16} />
-            Search providers
+            Search programs
           </Link>
           <SignOutButton />
         </div>
@@ -357,7 +357,7 @@ export default async function ReferentDashboardPage({
           {[
             ["Active referrals", activeReferralCount.toString()],
             ["This month", thisMonthReferralCount.toString()],
-            ["Favorites", favorites.length.toString()],
+            ["Programs", favorites.length.toString()],
             ["Team members", teamUsage.toString()]
           ].map(([label, value]) => (
             <div key={label} className="rounded-lg border border-border bg-white px-4 py-3">
@@ -625,9 +625,9 @@ export default async function ReferentDashboardPage({
         {activeTab === "overview" || activeTab === "favorites" ? (
           <Card>
           <Heart className="text-primary" size={24} />
-          <h2 className="mt-3 text-xl font-semibold">Favorites</h2>
+          <h2 className="mt-3 text-xl font-semibold">Programs</h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Your saved provider shortlist.
+            Your saved program shortlist.
           </p>
           {favorites.length ? (
             <div className="mt-4 grid gap-3">
@@ -666,7 +666,7 @@ export default async function ReferentDashboardPage({
                     className="mt-3 inline-flex text-sm font-semibold text-primary"
                     href={`/profiles/${favorite.profile.slug}`}
                   >
-                    View profile
+                    View program
                   </Link>
                 </div>
                 );
@@ -674,7 +674,7 @@ export default async function ReferentDashboardPage({
             </div>
           ) : (
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Keep a working shortlist of aftercare providers from search results.
+              Keep a working shortlist of aftercare programs from search results.
             </p>
           )}
           </Card>
@@ -689,7 +689,7 @@ export default async function ReferentDashboardPage({
             <Users className="text-primary" size={24} />
             <h2 className="mt-3 text-xl font-semibold">Referent team</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Add coworkers to this organization so they can search, favorite providers, and submit referrals under the same account.
+              Add coworkers to this organization so they can search, save programs, and submit referrals under the same account.
             </p>
             <p className="mt-1 text-xs font-semibold text-muted-foreground">
               Plan limit: {teamLimit === "unlimited" ? "Unlimited" : `${teamLimit} team members`} · Current usage: {teamUsage}

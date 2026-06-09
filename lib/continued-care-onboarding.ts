@@ -30,7 +30,7 @@ export const programTypeOptions = [
   "Dual Diagnosis Program"
 ] as const;
 
-export const telehealthModeOptions = ["In-person only", "Telehealth only", "Hybrid"] as const;
+export const telehealthModeOptions = ["In-person only", "Virtual only", "Hybrid"] as const;
 export const continuedCareDurationOptions = [
   "30 days",
   "30-60 days",
@@ -49,7 +49,7 @@ const optionalUrl = z
 
 export const continuedCareStepOneSchema = z.object({
   programName: requiredText.max(160),
-  programTypes: z.array(z.enum(programTypeOptions)).min(1),
+  programTypes: z.array(z.string()).min(1),
   streetAddress: requiredText.max(200),
   city: requiredText.max(120),
   state: requiredText.max(40),
@@ -66,7 +66,7 @@ export const continuedCareStepOneSchema = z.object({
 export const continuedCareStepTwoSchema = z.object({
   levelsOfCare: z.array(z.string()).min(1),
   hoursOfOperation: requiredText.max(500),
-  populationServed: z.array(z.enum(populationOptions)).min(1),
+  populationServed: z.array(z.string()).min(1),
   specialtyPopulations: z.array(z.string()).default([]),
   matServicesOffered: z.enum(["yes", "no"]),
   matAccepted: z.array(z.string()).default([]),

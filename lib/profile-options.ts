@@ -1,9 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { programTypeOptions } from "@/lib/continued-care-onboarding";
 import { levelsOfCareOptions } from "@/lib/levels-of-care";
 import {
   amenityOptions,
   certificationOptions,
   insuranceOptions,
+  matOptions,
+  populationOptions,
+  specialtyPopulationOptions,
   supportServiceOptions
 } from "@/lib/sober-living-onboarding";
 
@@ -42,6 +46,26 @@ export const profileOptionCategories = {
     label: "Levels of care",
     description: "Levels of care available in continued care and referent onboarding.",
     defaults: levelsOfCareOptions
+  },
+  programTypes: {
+    label: "Program types",
+    description: "Continued care program types available in onboarding and profile editors.",
+    defaults: programTypeOptions
+  },
+  populationServed: {
+    label: "Population served",
+    description: "Population options available in onboarding and profile editors.",
+    defaults: populationOptions
+  },
+  specialtyPopulations: {
+    label: "Specialty populations",
+    description: "Specialty population options available in onboarding and profile editors.",
+    defaults: specialtyPopulationOptions
+  },
+  matAccepted: {
+    label: "MAT accepted",
+    description: "Medication-assisted treatment options available in onboarding and profile editors.",
+    defaults: matOptions
   },
   supportServices: {
     label: "Support services",

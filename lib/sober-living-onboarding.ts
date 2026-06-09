@@ -152,7 +152,7 @@ export const stepOneSchema = z.object({
   admissionsContactPhone: requiredText.max(40),
   admissionsContactEmail: z.string().trim().email(),
   websiteUrl: optionalUrl,
-  populationServed: z.array(z.enum(populationOptions)).min(1),
+  populationServed: z.array(z.string()).min(1),
   specialtyPopulations: z.array(z.string()).default([]),
   certificationsHeld: z.array(z.string()).default([]),
   accreditations: z.array(z.string()).default([]),

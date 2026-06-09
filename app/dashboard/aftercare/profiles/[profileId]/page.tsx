@@ -12,15 +12,11 @@ import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-o
 import {
   bedTypeOptions,
   drugTestingPolicyOptions,
-  matOptions,
   medicationAdministrationOptions,
-  populationOptions,
   preferredContactOptions,
-  roomTypeOptions,
-  specialtyPopulationOptions
+  roomTypeOptions
 } from "@/lib/sober-living-onboarding";
 import {
-  programTypeOptions,
   telehealthModeOptions
 } from "@/lib/continued-care-onboarding";
 import { Badge } from "@/components/ui/badge";
@@ -364,7 +360,12 @@ export default async function AftercareProfileDetailPage({
               <input name="profileId" type="hidden" value={profile.id} />
               {isSoberLiving ? (
                 <>
-                  <CheckboxGroup label="Population served" name="populationServedOptions" options={populationOptions} selected={selectedPopulation(profile.populationServedOptions, profile.populationServed)} />
+                  <CheckboxGroup
+                    label="Population served"
+                    name="populationServedOptions"
+                    options={mergeOptionValues(profileOptions.populationServed, selectedPopulation(profile.populationServedOptions, profile.populationServed))}
+                    selected={selectedPopulation(profile.populationServedOptions, profile.populationServed)}
+                  />
                   <PopulationBedFields
                     initialPopulations={selectedPopulation(profile.populationServedOptions, profile.populationServed)}
                     values={{
@@ -416,7 +417,7 @@ export default async function AftercareProfileDetailPage({
                       </select>
                     </label>
                     <label className={labelClassName()}>
-                      Telehealth mode
+                      Delivery Model
                       <select className={fieldClassName()} defaultValue={textValue(profile.telehealthMode)} name="telehealthMode">
                         <option value="">Select one</option>
                         {telehealthModeOptions.map((option) => (
@@ -425,7 +426,7 @@ export default async function AftercareProfileDetailPage({
                       </select>
                     </label>
                   </div>
-                  <CheckboxGroup label="Program types" name="programTypes" options={programTypeOptions} selected={profile.programTypes} />
+                  <CheckboxGroup label="Program types" name="programTypes" options={mergeOptionValues(profileOptions.programTypes, profile.programTypes)} selected={profile.programTypes} />
                   <CheckboxGroup label="Levels of care" name="levelsOfCare" options={mergeOptionValues(profileOptions.levelsOfCare, profile.levelsOfCare)} selected={profile.levelsOfCare} />
                   <label className={labelClassName()}>
                     Hours of operation
@@ -465,9 +466,14 @@ export default async function AftercareProfileDetailPage({
                 </label>
               ) : null}
               {!isSoberLiving ? (
-                <CheckboxGroup label="Population served" name="populationServedOptions" options={populationOptions} selected={profile.populationServedOptions} />
+                <CheckboxGroup
+                  label="Population served"
+                  name="populationServedOptions"
+                  options={mergeOptionValues(profileOptions.populationServed, profile.populationServedOptions)}
+                  selected={profile.populationServedOptions}
+                />
               ) : null}
-              <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={specialtyPopulationOptions} selected={profile.specialtyPopulations} />
+              <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={mergeOptionValues(profileOptions.specialtyPopulations, profile.specialtyPopulations)} selected={profile.specialtyPopulations} />
               <CheckboxGroup label="Certifications held" name="certificationsHeld" options={mergeOptionValues(profileOptions.certificationsHeld, profile.certificationsHeld)} selected={profile.certificationsHeld} />
               <CheckboxGroup label="Accreditations" name="accreditations" options={mergeOptionValues(profileOptions.accreditations, profile.accreditations)} selected={profile.accreditations} />
               <CheckboxGroup label="Clinical focus" name="clinicalFocus" options={mergeOptionValues(profileOptions.clinicalFocus, profile.clinicalFocus)} selected={profile.clinicalFocus} />
@@ -490,7 +496,7 @@ export default async function AftercareProfileDetailPage({
                 Funding notes
                 <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
               </label>
-              <CheckboxGroup label="MAT accepted" name="matAccepted" options={matOptions} selected={profile.matAccepted} />
+              <CheckboxGroup label="MAT accepted" name="matAccepted" options={mergeOptionValues(profileOptions.matAccepted, profile.matAccepted)} selected={profile.matAccepted} />
               <label className={labelClassName()}>
                 Medication administration
                 <select className={fieldClassName()} defaultValue={textValue(profile.medicationAdministration)} name="medicationAdministration">

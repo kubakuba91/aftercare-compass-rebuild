@@ -9,7 +9,6 @@ import {
   continuedCareOptionGroups,
   continuedCareSteps,
   maxContinuedCareStep,
-  programTypeOptions,
   telehealthModeOptions
 } from "@/lib/continued-care-onboarding";
 import { isClerkIdentityError } from "@/lib/current-user";
@@ -171,7 +170,11 @@ export default async function ContinuedCareStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Program type")}
-                    <MultiSelectDropdown name="programTypes" options={programTypeOptions} selected={selected(profile?.programTypes)} />
+                    <MultiSelectDropdown
+                      name="programTypes"
+                      options={mergeOptionValues(profileOptions.programTypes, selected(profile?.programTypes))}
+                      selected={selected(profile?.programTypes)}
+                    />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Primary address")}
@@ -196,7 +199,7 @@ export default async function ContinuedCareStepPage({
                     <input name="websiteUrl" type="url" placeholder="https://example.com" defaultValue={profile?.websiteUrl ?? ""} className={fieldClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
-                    {requiredLabel("Telehealth")}
+                    {requiredLabel("Delivery Model")}
                     <select name="telehealthMode" required defaultValue={profile?.telehealthMode ?? "In-person only"} className={fieldClassName()}>
                       {telehealthModeOptions.map((option) => <option key={option}>{option}</option>)}
                     </select>
@@ -252,11 +255,19 @@ export default async function ContinuedCareStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Population served")}
-                    {checkboxGroup("populationServed", continuedCareOptionGroups.population, selected(profile?.populationServedOptions))}
+                    {checkboxGroup(
+                      "populationServed",
+                      mergeOptionValues(profileOptions.populationServed, selected(profile?.populationServedOptions)),
+                      selected(profile?.populationServedOptions)
+                    )}
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Specialty populations
-                    {checkboxGroup("specialtyPopulations", continuedCareOptionGroups.specialty, selected(profile?.specialtyPopulations))}
+                    {checkboxGroup(
+                      "specialtyPopulations",
+                      mergeOptionValues(profileOptions.specialtyPopulations, selected(profile?.specialtyPopulations)),
+                      selected(profile?.specialtyPopulations)
+                    )}
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
@@ -276,7 +287,11 @@ export default async function ContinuedCareStepPage({
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     MAT accepted
-                    <MultiSelectDropdown name="matAccepted" options={continuedCareOptionGroups.mat} selected={selected(profile?.matAccepted)} />
+                    <MultiSelectDropdown
+                      name="matAccepted"
+                      options={mergeOptionValues(profileOptions.matAccepted, selected(profile?.matAccepted))}
+                      selected={selected(profile?.matAccepted)}
+                    />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Average program duration")}

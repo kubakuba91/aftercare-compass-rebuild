@@ -16,7 +16,6 @@ import { getActiveProfileOptionValues } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { approximatePublicPoint, milesBetween, searchCenterFromQuery } from "@/lib/public-location";
 import { richTextToPlainText } from "@/lib/rich-text";
-import { matOptions, populationOptions, specialtyPopulationOptions } from "@/lib/sober-living-onboarding";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -252,10 +251,10 @@ export default async function SearchPage({
   const rawType = firstFromQuery(query.type);
   const type = rawType === "continued_care" ? "continued_care" : "sober_living";
   const population = valuesFromQuery(query.population).filter((value) =>
-    populationOptions.includes(value as never)
+    profileOptions.populationServed.includes(value)
   );
   const specialty = valuesFromQuery(query.specialty).filter((value) =>
-    specialtyPopulationOptions.includes(value as never)
+    profileOptions.specialtyPopulations.includes(value)
   );
   const minPrice = numberFromQuery(query.minPrice);
   const maxPrice = numberFromQuery(query.maxPrice);
@@ -264,7 +263,7 @@ export default async function SearchPage({
   const amenities = valuesFromQuery(query.amenity).filter((value) =>
     profileOptions.amenities.includes(value)
   );
-  const mat = valuesFromQuery(query.mat).filter((value) => matOptions.includes(value as never));
+  const mat = valuesFromQuery(query.mat).filter((value) => profileOptions.matAccepted.includes(value));
   const verified = firstFromQuery(query.verified) === "yes";
   const availability = firstFromQuery(query.availability) === "available" ? "available" : "";
   const showFilters = firstFromQuery(query.filters) === "1";

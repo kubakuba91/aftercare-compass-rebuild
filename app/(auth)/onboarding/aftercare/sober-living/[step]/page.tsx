@@ -15,14 +15,11 @@ import {
   averageLengthOptions,
   bedTypeOptions,
   drugTestingPolicyOptions,
-  matOptions,
   maxSoberLivingStep,
   medicationAdministrationOptions,
-  populationOptions,
   preferredContactOptions,
   roomTypeOptions,
   soberLivingSteps,
-  specialtyPopulationOptions
 } from "@/lib/sober-living-onboarding";
 import { saveSoberLivingOnboardingStep } from "../../actions";
 
@@ -289,13 +286,17 @@ export default async function SoberLivingStepPage({
                     {requiredLabel("Population served")}
                     {checkboxGroup(
                       "populationServed",
-                      populationOptions,
+                      mergeOptionValues(profileOptions.populationServed, servedPopulations),
                       selectedPopulation(profile?.populationServedOptions, profile?.populationServed)
                     )}
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Specialty populations served
-                    {checkboxGroup("specialtyPopulations", specialtyPopulationOptions, selected(profile?.specialtyPopulations))}
+                    {checkboxGroup(
+                      "specialtyPopulations",
+                      mergeOptionValues(profileOptions.specialtyPopulations, selected(profile?.specialtyPopulations)),
+                      selected(profile?.specialtyPopulations)
+                    )}
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     Certifications held
@@ -450,7 +451,11 @@ export default async function SoberLivingStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     MAT accepted
-                    <MultiSelectDropdown name="matAccepted" options={matOptions} selected={selected(profile?.matAccepted)} />
+                    <MultiSelectDropdown
+                      name="matAccepted"
+                      options={mergeOptionValues(profileOptions.matAccepted, selected(profile?.matAccepted))}
+                      selected={selected(profile?.matAccepted)}
+                    />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     Medication restrictions

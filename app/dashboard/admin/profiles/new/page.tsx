@@ -9,15 +9,11 @@ import { Card } from "@/components/ui/card";
 import {
   bedTypeOptions,
   drugTestingPolicyOptions,
-  matOptions,
   medicationAdministrationOptions,
-  populationOptions,
   preferredContactOptions,
-  roomTypeOptions,
-  specialtyPopulationOptions
+  roomTypeOptions
 } from "@/lib/sober-living-onboarding";
 import {
-  programTypeOptions,
   telehealthModeOptions
 } from "@/lib/continued-care-onboarding";
 import { getActiveProfileOptionValues } from "@/lib/profile-options";
@@ -198,7 +194,7 @@ export default async function AdminCreateProfilePage({
                       Used when the listing type is Sober living home.
                     </p>
                   </div>
-                    <CheckboxGroup label="Population served" name="populationServedOptions" options={populationOptions} />
+                    <CheckboxGroup label="Population served" name="populationServedOptions" options={profileOptions.populationServed} />
                   <PopulationBedFields
                     initialPopulations={[]}
                     values={{
@@ -254,7 +250,7 @@ export default async function AdminCreateProfilePage({
                       </select>
                     </label>
                     <label className={labelClassName()}>
-                      Telehealth mode
+                      Delivery Model
                       <select className={fieldClassName()} name="telehealthMode">
                         <option value="">Select one</option>
                         {telehealthModeOptions.map((option) => (
@@ -264,7 +260,7 @@ export default async function AdminCreateProfilePage({
                     </label>
                   </div>
                   <div className="mt-4 grid gap-4">
-                    <CheckboxGroup label="Program types" name="programTypes" options={programTypeOptions} />
+                    <CheckboxGroup label="Program types" name="programTypes" options={profileOptions.programTypes} />
                     <CheckboxGroup label="Levels of care" name="levelsOfCare" options={profileOptions.levelsOfCare} />
                     <label className={labelClassName()}>
                       Hours of operation
@@ -303,7 +299,7 @@ export default async function AdminCreateProfilePage({
                     <textarea className={textareaClassName("lg")} name="referralProcessDescription" />
                   </label>
                 </div>
-                <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={specialtyPopulationOptions} />
+                <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={profileOptions.specialtyPopulations} />
                 <CheckboxGroup label="Certifications held" name="certificationsHeld" options={profileOptions.certificationsHeld} />
                 <CheckboxGroup label="Accreditations" name="accreditations" options={profileOptions.accreditations} />
                 <CheckboxGroup label="Clinical focus" name="clinicalFocus" options={profileOptions.clinicalFocus} />
@@ -335,7 +331,7 @@ export default async function AdminCreateProfilePage({
                   Funding notes
                   <textarea className={textareaClassName()} name="fundingNotes" />
                 </label>
-                <CheckboxGroup label="MAT accepted" name="matAccepted" options={matOptions} />
+                <CheckboxGroup label="MAT accepted" name="matAccepted" options={profileOptions.matAccepted} />
                 <label className={labelClassName()}>
                   Medication restrictions
                   <textarea className={textareaClassName()} name="medicationRestrictions" />

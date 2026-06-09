@@ -305,7 +305,7 @@ export default async function AdminCreateProfilePage({
                   </label>
                 </div>
                 <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={specialtyPopulationOptions} />
-                <CheckboxGroup label="Certifications held" name="certificationsHeld" options={profileOptions.certificationsHeld} />
+                <CheckboxGroup label="Accreditations" name="certificationsHeld" options={profileOptions.certificationsHeld} />
                 <CheckboxGroup label="Support services" name="supportServices" options={profileOptions.supportServices} />
                 <div className="admin-profile-type-section admin-profile-type-section--sober-living">
                   <CheckboxGroup label="Amenities" name="amenities" options={profileOptions.amenities} />

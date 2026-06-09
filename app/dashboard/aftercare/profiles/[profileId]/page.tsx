@@ -469,7 +469,7 @@ export default async function AftercareProfileDetailPage({
                 <CheckboxGroup label="Population served" name="populationServedOptions" options={populationOptions} selected={profile.populationServedOptions} />
               ) : null}
               <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={specialtyPopulationOptions} selected={profile.specialtyPopulations} />
-              <CheckboxGroup label="Certifications held" name="certificationsHeld" options={mergeOptionValues(profileOptions.certificationsHeld, profile.certificationsHeld)} selected={profile.certificationsHeld} />
+              <CheckboxGroup label="Accreditations" name="certificationsHeld" options={mergeOptionValues(profileOptions.certificationsHeld, profile.certificationsHeld)} selected={profile.certificationsHeld} />
               <CheckboxGroup label="Support services" name="supportServices" options={mergeOptionValues(profileOptions.supportServices, profile.supportServices)} selected={profile.supportServices} />
               {isSoberLiving ? (
                 <CheckboxGroup label="Amenities" name="amenities" options={mergeOptionValues(profileOptions.amenities, profile.amenities)} selected={profile.amenities} />

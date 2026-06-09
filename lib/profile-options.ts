@@ -8,8 +8,8 @@ import {
 
 export const profileOptionCategories = {
   certificationsHeld: {
-    label: "Certifications held",
-    description: "Accreditations and certifications available in onboarding and profile editors.",
+    label: "Accreditations",
+    description: "Accreditation options available in onboarding and profile editors.",
     defaults: certificationOptions
   },
   supportServices: {

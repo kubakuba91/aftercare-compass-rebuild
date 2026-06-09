@@ -282,6 +282,7 @@ model AftercareProfile {
   populationServedOptions        String[]               @default([])
   specialtyPopulations           String[]               @default([])
   certificationsHeld             String[]               @default([])
+  accreditations                  String[]               @default([])
   totalBeds                      Int?
   bedsMen                        Int?
   bedsWomen                      Int?

@@ -20,7 +20,6 @@ import {
   specialtyPopulationOptions
 } from "@/lib/sober-living-onboarding";
 import {
-  levelOfCareOptions,
   programTypeOptions,
   telehealthModeOptions
 } from "@/lib/continued-care-onboarding";
@@ -427,7 +426,7 @@ export default async function AftercareProfileDetailPage({
                     </label>
                   </div>
                   <CheckboxGroup label="Program types" name="programTypes" options={programTypeOptions} selected={profile.programTypes} />
-                  <CheckboxGroup label="Levels of care" name="levelsOfCare" options={levelOfCareOptions} selected={profile.levelsOfCare} />
+                  <CheckboxGroup label="Levels of care" name="levelsOfCare" options={mergeOptionValues(profileOptions.levelsOfCare, profile.levelsOfCare)} selected={profile.levelsOfCare} />
                   <label className={labelClassName()}>
                     Hours of operation
                     <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.hoursOfOperation)} name="hoursOfOperation" />
@@ -469,7 +468,8 @@ export default async function AftercareProfileDetailPage({
                 <CheckboxGroup label="Population served" name="populationServedOptions" options={populationOptions} selected={profile.populationServedOptions} />
               ) : null}
               <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={specialtyPopulationOptions} selected={profile.specialtyPopulations} />
-              <CheckboxGroup label="Accreditations" name="certificationsHeld" options={mergeOptionValues(profileOptions.certificationsHeld, profile.certificationsHeld)} selected={profile.certificationsHeld} />
+              <CheckboxGroup label="Certifications held" name="certificationsHeld" options={mergeOptionValues(profileOptions.certificationsHeld, profile.certificationsHeld)} selected={profile.certificationsHeld} />
+              <CheckboxGroup label="Accreditations" name="accreditations" options={mergeOptionValues(profileOptions.accreditations, profile.accreditations)} selected={profile.accreditations} />
               <CheckboxGroup label="Support services" name="supportServices" options={mergeOptionValues(profileOptions.supportServices, profile.supportServices)} selected={profile.supportServices} />
               {isSoberLiving ? (
                 <CheckboxGroup label="Amenities" name="amenities" options={mergeOptionValues(profileOptions.amenities, profile.amenities)} selected={profile.amenities} />

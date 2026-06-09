@@ -276,6 +276,7 @@ async function upsertSoberLivingDraftProfile(
       populationServedOptions: arrayFromDraft(draftData.populationServedOptions),
       specialtyPopulations: arrayFromDraft(draftData.specialtyPopulations),
       certificationsHeld: arrayFromDraft(draftData.certificationsHeld),
+      accreditations: arrayFromDraft(draftData.accreditations),
       averageLengthOfStay: String(draftData.averageLengthOfStay || ""),
       totalBeds: Number(draftData.totalBeds || 0),
       bedsAvailable: Number(draftData.bedsAvailable || 0),
@@ -460,6 +461,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         populationServed: valuesFromForm(formData, "populationServed"),
         specialtyPopulations: valuesFromForm(formData, "specialtyPopulations"),
         certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
+        accreditations: valuesFromForm(formData, "accreditations"),
         averageLengthOfStay: formData.get("averageLengthOfStay")
       });
 
@@ -644,6 +646,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             populationServedOptions: arrayFromDraft(finalDraft.populationServedOptions),
             specialtyPopulations: arrayFromDraft(finalDraft.specialtyPopulations),
             certificationsHeld: arrayFromDraft(finalDraft.certificationsHeld),
+            accreditations: arrayFromDraft(finalDraft.accreditations),
             averageLengthOfStay: String(finalDraft.averageLengthOfStay || ""),
             totalBeds: Number(finalDraft.totalBeds || 0),
             bedsAvailable: Number(finalDraft.bedsAvailable || 0),
@@ -823,7 +826,8 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
         telehealthMode: formData.get("telehealthMode"),
         additionalLocations: formData.get("additionalLocations") || undefined,
         stateLicenseNumber: formData.get("stateLicenseNumber"),
-        certificationsHeld: valuesFromForm(formData, "certificationsHeld")
+        certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
+        accreditations: valuesFromForm(formData, "accreditations")
       });
 
       await prisma.onboardingDraft.update({
@@ -975,6 +979,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
             additionalLocations: nullableText(String(finalDraft.additionalLocations || "")),
             stateLicenseNumber: String(finalDraft.stateLicenseNumber || ""),
             certificationsHeld: arrayFromDraft(finalDraft.certificationsHeld),
+            accreditations: arrayFromDraft(finalDraft.accreditations),
             levelsOfCare: arrayFromDraft(finalDraft.levelsOfCare),
             hoursOfOperation: String(finalDraft.hoursOfOperation || ""),
             populationServed: String(finalDraft.populationServed || ""),

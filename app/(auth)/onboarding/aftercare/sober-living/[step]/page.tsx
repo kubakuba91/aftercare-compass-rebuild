@@ -298,11 +298,19 @@ export default async function SoberLivingStepPage({
                     {checkboxGroup("specialtyPopulations", specialtyPopulationOptions, selected(profile?.specialtyPopulations))}
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
-                    Accreditations held
+                    Certifications held
                     <MultiSelectDropdown
                       name="certificationsHeld"
                       options={mergeOptionValues(profileOptions.certificationsHeld, selected(profile?.certificationsHeld))}
                       selected={selected(profile?.certificationsHeld)}
+                    />
+                  </div>
+                  <div className="grid gap-2 text-sm font-medium">
+                    Accreditations
+                    <MultiSelectDropdown
+                      name="accreditations"
+                      options={mergeOptionValues(profileOptions.accreditations, selected(profile?.accreditations))}
+                      selected={selected(profile?.accreditations)}
                     />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">

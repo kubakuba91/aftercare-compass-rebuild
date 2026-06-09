@@ -137,7 +137,7 @@ export const referentStepOneSchema = z.object({
 });
 
 export const referentStepTwoSchema = z.object({
-  levelsOfCare: z.array(z.enum(levelsOfCareOptions)).min(1),
+  levelsOfCare: z.array(z.string()).min(1),
   currentPlacementMethods: z.array(z.enum(placementMethodOptions)).default([]),
   avgMonthlyReferrals: z.enum(avgMonthlyReferralOptions)
 });

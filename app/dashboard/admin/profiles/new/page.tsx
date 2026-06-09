@@ -17,7 +17,6 @@ import {
   specialtyPopulationOptions
 } from "@/lib/sober-living-onboarding";
 import {
-  levelOfCareOptions,
   programTypeOptions,
   telehealthModeOptions
 } from "@/lib/continued-care-onboarding";
@@ -266,7 +265,7 @@ export default async function AdminCreateProfilePage({
                   </div>
                   <div className="mt-4 grid gap-4">
                     <CheckboxGroup label="Program types" name="programTypes" options={programTypeOptions} />
-                    <CheckboxGroup label="Levels of care" name="levelsOfCare" options={levelOfCareOptions} />
+                    <CheckboxGroup label="Levels of care" name="levelsOfCare" options={profileOptions.levelsOfCare} />
                     <label className={labelClassName()}>
                       Hours of operation
                       <textarea className={textareaClassName()} name="hoursOfOperation" />
@@ -305,7 +304,8 @@ export default async function AdminCreateProfilePage({
                   </label>
                 </div>
                 <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={specialtyPopulationOptions} />
-                <CheckboxGroup label="Accreditations" name="certificationsHeld" options={profileOptions.certificationsHeld} />
+                <CheckboxGroup label="Certifications held" name="certificationsHeld" options={profileOptions.certificationsHeld} />
+                <CheckboxGroup label="Accreditations" name="accreditations" options={profileOptions.accreditations} />
                 <CheckboxGroup label="Support services" name="supportServices" options={profileOptions.supportServices} />
                 <div className="admin-profile-type-section admin-profile-type-section--sober-living">
                   <CheckboxGroup label="Amenities" name="amenities" options={profileOptions.amenities} />

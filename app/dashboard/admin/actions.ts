@@ -216,6 +216,7 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
       referralProcessDescription: nullableText(formData.get("referralProcessDescription")),
       specialtyPopulations: valuesFromForm(formData, "specialtyPopulations"),
       certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
+      accreditations: valuesFromForm(formData, "accreditations"),
       supportServices: valuesFromForm(formData, "supportServices"),
       amenities: valuesFromForm(formData, "amenities"),
       insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),

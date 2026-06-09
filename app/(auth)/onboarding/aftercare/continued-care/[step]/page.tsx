@@ -8,7 +8,6 @@ import {
   continuedCareDurationOptions,
   continuedCareOptionGroups,
   continuedCareSteps,
-  levelOfCareOptions,
   maxContinuedCareStep,
   programTypeOptions,
   telehealthModeOptions
@@ -211,11 +210,19 @@ export default async function ContinuedCareStepPage({
                     <input name="stateLicenseNumber" defaultValue={profile?.stateLicenseNumber ?? ""} className={fieldClassName()} />
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
-                    Accreditations
+                    Certifications held
                     <MultiSelectDropdown
                       name="certificationsHeld"
                       options={mergeOptionValues(profileOptions.certificationsHeld, selected(profile?.certificationsHeld))}
                       selected={selected(profile?.certificationsHeld)}
+                    />
+                  </div>
+                  <div className="grid gap-2 text-sm font-medium">
+                    Accreditations
+                    <MultiSelectDropdown
+                      name="accreditations"
+                      options={mergeOptionValues(profileOptions.accreditations, selected(profile?.accreditations))}
+                      selected={selected(profile?.accreditations)}
                     />
                   </div>
                 </>
@@ -225,7 +232,11 @@ export default async function ContinuedCareStepPage({
                 <>
                   <div className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Levels of care offered")}
-                    {checkboxGroup("levelsOfCare", levelOfCareOptions, selected(profile?.levelsOfCare))}
+                    {checkboxGroup(
+                      "levelsOfCare",
+                      mergeOptionValues(profileOptions.levelsOfCare, selected(profile?.levelsOfCare)),
+                      selected(profile?.levelsOfCare)
+                    )}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Hours of operation")}

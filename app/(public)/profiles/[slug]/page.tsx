@@ -700,6 +700,13 @@ export default async function PublicProfilePage({
                     </dt>
                     <dd className="font-medium">{listOrFallback(profile.certificationsHeld)}</dd>
                   </div>
+                  <div>
+                    <dt className="flex items-center gap-2 font-semibold text-foreground">
+                      <BadgeCheck className="text-primary" size={16} />
+                      Accreditations
+                    </dt>
+                    <dd className="font-medium">{listOrFallback(profile.accreditations)}</dd>
+                  </div>
                 </dl>
               </Card>
             </div>

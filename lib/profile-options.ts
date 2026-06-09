@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { levelsOfCareOptions } from "@/lib/levels-of-care";
 import {
   amenityOptions,
   certificationOptions,
@@ -6,11 +7,29 @@ import {
   supportServiceOptions
 } from "@/lib/sober-living-onboarding";
 
+export const accreditationOptions = [
+  "CARF",
+  "The Joint Commission",
+  "LegitScript",
+  "NAATP",
+  "ASAM Level of Care Certification"
+] as const;
+
 export const profileOptionCategories = {
   certificationsHeld: {
-    label: "Accreditations",
-    description: "Accreditation options available in onboarding and profile editors.",
+    label: "Certifications held",
+    description: "Certifications available in onboarding and profile editors.",
     defaults: certificationOptions
+  },
+  accreditations: {
+    label: "Accreditations",
+    description: "Accreditations available in onboarding and profile editors.",
+    defaults: accreditationOptions
+  },
+  levelsOfCare: {
+    label: "Levels of care",
+    description: "Levels of care available in continued care and referent onboarding.",
+    defaults: levelsOfCareOptions
   },
   supportServices: {
     label: "Support services",

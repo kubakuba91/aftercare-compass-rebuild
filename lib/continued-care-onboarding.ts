@@ -58,11 +58,12 @@ export const continuedCareStepOneSchema = z.object({
   telehealthMode: z.enum(telehealthModeOptions),
   additionalLocations: optionalText,
   stateLicenseNumber: optionalText,
-  certificationsHeld: z.array(z.string()).default([])
+  certificationsHeld: z.array(z.string()).default([]),
+  accreditations: z.array(z.string()).default([])
 });
 
 export const continuedCareStepTwoSchema = z.object({
-  levelsOfCare: z.array(z.enum(levelsOfCareOptions)).min(1),
+  levelsOfCare: z.array(z.string()).min(1),
   hoursOfOperation: requiredText.max(500),
   populationServed: z.array(z.enum(populationOptions)).min(1),
   specialtyPopulations: z.array(z.string()).default([]),

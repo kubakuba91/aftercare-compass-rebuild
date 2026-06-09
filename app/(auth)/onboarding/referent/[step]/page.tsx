@@ -8,11 +8,11 @@ import { getBillingPlansWithStripePrices } from "@/lib/billing";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { referentPlans } from "@/lib/plans";
+import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-options";
 import {
   avgMonthlyReferralOptions,
   billingCycleOptions,
   ehrSystemOptions,
-  levelsOfCareOptions,
   maxReferentStep,
   placementMethodOptions,
   referentOrgTypeOptions,
@@ -127,6 +127,7 @@ export default async function ReferentStepPage({
 
   const step = referentSteps[currentStep - 1];
   const action = saveReferentOnboardingStep.bind(null, currentStep);
+  const profileOptions = await getActiveProfileOptionValues();
   const referentBillingPlans = currentStep === 3 ? await getBillingPlansWithStripePrices("referent") : [];
   const selected = (values?: string[] | null) => values ?? [];
   const invitedTeamEmails = Array.isArray(referentDetails?.invitedTeamEmails)
@@ -225,7 +226,11 @@ export default async function ReferentStepPage({
                 <>
                   <div className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Levels of care provided")}
-                    <MultiSelectDropdown name="levelsOfCare" options={levelsOfCareOptions} selected={selected(referentDetails?.levelsOfCare)} />
+                    <MultiSelectDropdown
+                      name="levelsOfCare"
+                      options={mergeOptionValues(profileOptions.levelsOfCare, selected(referentDetails?.levelsOfCare))}
+                      selected={selected(referentDetails?.levelsOfCare)}
+                    />
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
                     How do you currently place patients?

@@ -140,6 +140,7 @@ function profileReadiness(profile: {
   admissionsContactPhone: string | null;
   certificationsHeld: string[];
   accreditations: string[];
+  clinicalFocus: string[];
   goodNeighborPolicyAcknowledged: boolean;
   populationServedOptions: string[];
   populationServed: string | null;
@@ -155,7 +156,7 @@ function profileReadiness(profile: {
       ? Boolean(profile.totalBeds !== null && profile.bedsAvailable !== null)
       : profile.acceptingNewPatients !== null,
     Boolean(profile.populationServedOptions.length || profile.populationServed),
-    Boolean(profile.certificationsHeld.length || profile.accreditations.length),
+    Boolean(profile.certificationsHeld.length || profile.accreditations.length || profile.clinicalFocus.length),
     profile.goodNeighborPolicyAcknowledged || profile.type === "continued_care",
     Boolean(profile.photoReadiness.length)
   ];
@@ -464,6 +465,7 @@ export default async function AftercareDashboardPage({
         description: true,
         certificationsHeld: true,
         accreditations: true,
+        clinicalFocus: true,
         goodNeighborPolicyAcknowledged: true,
         populationServed: true,
         populationServedOptions: true,

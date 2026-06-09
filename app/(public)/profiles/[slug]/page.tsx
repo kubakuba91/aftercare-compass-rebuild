@@ -707,6 +707,13 @@ export default async function PublicProfilePage({
                     </dt>
                     <dd className="font-medium">{listOrFallback(profile.accreditations)}</dd>
                   </div>
+                  <div>
+                    <dt className="flex items-center gap-2 font-semibold text-foreground">
+                      <PillBottle className="text-primary" size={16} />
+                      Clinical focus
+                    </dt>
+                    <dd className="font-medium">{listOrFallback(profile.clinicalFocus)}</dd>
+                  </div>
                 </dl>
               </Card>
             </div>

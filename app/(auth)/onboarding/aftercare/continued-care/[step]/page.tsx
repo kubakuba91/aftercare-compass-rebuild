@@ -225,6 +225,14 @@ export default async function ContinuedCareStepPage({
                       selected={selected(profile?.accreditations)}
                     />
                   </div>
+                  <div className="grid gap-2 text-sm font-medium">
+                    Clinical focus
+                    <MultiSelectDropdown
+                      name="clinicalFocus"
+                      options={mergeOptionValues(profileOptions.clinicalFocus, selected(profile?.clinicalFocus))}
+                      selected={selected(profile?.clinicalFocus)}
+                    />
+                  </div>
                 </>
               ) : null}
 

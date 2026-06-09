@@ -59,7 +59,8 @@ export const continuedCareStepOneSchema = z.object({
   additionalLocations: optionalText,
   stateLicenseNumber: optionalText,
   certificationsHeld: z.array(z.string()).default([]),
-  accreditations: z.array(z.string()).default([])
+  accreditations: z.array(z.string()).default([]),
+  clinicalFocus: z.array(z.string()).default([])
 });
 
 export const continuedCareStepTwoSchema = z.object({

@@ -1036,13 +1036,25 @@ export default async function AdminDashboardPage({
                           <form action={updateProfileOptionStatus}>
                             <input name="optionId" type="hidden" value={option.id} />
                             <button
-                              className="focus-ring min-h-9 rounded-md border border-border bg-white px-3 text-sm font-semibold shadow-sm"
+                              aria-label={`${option.isActive ? "Disable" : "Enable"} ${option.label}`}
+                              aria-pressed={option.isActive}
+                              className="focus-ring inline-flex min-h-9 items-center gap-3 rounded-full border border-border bg-white px-2.5 py-1 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 data-[active=true]:border-emerald-200 data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-800 data-[active=false]:text-muted-foreground"
+                              data-active={option.isActive ? "true" : "false"}
                               disabled={option.id.startsWith("default-")}
                               name="isActive"
                               type="submit"
                               value={option.isActive ? "false" : "true"}
                             >
-                              {option.isActive ? "Disable" : "Enable"}
+                              <span
+                                className="relative inline-flex h-5 w-9 shrink-0 rounded-full bg-muted transition data-[active=true]:bg-emerald-500"
+                                data-active={option.isActive ? "true" : "false"}
+                              >
+                                <span
+                                  className="absolute left-0.5 top-0.5 size-4 rounded-full bg-white shadow-sm transition-transform data-[active=true]:translate-x-4"
+                                  data-active={option.isActive ? "true" : "false"}
+                                />
+                              </span>
+                              <span>{option.isActive ? "Active" : "Off"}</span>
                             </button>
                           </form>
                         </div>

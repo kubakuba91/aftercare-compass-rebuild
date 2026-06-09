@@ -313,6 +313,14 @@ export default async function SoberLivingStepPage({
                       selected={selected(profile?.accreditations)}
                     />
                   </div>
+                  <div className="grid gap-2 text-sm font-medium">
+                    Clinical focus
+                    <MultiSelectDropdown
+                      name="clinicalFocus"
+                      options={mergeOptionValues(profileOptions.clinicalFocus, selected(profile?.clinicalFocus))}
+                      selected={selected(profile?.clinicalFocus)}
+                    />
+                  </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Average length of stay")}
                     <select name="averageLengthOfStay" required defaultValue={profile?.averageLengthOfStay ?? "90 days"} className={fieldClassName()}>

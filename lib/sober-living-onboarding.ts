@@ -156,6 +156,7 @@ export const stepOneSchema = z.object({
   specialtyPopulations: z.array(z.string()).default([]),
   certificationsHeld: z.array(z.string()).default([]),
   accreditations: z.array(z.string()).default([]),
+  clinicalFocus: z.array(z.string()).default([]),
   averageLengthOfStay: requiredText.max(80)
 });
 

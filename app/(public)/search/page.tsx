@@ -403,6 +403,7 @@ export default async function SearchPage({
       amenities: true,
       certificationsHeld: true,
       accreditations: true,
+      clinicalFocus: true,
       supportServices: true,
       insuranceAccepted: true,
       matAccepted: true,
@@ -497,7 +498,8 @@ export default async function SearchPage({
                   ...profile.matAccepted,
                   ...profile.insuranceAccepted,
                   ...profile.certificationsHeld,
-                  ...profile.accreditations
+                  ...profile.accreditations,
+                  ...profile.clinicalFocus
                 ],
                 4
               );

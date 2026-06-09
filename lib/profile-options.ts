@@ -15,6 +15,13 @@ export const accreditationOptions = [
   "ASAM Level of Care Certification"
 ] as const;
 
+export const clinicalFocusOptions = [
+  "SUD",
+  "Mental Health",
+  "Co-occurring/Dual Diagnosis",
+  "Co-occurring Mental Health + SUD"
+] as const;
+
 export const profileOptionCategories = {
   certificationsHeld: {
     label: "Certifications held",
@@ -25,6 +32,11 @@ export const profileOptionCategories = {
     label: "Accreditations",
     description: "Accreditations available in onboarding and profile editors.",
     defaults: accreditationOptions
+  },
+  clinicalFocus: {
+    label: "Clinical focus",
+    description: "Clinical focus options available in onboarding and profile editors.",
+    defaults: clinicalFocusOptions
   },
   levelsOfCare: {
     label: "Levels of care",

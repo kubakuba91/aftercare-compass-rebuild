@@ -217,6 +217,7 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
       specialtyPopulations: valuesFromForm(formData, "specialtyPopulations"),
       certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
       accreditations: valuesFromForm(formData, "accreditations"),
+      clinicalFocus: valuesFromForm(formData, "clinicalFocus"),
       supportServices: valuesFromForm(formData, "supportServices"),
       amenities: valuesFromForm(formData, "amenities"),
       insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
@@ -795,7 +796,11 @@ export async function updateProfileOptionStatus(formData: FormData) {
     }
   });
 
+  revalidatePath("/", "layout");
+  revalidatePath("/search");
   revalidatePath("/dashboard/admin");
   revalidatePath("/dashboard/aftercare");
+  revalidatePath("/onboarding/aftercare/sober-living/1");
+  revalidatePath("/onboarding/aftercare/continued-care/1");
   redirect(adminDataSettingsHref(`${option.label} was ${isActive ? "enabled" : "disabled"}.`));
 }

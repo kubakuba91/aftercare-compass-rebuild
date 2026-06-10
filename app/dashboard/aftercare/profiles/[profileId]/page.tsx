@@ -303,7 +303,7 @@ export default async function AftercareProfileDetailPage({
                 </label>
                 <label className={labelClassName()}>
                   Website URL
-                  <input className={fieldClassName()} defaultValue={textValue(profile.websiteUrl)} name="websiteUrl" type="url" />
+                  <input className={fieldClassName()} defaultValue={textValue(profile.websiteUrl)} name="websiteUrl" placeholder="https://example.com" type="url" />
                 </label>
                 <label className={labelClassName()}>
                   Street address

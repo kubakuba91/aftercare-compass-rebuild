@@ -145,7 +145,7 @@ export default async function AdminEditProfilePage({
                 </label>
                 <label className={labelClassName()}>
                   Website URL
-                  <input className={fieldClassName()} defaultValue={profile.websiteUrl || ""} name="websiteUrl" type="url" />
+                  <input className={fieldClassName()} defaultValue={profile.websiteUrl || ""} name="websiteUrl" placeholder="https://example.com" type="url" />
                 </label>
               </div>
             </Card>

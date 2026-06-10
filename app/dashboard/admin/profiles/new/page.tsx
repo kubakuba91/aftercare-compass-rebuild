@@ -176,7 +176,7 @@ export default async function AdminCreateProfilePage({
                   </label>
                   <label className={labelClassName()}>
                     Website URL
-                    <input className={fieldClassName()} name="websiteUrl" type="url" />
+                    <input className={fieldClassName()} name="websiteUrl" placeholder="https://example.com" type="url" />
                   </label>
                 </div>
               </div>

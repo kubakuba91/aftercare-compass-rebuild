@@ -2,8 +2,19 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Save, ShieldCheck } from "lucide-react";
 import { ProfileStatus, ProfileType, Role } from "@prisma/client";
+import { PopulationBedFields } from "@/components/dashboard/population-bed-fields";
+import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import {
+  bedTypeOptions,
+  drugTestingPolicyOptions,
+  medicationAdministrationOptions,
+  preferredContactOptions,
+  roomTypeOptions
+} from "@/lib/sober-living-onboarding";
+import { telehealthModeOptions } from "@/lib/continued-care-onboarding";
+import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-options";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
 import { updateAdminAftercareProfile } from "../../../actions";
@@ -46,6 +57,73 @@ function moneyValue(value: string | number | null | undefined) {
   return match?.[0] ?? "";
 }
 
+function textValue(value: string | null | undefined) {
+  return value ?? "";
+}
+
+function selectedPopulation(values?: string[] | null, legacyValue?: string | null) {
+  if (values?.length) {
+    return values;
+  }
+
+  if (legacyValue === "men") {
+    return ["Men"];
+  }
+
+  if (legacyValue === "women") {
+    return ["Women"];
+  }
+
+  if (legacyValue === "lgbtq") {
+    return ["LGBTQ+"];
+  }
+
+  if (legacyValue === "both") {
+    return ["Men", "Women"];
+  }
+
+  return [];
+}
+
+function SectionIntro({
+  children,
+  title
+}: {
+  children?: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <div className="border-b border-border bg-muted/20 px-5 py-4">
+      <h2 className="text-lg font-semibold">{title}</h2>
+      {children ? <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">{children}</p> : null}
+    </div>
+  );
+}
+
+function CheckboxGroup({
+  label,
+  name,
+  options,
+  selected
+}: {
+  label: string;
+  name: string;
+  options: readonly string[];
+  selected: string[];
+}) {
+  return (
+    <fieldset className="grid gap-2">
+      <legend className="text-sm font-medium">{label}</legend>
+      <MultiSelectDropdown
+        name={name}
+        options={options}
+        placeholder={`Select ${label.toLowerCase()}...`}
+        selected={selected}
+      />
+    </fieldset>
+  );
+}
+
 export default async function AdminEditProfilePage({
   params
 }: {
@@ -60,14 +138,17 @@ export default async function AdminEditProfilePage({
     redirect("/dashboard");
   }
 
-  const profile = await prisma.aftercareProfile.findUnique({
-    where: { id: profileId },
-    include: {
-      images: {
-        orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }]
+  const [profile, profileOptions] = await Promise.all([
+    prisma.aftercareProfile.findUnique({
+      where: { id: profileId },
+      include: {
+        images: {
+          orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }]
+        }
       }
-    }
-  });
+    }),
+    getActiveProfileOptionValues()
+  ]);
 
   if (!profile) {
     redirect("/dashboard/admin?tab=profiles&reviewMessage=Listing%20was%20not%20found.");
@@ -99,129 +180,280 @@ export default async function AdminEditProfilePage({
         <section>
           <form action={updateAdminAftercareProfile} className="grid gap-5" encType="multipart/form-data" id="admin-edit-profile-form">
             <input name="profileId" type="hidden" value={profile.id} />
-            <Card className="grid gap-4">
-              <div>
-                <h2 className="text-lg font-semibold">Program basics</h2>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  Public identity, location, and admissions contact information.
-                </p>
+            <Card className="overflow-hidden p-0">
+              <SectionIntro title="Program basics">
+                Public identity, location, and admissions contact information.
+              </SectionIntro>
+              <div className="grid gap-4 p-5 md:grid-cols-2">
+                  <label className={labelClassName()}>
+                    Listing type
+                    <input
+                      className={fieldClassName()}
+                      disabled
+                      value={profile.type === ProfileType.sober_living ? "Sober living home" : "Continued care program"}
+                    />
+                  </label>
+                  <label className={labelClassName()}>
+                    Program name
+                    <input className={fieldClassName()} defaultValue={profile.programName} name="programName" required />
+                  </label>
+                  <label className={labelClassName()}>
+                    Preferred contact method
+                    <select className={fieldClassName()} defaultValue={textValue(profile.preferredContactMethod)} name="preferredContactMethod">
+                      <option value="">Select one</option>
+                      {preferredContactOptions.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className={labelClassName()}>
+                    Intake contact name
+                    <input className={fieldClassName()} defaultValue={textValue(profile.intakeContactName)} name="intakeContactName" />
+                  </label>
+                  <label className={labelClassName()}>
+                    License number
+                    <input className={fieldClassName()} defaultValue={textValue(profile.stateLicenseNumber)} name="stateLicenseNumber" />
+                  </label>
+                  <label className={labelClassName()}>
+                    Street address
+                    <input className={fieldClassName()} defaultValue={textValue(profile.streetAddress)} name="streetAddress" />
+                  </label>
+                  <label className={labelClassName()}>
+                    City
+                    <input className={fieldClassName()} defaultValue={profile.city} name="city" required />
+                  </label>
+                  <label className={labelClassName()}>
+                    State
+                    <input className={fieldClassName()} defaultValue={profile.state} maxLength={2} name="state" required />
+                  </label>
+                  <label className={labelClassName()}>
+                    ZIP
+                    <input className={fieldClassName()} defaultValue={textValue(profile.zip)} name="zip" />
+                  </label>
+                  <label className={labelClassName()}>
+                    Admissions phone
+                    <input className={fieldClassName()} defaultValue={textValue(profile.admissionsContactPhone)} name="admissionsContactPhone" />
+                  </label>
+                  <label className={labelClassName()}>
+                    Admissions email
+                    <input className={fieldClassName()} defaultValue={textValue(profile.admissionsContactEmail)} name="admissionsContactEmail" type="email" />
+                  </label>
+                  <label className={labelClassName()}>
+                    Website URL
+                    <input className={fieldClassName()} defaultValue={textValue(profile.websiteUrl)} name="websiteUrl" placeholder="https://example.com" type="url" />
+                  </label>
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
+            </Card>
+
+            <Card className="overflow-hidden p-0">
+              <SectionIntro title="Availability">
+                Keep the public availability summary current.
+              </SectionIntro>
+              <div className="grid gap-5 p-5">
+                {profile.type === ProfileType.sober_living ? (
+                  <>
+                    <CheckboxGroup
+                      label="Population served"
+                      name="populationServedOptions"
+                      options={mergeOptionValues(profileOptions.populationServed, selectedPopulation(profile.populationServedOptions, profile.populationServed))}
+                      selected={selectedPopulation(profile.populationServedOptions, profile.populationServed)}
+                    />
+                    <PopulationBedFields
+                      initialPopulations={selectedPopulation(profile.populationServedOptions, profile.populationServed)}
+                      values={{
+                        bedsLgbtq: profile.bedsLgbtq,
+                        bedsLgbtqAvailable: profile.bedsLgbtqAvailable,
+                        bedsMen: profile.bedsMen,
+                        bedsMenAvailable: profile.bedsMenAvailable,
+                        bedsWomen: profile.bedsWomen,
+                        bedsWomenAvailable: profile.bedsWomenAvailable
+                      }}
+                    />
+                    <CheckboxGroup label="Room types" name="roomTypes" options={mergeOptionValues(roomTypeOptions, profile.roomTypes)} selected={profile.roomTypes} />
+                    <CheckboxGroup label="Bed types" name="bedTypes" options={mergeOptionValues(bedTypeOptions, profile.bedTypes)} selected={profile.bedTypes} />
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className={labelClassName()}>
+                        Price per week
+                        <span className={moneyFieldClassName()}>
+                          <span className="font-semibold text-muted-foreground">$</span>
+                          <input className={moneyInputClassName()} defaultValue={moneyValue(profile.pricePerWeek)} inputMode="numeric" min="0" name="pricePerWeek" type="number" />
+                        </span>
+                      </label>
+                      <label className={labelClassName()}>
+                        Cost to move in
+                        <span className={moneyFieldClassName()}>
+                          <span className="font-semibold text-muted-foreground">$</span>
+                          <input className={moneyInputClassName()} defaultValue={moneyValue(profile.moveInCost)} inputMode="numeric" min="0" name="moveInCost" placeholder="600" type="number" />
+                        </span>
+                      </label>
+                      <label className={labelClassName()}>
+                        Wheelchair accessible bed count
+                        <input className={fieldClassName()} defaultValue={profile.wheelchairAccessibleBeds ?? ""} min="0" name="wheelchairAccessibleBeds" type="number" />
+                      </label>
+                    </div>
+                    <label className={labelClassName()}>
+                      Reserved beds notes
+                      <textarea className={textareaClassName()} defaultValue={textValue(profile.bedsReservedNotes)} name="bedsReservedNotes" />
+                    </label>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className={labelClassName()}>
+                        Accepting new patients
+                        <select className={fieldClassName()} defaultValue={profile.acceptingNewPatients ? "yes" : "no"} name="acceptingNewPatients">
+                          <option value="yes">Yes</option>
+                          <option value="no">No</option>
+                        </select>
+                      </label>
+                      <label className={labelClassName()}>
+                        Delivery Model
+                        <select className={fieldClassName()} defaultValue={textValue(profile.telehealthMode)} name="telehealthMode">
+                          <option value="">Select one</option>
+                          {telehealthModeOptions.map((option) => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <CheckboxGroup label="Program types" name="programTypes" options={mergeOptionValues(profileOptions.programTypes, profile.programTypes)} selected={profile.programTypes} />
+                    <CheckboxGroup label="Levels of care" name="levelsOfCare" options={mergeOptionValues(profileOptions.levelsOfCare, profile.levelsOfCare)} selected={profile.levelsOfCare} />
+                    <label className={labelClassName()}>
+                      Hours of operation
+                      <textarea className={textareaClassName()} defaultValue={textValue(profile.hoursOfOperation)} name="hoursOfOperation" />
+                    </label>
+                  </>
+                )}
                 <label className={labelClassName()}>
-                  Listing type
-                  <input
-                    className={fieldClassName()}
-                    disabled
-                    value={profile.type === ProfileType.sober_living ? "Sober living home" : "Continued care program"}
-                  />
-                </label>
-                <label className={labelClassName()}>
-                  Program name
-                  <input className={fieldClassName()} defaultValue={profile.programName} name="programName" required />
-                </label>
-                <label className={labelClassName()}>
-                  Street address
-                  <input className={fieldClassName()} defaultValue={profile.streetAddress || ""} name="streetAddress" />
-                </label>
-                <label className={labelClassName()}>
-                  City
-                  <input className={fieldClassName()} defaultValue={profile.city} name="city" required />
-                </label>
-                <label className={labelClassName()}>
-                  State
-                  <input className={fieldClassName()} defaultValue={profile.state} maxLength={2} name="state" required />
-                </label>
-                <label className={labelClassName()}>
-                  ZIP
-                  <input className={fieldClassName()} defaultValue={profile.zip || ""} name="zip" />
-                </label>
-                <label className={labelClassName()}>
-                  Admissions phone
-                  <input className={fieldClassName()} defaultValue={profile.admissionsContactPhone || ""} name="admissionsContactPhone" />
-                </label>
-                <label className={labelClassName()}>
-                  Admissions email
-                  <input className={fieldClassName()} defaultValue={profile.admissionsContactEmail || ""} name="admissionsContactEmail" type="email" />
-                </label>
-                <label className={labelClassName()}>
-                  Website URL
-                  <input className={fieldClassName()} defaultValue={profile.websiteUrl || ""} name="websiteUrl" placeholder="https://example.com" type="url" />
+                  Availability notes
+                  <textarea className={textareaClassName()} defaultValue={textValue(profile.availabilityNotes)} name="availabilityNotes" />
                 </label>
               </div>
             </Card>
 
-            <Card className="grid gap-4">
-              <div>
-                <h2 className="text-lg font-semibold">Availability</h2>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  Keep the public availability summary current.
-                </p>
-              </div>
-              {profile.type === ProfileType.sober_living ? (
+            <Card className="overflow-hidden p-0">
+              <SectionIntro title="Profile content">
+                Story, services, fit, payment, clinical details, and public-facing notes.
+              </SectionIntro>
+              <div className="grid gap-5 p-5">
+                <label className={labelClassName()}>
+                  Description
+                  <textarea className={textareaClassName("lg")} defaultValue={textValue(profile.description)} name="description" />
+                </label>
+                <label className={labelClassName()}>
+                  House rules
+                  <textarea className={textareaClassName("lg")} defaultValue={textValue(profile.houseRulesText)} name="houseRulesText" />
+                </label>
+                <label className={labelClassName()}>
+                  Referral fit notes
+                  <textarea className={textareaClassName("lg")} defaultValue={textValue(profile.referralFitNotes)} name="referralFitNotes" />
+                </label>
+                {profile.type === ProfileType.continued_care ? (
+                  <>
+                    <label className={labelClassName()}>
+                      Referral process
+                      <textarea className={textareaClassName("lg")} defaultValue={textValue(profile.referralProcessDescription)} name="referralProcessDescription" />
+                    </label>
+                    <CheckboxGroup
+                      label="Population served"
+                      name="populationServedOptions"
+                      options={mergeOptionValues(profileOptions.populationServed, profile.populationServedOptions)}
+                      selected={profile.populationServedOptions}
+                    />
+                  </>
+                ) : null}
+                <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={mergeOptionValues(profileOptions.specialtyPopulations, profile.specialtyPopulations)} selected={profile.specialtyPopulations} />
+                <CheckboxGroup label="Certifications held" name="certificationsHeld" options={mergeOptionValues(profileOptions.certificationsHeld, profile.certificationsHeld)} selected={profile.certificationsHeld} />
+                <CheckboxGroup label="Accreditations" name="accreditations" options={mergeOptionValues(profileOptions.accreditations, profile.accreditations)} selected={profile.accreditations} />
+                <CheckboxGroup label="Clinical focus" name="clinicalFocus" options={mergeOptionValues(profileOptions.clinicalFocus, profile.clinicalFocus)} selected={profile.clinicalFocus} />
+                <CheckboxGroup label="Support services" name="supportServices" options={mergeOptionValues(profileOptions.supportServices, profile.supportServices)} selected={profile.supportServices} />
+                {profile.type === ProfileType.sober_living ? (
+                  <CheckboxGroup label="Amenities" name="amenities" options={mergeOptionValues(profileOptions.amenities, profile.amenities)} selected={profile.amenities} />
+                ) : null}
+                <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className={labelClassName()}>
-                    Price per week
-                    <span className={moneyFieldClassName()}>
-                      <span className="font-semibold text-muted-foreground">$</span>
-                      <input className={moneyInputClassName()} defaultValue={moneyValue(profile.pricePerWeek)} inputMode="numeric" min="0" name="pricePerWeek" type="number" />
-                    </span>
+                    Funding available
+                    <select className={fieldClassName()} defaultValue={profile.fundingAvailable === null ? "" : profile.fundingAvailable ? "yes" : "no"} name="fundingAvailable">
+                      <option value="">Not set</option>
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </select>
                   </label>
                   <label className={labelClassName()}>
-                    Cost to move in
-                    <span className={moneyFieldClassName()}>
-                      <span className="font-semibold text-muted-foreground">$</span>
-                      <input className={moneyInputClassName()} defaultValue={moneyValue(profile.moveInCost)} inputMode="numeric" min="0" name="moveInCost" placeholder="600" type="number" />
-                    </span>
+                    Medication administration
+                    <select className={fieldClassName()} defaultValue={textValue(profile.medicationAdministration)} name="medicationAdministration">
+                      <option value="">Not set</option>
+                      {medicationAdministrationOptions.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
                   </label>
                 </div>
-              ) : (
                 <label className={labelClassName()}>
-                  Accepting new patients
-                  <select className={fieldClassName()} defaultValue={profile.acceptingNewPatients ? "yes" : "no"} name="acceptingNewPatients">
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
+                  Funding notes
+                  <textarea className={textareaClassName()} defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
+                </label>
+                <CheckboxGroup label="MAT accepted" name="matAccepted" options={mergeOptionValues(profileOptions.matAccepted, profile.matAccepted)} selected={profile.matAccepted} />
+                <label className={labelClassName()}>
+                  Medication restrictions
+                  <textarea className={textareaClassName()} defaultValue={textValue(profile.medicationRestrictions)} name="medicationRestrictions" />
+                </label>
+                <label className={labelClassName()}>
+                  Drug testing policy
+                  <select className={fieldClassName()} defaultValue={textValue(profile.drugTestingPolicy)} name="drugTestingPolicy">
+                    <option value="">Not set</option>
+                    {drugTestingPolicyOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
                   </select>
                 </label>
-              )}
-              <label className={labelClassName()}>
-                Availability notes
-                <textarea className={textareaClassName()} defaultValue={profile.availabilityNotes || ""} name="availabilityNotes" />
-              </label>
+                {profile.type === ProfileType.sober_living ? (
+                  <label className="ac-panel-card flex items-start gap-3 p-4 text-sm">
+                    <input
+                      defaultChecked={profile.goodNeighborPolicyAcknowledged}
+                      name="goodNeighborPolicyAcknowledged"
+                      type="checkbox"
+                      value="yes"
+                    />
+                    Good Neighbor Policy acknowledged
+                  </label>
+                ) : null}
+              </div>
             </Card>
 
-            <Card className="grid gap-4">
-              <div>
-                <h2 className="text-lg font-semibold">Profile content</h2>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  Public profile description shown on the marketplace profile page.
-                </p>
-              </div>
-              <label className={labelClassName()}>
-                Description
-                <textarea className={textareaClassName("lg")} defaultValue={profile.description || ""} name="description" />
-              </label>
-            </Card>
-
-            <Card className="grid gap-4">
-              <div>
-                <h2 className="text-lg font-semibold">Profile images</h2>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  Add additional images to this listing. Existing images stay attached.
-                </p>
-              </div>
-              {profile.images.length ? (
-                <div className="flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
-                  {profile.images.length} existing image{profile.images.length === 1 ? "" : "s"} attached
+            <Card className="overflow-hidden p-0">
+              <SectionIntro title="Profile images">
+                Add additional images to this listing. Existing images stay attached.
+              </SectionIntro>
+              <div className="grid gap-4 p-5">
+                {profile.images.length ? (
+                  <div className="flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
+                    {profile.images.length} existing image{profile.images.length === 1 ? "" : "s"} attached
+                  </div>
+                ) : null}
+                <div className="grid gap-3">
+                  <p className="text-sm font-medium">Video URLs</p>
+                  {[0, 1, 2].map((index) => (
+                    <input
+                      key={index}
+                      className={fieldClassName()}
+                      defaultValue={profile.videoUrls[index] ?? ""}
+                      name="videoUrls"
+                      placeholder="https://..."
+                      type="url"
+                    />
+                  ))}
                 </div>
-              ) : null}
-              <div className="rounded-md border border-dashed border-border bg-muted/20 p-4">
-                <input
-                  accept="image/*"
-                  className="block w-full text-sm font-medium text-muted-foreground file:mr-4 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground"
-                  multiple
-                  name="images"
-                  type="file"
-                />
+                <div className="rounded-md border border-dashed border-border bg-muted/20 p-4">
+                  <input
+                    accept="image/*"
+                    className="block w-full text-sm font-medium text-muted-foreground file:mr-4 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground"
+                    multiple
+                    name="images"
+                    type="file"
+                  />
+                </div>
               </div>
             </Card>
           </form>

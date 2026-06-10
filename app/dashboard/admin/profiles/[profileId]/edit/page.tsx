@@ -1,7 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Save, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Save, ShieldCheck, Star, Trash2 } from "lucide-react";
+import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { ProfileStatus, ProfileType, Role } from "@prisma/client";
+import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
 import { PopulationBedFields } from "@/components/dashboard/population-bed-fields";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { Badge } from "@/components/ui/badge";
@@ -14,10 +17,16 @@ import {
   roomTypeOptions
 } from "@/lib/sober-living-onboarding";
 import { telehealthModeOptions } from "@/lib/continued-care-onboarding";
+import { formatPhotoLimit, getAftercarePhotoLimit } from "@/lib/feature-gates";
 import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-options";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
-import { updateAdminAftercareProfile } from "../../../actions";
+import {
+  removeAdminProfileImage,
+  setAdminProfileCoverImage,
+  updateAdminAftercareProfile,
+  uploadAdminProfileImages
+} from "../../../actions";
 
 function fieldClassName() {
   return "min-h-11 rounded-md border border-border bg-white px-3 text-sm";
@@ -125,13 +134,16 @@ function CheckboxGroup({
 }
 
 export default async function AdminEditProfilePage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ profileId: string }>;
+  searchParams: Promise<{ message?: string }>;
 }) {
-  const [appUser, { profileId }] = await Promise.all([
+  const [appUser, { profileId }, query] = await Promise.all([
     getProtectedAppUser("/dashboard/admin"),
-    params
+    params,
+    searchParams
   ]);
 
   if (appUser.role !== Role.system_admin) {
@@ -142,6 +154,11 @@ export default async function AdminEditProfilePage({
     prisma.aftercareProfile.findUnique({
       where: { id: profileId },
       include: {
+        organization: {
+          select: {
+            subscriptionPlan: true
+          }
+        },
         images: {
           orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }]
         }
@@ -153,6 +170,8 @@ export default async function AdminEditProfilePage({
   if (!profile) {
     redirect("/dashboard/admin?tab=profiles&reviewMessage=Listing%20was%20not%20found.");
   }
+
+  const photoLimit = getAftercarePhotoLimit(profile.organization.subscriptionPlan);
 
   return (
     <main className="shell py-8">
@@ -175,6 +194,12 @@ export default async function AdminEditProfilePage({
           </p>
         </div>
       </div>
+
+      {query.message ? (
+        <div className="mt-5 rounded-md border border-primary/25 bg-primary/10 p-4 text-sm font-semibold text-primary">
+          {query.message}
+        </div>
+      ) : null}
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_340px]">
         <section>
@@ -422,41 +447,85 @@ export default async function AdminEditProfilePage({
               </div>
             </Card>
 
-            <Card className="overflow-hidden p-0">
-              <SectionIntro title="Profile images">
-                Add additional images to this listing. Existing images stay attached.
-              </SectionIntro>
-              <div className="grid gap-4 p-5">
-                {profile.images.length ? (
-                  <div className="flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
-                    {profile.images.length} existing image{profile.images.length === 1 ? "" : "s"} attached
-                  </div>
-                ) : null}
-                <div className="grid gap-3">
-                  <p className="text-sm font-medium">Video URLs</p>
-                  {[0, 1, 2].map((index) => (
-                    <input
-                      key={index}
-                      className={fieldClassName()}
-                      defaultValue={profile.videoUrls[index] ?? ""}
-                      name="videoUrls"
-                      placeholder="https://..."
-                      type="url"
-                    />
+          </form>
+
+          <Card className="overflow-hidden p-0">
+            <SectionIntro title="Profile images">
+              Upload up to {formatPhotoLimit(photoLimit)}. The cover image appears on search cards and at the top of the public profile.
+            </SectionIntro>
+            <div className="grid gap-4 p-5">
+              <div className="grid gap-3">
+                <p className="text-sm font-medium">Video URLs</p>
+                {[0, 1, 2].map((index) => (
+                  <input
+                    key={index}
+                    className={fieldClassName()}
+                    defaultValue={profile.videoUrls[index] ?? ""}
+                    form="admin-edit-profile-form"
+                    name="videoUrls"
+                    placeholder="https://..."
+                    type="url"
+                  />
+                ))}
+              </div>
+
+              <form action={uploadAdminProfileImages} className="grid gap-3 rounded-md border border-dashed border-border bg-muted/30 p-4">
+                <input name="profileId" type="hidden" value={profile.id} />
+                <ProfileImageUploader currentImageCount={profile.images.length} photoLimit={photoLimit} />
+              </form>
+
+              {profile.images.length ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {profile.images.map((image) => (
+                    <div key={image.id} className="overflow-hidden rounded-md border border-border bg-white">
+                      <div className="relative aspect-[4/3] bg-muted">
+                        <Image
+                          alt={image.altText || profile.programName}
+                          className="object-cover"
+                          fill
+                          sizes="(min-width: 1024px) 320px, 100vw"
+                          src={image.url}
+                          unoptimized
+                        />
+                        {image.isCover ? (
+                          <Badge className="absolute left-3 top-3" tone="verified">
+                            Cover
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <div className="flex flex-wrap gap-2 p-3">
+                        {!image.isCover ? (
+                          <form action={setAdminProfileCoverImage}>
+                            <input name="profileId" type="hidden" value={profile.id} />
+                            <input name="imageId" type="hidden" value={image.id} />
+                            <button className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold">
+                              <Star size={15} />
+                              Make cover
+                            </button>
+                          </form>
+                        ) : null}
+                        <form action={removeAdminProfileImage}>
+                          <input name="profileId" type="hidden" value={profile.id} />
+                          <input name="imageId" type="hidden" value={image.id} />
+                          <ConfirmSubmitButton
+                            className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold text-destructive"
+                            message="Remove this image from the profile?"
+                          >
+                            <Trash2 size={15} />
+                            Remove
+                          </ConfirmSubmitButton>
+                        </form>
+                      </div>
+                    </div>
                   ))}
                 </div>
-                <div className="rounded-md border border-dashed border-border bg-muted/20 p-4">
-                  <input
-                    accept="image/*"
-                    className="block w-full text-sm font-medium text-muted-foreground file:mr-4 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground"
-                    multiple
-                    name="images"
-                    type="file"
-                  />
+              ) : (
+                <div className="ac-panel-card p-4 text-sm text-muted-foreground">
+                  No images uploaded yet.
                 </div>
-              </div>
-            </Card>
-          </form>
+              )}
+            </div>
+          </Card>
         </section>
 
         <aside className="grid h-fit gap-4 lg:sticky lg:top-6">

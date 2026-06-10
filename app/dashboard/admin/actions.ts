@@ -14,7 +14,7 @@ import {
 } from "@prisma/client";
 import { notifyProfileClaimApproved, notifyProfileClaimRejected } from "@/lib/email-notifications";
 import { geocodeProfileAddress } from "@/lib/geocoding";
-import { imagesFromFormData, uploadProfileImagesForProfile } from "@/lib/profile-images";
+import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { profileOptionCategories, profileOptionCategoryKeys, type ProfileOptionCategory } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
@@ -47,6 +47,12 @@ function adminProfileHref(message: string) {
   });
 
   return `/dashboard/admin?${params.toString()}`;
+}
+
+function adminEditProfileHref(profileId: string, message: string) {
+  const params = new URLSearchParams({ message });
+
+  return `/dashboard/admin/profiles/${profileId}/edit?${params.toString()}`;
 }
 
 function adminDataSettingsHref(message: string) {
@@ -557,6 +563,174 @@ export async function updateAdminAftercareProfile(formData: FormData) {
   revalidatePath(`/profiles/${profile.slug}`);
 
   redirect(adminProfileHref(`${programName} was updated.${imageUploadMessage}`));
+}
+
+export async function uploadAdminProfileImages(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const profileId = String(formData.get("profileId") || "");
+  const profile = await prisma.aftercareProfile.findUnique({
+    where: { id: profileId },
+    select: {
+      id: true,
+      orgId: true,
+      programName: true,
+      slug: true
+    }
+  });
+
+  if (!profile) {
+    redirect(adminProfileHref("Listing was not found."));
+  }
+
+  const files = imagesFromFormData(formData);
+
+  if (!files.length) {
+    redirect(adminEditProfileHref(profile.id, "Choose at least one image to upload."));
+  }
+
+  let uploadedCount = 0;
+
+  try {
+    uploadedCount = await uploadProfileImagesForProfile(profile, files);
+  } catch (error) {
+    redirect(adminEditProfileHref(profile.id, error instanceof Error ? error.message : "Image upload failed."));
+  }
+
+  await prisma.adminAuditLog.create({
+    data: {
+      actorUserId: appUser.id,
+      action: "profile_images_uploaded",
+      entityType: "AftercareProfile",
+      entityId: profile.id,
+      metadata: {
+        profileName: profile.programName,
+        uploadedCount
+      }
+    }
+  });
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath(`/dashboard/admin/profiles/${profile.id}/edit`);
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+  redirect(adminEditProfileHref(profile.id, `${uploadedCount} image${uploadedCount === 1 ? "" : "s"} uploaded.`));
+}
+
+export async function setAdminProfileCoverImage(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const profileId = String(formData.get("profileId") || "");
+  const imageId = String(formData.get("imageId") || "");
+  const profile = await prisma.aftercareProfile.findUnique({
+    where: { id: profileId },
+    select: {
+      id: true,
+      slug: true,
+      programName: true
+    }
+  });
+
+  if (!profile) {
+    redirect(adminProfileHref("Listing was not found."));
+  }
+
+  const image = await prisma.profileImage.findFirst({
+    where: {
+      id: imageId,
+      profileId: profile.id
+    },
+    select: { id: true }
+  });
+
+  if (!image) {
+    redirect(adminEditProfileHref(profile.id, "Image not found."));
+  }
+
+  await prisma.$transaction([
+    prisma.profileImage.updateMany({
+      where: { profileId: profile.id },
+      data: { isCover: false }
+    }),
+    prisma.profileImage.update({
+      where: { id: image.id },
+      data: { isCover: true }
+    }),
+    prisma.adminAuditLog.create({
+      data: {
+        actorUserId: appUser.id,
+        action: "profile_cover_image_updated",
+        entityType: "AftercareProfile",
+        entityId: profile.id,
+        metadata: {
+          profileName: profile.programName,
+          imageId: image.id
+        }
+      }
+    })
+  ]);
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath(`/dashboard/admin/profiles/${profile.id}/edit`);
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+  redirect(adminEditProfileHref(profile.id, "Cover image updated."));
+}
+
+export async function removeAdminProfileImage(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const profileId = String(formData.get("profileId") || "");
+  const imageId = String(formData.get("imageId") || "");
+  const profile = await prisma.aftercareProfile.findUnique({
+    where: { id: profileId },
+    select: {
+      id: true,
+      slug: true,
+      programName: true
+    }
+  });
+
+  if (!profile) {
+    redirect(adminProfileHref("Listing was not found."));
+  }
+
+  const removed = await removeProfileImageForProfile(profile.id, imageId);
+
+  if (!removed) {
+    redirect(adminEditProfileHref(profile.id, "Image not found."));
+  }
+
+  await prisma.adminAuditLog.create({
+    data: {
+      actorUserId: appUser.id,
+      action: "profile_image_removed",
+      entityType: "AftercareProfile",
+      entityId: profile.id,
+      metadata: {
+        profileName: profile.programName,
+        imageId
+      }
+    }
+  });
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath(`/dashboard/admin/profiles/${profile.id}/edit`);
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+  redirect(adminEditProfileHref(profile.id, "Image removed."));
 }
 
 export async function reviewOnboardingSubmission(formData: FormData) {

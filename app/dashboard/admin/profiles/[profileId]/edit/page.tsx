@@ -553,15 +553,17 @@ export default async function AdminEditProfilePage({
             </label>
           </Card>
 
-          <Card>
-            <h2 className="font-semibold">Public preview</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Check how this profile appears before or after saving edits.
-            </p>
-            <Link className="mt-4 inline-flex min-h-10 items-center rounded-full border border-border px-4 text-sm font-semibold" href={`/profiles/${profile.slug}?preview=1`}>
-              View profile
-            </Link>
-          </Card>
+          {profile.status === ProfileStatus.published ? (
+            <Card>
+              <h2 className="font-semibold">Public preview</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Check how this profile appears before or after saving edits.
+              </p>
+              <Link className="mt-4 inline-flex min-h-10 items-center rounded-full border border-border px-4 text-sm font-semibold" href={`/profiles/${profile.slug}?preview=1`}>
+                View profile
+              </Link>
+            </Card>
+          ) : null}
         </aside>
       </div>
     </main>

@@ -1481,12 +1481,14 @@ export default async function AftercareDashboardPage({
                             </td>
                             <td className="py-4">
                               <div className="flex items-center justify-end gap-2">
-                                <Link
-                                  className="focus-ring inline-flex min-h-9 items-center rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground"
-                                  href={`/profiles/${profile.slug}?preview=1`}
-                                >
-                                  View profile
-                                </Link>
+                                {profile.status === "published" ? (
+                                  <Link
+                                    className="focus-ring inline-flex min-h-9 items-center rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground"
+                                    href={`/profiles/${profile.slug}?preview=1`}
+                                  >
+                                    View profile
+                                  </Link>
+                                ) : null}
                                 <RowActionsMenu label={`${profile.programName} actions`}>
                                   <RowActionsMenuLabel>Actions</RowActionsMenuLabel>
                                   <RowActionsMenuLink

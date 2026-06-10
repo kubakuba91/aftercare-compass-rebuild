@@ -896,9 +896,13 @@ export default async function AdminDashboardPage({
                 {profiles.length ? profiles.map((profile) => (
                   <tr className="border-b border-border last:border-0" key={profile.id}>
                     <td className="py-4 pr-4">
-                      <Link className="font-semibold underline-offset-4 hover:underline" href={`/profiles/${profile.slug}?preview=1`}>
-                        {profile.programName}
-                      </Link>
+                      {profile.status === ProfileStatus.published ? (
+                        <Link className="font-semibold underline-offset-4 hover:underline" href={`/profiles/${profile.slug}?preview=1`}>
+                          {profile.programName}
+                        </Link>
+                      ) : (
+                        <span className="font-semibold">{profile.programName}</span>
+                      )}
                       <p className="mt-1 text-xs text-muted-foreground">{[profile.publicCity, profile.publicState].filter(Boolean).join(", ")}</p>
                     </td>
                     <td className="py-4 pr-4">
@@ -915,12 +919,14 @@ export default async function AdminDashboardPage({
                     <td className="py-4 text-right">
                       <RowActionsMenu label={`${profile.programName} actions`}>
                         <RowActionsMenuLabel>Listing actions</RowActionsMenuLabel>
-                        <RowActionsMenuLink
-                          description="Open the public profile in admin preview mode."
-                          href={`/profiles/${profile.slug}?preview=1`}
-                        >
-                          View profile
-                        </RowActionsMenuLink>
+                        {profile.status === ProfileStatus.published ? (
+                          <RowActionsMenuLink
+                            description="Open the public profile in admin preview mode."
+                            href={`/profiles/${profile.slug}?preview=1`}
+                          >
+                            View profile
+                          </RowActionsMenuLink>
+                        ) : null}
                         <RowActionsMenuLink
                           description="Update this listing's profile details."
                           href={`/dashboard/admin/profiles/${profile.id}/edit`}

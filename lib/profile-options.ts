@@ -122,7 +122,19 @@ export async function getProfileOptionGroups({ includeInactive = false } = {}) {
         }))
         .filter((option) => !rowLabels.has(option.label.toLowerCase()));
 
-      return [category, [...defaultOptions, ...rowsForCategory]];
+      const options = [...defaultOptions, ...rowsForCategory].sort((first, second) => {
+        if (first.isActive !== second.isActive) {
+          return first.isActive ? -1 : 1;
+        }
+
+        if (first.sortOrder !== second.sortOrder) {
+          return first.sortOrder - second.sortOrder;
+        }
+
+        return first.label.localeCompare(second.label);
+      });
+
+      return [category, options];
     })
   ) as Record<
     ProfileOptionCategory,

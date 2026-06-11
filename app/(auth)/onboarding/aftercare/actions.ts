@@ -8,6 +8,7 @@ import { getAftercareProfileLimit, isWithinPlanLimit } from "@/lib/feature-gates
 import { geocodeProfileAddress } from "@/lib/geocoding";
 import { imagesFromFormData, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
+import { populationBedTotalsFromForm } from "@/lib/population-beds";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
@@ -50,6 +51,17 @@ function jsonDraft(value: Record<string, unknown>) {
 
 function currencyText(value: FormDataEntryValue | null) {
   return String(value || "").replace(/^\s*\$\s*/, "").trim();
+}
+
+function numberFromForm(value: FormDataEntryValue | null) {
+  const text = currencyText(value);
+
+  if (!text) {
+    return null;
+  }
+
+  const parsed = Number(text);
+  return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null;
 }
 
 function moveInCostText(value: string | FormDataEntryValue | null | undefined) {
@@ -503,22 +515,29 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         moveInCost: currencyText(formData.get("moveInCost")) || undefined
       });
 
-      const totalBeds = parsed.bedsMen + parsed.bedsWomen + parsed.bedsLgbtq;
-      const bedsAvailable =
-        parsed.bedsMenAvailable + parsed.bedsWomenAvailable + parsed.bedsLgbtqAvailable;
+      const populationServedOptions = arrayFromDraft(
+        currentDraft && typeof currentDraft === "object" && !Array.isArray(currentDraft)
+          ? (currentDraft as Record<string, unknown>).populationServedOptions
+          : []
+      );
+      const bedTotals = populationBedTotalsFromForm(formData, populationServedOptions, numberFromForm);
+
+      if (bedTotals.hasInvalidAvailableBeds) {
+        redirect("/onboarding/aftercare/sober-living/2?error=Available beds cannot exceed total beds.");
+      }
 
       await prisma.onboardingDraft.update({
         where: { id: draft.id },
         data: {
           soberLivingDraft: jsonDraft(mergeDraft(currentDraft, {
-            totalBeds,
-            bedsAvailable,
-            bedsMen: parsed.bedsMen,
-            bedsMenAvailable: parsed.bedsMenAvailable,
-            bedsWomen: parsed.bedsWomen,
-            bedsWomenAvailable: parsed.bedsWomenAvailable,
-            bedsLgbtq: parsed.bedsLgbtq,
-            bedsLgbtqAvailable: parsed.bedsLgbtqAvailable,
+            totalBeds: bedTotals.totalBeds,
+            bedsAvailable: bedTotals.bedsAvailable,
+            bedsMen: bedTotals.bedsMen,
+            bedsMenAvailable: bedTotals.bedsMenAvailable,
+            bedsWomen: bedTotals.bedsWomen,
+            bedsWomenAvailable: bedTotals.bedsWomenAvailable,
+            bedsLgbtq: bedTotals.bedsLgbtq,
+            bedsLgbtqAvailable: bedTotals.bedsLgbtqAvailable,
             roomTypes: parsed.roomTypes,
             bedTypes: parsed.bedTypes,
             bedsReservedNotes: nullableText(parsed.bedsReservedNotes),

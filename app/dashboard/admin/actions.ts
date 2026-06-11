@@ -15,6 +15,7 @@ import {
 import { notifyProfileClaimApproved, notifyProfileClaimRejected } from "@/lib/email-notifications";
 import { geocodeProfileAddress } from "@/lib/geocoding";
 import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
+import { populationBedTotalsFromForm } from "@/lib/population-beds";
 import { profileOptionCategories, profileOptionCategoryKeys, type ProfileOptionCategory } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
@@ -255,19 +256,9 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
   });
 
   const populationServedOptions = valuesFromForm(formData, "populationServedOptions");
-  const selectedPopulations = new Set(populationServedOptions);
-  const bedsMen = selectedPopulations.has("Men") ? numberFromForm(formData.get("bedsMen")) ?? 0 : 0;
-  const bedsMenAvailable = selectedPopulations.has("Men") ? numberFromForm(formData.get("bedsMenAvailable")) ?? 0 : 0;
-  const bedsWomen = selectedPopulations.has("Women") ? numberFromForm(formData.get("bedsWomen")) ?? 0 : 0;
-  const bedsWomenAvailable = selectedPopulations.has("Women") ? numberFromForm(formData.get("bedsWomenAvailable")) ?? 0 : 0;
-  const bedsLgbtq = selectedPopulations.has("LGBTQ+") ? numberFromForm(formData.get("bedsLgbtq")) ?? 0 : 0;
-  const bedsLgbtqAvailable = selectedPopulations.has("LGBTQ+") ? numberFromForm(formData.get("bedsLgbtqAvailable")) ?? 0 : 0;
+  const bedTotals = populationBedTotalsFromForm(formData, populationServedOptions, numberFromForm);
 
-  if (
-    bedsMenAvailable > bedsMen ||
-    bedsWomenAvailable > bedsWomen ||
-    bedsLgbtqAvailable > bedsLgbtq
-  ) {
+  if (bedTotals.hasInvalidAvailableBeds) {
     redirect(adminProfileHref("Available beds cannot exceed total beds."));
   }
 
@@ -334,14 +325,14 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
         : {
             populationServedOptions,
             populationServed: populationServedOptions.join(", ") || null,
-            bedsMen,
-            bedsWomen,
-            bedsLgbtq,
-            bedsMenAvailable,
-            bedsWomenAvailable,
-            bedsLgbtqAvailable,
-            totalBeds: bedsMen + bedsWomen + bedsLgbtq,
-            bedsAvailable: bedsMenAvailable + bedsWomenAvailable + bedsLgbtqAvailable,
+            bedsMen: bedTotals.bedsMen,
+            bedsWomen: bedTotals.bedsWomen,
+            bedsLgbtq: bedTotals.bedsLgbtq,
+            bedsMenAvailable: bedTotals.bedsMenAvailable,
+            bedsWomenAvailable: bedTotals.bedsWomenAvailable,
+            bedsLgbtqAvailable: bedTotals.bedsLgbtqAvailable,
+            totalBeds: bedTotals.totalBeds,
+            bedsAvailable: bedTotals.bedsAvailable,
             bedsAvailableUpdatedAt: new Date(),
             roomTypes: valuesFromForm(formData, "roomTypes"),
             bedTypes: valuesFromForm(formData, "bedTypes"),
@@ -559,33 +550,23 @@ export async function updateAdminAftercareProfile(formData: FormData) {
   let typeSpecificData = {};
 
   if (profile.type === ProfileType.sober_living) {
-    const selectedPopulations = new Set(populationServedOptions);
-    const bedsMen = selectedPopulations.has("Men") ? numberFromForm(formData.get("bedsMen")) ?? 0 : 0;
-    const bedsMenAvailable = selectedPopulations.has("Men") ? numberFromForm(formData.get("bedsMenAvailable")) ?? 0 : 0;
-    const bedsWomen = selectedPopulations.has("Women") ? numberFromForm(formData.get("bedsWomen")) ?? 0 : 0;
-    const bedsWomenAvailable = selectedPopulations.has("Women") ? numberFromForm(formData.get("bedsWomenAvailable")) ?? 0 : 0;
-    const bedsLgbtq = selectedPopulations.has("LGBTQ+") ? numberFromForm(formData.get("bedsLgbtq")) ?? 0 : 0;
-    const bedsLgbtqAvailable = selectedPopulations.has("LGBTQ+") ? numberFromForm(formData.get("bedsLgbtqAvailable")) ?? 0 : 0;
+    const bedTotals = populationBedTotalsFromForm(formData, populationServedOptions, numberFromForm);
 
-    if (
-      bedsMenAvailable > bedsMen ||
-      bedsWomenAvailable > bedsWomen ||
-      bedsLgbtqAvailable > bedsLgbtq
-    ) {
+    if (bedTotals.hasInvalidAvailableBeds) {
       redirect(adminProfileHref("Available beds cannot exceed total beds."));
     }
 
     typeSpecificData = {
       populationServedOptions,
       populationServed: populationServedOptions.join(", ") || null,
-      totalBeds: bedsMen + bedsWomen + bedsLgbtq,
-      bedsAvailable: bedsMenAvailable + bedsWomenAvailable + bedsLgbtqAvailable,
-      bedsMen,
-      bedsMenAvailable,
-      bedsWomen,
-      bedsWomenAvailable,
-      bedsLgbtq,
-      bedsLgbtqAvailable,
+      totalBeds: bedTotals.totalBeds,
+      bedsAvailable: bedTotals.bedsAvailable,
+      bedsMen: bedTotals.bedsMen,
+      bedsMenAvailable: bedTotals.bedsMenAvailable,
+      bedsWomen: bedTotals.bedsWomen,
+      bedsWomenAvailable: bedTotals.bedsWomenAvailable,
+      bedsLgbtq: bedTotals.bedsLgbtq,
+      bedsLgbtqAvailable: bedTotals.bedsLgbtqAvailable,
       bedsAvailableUpdatedAt: new Date(),
       pricePerWeek: numberFromForm(formData.get("pricePerWeek")),
       moveInCost: moveInCostText(formData.get("moveInCost")),

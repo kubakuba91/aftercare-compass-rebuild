@@ -368,13 +368,16 @@ export default async function AftercareProfileDetailPage({
                   />
                   <PopulationBedFields
                     initialPopulations={selectedPopulation(profile.populationServedOptions, profile.populationServed)}
+                    populationOptions={mergeOptionValues(profileOptions.populationServed, selectedPopulation(profile.populationServedOptions, profile.populationServed))}
                     values={{
                       bedsLgbtq: profile.bedsLgbtq,
                       bedsLgbtqAvailable: profile.bedsLgbtqAvailable,
                       bedsMen: profile.bedsMen,
                       bedsMenAvailable: profile.bedsMenAvailable,
                       bedsWomen: profile.bedsWomen,
-                      bedsWomenAvailable: profile.bedsWomenAvailable
+                      bedsWomenAvailable: profile.bedsWomenAvailable,
+                      totalBeds: profile.totalBeds,
+                      bedsAvailable: profile.bedsAvailable
                     }}
                   />
                   <CheckboxGroup label="Room types" name="roomTypes" options={roomTypeOptions} selected={profile.roomTypes} />

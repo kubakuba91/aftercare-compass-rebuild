@@ -200,13 +200,16 @@ export default async function AdminCreateProfilePage({
                     <CheckboxGroup label="Population served" name="populationServedOptions" options={profileOptions.populationServed} />
                   <PopulationBedFields
                     initialPopulations={[]}
+                    populationOptions={profileOptions.populationServed}
                     values={{
                     bedsLgbtq: 0,
                     bedsLgbtqAvailable: 0,
                     bedsMen: 0,
                     bedsMenAvailable: 0,
                     bedsWomen: 0,
-                    bedsWomenAvailable: 0
+                    bedsWomenAvailable: 0,
+                    totalBeds: 0,
+                    bedsAvailable: 0
                     }}
                   />
                   <CheckboxGroup label="Room types" name="roomTypes" options={roomTypeOptions} />

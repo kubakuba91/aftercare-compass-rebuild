@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { PopulationBedFields } from "@/components/dashboard/population-bed-fields";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recovery-card";
 import { Card } from "@/components/ui/card";
@@ -132,44 +133,6 @@ function selectedPopulation(values?: string[] | null, legacyValue?: string | nul
   }
 
   return [];
-}
-
-function bedFieldsForPopulation(
-  label: string,
-  totalName: string,
-  availableName: string,
-  totalValue?: number | null,
-  availableValue?: number | null
-) {
-  return (
-    <div className="ac-panel-card p-4">
-      <h3 className="text-sm font-semibold">{requiredLabel(`${label} beds`)}</h3>
-      <div className="mt-3 grid gap-4 md:grid-cols-2">
-        <label className="grid gap-2 text-sm font-medium">
-          {requiredLabel("Total beds")}
-          <input
-            name={totalName}
-            type="number"
-            min="0"
-            required
-            defaultValue={totalValue ?? ""}
-            className={fieldClassName()}
-          />
-        </label>
-        <label className="grid gap-2 text-sm font-medium">
-          {requiredLabel("Available beds")}
-          <input
-            name={availableName}
-            type="number"
-            min="0"
-            required
-            defaultValue={availableValue ?? ""}
-            className={fieldClassName()}
-          />
-        </label>
-      </div>
-    </div>
-  );
 }
 
 export default async function SoberLivingStepPage({
@@ -333,35 +296,20 @@ export default async function SoberLivingStepPage({
 
               {currentStep === 2 ? (
                 <>
-                  <div className="grid gap-3">
-                    {servedPopulations.includes("Men")
-                      ? bedFieldsForPopulation(
-                          "Men",
-                          "bedsMen",
-                          "bedsMenAvailable",
-                          profile?.bedsMen,
-                          profile?.bedsMenAvailable
-                        )
-                      : null}
-                    {servedPopulations.includes("Women")
-                      ? bedFieldsForPopulation(
-                          "Women",
-                          "bedsWomen",
-                          "bedsWomenAvailable",
-                          profile?.bedsWomen,
-                          profile?.bedsWomenAvailable
-                        )
-                      : null}
-                    {servedPopulations.includes("LGBTQ+")
-                      ? bedFieldsForPopulation(
-                          "LGBTQ+",
-                          "bedsLgbtq",
-                          "bedsLgbtqAvailable",
-                          profile?.bedsLgbtq,
-                          profile?.bedsLgbtqAvailable
-                        )
-                      : null}
-                  </div>
+                  <PopulationBedFields
+                    initialPopulations={servedPopulations}
+                    populationOptions={mergeOptionValues(profileOptions.populationServed, servedPopulations)}
+                    values={{
+                      bedsLgbtq: profile?.bedsLgbtq ?? null,
+                      bedsLgbtqAvailable: profile?.bedsLgbtqAvailable ?? null,
+                      bedsMen: profile?.bedsMen ?? null,
+                      bedsMenAvailable: profile?.bedsMenAvailable ?? null,
+                      bedsWomen: profile?.bedsWomen ?? null,
+                      bedsWomenAvailable: profile?.bedsWomenAvailable ?? null,
+                      totalBeds: profile?.totalBeds ?? null,
+                      bedsAvailable: profile?.bedsAvailable ?? null
+                    }}
+                  />
                   <div className="grid gap-2 text-sm font-medium">
                     Room types
                     {checkboxGroup("roomTypes", roomTypeOptions, selected(profile?.roomTypes))}

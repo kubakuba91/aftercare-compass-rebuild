@@ -16,9 +16,7 @@ import {
   preferredContactOptions,
   roomTypeOptions
 } from "@/lib/sober-living-onboarding";
-import {
-  telehealthModeOptions
-} from "@/lib/continued-care-onboarding";
+import { clientAcceptanceMethodOptions, medicationServiceOptions, programmingScheduleOptions, telehealthModeOptions } from "@/lib/continued-care-onboarding";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -430,6 +428,12 @@ export default async function AftercareProfileDetailPage({
                   </div>
                   <CheckboxGroup label="Program types" name="programTypes" options={mergeOptionValues(profileOptions.programTypes, profile.programTypes)} selected={profile.programTypes} />
                   <CheckboxGroup label="Levels of care" name="levelsOfCare" options={mergeOptionValues(profileOptions.levelsOfCare, profile.levelsOfCare)} selected={profile.levelsOfCare} />
+                  <CheckboxGroup
+                    label="When do you offer programming?"
+                    name="programmingSchedule"
+                    options={mergeOptionValues(programmingScheduleOptions, profile.programmingSchedule)}
+                    selected={profile.programmingSchedule}
+                  />
                   <label className={labelClassName()}>
                     Hours of operation
                     <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.hoursOfOperation)} name="hoursOfOperation" />
@@ -469,6 +473,14 @@ export default async function AftercareProfileDetailPage({
               ) : null}
               {!isSoberLiving ? (
                 <CheckboxGroup
+                  label="How do you accept clients?"
+                  name="clientAcceptanceMethods"
+                  options={mergeOptionValues(clientAcceptanceMethodOptions, profile.clientAcceptanceMethods)}
+                  selected={profile.clientAcceptanceMethods}
+                />
+              ) : null}
+              {!isSoberLiving ? (
+                <CheckboxGroup
                   label="Population served"
                   name="populationServedOptions"
                   options={mergeOptionValues(profileOptions.populationServed, profile.populationServedOptions)}
@@ -498,7 +510,15 @@ export default async function AftercareProfileDetailPage({
                 Funding notes
                 <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
               </label>
-              <CheckboxGroup label="MAT accepted" name="matAccepted" options={mergeOptionValues(profileOptions.matAccepted, profile.matAccepted)} selected={profile.matAccepted} />
+              {!isSoberLiving ? (
+                <CheckboxGroup
+                  label="Medication services offered"
+                  name="medicationServicesOffered"
+                  options={mergeOptionValues(medicationServiceOptions, profile.medicationServicesOffered)}
+                  selected={profile.medicationServicesOffered}
+                />
+              ) : null}
+              <CheckboxGroup label={isSoberLiving ? "MAT accepted" : "MAT medications offered"} name="matAccepted" options={mergeOptionValues(profileOptions.matAccepted, profile.matAccepted)} selected={profile.matAccepted} />
               <label className={labelClassName()}>
                 Medication administration
                 <select className={fieldClassName()} defaultValue={textValue(profile.medicationAdministration)} name="medicationAdministration">

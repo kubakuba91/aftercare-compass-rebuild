@@ -16,7 +16,7 @@ import {
   preferredContactOptions,
   roomTypeOptions
 } from "@/lib/sober-living-onboarding";
-import { telehealthModeOptions } from "@/lib/continued-care-onboarding";
+import { clientAcceptanceMethodOptions, medicationServiceOptions, programmingScheduleOptions, telehealthModeOptions } from "@/lib/continued-care-onboarding";
 import { formatPhotoLimit, getAftercarePhotoLimit } from "@/lib/feature-gates";
 import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-options";
 import { getProtectedAppUser } from "@/lib/protected-routing";
@@ -343,6 +343,12 @@ export default async function AdminEditProfilePage({
                     </div>
                     <CheckboxGroup label="Program types" name="programTypes" options={mergeOptionValues(profileOptions.programTypes, profile.programTypes)} selected={profile.programTypes} />
                     <CheckboxGroup label="Levels of care" name="levelsOfCare" options={mergeOptionValues(profileOptions.levelsOfCare, profile.levelsOfCare)} selected={profile.levelsOfCare} />
+                    <CheckboxGroup
+                      label="When do you offer programming?"
+                      name="programmingSchedule"
+                      options={mergeOptionValues(programmingScheduleOptions, profile.programmingSchedule)}
+                      selected={profile.programmingSchedule}
+                    />
                     <label className={labelClassName()}>
                       Hours of operation
                       <textarea className={textareaClassName()} defaultValue={textValue(profile.hoursOfOperation)} name="hoursOfOperation" />
@@ -375,6 +381,12 @@ export default async function AdminEditProfilePage({
                 </label>
                 {profile.type === ProfileType.continued_care ? (
                   <>
+                    <CheckboxGroup
+                      label="How do you accept clients?"
+                      name="clientAcceptanceMethods"
+                      options={mergeOptionValues(clientAcceptanceMethodOptions, profile.clientAcceptanceMethods)}
+                      selected={profile.clientAcceptanceMethods}
+                    />
                     <label className={labelClassName()}>
                       Referral process
                       <textarea className={textareaClassName("lg")} defaultValue={textValue(profile.referralProcessDescription)} name="referralProcessDescription" />
@@ -415,11 +427,19 @@ export default async function AdminEditProfilePage({
                     </select>
                   </label>
                 </div>
+                {profile.type === ProfileType.continued_care ? (
+                  <CheckboxGroup
+                    label="Medication services offered"
+                    name="medicationServicesOffered"
+                    options={mergeOptionValues(medicationServiceOptions, profile.medicationServicesOffered)}
+                    selected={profile.medicationServicesOffered}
+                  />
+                ) : null}
                 <label className={labelClassName()}>
                   Funding notes
                   <textarea className={textareaClassName()} defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
                 </label>
-                <CheckboxGroup label="MAT accepted" name="matAccepted" options={mergeOptionValues(profileOptions.matAccepted, profile.matAccepted)} selected={profile.matAccepted} />
+                <CheckboxGroup label="MAT medications offered" name="matAccepted" options={mergeOptionValues(profileOptions.matAccepted, profile.matAccepted)} selected={profile.matAccepted} />
                 <label className={labelClassName()}>
                   Medication restrictions
                   <textarea className={textareaClassName()} defaultValue={textValue(profile.medicationRestrictions)} name="medicationRestrictions" />

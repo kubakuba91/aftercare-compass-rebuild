@@ -5,6 +5,9 @@ import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdo
 import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recovery-card";
 import { Card } from "@/components/ui/card";
 import {
+  clientAcceptanceMethodOptions,
+  medicationServiceOptions,
+  programmingScheduleOptions,
   continuedCareDurationOptions,
   continuedCareOptionGroups,
   continuedCareSteps,
@@ -161,7 +164,7 @@ export default async function ContinuedCareStepPage({
             </div>
           ) : null}
           <Card className="mt-8">
-            <form action={action} className="grid gap-5">
+            <form action={action} className="continued-care-onboarding-form grid gap-5">
               {currentStep === 1 ? (
                 <>
                   <label className="grid gap-2 text-sm font-medium">
@@ -254,6 +257,15 @@ export default async function ContinuedCareStepPage({
                     <textarea name="hoursOfOperation" required defaultValue={profile?.hoursOfOperation ?? ""} className={textAreaClassName()} />
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
+                    {requiredLabel("When do you offer programming?")}
+                    <p className="text-xs font-normal text-muted-foreground">Select all that apply.</p>
+                    {checkboxGroup(
+                      "programmingSchedule",
+                      programmingScheduleOptions,
+                      selected(profile?.programmingSchedule)
+                    )}
+                  </div>
+                  <div className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Population served")}
                     {checkboxGroup(
                       "populationServed",
@@ -271,13 +283,6 @@ export default async function ContinuedCareStepPage({
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
-                      {requiredLabel("MAT services offered?")}
-                      <select name="matServicesOffered" required defaultValue={profile?.matServicesOffered ? "yes" : "no"} className={fieldClassName()}>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
-                    </label>
-                    <label className="grid gap-2 text-sm font-medium">
                       {requiredLabel("Co-occurring mental health treatment?")}
                       <select name="coOccurringTreatment" required defaultValue={profile?.coOccurringTreatment ? "yes" : "no"} className={fieldClassName()}>
                         <option value="no">No</option>
@@ -285,8 +290,17 @@ export default async function ContinuedCareStepPage({
                       </select>
                     </label>
                   </div>
-                  <div className="grid gap-2 text-sm font-medium">
-                    MAT accepted
+                  <div className="cc-medication-services grid gap-2 text-sm font-medium">
+                    {requiredLabel("Medication services offered")}
+                    <p className="text-xs font-normal text-muted-foreground">Select all that apply.</p>
+                    <MultiSelectDropdown
+                      name="medicationServicesOffered"
+                      options={medicationServiceOptions}
+                      selected={selected(profile?.medicationServicesOffered)}
+                    />
+                  </div>
+                  <div className="cc-mat-medications grid gap-2 text-sm font-medium">
+                    MAT medications offered
                     <MultiSelectDropdown
                       name="matAccepted"
                       options={mergeOptionValues(profileOptions.matAccepted, selected(profile?.matAccepted))}
@@ -324,6 +338,15 @@ export default async function ContinuedCareStepPage({
                       name="insuranceAccepted"
                       options={mergeOptionValues(profileOptions.insuranceAccepted, selected(profile?.insuranceAccepted))}
                       selected={selected(profile?.insuranceAccepted)}
+                    />
+                  </div>
+                  <div className="grid gap-2 text-sm font-medium">
+                    {requiredLabel("How do you accept clients?")}
+                    <p className="text-xs font-normal text-muted-foreground">Select all that apply.</p>
+                    <MultiSelectDropdown
+                      name="clientAcceptanceMethods"
+                      options={clientAcceptanceMethodOptions}
+                      selected={selected(profile?.clientAcceptanceMethods)}
                     />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">

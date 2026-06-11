@@ -93,11 +93,10 @@ export const medicationAdministrationOptions = [
 ] as const;
 
 export const matOptions = [
-  "Suboxone / Buprenorphine",
-  "Vivitrol / Naltrexone",
+  "Buprenorphine / Suboxone",
   "Methadone",
-  "All MAT accepted",
-  "No MAT accepted"
+  "Naltrexone / Vivitrol",
+  "Other"
 ] as const;
 
 export const drugTestingPolicyOptions = [

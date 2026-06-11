@@ -14,6 +14,9 @@ import {
   roomTypeOptions
 } from "@/lib/sober-living-onboarding";
 import {
+  clientAcceptanceMethodOptions,
+  medicationServiceOptions,
+  programmingScheduleOptions,
   telehealthModeOptions
 } from "@/lib/continued-care-onboarding";
 import { getActiveProfileOptionValues } from "@/lib/profile-options";
@@ -262,6 +265,7 @@ export default async function AdminCreateProfilePage({
                   <div className="mt-4 grid gap-4">
                     <CheckboxGroup label="Program types" name="programTypes" options={profileOptions.programTypes} />
                     <CheckboxGroup label="Levels of care" name="levelsOfCare" options={profileOptions.levelsOfCare} />
+                    <CheckboxGroup label="When do you offer programming?" name="programmingSchedule" options={programmingScheduleOptions} />
                     <label className={labelClassName()}>
                       Hours of operation
                       <textarea className={textareaClassName()} name="hoursOfOperation" />
@@ -294,6 +298,7 @@ export default async function AdminCreateProfilePage({
                   <textarea className={textareaClassName("lg")} name="referralFitNotes" />
                 </label>
                 <div className="admin-profile-type-section admin-profile-type-section--continued-care">
+                  <CheckboxGroup label="How do you accept clients?" name="clientAcceptanceMethods" options={clientAcceptanceMethodOptions} />
                   <label className={labelClassName()}>
                     Referral process
                     <textarea className={textareaClassName("lg")} name="referralProcessDescription" />
@@ -326,6 +331,9 @@ export default async function AdminCreateProfilePage({
                       ))}
                     </select>
                   </label>
+                </div>
+                <div className="admin-profile-type-section admin-profile-type-section--continued-care">
+                  <CheckboxGroup label="Medication services offered" name="medicationServicesOffered" options={medicationServiceOptions} />
                 </div>
                 <label className={labelClassName()}>
                   Funding notes

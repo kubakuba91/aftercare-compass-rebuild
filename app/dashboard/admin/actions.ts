@@ -303,11 +303,13 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
       supportServices: valuesFromForm(formData, "supportServices"),
       amenities: valuesFromForm(formData, "amenities"),
       insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
+      clientAcceptanceMethods: valuesFromForm(formData, "clientAcceptanceMethods"),
       fundingAvailable: formData.get("fundingAvailable")
         ? formData.get("fundingAvailable") === "yes"
         : null,
       fundingNotes: nullableText(formData.get("fundingNotes")),
       medicationAdministration: nullableText(formData.get("medicationAdministration")),
+      medicationServicesOffered: valuesFromForm(formData, "medicationServicesOffered"),
       matAccepted: valuesFromForm(formData, "matAccepted"),
       medicationRestrictions: nullableText(formData.get("medicationRestrictions")),
       drugTestingPolicy: nullableText(formData.get("drugTestingPolicy")),
@@ -319,8 +321,13 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
         ? {
             acceptingNewPatients: formData.get("acceptingNewPatients") === "yes",
             acceptingNewPatientsUpdatedAt: new Date(),
+            matServicesOffered: valuesFromForm(formData, "medicationServicesOffered").includes("MAT / Addiction medication management"),
+            matAccepted: valuesFromForm(formData, "medicationServicesOffered").includes("MAT / Addiction medication management")
+              ? valuesFromForm(formData, "matAccepted")
+              : [],
             programTypes: valuesFromForm(formData, "programTypes"),
             levelsOfCare: valuesFromForm(formData, "levelsOfCare"),
+            programmingSchedule: valuesFromForm(formData, "programmingSchedule"),
             telehealthMode: nullableText(formData.get("telehealthMode")),
             hoursOfOperation: nullableText(formData.get("hoursOfOperation"))
           }
@@ -535,6 +542,7 @@ export async function updateAdminAftercareProfile(formData: FormData) {
       : null,
     fundingNotes: nullableText(formData.get("fundingNotes")),
     medicationAdministration: nullableText(formData.get("medicationAdministration")),
+    medicationServicesOffered: valuesFromForm(formData, "medicationServicesOffered"),
     matAccepted: valuesFromForm(formData, "matAccepted"),
     medicationRestrictions: nullableText(formData.get("medicationRestrictions")),
     drugTestingPolicy: nullableText(formData.get("drugTestingPolicy")),
@@ -592,8 +600,14 @@ export async function updateAdminAftercareProfile(formData: FormData) {
       populationServed: populationServedOptions.join(", ") || null,
       acceptingNewPatients: formData.get("acceptingNewPatients") === "yes",
       acceptingNewPatientsUpdatedAt: new Date(),
+      matServicesOffered: valuesFromForm(formData, "medicationServicesOffered").includes("MAT / Addiction medication management"),
+      matAccepted: valuesFromForm(formData, "medicationServicesOffered").includes("MAT / Addiction medication management")
+        ? valuesFromForm(formData, "matAccepted")
+        : [],
       programTypes: valuesFromForm(formData, "programTypes"),
       levelsOfCare: valuesFromForm(formData, "levelsOfCare"),
+      programmingSchedule: valuesFromForm(formData, "programmingSchedule"),
+      clientAcceptanceMethods: valuesFromForm(formData, "clientAcceptanceMethods"),
       telehealthMode: nullableText(formData.get("telehealthMode")),
       hoursOfOperation: nullableText(formData.get("hoursOfOperation"))
     };

@@ -672,6 +672,23 @@ export default async function PublicProfilePage({
                       </dt>
                       <dd className="font-medium">{listOrFallback(profile.amenities)}</dd>
                     </div>
+                  ) : (
+                    <div>
+                      <dt className="flex items-center gap-2 font-semibold text-foreground">
+                        <CheckCircle2 className="text-primary" size={16} />
+                        Programming schedule
+                      </dt>
+                      <dd className="font-medium">{listOrFallback(profile.programmingSchedule)}</dd>
+                    </div>
+                  )}
+                  {!isSoberLiving ? (
+                    <div>
+                      <dt className="flex items-center gap-2 font-semibold text-foreground">
+                        <HandHeart className="text-primary" size={16} />
+                        How clients are accepted
+                      </dt>
+                      <dd className="font-medium">{listOrFallback(profile.clientAcceptanceMethods)}</dd>
+                    </div>
                   ) : null}
                 </dl>
               </Card>
@@ -689,10 +706,21 @@ export default async function PublicProfilePage({
                   <div>
                     <dt className="flex items-center gap-2 font-semibold text-foreground">
                       <PillBottle className="text-primary" size={16} />
-                      MAT accepted
+                      {isSoberLiving ? "MAT accepted" : "Medication services"}
                     </dt>
-                    <dd className="font-medium">{listOrFallback(profile.matAccepted)}</dd>
+                    <dd className="font-medium">
+                      {isSoberLiving ? listOrFallback(profile.matAccepted) : listOrFallback(profile.medicationServicesOffered)}
+                    </dd>
                   </div>
+                  {!isSoberLiving && profile.medicationServicesOffered.includes("MAT / Addiction medication management") ? (
+                    <div>
+                      <dt className="flex items-center gap-2 font-semibold text-foreground">
+                        <PillBottle className="text-primary" size={16} />
+                        MAT medications offered
+                      </dt>
+                      <dd className="font-medium">{listOrFallback(profile.matAccepted)}</dd>
+                    </div>
+                  ) : null}
                   <div>
                     <dt className="flex items-center gap-2 font-semibold text-foreground">
                       <BadgeCheck className="text-primary" size={16} />

@@ -856,13 +856,15 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
       const parsed = continuedCareStepTwoSchema.parse({
         levelsOfCare: valuesFromForm(formData, "levelsOfCare"),
         hoursOfOperation: formData.get("hoursOfOperation"),
+        programmingSchedule: valuesFromForm(formData, "programmingSchedule"),
         populationServed: valuesFromForm(formData, "populationServed"),
         specialtyPopulations: valuesFromForm(formData, "specialtyPopulations"),
-        matServicesOffered: formData.get("matServicesOffered"),
+        medicationServicesOffered: valuesFromForm(formData, "medicationServicesOffered"),
         matAccepted: valuesFromForm(formData, "matAccepted"),
         coOccurringTreatment: formData.get("coOccurringTreatment"),
         averageLengthOfStay: formData.get("averageLengthOfStay")
       });
+      const matServicesOffered = parsed.medicationServicesOffered.includes("MAT / Addiction medication management");
 
       await prisma.onboardingDraft.update({
         where: { id: draft.id },
@@ -871,7 +873,8 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
             ...parsed,
             populationServed: parsed.populationServed.join(", "),
             populationServedOptions: parsed.populationServed,
-            matServicesOffered: parsed.matServicesOffered === "yes",
+            matServicesOffered,
+            matAccepted: matServicesOffered ? parsed.matAccepted : [],
             coOccurringTreatment: parsed.coOccurringTreatment === "yes"
           })),
           selectedAccountType: "continued_care",
@@ -889,6 +892,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
         admissionsContactPhone: formData.get("admissionsContactPhone"),
         admissionsContactEmail: formData.get("admissionsContactEmail"),
         insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
+        clientAcceptanceMethods: valuesFromForm(formData, "clientAcceptanceMethods"),
         referralProcessDescription: formData.get("referralProcessDescription"),
         medicalRecordsFax: formData.get("medicalRecordsFax") || undefined
       });
@@ -987,6 +991,8 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
             clinicalFocus: arrayFromDraft(finalDraft.clinicalFocus),
             levelsOfCare: arrayFromDraft(finalDraft.levelsOfCare),
             hoursOfOperation: String(finalDraft.hoursOfOperation || ""),
+            programmingSchedule: arrayFromDraft(finalDraft.programmingSchedule),
+            medicationServicesOffered: arrayFromDraft(finalDraft.medicationServicesOffered),
             populationServed: String(finalDraft.populationServed || ""),
             populationServedOptions: arrayFromDraft(finalDraft.populationServedOptions),
             specialtyPopulations: arrayFromDraft(finalDraft.specialtyPopulations),
@@ -996,6 +1002,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
             averageLengthOfStay: String(finalDraft.averageLengthOfStay || ""),
             intakeContactName: String(finalDraft.intakeContactName || ""),
             insuranceAccepted: arrayFromDraft(finalDraft.insuranceAccepted),
+            clientAcceptanceMethods: arrayFromDraft(finalDraft.clientAcceptanceMethods),
             referralProcessDescription: String(finalDraft.referralProcessDescription || ""),
             referralFitNotes: String(finalDraft.referralProcessDescription || ""),
             bedsReservedNotes: nullableText(String(finalDraft.medicalRecordsFax || "")),

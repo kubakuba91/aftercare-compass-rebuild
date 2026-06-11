@@ -509,3 +509,11 @@ input[type="checkbox"] {
 .admin-create-profile-form:has(select[name="type"] option[value="continued_care"]:checked) .admin-profile-type-section--sober-living {
   display: none;
 }
+
+.continued-care-onboarding-form .cc-mat-medications {
+  display: none;
+}
+
+.continued-care-onboarding-form:has(.cc-medication-services input[value="MAT / Addiction medication management"]:checked) .cc-mat-medications {
+  display: grid;
+}

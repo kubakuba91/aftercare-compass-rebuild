@@ -31,6 +31,13 @@ export const programTypeOptions = [
 ] as const;
 
 export const telehealthModeOptions = ["In-person only", "Virtual only", "Hybrid"] as const;
+export const programmingScheduleOptions = ["Mornings", "Afternoons", "Evenings", "Weekends", "24/7"] as const;
+export const clientAcceptanceMethodOptions = ["Walk-ins welcome", "Same-day intake", "By appointment only"] as const;
+export const medicationServiceOptions = [
+  "Psychiatric medication management",
+  "MAT / Addiction medication management",
+  "None"
+] as const;
 export const continuedCareDurationOptions = [
   "30 days",
   "30-60 days",
@@ -66,9 +73,10 @@ export const continuedCareStepOneSchema = z.object({
 export const continuedCareStepTwoSchema = z.object({
   levelsOfCare: z.array(z.string()).min(1),
   hoursOfOperation: requiredText.max(500),
+  programmingSchedule: z.array(z.string()).min(1),
   populationServed: z.array(z.string()).min(1),
   specialtyPopulations: z.array(z.string()).default([]),
-  matServicesOffered: z.enum(["yes", "no"]),
+  medicationServicesOffered: z.array(z.string()).min(1),
   matAccepted: z.array(z.string()).default([]),
   coOccurringTreatment: z.enum(["yes", "no"]),
   averageLengthOfStay: z.enum(continuedCareDurationOptions)
@@ -79,6 +87,7 @@ export const continuedCareStepThreeSchema = z.object({
   admissionsContactPhone: requiredText.max(40),
   admissionsContactEmail: z.string().trim().email(),
   insuranceAccepted: z.array(z.string()).default([]),
+  clientAcceptanceMethods: z.array(z.string()).min(1),
   referralProcessDescription: requiredText.max(2000),
   medicalRecordsFax: optionalText
 });

@@ -273,9 +273,12 @@ model AftercareProfile {
   stateLicenseNumber             String?
   levelsOfCare                   String[]               @default([])
   hoursOfOperation               String?
+  programmingSchedule            String[]               @default([])
+  medicationServicesOffered      String[]               @default([])
   matServicesOffered             Boolean?
   coOccurringTreatment           Boolean?
   intakeContactName              String?
+  clientAcceptanceMethods        String[]               @default([])
   referralProcessDescription     String?
   affiliatedSoberLivingHomes     String?
   populationServed               String?

@@ -28,7 +28,7 @@ import {
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { getProfileOptionGroups, profileOptionCategories, profileOptionCategoryKeys } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
-import { addProfileOption, reviewOnboardingSubmission, reviewProfileClaimRequest, updateAdminProfileStatus, updateProfileOptionStatus } from "./actions";
+import { addProfileOption, reviewOnboardingSubmission, reviewProfileClaimRequest, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -1033,8 +1033,28 @@ export default async function AdminDashboardPage({
                     <div className="mt-4 divide-y divide-border overflow-hidden rounded-md border border-border bg-white">
                       {options.map((option) => (
                         <div className="flex flex-wrap items-center justify-between gap-3 p-3" key={option.id}>
-                          <div>
-                            <p className="text-sm font-semibold">{option.label}</p>
+                          <div className="min-w-0 flex-1">
+                            <form action={updateProfileOptionLabel} className="flex flex-col gap-2 sm:flex-row">
+                              <input name="optionId" type="hidden" value={option.id} />
+                              <label className="sr-only" htmlFor={`${option.id}-edit-label`}>
+                                Edit {option.label}
+                              </label>
+                              <input
+                                className="min-h-9 min-w-0 flex-1 rounded-md border border-border bg-white px-3 text-sm font-semibold disabled:bg-muted/40 disabled:text-muted-foreground"
+                                defaultValue={option.label}
+                                disabled={option.id.startsWith("default-")}
+                                id={`${option.id}-edit-label`}
+                                name="label"
+                                required
+                              />
+                              <button
+                                className="focus-ring inline-flex min-h-9 items-center justify-center rounded-md border border-border px-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                                disabled={option.id.startsWith("default-")}
+                                type="submit"
+                              >
+                                Save
+                              </button>
+                            </form>
                             <p className="mt-1 text-xs text-muted-foreground">
                               {option.isActive ? "Available in dropdowns" : "Disabled for new selections"}
                             </p>

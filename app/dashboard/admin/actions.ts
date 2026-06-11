@@ -1050,3 +1050,83 @@ export async function updateProfileOptionStatus(formData: FormData) {
   revalidatePath("/onboarding/aftercare/continued-care/1");
   redirect(adminDataSettingsHref(`${option.label} was ${isActive ? "enabled" : "disabled"}.`));
 }
+
+export async function updateProfileOptionLabel(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const optionId = String(formData.get("optionId") || "");
+  const label = String(formData.get("label") || "").trim().replace(/\s+/g, " ");
+
+  if (!optionId || !label) {
+    redirect(adminDataSettingsHref("Choose an option and enter a label."));
+  }
+
+  const existingOption = await prisma.profileOption.findUnique({
+    where: { id: optionId },
+    select: {
+      id: true,
+      category: true,
+      label: true
+    }
+  });
+
+  if (!existingOption) {
+    redirect(adminDataSettingsHref("Option was not found."));
+  }
+
+  const category = profileOptionCategory(existingOption.category);
+
+  if (!category) {
+    redirect(adminDataSettingsHref("Option category is no longer supported."));
+  }
+
+  const duplicate = await prisma.profileOption.findUnique({
+    where: {
+      category_label: {
+        category,
+        label
+      }
+    },
+    select: { id: true }
+  });
+
+  if (duplicate && duplicate.id !== optionId) {
+    redirect(adminDataSettingsHref(`${label} already exists in ${profileOptionCategories[category].label}.`));
+  }
+
+  const option = await prisma.profileOption.update({
+    where: { id: optionId },
+    data: { label },
+    select: {
+      id: true,
+      label: true
+    }
+  });
+
+  await prisma.adminAuditLog.create({
+    data: {
+      actorUserId: appUser.id,
+      action: "profile_option_renamed",
+      entityType: "ProfileOption",
+      entityId: option.id,
+      metadata: {
+        category,
+        previousLabel: existingOption.label,
+        nextLabel: option.label,
+        categoryLabel: profileOptionCategories[category].label
+      }
+    }
+  });
+
+  revalidatePath("/", "layout");
+  revalidatePath("/search");
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/dashboard/aftercare");
+  revalidatePath("/onboarding/aftercare/sober-living/1");
+  revalidatePath("/onboarding/aftercare/continued-care/1");
+  redirect(adminDataSettingsHref(`${existingOption.label} was renamed to ${option.label}.`));
+}

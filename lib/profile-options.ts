@@ -102,8 +102,7 @@ export async function getProfileOptionGroups({ includeInactive = false } = {}) {
   const categories = profileOptionCategoryKeys();
   const rows = await prisma.profileOption.findMany({
     where: {
-      category: { in: categories },
-      ...(includeInactive ? {} : { isActive: true })
+      category: { in: categories }
     },
     orderBy: [{ category: "asc" }, { sortOrder: "asc" }, { label: "asc" }]
   });
@@ -111,6 +110,9 @@ export async function getProfileOptionGroups({ includeInactive = false } = {}) {
   return Object.fromEntries(
     categories.map((category) => {
       const rowsForCategory = rows.filter((row) => row.category === category);
+      const visibleRowsForCategory = includeInactive
+        ? rowsForCategory
+        : rowsForCategory.filter((row) => row.isActive);
       const rowLabels = new Set(rowsForCategory.map((row) => row.label.toLowerCase()));
       const defaultOptions = profileOptionCategories[category].defaults
         .map((label, index) => ({
@@ -122,7 +124,7 @@ export async function getProfileOptionGroups({ includeInactive = false } = {}) {
         }))
         .filter((option) => !rowLabels.has(option.label.toLowerCase()));
 
-      const options = [...defaultOptions, ...rowsForCategory].sort((first, second) => {
+      const options = [...defaultOptions, ...visibleRowsForCategory].sort((first, second) => {
         if (first.isActive !== second.isActive) {
           return first.isActive ? -1 : 1;
         }

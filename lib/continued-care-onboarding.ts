@@ -43,6 +43,7 @@ export const continuedCareDurationOptions = [
   "30-60 days",
   "60-90 days",
   "90+ days",
+  "Ongoing / No set end date",
   "Ongoing / as needed"
 ] as const;
 

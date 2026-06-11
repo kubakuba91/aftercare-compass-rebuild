@@ -111,21 +111,18 @@ export async function getProfileOptionGroups({ includeInactive = false } = {}) {
   return Object.fromEntries(
     categories.map((category) => {
       const rowsForCategory = rows.filter((row) => row.category === category);
-
-      if (!rowsForCategory.length) {
-        return [
+      const rowLabels = new Set(rowsForCategory.map((row) => row.label.toLowerCase()));
+      const defaultOptions = profileOptionCategories[category].defaults
+        .map((label, index) => ({
+          id: `default-${category}-${index}`,
           category,
-          profileOptionCategories[category].defaults.map((label, index) => ({
-            id: `default-${category}-${index}`,
-            category,
-            label,
-            isActive: true,
-            sortOrder: (index + 1) * 10
-          }))
-        ];
-      }
+          label,
+          isActive: true,
+          sortOrder: (index + 1) * 10
+        }))
+        .filter((option) => !rowLabels.has(option.label.toLowerCase()));
 
-      return [category, rowsForCategory];
+      return [category, [...defaultOptions, ...rowsForCategory]];
     })
   ) as Record<
     ProfileOptionCategory,

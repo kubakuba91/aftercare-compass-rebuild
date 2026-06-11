@@ -1036,20 +1036,19 @@ export default async function AdminDashboardPage({
                           <div className="min-w-0 flex-1">
                             <form action={updateProfileOptionLabel} className="flex flex-col gap-2 sm:flex-row">
                               <input name="optionId" type="hidden" value={option.id} />
+                              <input name="category" type="hidden" value={category} />
                               <label className="sr-only" htmlFor={`${option.id}-edit-label`}>
                                 Edit {option.label}
                               </label>
                               <input
-                                className="min-h-9 min-w-0 flex-1 rounded-md border border-border bg-white px-3 text-sm font-semibold disabled:bg-muted/40 disabled:text-muted-foreground"
+                                className="min-h-9 min-w-0 flex-1 rounded-md border border-border bg-white px-3 text-sm font-semibold"
                                 defaultValue={option.label}
-                                disabled={option.id.startsWith("default-")}
                                 id={`${option.id}-edit-label`}
                                 name="label"
                                 required
                               />
                               <button
-                                className="focus-ring inline-flex min-h-9 items-center justify-center rounded-md border border-border px-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-                                disabled={option.id.startsWith("default-")}
+                                className="focus-ring inline-flex min-h-9 items-center justify-center rounded-md border border-border px-3 text-sm font-semibold"
                                 type="submit"
                               >
                                 Save
@@ -1061,12 +1060,12 @@ export default async function AdminDashboardPage({
                           </div>
                           <form action={updateProfileOptionStatus}>
                             <input name="optionId" type="hidden" value={option.id} />
+                            <input name="category" type="hidden" value={category} />
                             <button
                               aria-label={`${option.isActive ? "Disable" : "Enable"} ${option.label}`}
                               aria-pressed={option.isActive}
-                              className="focus-ring inline-flex min-h-9 items-center gap-3 rounded-full border border-border bg-white px-2.5 py-1 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 data-[active=true]:border-emerald-200 data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-800 data-[active=false]:text-muted-foreground"
+                              className="focus-ring inline-flex min-h-9 items-center gap-3 rounded-full border border-border bg-white px-2.5 py-1 text-sm font-semibold shadow-sm transition data-[active=true]:border-emerald-200 data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-800 data-[active=false]:text-muted-foreground"
                               data-active={option.isActive ? "true" : "false"}
-                              disabled={option.id.startsWith("default-")}
                               name="isActive"
                               type="submit"
                               value={option.isActive ? "false" : "true"}

@@ -72,6 +72,82 @@ function profileOptionCategory(value: FormDataEntryValue | null): ProfileOptionC
     : null;
 }
 
+function defaultProfileOptionIndex(optionId: string, category: ProfileOptionCategory) {
+  const prefix = `default-${category}-`;
+
+  if (!optionId.startsWith(prefix)) {
+    return null;
+  }
+
+  const index = Number(optionId.slice(prefix.length));
+  return Number.isInteger(index) && index >= 0 ? index : null;
+}
+
+function defaultProfileOptionLabel(optionId: string, category: ProfileOptionCategory) {
+  const index = defaultProfileOptionIndex(optionId, category);
+
+  if (index === null) {
+    return null;
+  }
+
+  return profileOptionCategories[category].defaults[index] ?? null;
+}
+
+async function findOrCreateProfileOptionFromForm(formData: FormData) {
+  const optionId = String(formData.get("optionId") || "");
+  const existingOption = optionId
+    ? await prisma.profileOption.findUnique({
+        where: { id: optionId },
+        select: {
+          id: true,
+          category: true,
+          label: true,
+          sortOrder: true
+        }
+      })
+    : null;
+
+  if (existingOption) {
+    return existingOption;
+  }
+
+  const category = profileOptionCategory(formData.get("category"));
+
+  if (!category) {
+    return null;
+  }
+
+  const defaultLabel = defaultProfileOptionLabel(optionId, category);
+
+  if (!defaultLabel) {
+    return null;
+  }
+
+  const sortOrder = (defaultProfileOptionIndex(optionId, category) ?? 0) * 10 + 10;
+
+  return prisma.profileOption.upsert({
+    where: {
+      category_label: {
+        category,
+        label: defaultLabel
+      }
+    },
+    update: {},
+    create: {
+      category,
+      label: defaultLabel,
+      isActive: true,
+      sortOrder
+    },
+    select: {
+      id: true,
+      category: true,
+      label: true,
+      sortOrder: true
+    }
+  });
+}
+
 function nullableText(value: FormDataEntryValue | null) {
   const text = String(value || "").trim();
   return text || null;
@@ -1010,11 +1086,15 @@ export async function updateProfileOptionStatus(formData: FormData) {
     redirect("/dashboard");
   }
 
-  const optionId = String(formData.get("optionId") || "");
   const isActive = String(formData.get("isActive") || "") === "true";
+  const existingOption = await findOrCreateProfileOptionFromForm(formData);
+
+  if (!existingOption) {
+    redirect(adminDataSettingsHref("Option was not found."));
+  }
 
   const option = await prisma.profileOption.update({
-    where: { id: optionId },
+    where: { id: existingOption.id },
     data: { isActive },
     select: {
       id: true,
@@ -1058,24 +1138,11 @@ export async function updateProfileOptionLabel(formData: FormData) {
     redirect("/dashboard");
   }
 
-  const optionId = String(formData.get("optionId") || "");
   const label = String(formData.get("label") || "").trim().replace(/\s+/g, " ");
+  const existingOption = await findOrCreateProfileOptionFromForm(formData);
 
-  if (!optionId || !label) {
+  if (!existingOption || !label) {
     redirect(adminDataSettingsHref("Choose an option and enter a label."));
-  }
-
-  const existingOption = await prisma.profileOption.findUnique({
-    where: { id: optionId },
-    select: {
-      id: true,
-      category: true,
-      label: true
-    }
-  });
-
-  if (!existingOption) {
-    redirect(adminDataSettingsHref("Option was not found."));
   }
 
   const category = profileOptionCategory(existingOption.category);
@@ -1094,12 +1161,12 @@ export async function updateProfileOptionLabel(formData: FormData) {
     select: { id: true }
   });
 
-  if (duplicate && duplicate.id !== optionId) {
+  if (duplicate && duplicate.id !== existingOption.id) {
     redirect(adminDataSettingsHref(`${label} already exists in ${profileOptionCategories[category].label}.`));
   }
 
   const option = await prisma.profileOption.update({
-    where: { id: optionId },
+    where: { id: existingOption.id },
     data: { label },
     select: {
       id: true,

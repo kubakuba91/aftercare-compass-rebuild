@@ -274,6 +274,7 @@ model AftercareProfile {
   levelsOfCare                   String[]               @default([])
   hoursOfOperation               String?
   programmingSchedule            String[]               @default([])
+  languagesServed                String[]               @default([])
   medicationServicesOffered      String[]               @default([])
   matServicesOffered             Boolean?
   coOccurringTreatment           Boolean?

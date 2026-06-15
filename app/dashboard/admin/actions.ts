@@ -17,6 +17,7 @@ import { geocodeProfileAddress } from "@/lib/geocoding";
 import { moveInCostText, nullableText, numberFromForm } from "@/lib/form-utils";
 import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { populationBedTotalsFromForm } from "@/lib/population-beds";
+import { normalizePhoneForStorage } from "@/lib/phone";
 import { profileOptionCategories, profileOptionCategoryKeys, type ProfileOptionCategory } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
@@ -227,6 +228,11 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
 
   const populationServedOptions = valuesFromForm(formData, "populationServedOptions");
   const bedTotals = populationBedTotalsFromForm(formData, populationServedOptions, numberFromForm);
+  const admissionsContactPhone = normalizePhoneForStorage(formData.get("admissionsContactPhone"));
+
+  if (formData.get("admissionsContactPhone") && !admissionsContactPhone) {
+    redirect(adminProfileHref("Enter a valid 10-digit admissions phone number."));
+  }
 
   if (bedTotals.hasInvalidAvailableBeds) {
     redirect(adminProfileHref("Available beds cannot exceed total beds."));
@@ -247,7 +253,7 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
       zip,
       publicCity: city,
       publicState: state,
-      admissionsContactPhone: nullableText(formData.get("admissionsContactPhone")),
+      admissionsContactPhone,
       admissionsContactEmail: nullableText(formData.get("admissionsContactEmail")),
       preferredContactMethod: nullableText(formData.get("preferredContactMethod")),
       intakeContactName: nullableText(formData.get("intakeContactName")),
@@ -286,11 +292,13 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
             matAccepted: valuesFromForm(formData, "medicationServicesOffered").includes("MAT / Addiction medication management")
               ? valuesFromForm(formData, "matAccepted")
               : [],
-            programTypes: valuesFromForm(formData, "programTypes"),
+            programTypes: [],
             levelsOfCare: valuesFromForm(formData, "levelsOfCare"),
             programmingSchedule: valuesFromForm(formData, "programmingSchedule"),
+            languagesServed: valuesFromForm(formData, "languagesServed"),
             telehealthMode: nullableText(formData.get("telehealthMode")),
-            hoursOfOperation: nullableText(formData.get("hoursOfOperation"))
+            hoursOfOperation: null,
+            coOccurringTreatment: null
           }
         : {
             populationServedOptions,
@@ -463,6 +471,12 @@ export async function updateAdminAftercareProfile(formData: FormData) {
 
   const streetAddress = nullableText(formData.get("streetAddress"));
   const zip = nullableText(formData.get("zip"));
+  const admissionsContactPhone = normalizePhoneForStorage(formData.get("admissionsContactPhone"));
+
+  if (formData.get("admissionsContactPhone") && !admissionsContactPhone) {
+    redirect(adminEditProfileHref(profile.id, "Enter a valid 10-digit admissions phone number."));
+  }
+
   const coordinates = await geocodeProfileAddress({
     idSeed: profile.slug,
     streetAddress,
@@ -481,7 +495,7 @@ export async function updateAdminAftercareProfile(formData: FormData) {
     zip,
     publicCity: city,
     publicState: state,
-    admissionsContactPhone: nullableText(formData.get("admissionsContactPhone")),
+    admissionsContactPhone,
     admissionsContactEmail: nullableText(formData.get("admissionsContactEmail")),
     preferredContactMethod: nullableText(formData.get("preferredContactMethod")),
     intakeContactName: nullableText(formData.get("intakeContactName")),
@@ -555,12 +569,14 @@ export async function updateAdminAftercareProfile(formData: FormData) {
       matAccepted: valuesFromForm(formData, "medicationServicesOffered").includes("MAT / Addiction medication management")
         ? valuesFromForm(formData, "matAccepted")
         : [],
-      programTypes: valuesFromForm(formData, "programTypes"),
+      programTypes: [],
       levelsOfCare: valuesFromForm(formData, "levelsOfCare"),
       programmingSchedule: valuesFromForm(formData, "programmingSchedule"),
+      languagesServed: valuesFromForm(formData, "languagesServed"),
       clientAcceptanceMethods: valuesFromForm(formData, "clientAcceptanceMethods"),
       telehealthMode: nullableText(formData.get("telehealthMode")),
-      hoursOfOperation: nullableText(formData.get("hoursOfOperation"))
+      hoursOfOperation: null,
+      coOccurringTreatment: null
     };
   }
 

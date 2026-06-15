@@ -39,3 +39,19 @@ export function formatPhoneForDisplay(value: string | null | undefined) {
 
   return value;
 }
+
+export function normalizePhoneForStorage(value: FormDataEntryValue | string | null | undefined) {
+  const text = String(value || "").trim();
+
+  if (!text) {
+    return null;
+  }
+
+  const normalized = normalizePhoneNumber(text);
+
+  if (!normalized) {
+    return null;
+  }
+
+  return formatPhoneForDisplay(normalized);
+}

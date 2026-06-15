@@ -14,6 +14,7 @@ import { moveInCostText, nullableText, numberFromForm } from "@/lib/form-utils";
 import { geocodeProfileAddress } from "@/lib/geocoding";
 import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { populationBedTotalsFromForm } from "@/lib/population-beds";
+import { normalizePhoneForStorage } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { getAftercareDashboardUser } from "@/lib/protected-routing";
@@ -82,6 +83,12 @@ export async function updateAftercareProfileBasics(formData: FormData) {
 
   const streetAddress = nullableText(formData.get("streetAddress"));
   const zip = nullableText(formData.get("zip"));
+  const admissionsContactPhone = normalizePhoneForStorage(formData.get("admissionsContactPhone"));
+
+  if (formData.get("admissionsContactPhone") && !admissionsContactPhone) {
+    redirect(profileHref(profile.id, "Enter a valid 10-digit admissions phone number."));
+  }
+
   const coordinates = await geocodeProfileAddress({
     idSeed: profile.id,
     streetAddress,
@@ -101,7 +108,7 @@ export async function updateAftercareProfileBasics(formData: FormData) {
       publicCity: city,
       publicState: state,
       websiteUrl: nullableText(formData.get("websiteUrl")),
-      admissionsContactPhone: nullableText(formData.get("admissionsContactPhone")),
+      admissionsContactPhone,
       admissionsContactEmail: nullableText(formData.get("admissionsContactEmail")),
       preferredContactMethod: nullableText(formData.get("preferredContactMethod")),
       intakeContactName: nullableText(formData.get("intakeContactName")),
@@ -129,6 +136,12 @@ export async function updateAftercareProfileDetails(formData: FormData) {
 
   const streetAddress = nullableText(formData.get("streetAddress"));
   const zip = nullableText(formData.get("zip"));
+  const admissionsContactPhone = normalizePhoneForStorage(formData.get("admissionsContactPhone"));
+
+  if (formData.get("admissionsContactPhone") && !admissionsContactPhone) {
+    redirect(profileHref(profile.id, "Enter a valid 10-digit admissions phone number."));
+  }
+
   const coordinates = await geocodeProfileAddress({
     idSeed: profile.id,
     streetAddress,
@@ -148,7 +161,7 @@ export async function updateAftercareProfileDetails(formData: FormData) {
     publicCity: city,
     publicState: state,
     websiteUrl: nullableText(formData.get("websiteUrl")),
-    admissionsContactPhone: nullableText(formData.get("admissionsContactPhone")),
+    admissionsContactPhone,
     admissionsContactEmail: nullableText(formData.get("admissionsContactEmail")),
     preferredContactMethod: nullableText(formData.get("preferredContactMethod")),
     intakeContactName: nullableText(formData.get("intakeContactName")),
@@ -224,11 +237,13 @@ export async function updateAftercareProfileDetails(formData: FormData) {
         matAccepted: valuesFromForm(formData, "medicationServicesOffered").includes("MAT / Addiction medication management")
           ? valuesFromForm(formData, "matAccepted")
           : [],
-        programTypes: valuesFromForm(formData, "programTypes"),
+        programTypes: [],
         levelsOfCare: valuesFromForm(formData, "levelsOfCare"),
         programmingSchedule: valuesFromForm(formData, "programmingSchedule"),
+        languagesServed: valuesFromForm(formData, "languagesServed"),
         telehealthMode: nullableText(formData.get("telehealthMode")),
-        hoursOfOperation: nullableText(formData.get("hoursOfOperation"))
+        hoursOfOperation: null,
+        coOccurringTreatment: null
       }
     });
   }
@@ -285,11 +300,13 @@ export async function updateAftercareProfileAvailability(formData: FormData) {
         acceptingNewPatients: formData.get("acceptingNewPatients") === "yes",
         acceptingNewPatientsUpdatedAt: new Date(),
         availabilityNotes: nullableText(formData.get("availabilityNotes")),
-        programTypes: valuesFromForm(formData, "programTypes"),
+        programTypes: [],
         levelsOfCare: valuesFromForm(formData, "levelsOfCare"),
         programmingSchedule: valuesFromForm(formData, "programmingSchedule"),
+        languagesServed: valuesFromForm(formData, "languagesServed"),
         telehealthMode: nullableText(formData.get("telehealthMode")),
-        hoursOfOperation: nullableText(formData.get("hoursOfOperation"))
+        hoursOfOperation: null,
+        coOccurringTreatment: null
       }
     });
   }

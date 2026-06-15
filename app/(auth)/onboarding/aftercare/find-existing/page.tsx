@@ -132,7 +132,6 @@ export default async function FindExistingAftercareProfilePage({
           ownershipStatus: true,
           populationServedOptions: true,
           levelsOfCare: true,
-          programTypes: true,
           images: {
             orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
             take: 1,
@@ -206,7 +205,7 @@ export default async function FindExistingAftercareProfilePage({
             <div className="grid gap-4">
               {matchingProfiles.map((profile) => {
                 const tags = profile.type === ProfileType.continued_care
-                  ? [...profile.levelsOfCare, ...profile.programTypes]
+                  ? profile.levelsOfCare
                   : profile.populationServedOptions;
                 const image = profile.images[0];
                 const claimHref = profile.ownershipStatus === ProfileOwnershipStatus.claimed

@@ -388,7 +388,6 @@ export default async function PublicProfilePage({
               publicCity: true,
               publicState: true,
               levelsOfCare: true,
-              programTypes: true,
               acceptingNewPatients: true,
               organization: {
                 select: {
@@ -691,6 +690,15 @@ export default async function PublicProfilePage({
                         How clients are accepted
                       </dt>
                       <dd className="font-medium">{listOrFallback(profile.clientAcceptanceMethods)}</dd>
+                    </div>
+                  ) : null}
+                  {!isSoberLiving ? (
+                    <div>
+                      <dt className="flex items-center gap-2 font-semibold text-foreground">
+                        <Users className="text-primary" size={16} />
+                        Languages served
+                      </dt>
+                      <dd className="font-medium">{listOrFallback(profile.languagesServed)}</dd>
                     </div>
                   ) : null}
                 </dl>

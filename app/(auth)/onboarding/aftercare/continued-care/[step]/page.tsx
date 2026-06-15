@@ -6,12 +6,13 @@ import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recov
 import { Card } from "@/components/ui/card";
 import {
   clientAcceptanceMethodOptions,
-  medicationServiceOptions,
-  programmingScheduleOptions,
   continuedCareDurationOptions,
   continuedCareOptionGroups,
   continuedCareSteps,
+  languageServedOptions,
   maxContinuedCareStep,
+  medicationServiceOptions,
+  programmingScheduleOptions,
   telehealthModeOptions
 } from "@/lib/continued-care-onboarding";
 import { isClerkIdentityError } from "@/lib/current-user";
@@ -171,14 +172,6 @@ export default async function ContinuedCareStepPage({
                     {requiredLabel("Program name")}
                     <input name="programName" required defaultValue={profile?.programName ?? ""} className={fieldClassName()} />
                   </label>
-                  <div className="grid gap-2 text-sm font-medium">
-                    {requiredLabel("Program type")}
-                    <MultiSelectDropdown
-                      name="programTypes"
-                      options={mergeOptionValues(profileOptions.programTypes, selected(profile?.programTypes))}
-                      selected={selected(profile?.programTypes)}
-                    />
-                  </div>
                   <label className="grid gap-2 text-sm font-medium">
                     {requiredLabel("Primary address")}
                     <input name="streetAddress" required defaultValue={profile?.streetAddress ?? ""} className={fieldClassName()} />
@@ -252,10 +245,6 @@ export default async function ContinuedCareStepPage({
                       selected(profile?.levelsOfCare)
                     )}
                   </div>
-                  <label className="grid gap-2 text-sm font-medium">
-                    {requiredLabel("Hours of operation")}
-                    <textarea name="hoursOfOperation" required defaultValue={profile?.hoursOfOperation ?? ""} className={textAreaClassName()} />
-                  </label>
                   <div className="grid gap-2 text-sm font-medium">
                     {requiredLabel("When do you offer programming?")}
                     <p className="text-xs font-normal text-muted-foreground">Select all that apply.</p>
@@ -266,7 +255,7 @@ export default async function ContinuedCareStepPage({
                     )}
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
-                    {requiredLabel("Population served")}
+                    {requiredLabel("Gender served")}
                     {checkboxGroup(
                       "populationServed",
                       mergeOptionValues(profileOptions.populationServed, selected(profile?.populationServedOptions)),
@@ -280,15 +269,6 @@ export default async function ContinuedCareStepPage({
                       mergeOptionValues(profileOptions.specialtyPopulations, selected(profile?.specialtyPopulations)),
                       selected(profile?.specialtyPopulations)
                     )}
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <label className="grid gap-2 text-sm font-medium">
-                      {requiredLabel("Co-occurring mental health treatment?")}
-                      <select name="coOccurringTreatment" required defaultValue={profile?.coOccurringTreatment ? "yes" : "no"} className={fieldClassName()}>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
-                    </label>
                   </div>
                   <div className="cc-medication-services grid gap-2 text-sm font-medium">
                     {requiredLabel("Medication services offered")}
@@ -313,6 +293,11 @@ export default async function ContinuedCareStepPage({
                       {continuedCareDurationOptions.map((option) => <option key={option}>{option}</option>)}
                     </select>
                   </label>
+                  <div className="grid gap-2 text-sm font-medium">
+                    {requiredLabel("Languages served")}
+                    <p className="text-xs font-normal text-muted-foreground">Select all that apply.</p>
+                    {checkboxGroup("languagesServed", languageServedOptions, selected(profile?.languagesServed))}
+                  </div>
                 </>
               ) : null}
 
@@ -398,7 +383,12 @@ export default async function ContinuedCareStepPage({
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
                     Availability notes
-                    <textarea name="availabilityNotes" defaultValue={profile?.availabilityNotes ?? ""} className={textAreaClassName()} />
+                    <textarea
+                      name="availabilityNotes"
+                      placeholder="Share timing, waitlist, or scheduling notes."
+                      defaultValue={profile?.availabilityNotes ?? ""}
+                      className={textAreaClassName()}
+                    />
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     Photo checklist

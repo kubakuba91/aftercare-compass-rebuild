@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { programTypeOptions } from "@/lib/continued-care-onboarding";
 import { levelsOfCareOptions } from "@/lib/levels-of-care";
 import {
   amenityOptions,
@@ -47,14 +46,9 @@ export const profileOptionCategories = {
     description: "Levels of care available in continued care and referent onboarding.",
     defaults: levelsOfCareOptions
   },
-  programTypes: {
-    label: "Program types",
-    description: "Continued care program types available in onboarding and profile editors.",
-    defaults: programTypeOptions
-  },
   populationServed: {
-    label: "Population served",
-    description: "Population options available in onboarding and profile editors.",
+    label: "Gender served",
+    description: "Gender served options available in onboarding and profile editors.",
     defaults: populationOptions
   },
   specialtyPopulations: {

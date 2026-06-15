@@ -10,6 +10,7 @@ import { geocodeProfileAddress } from "@/lib/geocoding";
 import { imagesFromFormData, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { populationBedTotalsFromForm } from "@/lib/population-beds";
+import { normalizePhoneForStorage } from "@/lib/phone";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
@@ -85,6 +86,10 @@ function aftercareSubscriptionRedirect(message: string) {
 }
 
 function onboardingSaveErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message.startsWith("Invalid continued care intake phone:")) {
+    return error.message.replace("Invalid continued care intake phone:", "").trim();
+  }
+
   if (
     error instanceof Error &&
     error.message.includes("Transaction already closed") &&
@@ -814,7 +819,6 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
     if (step === 1) {
       const parsed = continuedCareStepOneSchema.parse({
         programName: formData.get("programName"),
-        programTypes: valuesFromForm(formData, "programTypes"),
         streetAddress: formData.get("streetAddress"),
         city: formData.get("city"),
         state: formData.get("state"),
@@ -849,14 +853,13 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
     if (step === 2) {
       const parsed = continuedCareStepTwoSchema.parse({
         levelsOfCare: valuesFromForm(formData, "levelsOfCare"),
-        hoursOfOperation: formData.get("hoursOfOperation"),
         programmingSchedule: valuesFromForm(formData, "programmingSchedule"),
         populationServed: valuesFromForm(formData, "populationServed"),
         specialtyPopulations: valuesFromForm(formData, "specialtyPopulations"),
         medicationServicesOffered: valuesFromForm(formData, "medicationServicesOffered"),
         matAccepted: valuesFromForm(formData, "matAccepted"),
-        coOccurringTreatment: formData.get("coOccurringTreatment"),
-        averageLengthOfStay: formData.get("averageLengthOfStay")
+        averageLengthOfStay: formData.get("averageLengthOfStay"),
+        languagesServed: valuesFromForm(formData, "languagesServed")
       });
       const matServicesOffered = parsed.medicationServicesOffered.includes("MAT / Addiction medication management");
 
@@ -868,8 +871,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
             populationServed: parsed.populationServed.join(", "),
             populationServedOptions: parsed.populationServed,
             matServicesOffered,
-            matAccepted: matServicesOffered ? parsed.matAccepted : [],
-            coOccurringTreatment: parsed.coOccurringTreatment === "yes"
+            matAccepted: matServicesOffered ? parsed.matAccepted : []
           })),
           selectedAccountType: "continued_care",
           activeStep: 3,
@@ -881,9 +883,16 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
     }
 
     if (step === 3) {
+      const formattedPhone = normalizePhoneForStorage(formData.get("admissionsContactPhone"));
+
+      if (!formattedPhone) {
+        destination = continuedCareStepRedirect(3, "Enter a valid 10-digit intake phone number.");
+        throw new Error("Invalid continued care intake phone: Enter a valid 10-digit intake phone number.");
+      }
+
       const parsed = continuedCareStepThreeSchema.parse({
         intakeContactName: formData.get("intakeContactName"),
-        admissionsContactPhone: formData.get("admissionsContactPhone"),
+        admissionsContactPhone: formattedPhone,
         admissionsContactEmail: formData.get("admissionsContactEmail"),
         insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
         clientAcceptanceMethods: valuesFromForm(formData, "clientAcceptanceMethods"),
@@ -975,7 +984,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
             admissionsContactEmail: String(finalDraft.admissionsContactEmail || ""),
             preferredContactMethod: String(finalDraft.preferredContactMethod || ""),
             websiteUrl: nullableText(String(finalDraft.websiteUrl || "")),
-            programTypes: arrayFromDraft(finalDraft.programTypes),
+            programTypes: [],
             telehealthAvailable: Boolean(finalDraft.telehealthAvailable),
             telehealthMode: String(finalDraft.telehealthMode || ""),
             additionalLocations: nullableText(String(finalDraft.additionalLocations || "")),
@@ -984,15 +993,16 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
             accreditations: arrayFromDraft(finalDraft.accreditations),
             clinicalFocus: arrayFromDraft(finalDraft.clinicalFocus),
             levelsOfCare: arrayFromDraft(finalDraft.levelsOfCare),
-            hoursOfOperation: String(finalDraft.hoursOfOperation || ""),
+            hoursOfOperation: null,
             programmingSchedule: arrayFromDraft(finalDraft.programmingSchedule),
+            languagesServed: arrayFromDraft(finalDraft.languagesServed),
             medicationServicesOffered: arrayFromDraft(finalDraft.medicationServicesOffered),
             populationServed: String(finalDraft.populationServed || ""),
             populationServedOptions: arrayFromDraft(finalDraft.populationServedOptions),
             specialtyPopulations: arrayFromDraft(finalDraft.specialtyPopulations),
             matServicesOffered: Boolean(finalDraft.matServicesOffered),
             matAccepted: arrayFromDraft(finalDraft.matAccepted),
-            coOccurringTreatment: Boolean(finalDraft.coOccurringTreatment),
+            coOccurringTreatment: null,
             averageLengthOfStay: String(finalDraft.averageLengthOfStay || ""),
             intakeContactName: String(finalDraft.intakeContactName || ""),
             insuranceAccepted: arrayFromDraft(finalDraft.insuranceAccepted),

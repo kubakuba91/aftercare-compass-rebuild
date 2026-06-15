@@ -15,6 +15,7 @@ import {
 } from "@/lib/sober-living-onboarding";
 import {
   clientAcceptanceMethodOptions,
+  languageServedOptions,
   medicationServiceOptions,
   programmingScheduleOptions,
   telehealthModeOptions
@@ -266,13 +267,9 @@ export default async function AdminCreateProfilePage({
                     </label>
                   </div>
                   <div className="mt-4 grid gap-4">
-                    <CheckboxGroup label="Program types" name="programTypes" options={profileOptions.programTypes} />
                     <CheckboxGroup label="Levels of care" name="levelsOfCare" options={profileOptions.levelsOfCare} />
                     <CheckboxGroup label="When do you offer programming?" name="programmingSchedule" options={programmingScheduleOptions} />
-                    <label className={labelClassName()}>
-                      Hours of operation
-                      <textarea className={textareaClassName()} name="hoursOfOperation" />
-                    </label>
+                    <CheckboxGroup label="Languages served" name="languagesServed" options={languageServedOptions} />
                   </div>
                 </div>
 
@@ -302,6 +299,7 @@ export default async function AdminCreateProfilePage({
                 </label>
                 <div className="admin-profile-type-section admin-profile-type-section--continued-care">
                   <CheckboxGroup label="How do you accept clients?" name="clientAcceptanceMethods" options={clientAcceptanceMethodOptions} />
+                  <CheckboxGroup label="Gender served" name="populationServedOptions" options={profileOptions.populationServed} />
                   <label className={labelClassName()}>
                     Referral process
                     <textarea className={textareaClassName("lg")} name="referralProcessDescription" />

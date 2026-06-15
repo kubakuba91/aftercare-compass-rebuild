@@ -16,7 +16,13 @@ import {
   preferredContactOptions,
   roomTypeOptions
 } from "@/lib/sober-living-onboarding";
-import { clientAcceptanceMethodOptions, medicationServiceOptions, programmingScheduleOptions, telehealthModeOptions } from "@/lib/continued-care-onboarding";
+import {
+  clientAcceptanceMethodOptions,
+  languageServedOptions,
+  medicationServiceOptions,
+  programmingScheduleOptions,
+  telehealthModeOptions
+} from "@/lib/continued-care-onboarding";
 import { formatPhotoLimit, getAftercarePhotoLimit } from "@/lib/feature-gates";
 import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-options";
 import { getProtectedAppUser } from "@/lib/protected-routing";
@@ -344,7 +350,6 @@ export default async function AdminEditProfilePage({
                         </select>
                       </label>
                     </div>
-                    <CheckboxGroup label="Program types" name="programTypes" options={mergeOptionValues(profileOptions.programTypes, profile.programTypes)} selected={profile.programTypes} />
                     <CheckboxGroup label="Levels of care" name="levelsOfCare" options={mergeOptionValues(profileOptions.levelsOfCare, profile.levelsOfCare)} selected={profile.levelsOfCare} />
                     <CheckboxGroup
                       label="When do you offer programming?"
@@ -352,10 +357,12 @@ export default async function AdminEditProfilePage({
                       options={mergeOptionValues(programmingScheduleOptions, profile.programmingSchedule)}
                       selected={profile.programmingSchedule}
                     />
-                    <label className={labelClassName()}>
-                      Hours of operation
-                      <textarea className={textareaClassName()} defaultValue={textValue(profile.hoursOfOperation)} name="hoursOfOperation" />
-                    </label>
+                    <CheckboxGroup
+                      label="Languages served"
+                      name="languagesServed"
+                      options={mergeOptionValues(languageServedOptions, profile.languagesServed)}
+                      selected={profile.languagesServed}
+                    />
                   </>
                 )}
                 <label className={labelClassName()}>
@@ -395,7 +402,7 @@ export default async function AdminEditProfilePage({
                       <textarea className={textareaClassName("lg")} defaultValue={textValue(profile.referralProcessDescription)} name="referralProcessDescription" />
                     </label>
                     <CheckboxGroup
-                      label="Population served"
+                      label="Gender served"
                       name="populationServedOptions"
                       options={mergeOptionValues(profileOptions.populationServed, profile.populationServedOptions)}
                       selected={profile.populationServedOptions}

@@ -2,9 +2,7 @@ import { z } from "zod";
 import {
   matOptions,
   nullableText,
-  populationOptions,
   preferredContactOptions,
-  specialtyPopulationOptions,
   valuesFromForm
 } from "@/lib/sober-living-onboarding";
 import { levelsOfCareOptions } from "@/lib/levels-of-care";
@@ -13,22 +11,14 @@ export { nullableText, valuesFromForm };
 export { levelsOfCareOptions as levelOfCareOptions };
 
 export const continuedCareSteps = [
-  { number: 1, slug: "program-info", label: "Program Info", title: "Tell us about your program" },
-  { number: 2, slug: "clinical-details", label: "Clinical Details", title: "Add clinical details" },
-  { number: 3, slug: "intake-referral", label: "Intake & Referral", title: "Set intake and referral details" },
-  { number: 4, slug: "profile-partnerships", label: "Profile", title: "Describe the program" },
-  { number: 5, slug: "media-availability", label: "Media & Availability", title: "Finish program setup" }
+  { number: 1, slug: "program-basics", label: "Program Basics", title: "Program Basics" },
+  { number: 2, slug: "clinical-details", label: "Clinical Details", title: "Clinical Details" },
+  { number: 3, slug: "intake-referral", label: "Intake & Referral", title: "Intake & Referral" },
+  { number: 4, slug: "program-profile", label: "Program Profile", title: "Describe Your Program" },
+  { number: 5, slug: "media-availability", label: "Media & Availability", title: "Media & Availability" }
 ] as const;
 
 export const maxContinuedCareStep = continuedCareSteps.length;
-
-export const programTypeOptions = [
-  "Partial Hospitalization Program (PHP)",
-  "Intensive Outpatient Program (IOP)",
-  "Standard Outpatient (OP)",
-  "MAT Clinic",
-  "Dual Diagnosis Program"
-] as const;
 
 export const telehealthModeOptions = ["In-person only", "Virtual only", "Hybrid"] as const;
 export const programmingScheduleOptions = ["Mornings", "Afternoons", "Evenings", "Weekends", "24/7"] as const;
@@ -46,6 +36,7 @@ export const continuedCareDurationOptions = [
   "Ongoing / No set end date",
   "Ongoing / as needed"
 ] as const;
+export const languageServedOptions = ["English only", "Spanish", "Other"] as const;
 
 const requiredText = z.string().trim().min(1);
 const optionalText = z.string().trim().optional();
@@ -57,7 +48,6 @@ const optionalUrl = z
 
 export const continuedCareStepOneSchema = z.object({
   programName: requiredText.max(160),
-  programTypes: z.array(z.string()).min(1),
   streetAddress: requiredText.max(200),
   city: requiredText.max(120),
   state: requiredText.max(40),
@@ -73,14 +63,13 @@ export const continuedCareStepOneSchema = z.object({
 
 export const continuedCareStepTwoSchema = z.object({
   levelsOfCare: z.array(z.string()).min(1),
-  hoursOfOperation: requiredText.max(500),
   programmingSchedule: z.array(z.string()).min(1),
   populationServed: z.array(z.string()).min(1),
   specialtyPopulations: z.array(z.string()).default([]),
   medicationServicesOffered: z.array(z.string()).min(1),
   matAccepted: z.array(z.string()).default([]),
-  coOccurringTreatment: z.enum(["yes", "no"]),
-  averageLengthOfStay: z.enum(continuedCareDurationOptions)
+  averageLengthOfStay: z.enum(continuedCareDurationOptions),
+  languagesServed: z.array(z.string()).min(1)
 });
 
 export const continuedCareStepThreeSchema = z.object({
@@ -109,7 +98,5 @@ export const continuedCareStepFiveSchema = z.object({
 
 export const continuedCareOptionGroups = {
   mat: matOptions,
-  population: populationOptions,
-  specialty: specialtyPopulationOptions,
   contact: preferredContactOptions
 } as const;

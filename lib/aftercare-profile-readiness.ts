@@ -13,7 +13,6 @@ type AftercareReadinessProfile = {
   totalBeds: number | null;
   bedsAvailable: number | null;
   acceptingNewPatients: boolean | null;
-  programTypes?: string[];
   levelsOfCare?: string[];
   goodNeighborPolicyAcknowledged: boolean;
 };
@@ -45,10 +44,10 @@ export function getAftercareProfileReadiness(profile: AftercareReadinessProfile)
       message: "Profile description is required."
     },
     {
-      label: "Population served",
+      label: profile.type === "continued_care" ? "Gender served" : "Population served",
       complete: Boolean(profile.populationServedOptions.length || profile.populationServed?.trim()),
       required: true,
-      message: "Population served is required."
+      message: profile.type === "continued_care" ? "Gender served is required." : "Population served is required."
     },
     ...(profile.type === "sober_living"
       ? [
@@ -71,12 +70,6 @@ export function getAftercareProfileReadiness(profile: AftercareReadinessProfile)
             complete: profile.acceptingNewPatients !== null,
             required: true,
             message: "Patient availability status is required."
-          },
-          {
-            label: "Program type",
-            complete: Boolean(profile.programTypes?.length),
-            required: true,
-            message: "Program type is required."
           },
           {
             label: "Level of care",

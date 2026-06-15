@@ -397,7 +397,6 @@ export default async function SearchPage({
       averageLengthOfStay: true,
       pricePerWeek: true,
       moveInCost: true,
-      programTypes: true,
       levelsOfCare: true,
       amenities: true,
       certificationsHeld: true,
@@ -490,7 +489,6 @@ export default async function SearchPage({
             profiles.map((profile, index) => {
               const offerings = compactItems(
                 [
-                  ...profile.programTypes,
                   ...profile.levelsOfCare,
                   ...profile.populationServedOptions,
                   ...profile.specialtyPopulations,

@@ -320,6 +320,23 @@ export default async function AdminEditProfilePage({
                           <input className={moneyInputClassName()} defaultValue={moneyValue(profile.moveInCost)} inputMode="numeric" min="0" name="moveInCost" placeholder="600" type="number" />
                         </span>
                       </label>
+                    </div>
+                    <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className={labelClassName()}>
+                        Funding available
+                        <select className={fieldClassName()} defaultValue={profile.fundingAvailable === null ? "" : profile.fundingAvailable ? "yes" : "no"} name="fundingAvailable">
+                          <option value="">Not set</option>
+                          <option value="yes">Yes</option>
+                          <option value="no">No</option>
+                        </select>
+                      </label>
+                    </div>
+                    <label className={labelClassName()}>
+                      Funding notes
+                      <textarea className={textareaClassName()} defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
+                    </label>
+                    <div className="grid gap-4 md:grid-cols-2">
                       <label className={labelClassName()}>
                         Wheelchair accessible bed count
                         <input className={fieldClassName()} defaultValue={profile.wheelchairAccessibleBeds ?? ""} min="0" name="wheelchairAccessibleBeds" type="number" />
@@ -417,26 +434,34 @@ export default async function AdminEditProfilePage({
                 {profile.type === ProfileType.sober_living ? (
                   <CheckboxGroup label="Amenities" name="amenities" options={mergeOptionValues(profileOptions.amenities, profile.amenities)} selected={profile.amenities} />
                 ) : null}
-                <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className={labelClassName()}>
-                    Funding available
-                    <select className={fieldClassName()} defaultValue={profile.fundingAvailable === null ? "" : profile.fundingAvailable ? "yes" : "no"} name="fundingAvailable">
-                      <option value="">Not set</option>
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </label>
-                  <label className={labelClassName()}>
-                    Medication administration
-                    <select className={fieldClassName()} defaultValue={textValue(profile.medicationAdministration)} name="medicationAdministration">
-                      <option value="">Not set</option>
-                      {medicationAdministrationOptions.map((option) => (
-                        <option key={option} value={option}>{option}</option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
+                {profile.type === ProfileType.continued_care ? (
+                  <>
+                    <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className={labelClassName()}>
+                        Funding available
+                        <select className={fieldClassName()} defaultValue={profile.fundingAvailable === null ? "" : profile.fundingAvailable ? "yes" : "no"} name="fundingAvailable">
+                          <option value="">Not set</option>
+                          <option value="yes">Yes</option>
+                          <option value="no">No</option>
+                        </select>
+                      </label>
+                    </div>
+                    <label className={labelClassName()}>
+                      Funding notes
+                      <textarea className={textareaClassName()} defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
+                    </label>
+                  </>
+                ) : null}
+                <label className={labelClassName()}>
+                  Medication administration
+                  <select className={fieldClassName()} defaultValue={textValue(profile.medicationAdministration)} name="medicationAdministration">
+                    <option value="">Not set</option>
+                    {medicationAdministrationOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
                 {profile.type === ProfileType.continued_care ? (
                   <CheckboxGroup
                     label="Medication services offered"
@@ -445,10 +470,6 @@ export default async function AdminEditProfilePage({
                     selected={profile.medicationServicesOffered}
                   />
                 ) : null}
-                <label className={labelClassName()}>
-                  Funding notes
-                  <textarea className={textareaClassName()} defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
-                </label>
                 <CheckboxGroup label="MAT medications offered" name="matAccepted" options={mergeOptionValues(profileOptions.matAccepted, profile.matAccepted)} selected={profile.matAccepted} />
                 <label className={labelClassName()}>
                   Medication restrictions

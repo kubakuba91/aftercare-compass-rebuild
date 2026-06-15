@@ -404,6 +404,21 @@ export default async function AftercareProfileDetailPage({
                       </span>
                     </label>
                   </div>
+                  <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className={labelClassName()}>
+                      Funding available
+                      <select className={fieldClassName()} defaultValue={profile.fundingAvailable === null ? "" : profile.fundingAvailable ? "yes" : "no"} name="fundingAvailable">
+                        <option value="">Not set</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label className={labelClassName()}>
+                    Funding notes
+                    <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
+                  </label>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className={labelClassName()}>
                       Wheelchair accessible bed count
@@ -505,21 +520,25 @@ export default async function AftercareProfileDetailPage({
               {isSoberLiving ? (
                 <CheckboxGroup label="Amenities" name="amenities" options={mergeOptionValues(profileOptions.amenities, profile.amenities)} selected={profile.amenities} />
               ) : null}
-              <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className={labelClassName()}>
-                  Funding available
-                  <select className={fieldClassName()} defaultValue={profile.fundingAvailable === null ? "" : profile.fundingAvailable ? "yes" : "no"} name="fundingAvailable">
-                    <option value="">Not set</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                </label>
-              </div>
-              <label className={labelClassName()}>
-                Funding notes
-                <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
-              </label>
+              {!isSoberLiving ? (
+                <>
+                  <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className={labelClassName()}>
+                      Funding available
+                      <select className={fieldClassName()} defaultValue={profile.fundingAvailable === null ? "" : profile.fundingAvailable ? "yes" : "no"} name="fundingAvailable">
+                        <option value="">Not set</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label className={labelClassName()}>
+                    Funding notes
+                    <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
+                  </label>
+                </>
+              ) : null}
               {!isSoberLiving ? (
                 <CheckboxGroup
                   label="Medication services offered"

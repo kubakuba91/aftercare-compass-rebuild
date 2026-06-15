@@ -218,6 +218,11 @@ export async function updateAftercareProfileDetails(formData: FormData) {
         bedsAvailableUpdatedAt: new Date(),
         pricePerWeek: numberFromForm(formData.get("pricePerWeek")),
         moveInCost: moveInCostText(formData.get("moveInCost")),
+        insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
+        fundingAvailable: formData.get("fundingAvailable")
+          ? formData.get("fundingAvailable") === "yes"
+          : null,
+        fundingNotes: nullableText(formData.get("fundingNotes")),
         wheelchairAccessibleBeds: numberFromForm(formData.get("wheelchairAccessibleBeds")),
         roomTypes: valuesFromForm(formData, "roomTypes"),
         bedTypes: valuesFromForm(formData, "bedTypes"),
@@ -286,6 +291,11 @@ export async function updateAftercareProfileAvailability(formData: FormData) {
         bedsAvailableUpdatedAt: new Date(),
         pricePerWeek: numberFromForm(formData.get("pricePerWeek")),
         moveInCost: moveInCostText(formData.get("moveInCost")),
+        insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
+        fundingAvailable: formData.get("fundingAvailable")
+          ? formData.get("fundingAvailable") === "yes"
+          : null,
+        fundingNotes: nullableText(formData.get("fundingNotes")),
         wheelchairAccessibleBeds: numberFromForm(formData.get("wheelchairAccessibleBeds")),
         roomTypes: valuesFromForm(formData, "roomTypes"),
         bedTypes: valuesFromForm(formData, "bedTypes"),
@@ -343,11 +353,15 @@ export async function updateAftercareProfileContent(formData: FormData) {
       clinicalFocus: valuesFromForm(formData, "clinicalFocus"),
       supportServices: valuesFromForm(formData, "supportServices"),
       amenities: valuesFromForm(formData, "amenities"),
-      insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
-      fundingAvailable: formData.get("fundingAvailable")
-        ? formData.get("fundingAvailable") === "yes"
-        : null,
-      fundingNotes: nullableText(formData.get("fundingNotes")),
+      ...(profile.type === ProfileType.continued_care
+        ? {
+            insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
+            fundingAvailable: formData.get("fundingAvailable")
+              ? formData.get("fundingAvailable") === "yes"
+              : null,
+            fundingNotes: nullableText(formData.get("fundingNotes"))
+          }
+        : {}),
       medicationAdministration: nullableText(formData.get("medicationAdministration")),
       medicationServicesOffered: valuesFromForm(formData, "medicationServicesOffered"),
       matAccepted: profile.type === ProfileType.continued_care &&

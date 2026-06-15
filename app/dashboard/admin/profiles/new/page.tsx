@@ -137,7 +137,7 @@ export default async function AdminCreateProfilePage({
                     Program name
                     <input className={fieldClassName()} name="programName" required />
                   </label>
-                  <label className={`admin-profile-type-section admin-profile-type-section--continued-care ${labelClassName()}`}>
+                  <label className={labelClassName()}>
                     Preferred contact method
                     <select className={fieldClassName()} name="preferredContactMethod">
                       <option value="">Select one</option>

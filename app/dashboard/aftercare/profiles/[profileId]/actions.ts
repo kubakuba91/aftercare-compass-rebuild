@@ -246,6 +246,11 @@ export async function updateAftercareProfileDetails(formData: FormData) {
         levelsOfCare: valuesFromForm(formData, "levelsOfCare"),
         programmingSchedule: valuesFromForm(formData, "programmingSchedule"),
         languagesServed: valuesFromForm(formData, "languagesServed"),
+        insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
+        fundingAvailable: formData.get("fundingAvailable")
+          ? formData.get("fundingAvailable") === "yes"
+          : null,
+        fundingNotes: nullableText(formData.get("fundingNotes")),
         telehealthMode: nullableText(formData.get("telehealthMode")),
         hoursOfOperation: null,
         coOccurringTreatment: null
@@ -353,15 +358,6 @@ export async function updateAftercareProfileContent(formData: FormData) {
       clinicalFocus: valuesFromForm(formData, "clinicalFocus"),
       supportServices: valuesFromForm(formData, "supportServices"),
       amenities: valuesFromForm(formData, "amenities"),
-      ...(profile.type === ProfileType.continued_care
-        ? {
-            insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
-            fundingAvailable: formData.get("fundingAvailable")
-              ? formData.get("fundingAvailable") === "yes"
-              : null,
-            fundingNotes: nullableText(formData.get("fundingNotes"))
-          }
-        : {}),
       medicationAdministration: nullableText(formData.get("medicationAdministration")),
       medicationServicesOffered: valuesFromForm(formData, "medicationServicesOffered"),
       matAccepted: profile.type === ProfileType.continued_care &&

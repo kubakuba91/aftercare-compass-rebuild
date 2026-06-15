@@ -463,6 +463,21 @@ export default async function AftercareProfileDetailPage({
                     options={mergeOptionValues(languageServedOptions, profile.languagesServed)}
                     selected={profile.languagesServed}
                   />
+                  <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className={labelClassName()}>
+                      Funding available
+                      <select className={fieldClassName()} defaultValue={profile.fundingAvailable === null ? "" : profile.fundingAvailable ? "yes" : "no"} name="fundingAvailable">
+                        <option value="">Not set</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label className={labelClassName()}>
+                    Funding notes
+                    <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
+                  </label>
                 </>
               )}
               <label className={labelClassName()}>
@@ -519,25 +534,6 @@ export default async function AftercareProfileDetailPage({
               <CheckboxGroup label="Support services" name="supportServices" options={mergeOptionValues(profileOptions.supportServices, profile.supportServices)} selected={profile.supportServices} />
               {isSoberLiving ? (
                 <CheckboxGroup label="Amenities" name="amenities" options={mergeOptionValues(profileOptions.amenities, profile.amenities)} selected={profile.amenities} />
-              ) : null}
-              {!isSoberLiving ? (
-                <>
-                  <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <label className={labelClassName()}>
-                      Funding available
-                      <select className={fieldClassName()} defaultValue={profile.fundingAvailable === null ? "" : profile.fundingAvailable ? "yes" : "no"} name="fundingAvailable">
-                        <option value="">Not set</option>
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                      </select>
-                    </label>
-                  </div>
-                  <label className={labelClassName()}>
-                    Funding notes
-                    <textarea className="min-h-24 rounded-md border border-border bg-white p-3 text-sm" defaultValue={textValue(profile.fundingNotes)} name="fundingNotes" />
-                  </label>
-                </>
               ) : null}
               {!isSoberLiving ? (
                 <CheckboxGroup

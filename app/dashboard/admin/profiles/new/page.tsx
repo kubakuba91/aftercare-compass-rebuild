@@ -110,7 +110,7 @@ export default async function AdminCreateProfilePage({
           <div className="flex flex-wrap gap-2">
             <Badge tone="warning">Unclaimed listing</Badge>
           </div>
-          <h1 className="mt-4 text-3xl font-semibold">Add new home</h1>
+          <h1 className="mt-4 text-3xl font-semibold">Add listing</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Create a public directory profile before the provider claims it.
           </p>

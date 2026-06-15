@@ -137,7 +137,7 @@ export default async function AdminCreateProfilePage({
                     Program name
                     <input className={fieldClassName()} name="programName" required />
                   </label>
-                  <label className={labelClassName()}>
+                  <label className={`admin-profile-type-section admin-profile-type-section--continued-care ${labelClassName()}`}>
                     Preferred contact method
                     <select className={fieldClassName()} name="preferredContactMethod">
                       <option value="">Select one</option>
@@ -146,11 +146,11 @@ export default async function AdminCreateProfilePage({
                       ))}
                     </select>
                   </label>
-                  <label className={labelClassName()}>
+                  <label className={`admin-profile-type-section admin-profile-type-section--continued-care ${labelClassName()}`}>
                     Intake contact name
                     <input className={fieldClassName()} name="intakeContactName" />
                   </label>
-                  <label className={labelClassName()}>
+                  <label className={`admin-profile-type-section admin-profile-type-section--continued-care ${labelClassName()}`}>
                     License number
                     <input className={fieldClassName()} name="stateLicenseNumber" />
                   </label>
@@ -289,11 +289,11 @@ export default async function AdminCreateProfilePage({
                   Description
                   <textarea className={textareaClassName("lg")} name="description" />
                 </label>
-                <label className={labelClassName()}>
+                <label className={`admin-profile-type-section admin-profile-type-section--sober-living ${labelClassName()}`}>
                   House rules
                   <textarea className={textareaClassName("lg")} name="houseRulesText" />
                 </label>
-                <label className={labelClassName()}>
+                <label className={`admin-profile-type-section admin-profile-type-section--sober-living ${labelClassName()}`}>
                   Referral fit notes
                   <textarea className={textareaClassName("lg")} name="referralFitNotes" />
                 </label>
@@ -323,10 +323,10 @@ export default async function AdminCreateProfilePage({
                       <option value="no">No</option>
                     </select>
                   </label>
-                  <label className={labelClassName()}>
-                    Medication administration
-                    <select className={fieldClassName()} name="medicationAdministration">
-                      <option value="">Not set</option>
+                <label className={`admin-profile-type-section admin-profile-type-section--sober-living ${labelClassName()}`}>
+                  Medication administration
+                  <select className={fieldClassName()} name="medicationAdministration">
+                    <option value="">Not set</option>
                       {medicationAdministrationOptions.map((option) => (
                         <option key={option} value={option}>{option}</option>
                       ))}
@@ -340,12 +340,14 @@ export default async function AdminCreateProfilePage({
                   Funding notes
                   <textarea className={textareaClassName()} name="fundingNotes" />
                 </label>
-                <CheckboxGroup label="MAT accepted" name="matAccepted" options={profileOptions.matAccepted} />
-                <label className={labelClassName()}>
+                <div className="admin-profile-type-section admin-profile-type-section--sober-living">
+                  <CheckboxGroup label="MAT accepted" name="matAccepted" options={profileOptions.matAccepted} />
+                </div>
+                <label className={`admin-profile-type-section admin-profile-type-section--sober-living ${labelClassName()}`}>
                   Medication restrictions
                   <textarea className={textareaClassName()} name="medicationRestrictions" />
                 </label>
-                <label className={labelClassName()}>
+                <label className={`admin-profile-type-section admin-profile-type-section--sober-living ${labelClassName()}`}>
                   Drug testing policy
                   <select className={fieldClassName()} name="drugTestingPolicy">
                     <option value="">Not set</option>

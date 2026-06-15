@@ -506,6 +506,10 @@ input[type="checkbox"] {
   display: block;
 }
 
+.admin-create-profile-form:has(select[name="type"] option[value="continued_care"]:checked) .admin-profile-type-section--continued-care.grid {
+  display: grid;
+}
+
 .admin-create-profile-form:has(select[name="type"] option[value="continued_care"]:checked) .admin-profile-type-section--sober-living {
   display: none;
 }

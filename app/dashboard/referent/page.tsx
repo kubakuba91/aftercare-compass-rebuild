@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatBillingStatus, getBillingPlan, getBillingPlansWithStripePrices } from "@/lib/billing";
 import { canDisplayVerifiedBadge, canReceiveDirectReferrals, getReferentTeamLimit } from "@/lib/feature-gates";
+import { formatDate } from "@/lib/format-utils";
 import {
   formatPhoneScreeningDateTime,
   generatePhoneScreeningSlots
@@ -78,18 +79,6 @@ function formatAvailability(profile: {
 
 function formatPricePerWeek(value: number | null) {
   return value ? `$${value}/week` : "Price not listed";
-}
-
-function formatDate(value: Date | null | undefined) {
-  if (!value) {
-    return "Not set";
-  }
-
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric"
-  }).format(value);
 }
 
 function formatBillingDate(value: Date | null | undefined) {

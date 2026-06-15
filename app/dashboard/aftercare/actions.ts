@@ -13,21 +13,13 @@ import {
   getAftercareManagerLimit,
   isWithinPlanLimit
 } from "@/lib/feature-gates";
+import { numberFromForm } from "@/lib/form-utils";
 import { normalizePhoneNumber } from "@/lib/phone";
 import { phoneScreeningTimezone } from "@/lib/phone-screening";
 import { canTransitionReferral, referralStatuses } from "@/lib/product-rules";
 import { prisma } from "@/lib/prisma";
 import { getAftercareDashboardUser } from "@/lib/protected-routing";
 import { sendSms } from "@/lib/sms";
-
-function numberFromForm(value: FormDataEntryValue | null) {
-  if (value === null || value === "") {
-    return null;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null;
-}
 
 function minuteFromTime(value: FormDataEntryValue | null) {
   const text = String(value || "");

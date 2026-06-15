@@ -101,6 +101,7 @@ function ContactForm({
       <form action={createPublicProfileLead} className="mt-5 grid gap-3">
         <input name="profileId" type="hidden" value={profile.id} />
         <input name="slug" type="hidden" value={profile.slug} />
+        <input aria-hidden="true" autoComplete="off" className="hidden" name="companyWebsite" tabIndex={-1} />
         <label className="grid gap-2 text-sm font-medium">
           Name
           <input className="min-h-10 rounded-md border border-border px-3" name="name" required />
@@ -160,6 +161,7 @@ function PlaceClientForm({
       <form action={createProfileReferral} className="mt-5 grid gap-3">
         <input name="aftercareProfileId" type="hidden" value={profile.id} />
         <input name="slug" type="hidden" value={profile.slug} />
+        <input aria-hidden="true" autoComplete="off" className="hidden" name="companyWebsite" tabIndex={-1} />
         <label className="grid gap-2 text-sm font-medium">
           Case manager name
           <input className="min-h-10 rounded-md border border-border px-3" defaultValue={userName} name="caseManagerName" required />
@@ -302,6 +304,7 @@ function ClaimProfileCard({
         <form action={createProfileClaimRequest} className="mt-5 grid gap-3">
           <input name="profileId" type="hidden" value={profile.id} />
           <input name="slug" type="hidden" value={profile.slug} />
+          <input aria-hidden="true" autoComplete="off" className="hidden" name="companyWebsite" tabIndex={-1} />
           <label className="grid gap-2 text-sm font-medium">
             Your name
             <input className="min-h-10 rounded-md border border-border px-3" defaultValue={userName} minLength={2} name="claimantName" required />

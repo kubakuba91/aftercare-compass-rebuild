@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Prisma, ProfileStatus, ProfileType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getAftercareProfileLimit, isWithinPlanLimit } from "@/lib/feature-gates";
+import { currencyText, moveInCostText, numberFromForm } from "@/lib/form-utils";
 import { geocodeProfileAddress } from "@/lib/geocoding";
 import { imagesFromFormData, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
@@ -47,32 +48,6 @@ function mergeDraft(currentDraft: unknown, nextValues: Record<string, unknown>) 
 
 function jsonDraft(value: Record<string, unknown>) {
   return value as Prisma.InputJsonValue;
-}
-
-function currencyText(value: FormDataEntryValue | null) {
-  return String(value || "").replace(/^\s*\$\s*/, "").trim();
-}
-
-function numberFromForm(value: FormDataEntryValue | null) {
-  const text = currencyText(value);
-
-  if (!text) {
-    return null;
-  }
-
-  const parsed = Number(text);
-  return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null;
-}
-
-function moveInCostText(value: string | FormDataEntryValue | null | undefined) {
-  const text = String(value || "").replace(/^\s*\$\s*/, "").trim();
-  const match = text.match(/^\d+/);
-
-  if (!match) {
-    return null;
-  }
-
-  return `$${match[0]}`;
 }
 
 function arrayFromDraft(value: unknown) {

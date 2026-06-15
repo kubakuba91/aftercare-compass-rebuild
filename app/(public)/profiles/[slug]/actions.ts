@@ -6,6 +6,7 @@ import { hasDatabaseConfig } from "@/lib/database-status";
 import { defaultRoleForAccountType, getCurrentAppUser, getRequiredClerkIdentity } from "@/lib/current-user";
 import { notifyNewPublicLead, notifyNewReferral, notifyProfileClaimSubmitted } from "@/lib/email-notifications";
 import { canReceiveDirectReferrals, canSubmitReferrals } from "@/lib/feature-gates";
+import { hasHumanTrapValue } from "@/lib/form-utils";
 import { prisma } from "@/lib/prisma";
 import { publicLeadSchema } from "@/lib/validations/lead";
 import { profileClaimRequestSchema } from "@/lib/validations/profile-claim";
@@ -19,20 +20,23 @@ export async function createPublicProfileLead(formData: FormData) {
   const slug = String(formData.get("slug") || "");
   const parsed = publicLeadSchema.safeParse({
     profileId: formData.get("profileId"),
+    slug,
     name: formData.get("name"),
     email: formData.get("email"),
     phone: formData.get("phone") || undefined,
-    message: formData.get("message")
+    message: formData.get("message"),
+    companyWebsite: formData.get("companyWebsite") || undefined
   });
 
-  if (!parsed.success) {
+  if (!parsed.success || hasHumanTrapValue(formData)) {
     redirect(`/profiles/${slug}?lead=invalid`);
   }
 
   const profile = await prisma.aftercareProfile.findFirst({
     where: {
       id: parsed.data.profileId,
-      slug
+      slug,
+      status: "published"
     },
     select: {
       id: true,
@@ -74,6 +78,10 @@ export async function createProfileReferral(formData: FormData) {
   }
 
   const slug = String(formData.get("slug") || "");
+  if (hasHumanTrapValue(formData)) {
+    redirect(`/profiles/${slug}?referral=invalid`);
+  }
+
   const payload = {
     aftercareProfileId: formData.get("aftercareProfileId"),
     caseManagerName: formData.get("caseManagerName"),
@@ -174,7 +182,7 @@ export async function createProfileClaimRequest(formData: FormData) {
   });
   const slug = String(formData.get("slug") || "");
 
-  if (!parsed.success) {
+  if (!parsed.success || hasHumanTrapValue(formData)) {
     redirect(`/profiles/${slug}?claim=invalid`);
   }
 

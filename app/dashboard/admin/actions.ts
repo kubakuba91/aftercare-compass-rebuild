@@ -14,6 +14,7 @@ import {
 } from "@prisma/client";
 import { notifyProfileClaimApproved, notifyProfileClaimRejected } from "@/lib/email-notifications";
 import { geocodeProfileAddress } from "@/lib/geocoding";
+import { moveInCostText, nullableText, numberFromForm } from "@/lib/form-utils";
 import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { populationBedTotalsFromForm } from "@/lib/population-beds";
 import { profileOptionCategories, profileOptionCategoryKeys, type ProfileOptionCategory } from "@/lib/profile-options";
@@ -147,37 +148,6 @@ async function findOrCreateProfileOptionFromForm(formData: FormData) {
       sortOrder: true
     }
   });
-}
-
-function nullableText(value: FormDataEntryValue | null) {
-  const text = String(value || "").trim();
-  return text || null;
-}
-
-function currencyText(value: FormDataEntryValue | null) {
-  return String(value || "").replace(/^\s*\$\s*/, "").trim();
-}
-
-function moveInCostText(value: FormDataEntryValue | null) {
-  const text = currencyText(value);
-  const match = text.match(/^\d+/);
-
-  if (!match) {
-    return null;
-  }
-
-  return `$${match[0]}`;
-}
-
-function numberFromForm(value: FormDataEntryValue | null) {
-  const text = currencyText(value);
-
-  if (!text) {
-    return null;
-  }
-
-  const parsed = Number(text);
-  return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null;
 }
 
 async function uniqueProfileSlug(programName: string) {

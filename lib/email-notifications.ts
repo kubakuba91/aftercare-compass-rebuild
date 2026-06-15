@@ -1,11 +1,12 @@
 import { Role } from "@prisma/client";
 import { createCalendarEvent } from "@/lib/calendar";
 import { appUrl, emailButton, emailField, emailShell, escapeHtml, sendTransactionalEmail, uniqueEmailRecipients } from "@/lib/email";
+import { formatValue as formatDisplayValue } from "@/lib/format-utils";
 import { formatPhoneScreeningDateTime } from "@/lib/phone-screening";
 import { prisma } from "@/lib/prisma";
 
 function formatValue(value: string | null | undefined) {
-  return value ? value.replace(/_/g, " ") : "";
+  return formatDisplayValue(value, { fallback: "" });
 }
 
 function roleLabel(role: Role) {

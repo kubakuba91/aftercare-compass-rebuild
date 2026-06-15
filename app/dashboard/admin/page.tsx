@@ -26,6 +26,7 @@ import {
   RowActionsMenuLink
 } from "@/components/ui/row-actions-menu";
 import { getProtectedAppUser } from "@/lib/protected-routing";
+import { formatDate, formatValue as formatDisplayValue } from "@/lib/format-utils";
 import { getProfileOptionGroups, profileOptionCategories, profileOptionCategoryKeys } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { addProfileOption, reviewOnboardingSubmission, reviewProfileClaimRequest, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus } from "./actions";
@@ -50,19 +51,7 @@ function asAdminTab(value: string | string[] | undefined): AdminTab {
 }
 
 function formatValue(value: string | null | undefined) {
-  if (!value) {
-    return "Not set";
-  }
-
-  return value
-    .replaceAll("_", " ")
-    .split(" ")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function formatDate(value: Date | null | undefined) {
-  return value ? value.toLocaleDateString() : "Not set";
+  return formatDisplayValue(value, { fallback: "Not set", titleCase: true });
 }
 
 function organizationLabel(type: OrganizationType) {

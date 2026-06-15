@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/row-actions-menu";
 import { billingPlans, formatBillingStatus, getBillingPlan, getBillingPlansWithStripePrices } from "@/lib/billing";
 import { getVisiblePopulationBeds } from "@/lib/bed-display";
+import { formatDate as formatShortDate } from "@/lib/format-utils";
 import {
   canReceiveDirectReferrals,
   canUseLiveAvailability,
@@ -83,16 +84,15 @@ function isDashboardTab(value: string | undefined): value is DashboardTab {
 }
 
 function formatDate(value: Date | null | undefined) {
-  if (!value) {
-    return "Not updated";
-  }
-
-  return new Intl.DateTimeFormat("en", {
+  return formatShortDate(value, {
+    fallback: "Not updated",
+    options: {
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit"
-  }).format(value);
+    }
+  });
 }
 
 function formatBillingDate(value: Date | null | undefined) {

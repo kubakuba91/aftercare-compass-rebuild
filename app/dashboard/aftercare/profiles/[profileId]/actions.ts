@@ -10,6 +10,7 @@ import {
   getAftercareProfileLimit,
   isWithinPlanLimit
 } from "@/lib/feature-gates";
+import { moveInCostText, nullableText, numberFromForm } from "@/lib/form-utils";
 import { geocodeProfileAddress } from "@/lib/geocoding";
 import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { populationBedTotalsFromForm } from "@/lib/population-beds";
@@ -17,37 +18,6 @@ import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { getAftercareDashboardUser } from "@/lib/protected-routing";
 import { valuesFromForm } from "@/lib/sober-living-onboarding";
-
-function nullableText(value: FormDataEntryValue | null) {
-  const text = String(value || "").trim();
-  return text || null;
-}
-
-function currencyText(value: FormDataEntryValue | null) {
-  return String(value || "").replace(/^\s*\$\s*/, "").trim();
-}
-
-function moveInCostText(value: FormDataEntryValue | null) {
-  const text = currencyText(value);
-  const match = text.match(/^\d+/);
-
-  if (!match) {
-    return null;
-  }
-
-  return `$${match[0]}`;
-}
-
-function numberFromForm(value: FormDataEntryValue | null) {
-  const text = currencyText(value);
-
-  if (!text) {
-    return null;
-  }
-
-  const parsed = Number(text);
-  return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null;
-}
 
 async function getOwnedProfile(profileId: string) {
   const appUser = await getAftercareDashboardUser(`/dashboard/aftercare/profiles/${profileId}`);

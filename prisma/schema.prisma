@@ -103,6 +103,8 @@ model ProfileOption {
   category  String
   label     String
   isActive  Boolean  @default(true)
+  showForSoberLiving   Boolean  @default(true)
+  showForContinuedCare Boolean  @default(true)
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

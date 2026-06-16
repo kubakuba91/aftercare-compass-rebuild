@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ProfileType } from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { PopulationBedFields } from "@/components/dashboard/population-bed-fields";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
@@ -186,7 +187,7 @@ export default async function SoberLivingStepPage({
 
   const step = soberLivingSteps[currentStep - 1];
   const action = saveSoberLivingOnboardingStep.bind(null, currentStep);
-  const profileOptions = await getActiveProfileOptionValues();
+  const profileOptions = await getActiveProfileOptionValues(ProfileType.sober_living);
   const selected = (values?: string[] | null) => values ?? [];
   const servedPopulations = selectedPopulation(profile?.populationServedOptions, profile?.populationServed);
   const videoUrls = Array.isArray(profile?.videoUrls) ? profile.videoUrls : [];

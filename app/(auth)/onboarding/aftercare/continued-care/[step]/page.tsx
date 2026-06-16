@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ProfileType } from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recovery-card";
@@ -146,7 +147,7 @@ export default async function ContinuedCareStepPage({
 
   const step = continuedCareSteps[currentStep - 1];
   const action = saveContinuedCareOnboardingStep.bind(null, currentStep);
-  const profileOptions = await getActiveProfileOptionValues();
+  const profileOptions = await getActiveProfileOptionValues(ProfileType.continued_care);
   const selected = (values?: string[] | null) => values ?? [];
   const videoUrls = Array.isArray(profile?.videoUrls) ? profile.videoUrls : [];
 

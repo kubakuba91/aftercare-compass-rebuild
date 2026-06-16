@@ -29,7 +29,7 @@ import { getProtectedAppUser } from "@/lib/protected-routing";
 import { formatDate, formatValue as formatDisplayValue } from "@/lib/format-utils";
 import { getProfileOptionGroups, profileOptionCategories, profileOptionCategoryKeys } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
-import { addProfileOption, reviewOnboardingSubmission, reviewProfileClaimRequest, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus } from "./actions";
+import { addProfileOption, reviewOnboardingSubmission, reviewProfileClaimRequest, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus, updateProfileOptionVisibility } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -1046,6 +1046,34 @@ export default async function AdminDashboardPage({
                             <p className="mt-1 text-xs text-muted-foreground">
                               {option.isActive ? "Available in dropdowns" : "Disabled for new selections"}
                             </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <form action={updateProfileOptionVisibility}>
+                                <input name="optionId" type="hidden" value={option.id} />
+                                <input name="category" type="hidden" value={category} />
+                                <input name="visibility" type="hidden" value="sober_living" />
+                                <button
+                                  aria-pressed={option.showForSoberLiving}
+                                  className="focus-ring inline-flex min-h-8 items-center rounded-full border border-border px-3 text-xs font-semibold transition data-[active=true]:border-primary/30 data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=false]:text-muted-foreground"
+                                  data-active={option.showForSoberLiving ? "true" : "false"}
+                                  type="submit"
+                                >
+                                  Sober living
+                                </button>
+                              </form>
+                              <form action={updateProfileOptionVisibility}>
+                                <input name="optionId" type="hidden" value={option.id} />
+                                <input name="category" type="hidden" value={category} />
+                                <input name="visibility" type="hidden" value="continued_care" />
+                                <button
+                                  aria-pressed={option.showForContinuedCare}
+                                  className="focus-ring inline-flex min-h-8 items-center rounded-full border border-border px-3 text-xs font-semibold transition data-[active=true]:border-primary/30 data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=false]:text-muted-foreground"
+                                  data-active={option.showForContinuedCare ? "true" : "false"}
+                                  type="submit"
+                                >
+                                  Continued care
+                                </button>
+                              </form>
+                            </div>
                           </div>
                           <form action={updateProfileOptionStatus}>
                             <input name="optionId" type="hidden" value={option.id} />

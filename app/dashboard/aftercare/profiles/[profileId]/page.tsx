@@ -235,7 +235,7 @@ export default async function AftercareProfileDetailPage({
     profile.continuedCareAssociations.map((association) => association.continuedCareProfileId)
   );
   const [profileOptions, continuedCareOptions] = await Promise.all([
-    getActiveProfileOptionValues(),
+    getActiveProfileOptionValues(profile.type),
     isSoberLiving
       ? prisma.aftercareProfile.findMany({
           where: {

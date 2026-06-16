@@ -105,6 +105,8 @@ async function findOrCreateProfileOptionFromForm(formData: FormData) {
           id: true,
           category: true,
           label: true,
+          showForSoberLiving: true,
+          showForContinuedCare: true,
           sortOrder: true
         }
       })
@@ -140,12 +142,16 @@ async function findOrCreateProfileOptionFromForm(formData: FormData) {
       category,
       label: defaultLabel,
       isActive: true,
+      showForSoberLiving: true,
+      showForContinuedCare: true,
       sortOrder
     },
     select: {
       id: true,
       category: true,
       label: true,
+      showForSoberLiving: true,
+      showForContinuedCare: true,
       sortOrder: true
     }
   });
@@ -1031,12 +1037,16 @@ export async function addProfileOption(formData: FormData) {
       }
     },
     update: {
-      isActive: true
+      isActive: true,
+      showForSoberLiving: true,
+      showForContinuedCare: true
     },
     create: {
       category,
       label,
       isActive: true,
+      showForSoberLiving: true,
+      showForContinuedCare: true,
       sortOrder: (lastOption?.sortOrder ?? 0) + 10
     }
   });
@@ -1110,6 +1120,66 @@ export async function updateProfileOptionStatus(formData: FormData) {
   revalidatePath("/onboarding/aftercare/sober-living/1");
   revalidatePath("/onboarding/aftercare/continued-care/1");
   redirect(adminDataSettingsHref(`${option.label} was ${isActive ? "enabled" : "disabled"}.`));
+}
+
+export async function updateProfileOptionVisibility(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const visibility = String(formData.get("visibility") || "");
+  const existingOption = await findOrCreateProfileOptionFromForm(formData);
+
+  if (!existingOption) {
+    redirect(adminDataSettingsHref("Option was not found."));
+  }
+
+  const category = profileOptionCategory(existingOption.category);
+
+  if (!category) {
+    redirect(adminDataSettingsHref("Option category is no longer supported."));
+  }
+
+  const data = visibility === "continued_care"
+    ? { showForContinuedCare: !existingOption.showForContinuedCare }
+    : { showForSoberLiving: !existingOption.showForSoberLiving };
+
+  const option = await prisma.profileOption.update({
+    where: { id: existingOption.id },
+    data,
+    select: {
+      id: true,
+      label: true,
+      showForSoberLiving: true,
+      showForContinuedCare: true
+    }
+  });
+
+  await prisma.adminAuditLog.create({
+    data: {
+      actorUserId: appUser.id,
+      action: "profile_option_visibility_updated",
+      entityType: "ProfileOption",
+      entityId: option.id,
+      metadata: {
+        category,
+        label: option.label,
+        categoryLabel: profileOptionCategories[category].label,
+        showForSoberLiving: option.showForSoberLiving,
+        showForContinuedCare: option.showForContinuedCare
+      }
+    }
+  });
+
+  revalidatePath("/", "layout");
+  revalidatePath("/search");
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/dashboard/aftercare");
+  revalidatePath("/onboarding/aftercare/sober-living/1");
+  revalidatePath("/onboarding/aftercare/continued-care/1");
+  redirect(adminDataSettingsHref(`${option.label} visibility updated.`));
 }
 
 export async function updateProfileOptionLabel(formData: FormData) {

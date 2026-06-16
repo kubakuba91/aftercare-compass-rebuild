@@ -96,7 +96,10 @@ export default async function AdminCreateProfilePage({
     redirect("/dashboard");
   }
 
-  const profileOptions = await getActiveProfileOptionValues();
+  const [soberLivingOptions, continuedCareOptions] = await Promise.all([
+    getActiveProfileOptionValues(ProfileType.sober_living),
+    getActiveProfileOptionValues(ProfileType.continued_care)
+  ]);
 
   return (
     <main className="shell py-8">
@@ -198,10 +201,10 @@ export default async function AdminCreateProfilePage({
                       Used when the listing type is Sober living home.
                     </p>
                   </div>
-                    <CheckboxGroup label="Population served" name="populationServedOptions" options={profileOptions.populationServed} />
+                    <CheckboxGroup label="Population served" name="populationServedOptions" options={soberLivingOptions.populationServed} />
                   <PopulationBedFields
                     initialPopulations={[]}
-                    populationOptions={profileOptions.populationServed}
+                    populationOptions={soberLivingOptions.populationServed}
                     values={{
                     bedsLgbtq: 0,
                     bedsLgbtqAvailable: 0,
@@ -267,7 +270,7 @@ export default async function AdminCreateProfilePage({
                     </label>
                   </div>
                   <div className="mt-4 grid gap-4">
-                    <CheckboxGroup label="Levels of care" name="levelsOfCare" options={profileOptions.levelsOfCare} />
+                    <CheckboxGroup label="Levels of care" name="levelsOfCare" options={continuedCareOptions.levelsOfCare} />
                     <CheckboxGroup label="When do you offer programming?" name="programmingSchedule" options={programmingScheduleOptions} />
                     <CheckboxGroup label="Languages served" name="languagesServed" options={languageServedOptions} />
                   </div>
@@ -299,21 +302,35 @@ export default async function AdminCreateProfilePage({
                 </label>
                 <div className="admin-profile-type-section admin-profile-type-section--continued-care">
                   <CheckboxGroup label="How do you accept clients?" name="clientAcceptanceMethods" options={clientAcceptanceMethodOptions} />
-                  <CheckboxGroup label="Gender served" name="populationServedOptions" options={profileOptions.populationServed} />
+                  <CheckboxGroup label="Gender served" name="populationServedOptions" options={continuedCareOptions.populationServed} />
                   <label className={labelClassName()}>
                     Referral process
                     <textarea className={textareaClassName("lg")} name="referralProcessDescription" />
                   </label>
                 </div>
-                <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={profileOptions.specialtyPopulations} />
-                <CheckboxGroup label="Certifications held" name="certificationsHeld" options={profileOptions.certificationsHeld} />
-                <CheckboxGroup label="Accreditations" name="accreditations" options={profileOptions.accreditations} />
-                <CheckboxGroup label="Clinical focus" name="clinicalFocus" options={profileOptions.clinicalFocus} />
-                <CheckboxGroup label="Support services" name="supportServices" options={profileOptions.supportServices} />
-                <div className="admin-profile-type-section admin-profile-type-section--sober-living">
-                  <CheckboxGroup label="Amenities" name="amenities" options={profileOptions.amenities} />
+                <div className="admin-profile-type-section admin-profile-type-section--sober-living grid gap-5">
+                  <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={soberLivingOptions.specialtyPopulations} />
+                  <CheckboxGroup label="Certifications held" name="certificationsHeld" options={soberLivingOptions.certificationsHeld} />
+                  <CheckboxGroup label="Accreditations" name="accreditations" options={soberLivingOptions.accreditations} />
+                  <CheckboxGroup label="Clinical focus" name="clinicalFocus" options={soberLivingOptions.clinicalFocus} />
+                  <CheckboxGroup label="Support services" name="supportServices" options={soberLivingOptions.supportServices} />
                 </div>
-                <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={profileOptions.insuranceAccepted} />
+                <div className="admin-profile-type-section admin-profile-type-section--continued-care grid gap-5">
+                  <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={continuedCareOptions.specialtyPopulations} />
+                  <CheckboxGroup label="Certifications held" name="certificationsHeld" options={continuedCareOptions.certificationsHeld} />
+                  <CheckboxGroup label="Accreditations" name="accreditations" options={continuedCareOptions.accreditations} />
+                  <CheckboxGroup label="Clinical focus" name="clinicalFocus" options={continuedCareOptions.clinicalFocus} />
+                  <CheckboxGroup label="Support services" name="supportServices" options={continuedCareOptions.supportServices} />
+                </div>
+                <div className="admin-profile-type-section admin-profile-type-section--sober-living">
+                  <CheckboxGroup label="Amenities" name="amenities" options={soberLivingOptions.amenities} />
+                </div>
+                <div className="admin-profile-type-section admin-profile-type-section--sober-living">
+                  <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={soberLivingOptions.insuranceAccepted} />
+                </div>
+                <div className="admin-profile-type-section admin-profile-type-section--continued-care">
+                  <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={continuedCareOptions.insuranceAccepted} />
+                </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className={labelClassName()}>
                     Funding available
@@ -336,12 +353,15 @@ export default async function AdminCreateProfilePage({
                 <div className="admin-profile-type-section admin-profile-type-section--continued-care">
                   <CheckboxGroup label="Medication services offered" name="medicationServicesOffered" options={medicationServiceOptions} />
                 </div>
+                <div className="admin-profile-type-section admin-profile-type-section--continued-care">
+                  <CheckboxGroup label="MAT medications offered" name="matAccepted" options={continuedCareOptions.matAccepted} />
+                </div>
                 <label className={labelClassName()}>
                   Funding notes
                   <textarea className={textareaClassName()} name="fundingNotes" />
                 </label>
                 <div className="admin-profile-type-section admin-profile-type-section--sober-living">
-                  <CheckboxGroup label="MAT accepted" name="matAccepted" options={profileOptions.matAccepted} />
+                  <CheckboxGroup label="MAT accepted" name="matAccepted" options={soberLivingOptions.matAccepted} />
                 </div>
                 <label className={`admin-profile-type-section admin-profile-type-section--sober-living ${labelClassName()}`}>
                   Medication restrictions

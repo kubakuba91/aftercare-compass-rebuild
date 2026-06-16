@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { ProfileType } from "@prisma/client";
 import { levelsOfCareOptions } from "@/lib/levels-of-care";
 import {
   amenityOptions,
@@ -79,6 +80,16 @@ export const profileOptionCategories = {
 } as const;
 
 export type ProfileOptionCategory = keyof typeof profileOptionCategories;
+export type ProfileOptionVisibility = "sober_living" | "continued_care";
+export type ProfileOptionRow = {
+  id: string;
+  category: string;
+  label: string;
+  isActive: boolean;
+  showForSoberLiving: boolean;
+  showForContinuedCare: boolean;
+  sortOrder: number;
+};
 
 export function profileOptionCategoryKeys() {
   return Object.keys(profileOptionCategories) as ProfileOptionCategory[];
@@ -92,7 +103,25 @@ export function mergeOptionValues(activeOptions: readonly string[], selectedOpti
   return uniqueValues([...activeOptions, ...selectedOptions]);
 }
 
-export async function getProfileOptionGroups({ includeInactive = false } = {}) {
+function optionVisibleForProfileType(option: Pick<ProfileOptionRow, "showForSoberLiving" | "showForContinuedCare">, profileType?: ProfileOptionVisibility) {
+  if (profileType === ProfileType.sober_living) {
+    return option.showForSoberLiving;
+  }
+
+  if (profileType === ProfileType.continued_care) {
+    return option.showForContinuedCare;
+  }
+
+  return true;
+}
+
+export async function getProfileOptionGroups({
+  includeInactive = false,
+  profileType
+}: {
+  includeInactive?: boolean;
+  profileType?: ProfileOptionVisibility;
+} = {}) {
   const categories = profileOptionCategoryKeys();
   const rows = await prisma.profileOption.findMany({
     where: {
@@ -114,32 +143,33 @@ export async function getProfileOptionGroups({ includeInactive = false } = {}) {
           category,
           label,
           isActive: true,
+          showForSoberLiving: true,
+          showForContinuedCare: true,
           sortOrder: (index + 1) * 10
         }))
         .filter((option) => !rowLabels.has(option.label.toLowerCase()));
 
-      const options = [...defaultOptions, ...visibleRowsForCategory].sort((first, second) => {
-        if (first.isActive !== second.isActive) {
-          return first.isActive ? -1 : 1;
-        }
+      const options = [...defaultOptions, ...visibleRowsForCategory]
+        .filter((option) => optionVisibleForProfileType(option, profileType))
+        .sort((first, second) => {
+          if (first.isActive !== second.isActive) {
+            return first.isActive ? -1 : 1;
+          }
 
-        if (first.sortOrder !== second.sortOrder) {
-          return first.sortOrder - second.sortOrder;
-        }
+          if (first.sortOrder !== second.sortOrder) {
+            return first.sortOrder - second.sortOrder;
+          }
 
-        return first.label.localeCompare(second.label);
-      });
+          return first.label.localeCompare(second.label);
+        });
 
       return [category, options];
     })
-  ) as Record<
-    ProfileOptionCategory,
-    Array<{ id: string; category: string; label: string; isActive: boolean; sortOrder: number }>
-  >;
+  ) as Record<ProfileOptionCategory, ProfileOptionRow[]>;
 }
 
-export async function getActiveProfileOptionValues() {
-  const groups = await getProfileOptionGroups();
+export async function getActiveProfileOptionValues(profileType?: ProfileOptionVisibility) {
+  const groups = await getProfileOptionGroups({ profileType });
 
   return Object.fromEntries(
     profileOptionCategoryKeys().map((category) => [

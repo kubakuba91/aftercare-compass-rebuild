@@ -156,26 +156,25 @@ export default async function AdminEditProfilePage({
     redirect("/dashboard");
   }
 
-  const [profile, profileOptions] = await Promise.all([
-    prisma.aftercareProfile.findUnique({
-      where: { id: profileId },
-      include: {
-        organization: {
-          select: {
-            subscriptionPlan: true
-          }
-        },
-        images: {
-          orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }]
+  const profile = await prisma.aftercareProfile.findUnique({
+    where: { id: profileId },
+    include: {
+      organization: {
+        select: {
+          subscriptionPlan: true
         }
+      },
+      images: {
+        orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }]
       }
-    }),
-    getActiveProfileOptionValues()
-  ]);
+    }
+  });
 
   if (!profile) {
     redirect("/dashboard/admin?tab=profiles&reviewMessage=Listing%20was%20not%20found.");
   }
+
+  const profileOptions = await getActiveProfileOptionValues(profile.type);
 
   const photoLimit = getAftercarePhotoLimit(profile.organization.subscriptionPlan);
 

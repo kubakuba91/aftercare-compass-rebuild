@@ -270,6 +270,9 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
       referralFitNotes: nullableText(formData.get("referralFitNotes")),
       referralProcessDescription: nullableText(formData.get("referralProcessDescription")),
       specialtyPopulations: valuesFromForm(formData, "specialtyPopulations"),
+      recoveryResidenceLevel: type === ProfileType.sober_living
+        ? nullableText(formData.get("recoveryResidenceLevel"))
+        : null,
       certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
       accreditations: valuesFromForm(formData, "accreditations"),
       clinicalFocus: valuesFromForm(formData, "clinicalFocus"),
@@ -512,6 +515,9 @@ export async function updateAdminAftercareProfile(formData: FormData) {
     referralFitNotes: nullableText(formData.get("referralFitNotes")),
     referralProcessDescription: nullableText(formData.get("referralProcessDescription")),
     specialtyPopulations: valuesFromForm(formData, "specialtyPopulations"),
+    recoveryResidenceLevel: profile.type === ProfileType.sober_living
+      ? nullableText(formData.get("recoveryResidenceLevel"))
+      : null,
     certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
     accreditations: valuesFromForm(formData, "accreditations"),
     clinicalFocus: valuesFromForm(formData, "clinicalFocus"),

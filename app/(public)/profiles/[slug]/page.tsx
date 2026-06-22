@@ -732,6 +732,15 @@ export default async function PublicProfilePage({
                       <dd className="font-medium">{listOrFallback(profile.matAccepted)}</dd>
                     </div>
                   ) : null}
+                  {isSoberLiving ? (
+                    <div>
+                      <dt className="flex items-center gap-2 font-semibold text-foreground">
+                        <BadgeCheck className="text-primary" size={16} />
+                        Recovery Residence Level (NARR)
+                      </dt>
+                      <dd className="font-medium">{profile.recoveryResidenceLevel || "Not listed"}</dd>
+                    </div>
+                  ) : null}
                   <div>
                     <dt className="flex items-center gap-2 font-semibold text-foreground">
                       <BadgeCheck className="text-primary" size={16} />

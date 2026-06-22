@@ -35,6 +35,13 @@ export const certificationOptions = [
   "State-specific license"
 ] as const;
 
+export const recoveryResidenceLevelOptions = [
+  "Level I - Peer-run",
+  "Level II - Monitored (typical sober home)",
+  "Level III - Supervised",
+  "Level IV - Service provider"
+] as const;
+
 export const averageLengthOptions = [
   "30 days",
   "60 days",
@@ -153,6 +160,7 @@ export const stepOneSchema = z.object({
   websiteUrl: optionalUrl,
   populationServed: z.array(z.string()).min(1),
   specialtyPopulations: z.array(z.string()).default([]),
+  recoveryResidenceLevel: z.enum(recoveryResidenceLevelOptions).optional(),
   certificationsHeld: z.array(z.string()).default([]),
   accreditations: z.array(z.string()).default([]),
   clinicalFocus: z.array(z.string()).default([]),

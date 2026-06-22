@@ -20,6 +20,7 @@ import {
   maxSoberLivingStep,
   medicationAdministrationOptions,
   preferredContactOptions,
+  recoveryResidenceLevelOptions,
   roomTypeOptions,
   soberLivingSteps,
 } from "@/lib/sober-living-onboarding";
@@ -262,6 +263,13 @@ export default async function SoberLivingStepPage({
                       selected(profile?.specialtyPopulations)
                     )}
                   </div>
+                  <label className="grid gap-2 text-sm font-medium">
+                    Recovery Residence Level (NARR)
+                    <select name="recoveryResidenceLevel" defaultValue={profile?.recoveryResidenceLevel ?? ""} className={fieldClassName()}>
+                      <option value="">Select one</option>
+                      {recoveryResidenceLevelOptions.map((option) => <option key={option}>{option}</option>)}
+                    </select>
+                  </label>
                   <div className="grid gap-2 text-sm font-medium">
                     Certifications held
                     <MultiSelectDropdown

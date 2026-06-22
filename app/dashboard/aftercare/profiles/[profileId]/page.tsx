@@ -14,6 +14,7 @@ import {
   drugTestingPolicyOptions,
   medicationAdministrationOptions,
   preferredContactOptions,
+  recoveryResidenceLevelOptions,
   roomTypeOptions
 } from "@/lib/sober-living-onboarding";
 import {
@@ -528,6 +529,17 @@ export default async function AftercareProfileDetailPage({
                 />
               ) : null}
               <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={mergeOptionValues(profileOptions.specialtyPopulations, profile.specialtyPopulations)} selected={profile.specialtyPopulations} />
+              {isSoberLiving ? (
+                <label className={labelClassName()}>
+                  Recovery Residence Level (NARR)
+                  <select className={fieldClassName()} defaultValue={textValue(profile.recoveryResidenceLevel)} name="recoveryResidenceLevel">
+                    <option value="">Select one</option>
+                    {recoveryResidenceLevelOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
               <CheckboxGroup label="Certifications held" name="certificationsHeld" options={mergeOptionValues(profileOptions.certificationsHeld, profile.certificationsHeld)} selected={profile.certificationsHeld} />
               <CheckboxGroup label="Accreditations" name="accreditations" options={mergeOptionValues(profileOptions.accreditations, profile.accreditations)} selected={profile.accreditations} />
               <CheckboxGroup label="Clinical focus" name="clinicalFocus" options={mergeOptionValues(profileOptions.clinicalFocus, profile.clinicalFocus)} selected={profile.clinicalFocus} />

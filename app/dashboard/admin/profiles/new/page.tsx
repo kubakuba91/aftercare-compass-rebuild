@@ -11,6 +11,7 @@ import {
   drugTestingPolicyOptions,
   medicationAdministrationOptions,
   preferredContactOptions,
+  recoveryResidenceLevelOptions,
   roomTypeOptions
 } from "@/lib/sober-living-onboarding";
 import {
@@ -311,6 +312,15 @@ export default async function AdminCreateProfilePage({
                 </div>
                 <div className="admin-profile-type-section admin-profile-type-section--sober-living grid gap-5">
                   <CheckboxGroup label="Specialty populations" name="specialtyPopulations" options={soberLivingOptions.specialtyPopulations} />
+                  <label className={labelClassName()}>
+                    Recovery Residence Level (NARR)
+                    <select className={fieldClassName()} name="recoveryResidenceLevel">
+                      <option value="">Select one</option>
+                      {recoveryResidenceLevelOptions.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  </label>
                   <CheckboxGroup label="Certifications held" name="certificationsHeld" options={soberLivingOptions.certificationsHeld} />
                   <CheckboxGroup label="Accreditations" name="accreditations" options={soberLivingOptions.accreditations} />
                   <CheckboxGroup label="Clinical focus" name="clinicalFocus" options={soberLivingOptions.clinicalFocus} />

@@ -1053,10 +1053,11 @@ export default async function AdminDashboardPage({
                                 <input name="visibility" type="hidden" value="sober_living" />
                                 <button
                                   aria-pressed={option.showForSoberLiving}
-                                  className="focus-ring inline-flex min-h-8 items-center rounded-full border border-border px-3 text-xs font-semibold transition data-[active=true]:border-primary/30 data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=false]:text-muted-foreground"
+                                  className="focus-ring inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition data-[active=true]:border-emerald-300 data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-800 data-[active=false]:border-border data-[active=false]:bg-white data-[active=false]:text-muted-foreground data-[active=false]:opacity-60"
                                   data-active={option.showForSoberLiving ? "true" : "false"}
                                   type="submit"
                                 >
+                                  {option.showForSoberLiving ? <span aria-hidden="true">✓</span> : null}
                                   Sober living
                                 </button>
                               </form>
@@ -1066,10 +1067,11 @@ export default async function AdminDashboardPage({
                                 <input name="visibility" type="hidden" value="continued_care" />
                                 <button
                                   aria-pressed={option.showForContinuedCare}
-                                  className="focus-ring inline-flex min-h-8 items-center rounded-full border border-border px-3 text-xs font-semibold transition data-[active=true]:border-primary/30 data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=false]:text-muted-foreground"
+                                  className="focus-ring inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition data-[active=true]:border-emerald-300 data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-800 data-[active=false]:border-border data-[active=false]:bg-white data-[active=false]:text-muted-foreground data-[active=false]:opacity-60"
                                   data-active={option.showForContinuedCare ? "true" : "false"}
                                   type="submit"
                                 >
+                                  {option.showForContinuedCare ? <span aria-hidden="true">✓</span> : null}
                                   Continued care
                                 </button>
                               </form>

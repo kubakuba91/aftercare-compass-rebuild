@@ -224,7 +224,7 @@ export default async function AdminEditProfilePage({
                     />
                   </label>
                   <label className={labelClassName()}>
-                    Program name
+                    {profile.type === ProfileType.sober_living ? "Residence name" : "Program name"}
                     <input className={fieldClassName()} defaultValue={profile.programName} name="programName" required />
                   </label>
                   <label className={labelClassName()}>
@@ -261,11 +261,11 @@ export default async function AdminEditProfilePage({
                     <input className={fieldClassName()} defaultValue={textValue(profile.zip)} name="zip" />
                   </label>
                   <label className={labelClassName()}>
-                    Admissions phone
+                    {profile.type === ProfileType.sober_living ? "Intake phone" : "Admissions phone"}
                     <input className={fieldClassName()} defaultValue={textValue(profile.admissionsContactPhone)} name="admissionsContactPhone" />
                   </label>
                   <label className={labelClassName()}>
-                    Admissions email
+                    {profile.type === ProfileType.sober_living ? "Intake email" : "Admissions email"}
                     <input className={fieldClassName()} defaultValue={textValue(profile.admissionsContactEmail)} name="admissionsContactEmail" type="email" />
                   </label>
                   <label className={labelClassName()}>

@@ -217,7 +217,7 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
     : ProfileStatus.published;
 
   if (!programName || !city || !state) {
-    redirect(adminProfileHref("Program name, city, and state are required."));
+    redirect(adminProfileHref(`${type === ProfileType.sober_living ? "Residence name" : "Program name"}, city, and state are required.`));
   }
 
   const [org, slug] = await Promise.all([
@@ -237,7 +237,7 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
   const admissionsContactPhone = normalizePhoneForStorage(formData.get("admissionsContactPhone"));
 
   if (formData.get("admissionsContactPhone") && !admissionsContactPhone) {
-    redirect(adminProfileHref("Enter a valid 10-digit admissions phone number."));
+    redirect(adminProfileHref(`Enter a valid 10-digit ${type === ProfileType.sober_living ? "intake phone" : "admissions phone"} number.`));
   }
 
   if (bedTotals.hasInvalidAvailableBeds) {
@@ -449,7 +449,7 @@ export async function updateAdminAftercareProfile(formData: FormData) {
   const state = String(formData.get("state") || "").trim();
 
   if (!profileId || !programName || !city || !state) {
-    redirect(adminProfileHref("Program name, city, and state are required."));
+    redirect(adminProfileHref("Listing name, city, and state are required."));
   }
 
   const profile = await prisma.aftercareProfile.findUnique({
@@ -480,7 +480,7 @@ export async function updateAdminAftercareProfile(formData: FormData) {
   const admissionsContactPhone = normalizePhoneForStorage(formData.get("admissionsContactPhone"));
 
   if (formData.get("admissionsContactPhone") && !admissionsContactPhone) {
-    redirect(adminEditProfileHref(profile.id, "Enter a valid 10-digit admissions phone number."));
+    redirect(adminEditProfileHref(profile.id, `Enter a valid 10-digit ${profile.type === ProfileType.sober_living ? "intake phone" : "admissions phone"} number.`));
   }
 
   const coordinates = await geocodeProfileAddress({

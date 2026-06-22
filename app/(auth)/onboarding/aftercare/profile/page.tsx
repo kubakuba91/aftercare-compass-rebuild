@@ -33,7 +33,7 @@ export default async function AftercareProfileOnboardingPage({
         <form action={createAftercareProfileDraft} className="grid gap-5">
           <input type="hidden" name="profileType" value={profileType} />
           <label className="grid gap-2 text-sm font-medium">
-            Program name
+            {isSoberLiving ? "Residence name" : "Program name"}
             <input name="programName" required className="min-h-10 rounded-md border border-border px-3" />
           </label>
           <label className="grid gap-2 text-sm font-medium">
@@ -56,7 +56,7 @@ export default async function AftercareProfileOnboardingPage({
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="grid gap-2 text-sm font-medium">
-              Admissions phone
+              {isSoberLiving ? "Intake phone" : "Admissions phone"}
               <input
                 name="admissionsContactPhone"
                 required
@@ -64,7 +64,7 @@ export default async function AftercareProfileOnboardingPage({
               />
             </label>
             <label className="grid gap-2 text-sm font-medium">
-              Admissions email
+              {isSoberLiving ? "Intake email" : "Admissions email"}
               <input
                 name="admissionsContactEmail"
                 type="email"

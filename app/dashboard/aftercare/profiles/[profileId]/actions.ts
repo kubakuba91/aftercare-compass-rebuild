@@ -76,9 +76,11 @@ export async function updateAftercareProfileBasics(formData: FormData) {
   const programName = String(formData.get("programName") || "").trim();
   const city = String(formData.get("city") || "").trim();
   const state = String(formData.get("state") || "").trim();
+  const nameLabel = profile.type === ProfileType.sober_living ? "Residence name" : "Program name";
+  const phoneLabel = profile.type === ProfileType.sober_living ? "intake phone" : "admissions phone";
 
   if (!programName || !city || !state) {
-    redirect(profileHref(profile.id, "Program name, city, and state are required."));
+    redirect(profileHref(profile.id, `${nameLabel}, city, and state are required.`));
   }
 
   const streetAddress = nullableText(formData.get("streetAddress"));
@@ -86,7 +88,7 @@ export async function updateAftercareProfileBasics(formData: FormData) {
   const admissionsContactPhone = normalizePhoneForStorage(formData.get("admissionsContactPhone"));
 
   if (formData.get("admissionsContactPhone") && !admissionsContactPhone) {
-    redirect(profileHref(profile.id, "Enter a valid 10-digit admissions phone number."));
+    redirect(profileHref(profile.id, `Enter a valid 10-digit ${phoneLabel} number.`));
   }
 
   const coordinates = await geocodeProfileAddress({
@@ -129,9 +131,11 @@ export async function updateAftercareProfileDetails(formData: FormData) {
   const programName = String(formData.get("programName") || "").trim();
   const city = String(formData.get("city") || "").trim();
   const state = String(formData.get("state") || "").trim();
+  const nameLabel = profile.type === ProfileType.sober_living ? "Residence name" : "Program name";
+  const phoneLabel = profile.type === ProfileType.sober_living ? "intake phone" : "admissions phone";
 
   if (!programName || !city || !state) {
-    redirect(profileHref(profile.id, "Program name, city, and state are required."));
+    redirect(profileHref(profile.id, `${nameLabel}, city, and state are required.`));
   }
 
   const streetAddress = nullableText(formData.get("streetAddress"));
@@ -139,7 +143,7 @@ export async function updateAftercareProfileDetails(formData: FormData) {
   const admissionsContactPhone = normalizePhoneForStorage(formData.get("admissionsContactPhone"));
 
   if (formData.get("admissionsContactPhone") && !admissionsContactPhone) {
-    redirect(profileHref(profile.id, "Enter a valid 10-digit admissions phone number."));
+    redirect(profileHref(profile.id, `Enter a valid 10-digit ${phoneLabel} number.`));
   }
 
   const coordinates = await geocodeProfileAddress({

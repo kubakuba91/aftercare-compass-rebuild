@@ -137,7 +137,8 @@ export default async function AdminCreateProfilePage({
                     </select>
                   </label>
                   <label className={labelClassName()}>
-                    Program name
+                    <span className="admin-profile-type-section admin-profile-type-section--sober-living">Residence name</span>
+                    <span className="admin-profile-type-section admin-profile-type-section--continued-care">Program name</span>
                     <input className={fieldClassName()} name="programName" required />
                   </label>
                   <label className={labelClassName()}>
@@ -174,11 +175,11 @@ export default async function AdminCreateProfilePage({
                     <input className={fieldClassName()} name="zip" />
                   </label>
                   <label className={labelClassName()}>
-                    Admissions phone
+                    Intake phone
                     <input className={fieldClassName()} name="admissionsContactPhone" />
                   </label>
                   <label className={labelClassName()}>
-                    Admissions email
+                    Intake email
                     <input className={fieldClassName()} name="admissionsContactEmail" type="email" />
                   </label>
                   <label className={labelClassName()}>

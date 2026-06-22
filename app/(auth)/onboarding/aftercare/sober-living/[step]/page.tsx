@@ -211,7 +211,7 @@ export default async function SoberLivingStepPage({
               {currentStep === 1 ? (
                 <>
                   <label className="grid gap-2 text-sm font-medium">
-                    {requiredLabel("Program name")}
+                    {requiredLabel("Residence name")}
                     <input name="programName" required defaultValue={profile?.programName ?? ""} className={fieldClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
@@ -234,11 +234,11 @@ export default async function SoberLivingStepPage({
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
-                      {requiredLabel("Admissions phone")}
+                      {requiredLabel("Intake phone")}
                       <input name="admissionsContactPhone" required defaultValue={profile?.admissionsContactPhone ?? ""} className={fieldClassName()} />
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
-                      {requiredLabel("Admissions email")}
+                      {requiredLabel("Intake email")}
                       <input name="admissionsContactEmail" type="email" required defaultValue={profile?.admissionsContactEmail ?? ""} className={fieldClassName()} />
                     </label>
                   </div>

@@ -18,12 +18,14 @@ type AftercareReadinessProfile = {
 };
 
 export function getAftercareProfileReadiness(profile: AftercareReadinessProfile) {
+  const isSoberLiving = profile.type === "sober_living";
+
   const checks = [
     {
-      label: "Program name",
+      label: isSoberLiving ? "Residence name" : "Program name",
       complete: Boolean(profile.programName?.trim()),
       required: true,
-      message: "Program name is required."
+      message: `${isSoberLiving ? "Residence name" : "Program name"} is required.`
     },
     {
       label: "Public city and state",

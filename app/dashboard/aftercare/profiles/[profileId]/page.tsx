@@ -304,7 +304,7 @@ export default async function AftercareProfileDetailPage({
               <input name="profileId" type="hidden" value={profile.id} />
               <div className="grid gap-4 md:grid-cols-2">
                 <label className={labelClassName()}>
-                  Program name
+                  {isSoberLiving ? "Residence name" : "Program name"}
                   <input className={fieldClassName()} defaultValue={profile.programName} name="programName" required />
                 </label>
                 <label className={labelClassName()}>
@@ -328,11 +328,11 @@ export default async function AftercareProfileDetailPage({
                   <input className={fieldClassName()} defaultValue={textValue(profile.zip)} name="zip" />
                 </label>
                 <label className={labelClassName()}>
-                  Admissions phone
+                  {isSoberLiving ? "Intake phone" : "Admissions phone"}
                   <input className={fieldClassName()} defaultValue={textValue(profile.admissionsContactPhone)} name="admissionsContactPhone" />
                 </label>
                 <label className={labelClassName()}>
-                  Admissions email
+                  {isSoberLiving ? "Intake email" : "Admissions email"}
                   <input className={fieldClassName()} defaultValue={textValue(profile.admissionsContactEmail)} name="admissionsContactEmail" type="email" />
                 </label>
                 <label className={labelClassName()}>

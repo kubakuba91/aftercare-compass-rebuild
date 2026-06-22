@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const soberLivingSteps = [
-  { number: 1, slug: "program-info", label: "Program Info", title: "Let's go over some program details" },
+  { number: 1, slug: "program-info", label: "Residence Info", title: "Let's go over your recovery residence details" },
   { number: 2, slug: "housing-details", label: "Housing Details", title: "Set up beds and housing details" },
   { number: 3, slug: "services-amenities", label: "Services & Amenities", title: "Choose services and amenities" },
   { number: 4, slug: "profile-media", label: "Profile & Media", title: "Tell referents what makes this home a fit" },

@@ -92,7 +92,7 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
 
     if (step === 2) {
       const parsed = referentStepTwoSchema.parse({
-        levelsOfCare: valuesFromForm(formData, "levelsOfCare"),
+        roleOrganizationDescription: formData.get("roleOrganizationDescription"),
         currentPlacementMethods: valuesFromForm(formData, "currentPlacementMethods"),
         avgMonthlyReferrals: formData.get("avgMonthlyReferrals")
       });
@@ -172,7 +172,8 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
             stateLicenseNumber: nullableText(String(finalDraft.stateLicenseNumber || "")),
             ehrSystem: String(finalDraft.ehrSystem || "None"),
             statesOperatedIn: arrayFromDraft(finalDraft.statesOperatedIn),
-            levelsOfCare: arrayFromDraft(finalDraft.levelsOfCare),
+            roleOrganizationDescription: String(finalDraft.roleOrganizationDescription || ""),
+            levelsOfCare: [],
             currentPlacementMethods: arrayFromDraft(finalDraft.currentPlacementMethods),
             avgMonthlyReferrals: String(finalDraft.avgMonthlyReferrals || ""),
             invitedTeamEmails: parsed.invitedTeamEmails,

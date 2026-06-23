@@ -230,6 +230,7 @@ model ReferentOrganization {
   stateLicenseNumber      String?
   ehrSystem               String?
   statesOperatedIn        String[]     @default([])
+  roleOrganizationDescription String?
   levelsOfCare            String[]     @default([])
   currentPlacementMethods String[]     @default([])
   avgMonthlyReferrals     String?

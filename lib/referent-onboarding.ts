@@ -1,7 +1,4 @@
 import { z } from "zod";
-import { levelsOfCareOptions } from "@/lib/levels-of-care";
-
-export { levelsOfCareOptions };
 
 export const referentSteps = [
   { number: 1, slug: "organization", label: "Organization", title: "Tell us about your organization" },
@@ -88,6 +85,62 @@ export const placementMethodOptions = [
   "Other"
 ] as const;
 
+export const roleOrganizationDescriptionOptions = [
+  {
+    label: "Hospital Social Worker / Discharge Planner",
+    description: "Referring patients from hospitals, emergency departments, psychiatric units, or medical detox."
+  },
+  {
+    label: "Treatment Case Manager",
+    description: "Coordinating discharge and aftercare from residential, inpatient, or detox programs."
+  },
+  {
+    label: "Behavioral Health Clinician",
+    description: "Therapist, counselor, psychologist, or other clinician referring clients who need additional support or recovery housing."
+  },
+  {
+    label: "Psychiatric or Medical Provider",
+    description: "Psychiatrist, physician, nurse practitioner, or MAT provider overseeing ongoing treatment."
+  },
+  {
+    label: "Community Mental Health Professional",
+    description: "Community support worker, care coordinator, crisis worker, or outreach specialist connecting clients to services."
+  },
+  {
+    label: "Peer Recovery or Recovery Community Organization",
+    description: "Peer specialists, recovery coaches, recovery community organizations, and nonprofit recovery support staff."
+  },
+  {
+    label: "Veterans Services Professional",
+    description: "VA Community Care coordinators, veteran service organizations, and veteran-focused case managers."
+  },
+  {
+    label: "Court, Probation, or Justice Professional",
+    description: "Drug court staff, probation/parole officers, corrections reentry specialists, and legal diversion programs."
+  },
+  {
+    label: "Employee Assistance or Workplace Support Professional",
+    description: "EAP coordinators, HR wellness programs, and employer-sponsored referral services."
+  },
+  {
+    label: "Intervention or Placement Specialist",
+    description: "Interventionists, treatment consultants, and professional placement coordinators."
+  },
+  {
+    label: "Housing and Community Support Professional",
+    description: "Homeless services, supportive housing, recovery housing operators, and housing navigators."
+  },
+  {
+    label: "Other",
+    description: "Another referral, care coordination, or placement role."
+  }
+] as const;
+
+export const roleOrganizationDescriptionLabels = roleOrganizationDescriptionOptions.map((option) => option.label) as [
+  string,
+  ...string[]
+];
+
 export const avgMonthlyReferralOptions = ["1-5", "6-15", "16-30", "30+"] as const;
 export const referentPlanOptions = ["starter", "professional", "enterprise"] as const;
 export const billingCycleOptions = ["monthly", "annual"] as const;
@@ -137,7 +190,7 @@ export const referentStepOneSchema = z.object({
 });
 
 export const referentStepTwoSchema = z.object({
-  levelsOfCare: z.array(z.string()).min(1),
+  roleOrganizationDescription: z.enum(roleOrganizationDescriptionLabels),
   currentPlacementMethods: z.array(z.enum(placementMethodOptions)).default([]),
   avgMonthlyReferrals: z.enum(avgMonthlyReferralOptions)
 });

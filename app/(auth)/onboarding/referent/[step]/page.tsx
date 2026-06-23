@@ -8,7 +8,6 @@ import { getBillingPlansWithStripePrices } from "@/lib/billing";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { referentPlans } from "@/lib/plans";
-import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-options";
 import {
   avgMonthlyReferralOptions,
   billingCycleOptions,
@@ -18,6 +17,7 @@ import {
   referentOrgTypeOptions,
   referentPlanOptions,
   referentSteps,
+  roleOrganizationDescriptionOptions,
   statesOperatedOptions
 } from "@/lib/referent-onboarding";
 import { cn } from "@/lib/utils";
@@ -127,7 +127,6 @@ export default async function ReferentStepPage({
 
   const step = referentSteps[currentStep - 1];
   const action = saveReferentOnboardingStep.bind(null, currentStep);
-  const profileOptions = await getActiveProfileOptionValues();
   const referentBillingPlans = currentStep === 3 ? await getBillingPlansWithStripePrices("referent") : [];
   const selected = (values?: string[] | null) => values ?? [];
   const invitedTeamEmails = Array.isArray(referentDetails?.invitedTeamEmails)
@@ -224,14 +223,29 @@ export default async function ReferentStepPage({
 
               {currentStep === 2 ? (
                 <>
-                  <div className="grid gap-2 text-sm font-medium">
-                    {requiredLabel("Levels of care provided")}
-                    <MultiSelectDropdown
-                      name="levelsOfCare"
-                      options={mergeOptionValues(profileOptions.levelsOfCare, selected(referentDetails?.levelsOfCare))}
-                      selected={selected(referentDetails?.levelsOfCare)}
-                    />
-                  </div>
+                  <fieldset className="grid gap-3">
+                    <legend className="text-sm font-medium">
+                      {requiredLabel("What best describes your role and organization?")}
+                    </legend>
+                    <div className="grid gap-3">
+                      {roleOrganizationDescriptionOptions.map((option) => (
+                        <label key={option.label} className="flex min-h-16 items-start gap-3 rounded-md border border-border bg-white p-3 text-sm">
+                          <input
+                            className="mt-1"
+                            defaultChecked={referentDetails?.roleOrganizationDescription === option.label}
+                            name="roleOrganizationDescription"
+                            required
+                            type="radio"
+                            value={option.label}
+                          />
+                          <span>
+                            <span className="block font-semibold">{option.label}</span>
+                            <span className="mt-1 block leading-5 text-muted-foreground">{option.description}</span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
                   <div className="grid gap-2 text-sm font-medium">
                     How do you currently place patients?
                     <MultiSelectDropdown

@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import {
   bedTypeOptions,
   drugTestingPolicyOptions,
+  intakeTurnaroundTimeOptions,
   medicationAdministrationOptions,
   preferredContactOptions,
   recoveryResidenceLevelOptions,
@@ -148,6 +149,15 @@ export default async function AdminCreateProfilePage({
                     <select className={fieldClassName()} name="preferredContactMethod">
                       <option value="">Select one</option>
                       {preferredContactOptions.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className={`admin-profile-type-section admin-profile-type-section--sober-living ${labelClassName()}`}>
+                    Intake turnaround time
+                    <select className={fieldClassName()} name="intakeTurnaroundTime">
+                      <option value="">Select one</option>
+                      {intakeTurnaroundTimeOptions.map((option) => (
                         <option key={option} value={option}>{option}</option>
                       ))}
                     </select>

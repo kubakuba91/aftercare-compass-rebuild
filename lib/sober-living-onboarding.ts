@@ -53,6 +53,11 @@ export const recoverySupportServiceOptions = [
   "Curfew & house rules structure"
 ] as const;
 
+export const intakeTurnaroundTimeOptions = [
+  "Same day",
+  "24-48 hours"
+] as const;
+
 export const averageLengthOptions = [
   "30 days",
   "60 days",
@@ -214,7 +219,8 @@ export const stepFourSchema = z.object({
   houseRulesText: optionalText,
   photoReadiness: z.array(z.string()).default([]),
   videoUrls: optionalVideoUrls,
-  preferredContactMethod: requiredText.max(80)
+  preferredContactMethod: requiredText.max(80),
+  intakeTurnaroundTime: z.string().trim().max(80).optional()
 });
 
 export const stepFiveSchema = z.object({

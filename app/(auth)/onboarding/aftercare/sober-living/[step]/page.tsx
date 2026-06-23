@@ -17,6 +17,7 @@ import {
   averageLengthOptions,
   bedTypeOptions,
   drugTestingPolicyOptions,
+  intakeTurnaroundTimeOptions,
   maxSoberLivingStep,
   medicationAdministrationOptions,
   preferredContactOptions,
@@ -447,6 +448,13 @@ export default async function SoberLivingStepPage({
                     {requiredLabel("Preferred contact method")}
                     <select name="preferredContactMethod" required defaultValue={profile?.preferredContactMethod ?? "Any"} className={fieldClassName()}>
                       {preferredContactOptions.map((option) => <option key={option}>{option}</option>)}
+                    </select>
+                  </label>
+                  <label className="grid gap-2 text-sm font-medium">
+                    Intake turnaround time
+                    <select name="intakeTurnaroundTime" defaultValue={profile?.intakeTurnaroundTime ?? ""} className={fieldClassName()}>
+                      <option value="">Select one</option>
+                      {intakeTurnaroundTimeOptions.map((option) => <option key={option}>{option}</option>)}
                     </select>
                   </label>
                 </>

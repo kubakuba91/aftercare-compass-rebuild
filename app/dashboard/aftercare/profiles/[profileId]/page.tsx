@@ -12,6 +12,7 @@ import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-o
 import {
   bedTypeOptions,
   drugTestingPolicyOptions,
+  intakeTurnaroundTimeOptions,
   medicationAdministrationOptions,
   preferredContactOptions,
   recoveryResidenceLevelOptions,
@@ -346,6 +347,17 @@ export default async function AftercareProfileDetailPage({
                     ))}
                   </select>
                 </label>
+                {isSoberLiving ? (
+                  <label className={labelClassName()}>
+                    Intake turnaround time
+                    <select className={fieldClassName()} defaultValue={textValue(profile.intakeTurnaroundTime)} name="intakeTurnaroundTime">
+                      <option value="">Select one</option>
+                      {intakeTurnaroundTimeOptions.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
                 <label className={labelClassName()}>
                   Intake contact name
                   <input className={fieldClassName()} defaultValue={textValue(profile.intakeContactName)} name="intakeContactName" />

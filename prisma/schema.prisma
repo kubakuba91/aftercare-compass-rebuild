@@ -267,6 +267,7 @@ model AftercareProfile {
   admissionsContactPhone         String?
   admissionsContactEmail         String?
   preferredContactMethod         String?
+  intakeTurnaroundTime           String?
   websiteUrl                     String?
   programTypes                   String[]               @default([])
   telehealthAvailable            Boolean?

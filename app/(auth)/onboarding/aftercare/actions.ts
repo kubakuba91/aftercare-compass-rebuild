@@ -229,6 +229,7 @@ async function upsertSoberLivingDraftProfile(
         photoReadiness: arrayFromDraft(draftData.photoReadiness),
         videoUrls: arrayFromDraft(draftData.videoUrls),
         preferredContactMethod: String(draftData.preferredContactMethod || ""),
+        intakeTurnaroundTime: nullableText(String(draftData.intakeTurnaroundTime || "")),
         onboardingStep
       }
     });
@@ -303,6 +304,7 @@ async function upsertSoberLivingDraftProfile(
       photoReadiness: arrayFromDraft(draftData.photoReadiness),
       videoUrls: arrayFromDraft(draftData.videoUrls),
       preferredContactMethod: String(draftData.preferredContactMethod || ""),
+      intakeTurnaroundTime: nullableText(String(draftData.intakeTurnaroundTime || "")),
       onboardingStep
     },
     select: { id: true, orgId: true, programName: true, slug: true }
@@ -582,14 +584,16 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         houseRulesText: formData.get("houseRulesText") || undefined,
         photoReadiness: valuesFromForm(formData, "photoReadiness"),
         videoUrls: valuesFromForm(formData, "videoUrls"),
-        preferredContactMethod: formData.get("preferredContactMethod")
+        preferredContactMethod: formData.get("preferredContactMethod"),
+        intakeTurnaroundTime: formData.get("intakeTurnaroundTime") || undefined
       });
       const nextDraft = mergeDraft(currentDraft, {
         description: sanitizeRichText(nullableText(parsed.description)),
         houseRulesText: sanitizeRichText(nullableText(parsed.houseRulesText)),
         photoReadiness: parsed.photoReadiness,
         videoUrls: parsed.videoUrls,
-        preferredContactMethod: parsed.preferredContactMethod
+        preferredContactMethod: parsed.preferredContactMethod,
+        intakeTurnaroundTime: nullableText(parsed.intakeTurnaroundTime)
       }) as Record<string, unknown>;
 
       await prisma.onboardingDraft.update({
@@ -685,6 +689,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             photoReadiness: arrayFromDraft(finalDraft.photoReadiness),
             videoUrls: arrayFromDraft(finalDraft.videoUrls),
             preferredContactMethod: String(finalDraft.preferredContactMethod || ""),
+            intakeTurnaroundTime: nullableText(String(finalDraft.intakeTurnaroundTime || "")),
             availabilityNotes: nullableText(String(finalDraft.availabilityNotes || "")),
             referralFitNotes: nullableText(String(finalDraft.referralFitNotes || "")),
             goodNeighborPolicyAcknowledged: true,

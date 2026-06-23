@@ -113,6 +113,9 @@ export async function updateAftercareProfileBasics(formData: FormData) {
       admissionsContactPhone,
       admissionsContactEmail: nullableText(formData.get("admissionsContactEmail")),
       preferredContactMethod: nullableText(formData.get("preferredContactMethod")),
+      intakeTurnaroundTime: profile.type === ProfileType.sober_living
+        ? nullableText(formData.get("intakeTurnaroundTime"))
+        : null,
       intakeContactName: nullableText(formData.get("intakeContactName")),
       stateLicenseNumber: nullableText(formData.get("stateLicenseNumber")),
       ...(coordinates ?? {})
@@ -168,6 +171,9 @@ export async function updateAftercareProfileDetails(formData: FormData) {
     admissionsContactPhone,
     admissionsContactEmail: nullableText(formData.get("admissionsContactEmail")),
     preferredContactMethod: nullableText(formData.get("preferredContactMethod")),
+    intakeTurnaroundTime: profile.type === ProfileType.sober_living
+      ? nullableText(formData.get("intakeTurnaroundTime"))
+      : null,
     intakeContactName: nullableText(formData.get("intakeContactName")),
     stateLicenseNumber: nullableText(formData.get("stateLicenseNumber")),
     description: sanitizeRichText(nullableText(formData.get("description"))),

@@ -741,6 +741,15 @@ export default async function PublicProfilePage({
                       <dd className="font-medium">{profile.recoveryResidenceLevel || "Not listed"}</dd>
                     </div>
                   ) : null}
+                  {isSoberLiving ? (
+                    <div>
+                      <dt className="flex items-center gap-2 font-semibold text-foreground">
+                        <CheckCircle2 className="text-primary" size={16} />
+                        Intake turnaround
+                      </dt>
+                      <dd className="font-medium">{profile.intakeTurnaroundTime || "Not listed"}</dd>
+                    </div>
+                  ) : null}
                   <div>
                     <dt className="flex items-center gap-2 font-semibold text-foreground">
                       <BadgeCheck className="text-primary" size={16} />

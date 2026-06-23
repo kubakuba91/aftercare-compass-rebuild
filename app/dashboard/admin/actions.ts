@@ -262,6 +262,9 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
       admissionsContactPhone,
       admissionsContactEmail: nullableText(formData.get("admissionsContactEmail")),
       preferredContactMethod: nullableText(formData.get("preferredContactMethod")),
+      intakeTurnaroundTime: type === ProfileType.sober_living
+        ? nullableText(formData.get("intakeTurnaroundTime"))
+        : null,
       intakeContactName: nullableText(formData.get("intakeContactName")),
       stateLicenseNumber: nullableText(formData.get("stateLicenseNumber")),
       websiteUrl: nullableText(formData.get("websiteUrl")),
@@ -510,6 +513,9 @@ export async function updateAdminAftercareProfile(formData: FormData) {
     admissionsContactPhone,
     admissionsContactEmail: nullableText(formData.get("admissionsContactEmail")),
     preferredContactMethod: nullableText(formData.get("preferredContactMethod")),
+    intakeTurnaroundTime: profile.type === ProfileType.sober_living
+      ? nullableText(formData.get("intakeTurnaroundTime"))
+      : null,
     intakeContactName: nullableText(formData.get("intakeContactName")),
     stateLicenseNumber: nullableText(formData.get("stateLicenseNumber")),
     websiteUrl: nullableText(formData.get("websiteUrl")),

@@ -405,7 +405,9 @@ input[type="checkbox"] {
 .ac-tabs--category-window {
   display: flex;
   width: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
 }
 
 .ac-tabs--category-window .ac-tab {

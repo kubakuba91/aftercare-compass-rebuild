@@ -26,6 +26,7 @@ export function MultiSelectDropdown({
   const summary = useMemo(() => {
     return options.filter((option) => selectedValues.has(option));
   }, [options, selectedValues]);
+  const selectedInputs = useMemo(() => Array.from(selectedValues), [selectedValues]);
   const visibleSummary = summary.slice(0, maxVisibleChips);
   const hiddenSummaryCount = Math.max(0, summary.length - visibleSummary.length);
 
@@ -83,12 +84,14 @@ export function MultiSelectDropdown({
         </span>
         <ChevronDown aria-hidden="true" className="shrink-0 text-muted-foreground" size={16} />
       </summary>
+      {selectedInputs.map((value) => (
+        <input key={value} name={name} type="hidden" value={value} />
+      ))}
       <div className="ac-multiselect__menu grid max-h-72 gap-2 overflow-auto p-3">
         {options.map((option) => (
           <label key={option} className="ac-multiselect__option flex min-h-9 items-center gap-2 px-2 text-sm">
             <input
               type="checkbox"
-              name={name}
               value={option}
               checked={selectedValues.has(option)}
               onChange={() => toggleValue(option)}

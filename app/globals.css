@@ -403,16 +403,26 @@ input[type="checkbox"] {
 }
 
 .ac-tabs--category-window {
-  display: flex;
+  display: block;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: hidden;
   overflow-y: hidden;
   scroll-behavior: smooth;
 }
 
+.ac-tabs__category-strip {
+  display: flex;
+  width: max-content;
+  min-width: max-content;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .ac-tabs--category-window .ac-tab {
   width: auto;
-  min-width: 0;
+  min-width: max-content;
 }
 
 .ac-tab {

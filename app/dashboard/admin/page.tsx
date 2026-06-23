@@ -1015,7 +1015,7 @@ export default async function AdminDashboardPage({
               >
                 <ChevronLeft aria-hidden="true" size={18} />
               </Link>
-              <nav className="ac-tabs ac-tabs--category-window min-w-0" aria-label="Data settings categories">
+              <nav className="ac-tabs ac-tabs--category-window min-w-0 flex-1" aria-label="Data settings categories">
                 {visibleDataSettingCategories.map((category) => {
                   const meta = profileOptionCategories[category];
                   const activeCount = profileOptionGroups[category].filter((option) => option.isActive).length;

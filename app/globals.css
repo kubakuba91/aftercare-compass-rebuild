@@ -403,8 +403,8 @@ input[type="checkbox"] {
 }
 
 .ac-tabs--category-window {
-  display: inline-flex;
-  width: auto;
+  display: flex;
+  width: 100%;
   overflow: hidden;
 }
 

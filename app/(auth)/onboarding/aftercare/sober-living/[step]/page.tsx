@@ -280,14 +280,6 @@ export default async function SoberLivingStepPage({
                     />
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
-                    Accreditations
-                    <MultiSelectDropdown
-                      name="accreditations"
-                      options={mergeOptionValues(profileOptions.accreditations, selected(profile?.accreditations))}
-                      selected={selected(profile?.accreditations)}
-                    />
-                  </div>
-                  <div className="grid gap-2 text-sm font-medium">
                     Recovery Support Services
                     <MultiSelectDropdown
                       name="recoverySupportServices"

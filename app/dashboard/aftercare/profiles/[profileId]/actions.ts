@@ -179,7 +179,7 @@ export async function updateAftercareProfileDetails(formData: FormData) {
       ? nullableText(formData.get("recoveryResidenceLevel"))
       : null,
     certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
-    accreditations: valuesFromForm(formData, "accreditations"),
+    accreditations: profile.type === ProfileType.sober_living ? [] : valuesFromForm(formData, "accreditations"),
     clinicalFocus: profile.type === ProfileType.sober_living ? [] : valuesFromForm(formData, "clinicalFocus"),
     recoverySupportServices: profile.type === ProfileType.sober_living
       ? valuesFromForm(formData, "recoverySupportServices")
@@ -367,7 +367,7 @@ export async function updateAftercareProfileContent(formData: FormData) {
         ? nullableText(formData.get("recoveryResidenceLevel"))
         : null,
       certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
-      accreditations: valuesFromForm(formData, "accreditations"),
+      accreditations: profile.type === ProfileType.sober_living ? [] : valuesFromForm(formData, "accreditations"),
       clinicalFocus: profile.type === ProfileType.sober_living ? [] : valuesFromForm(formData, "clinicalFocus"),
       recoverySupportServices: profile.type === ProfileType.sober_living
         ? valuesFromForm(formData, "recoverySupportServices")

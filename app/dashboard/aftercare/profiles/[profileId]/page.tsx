@@ -542,7 +542,9 @@ export default async function AftercareProfileDetailPage({
                 </label>
               ) : null}
               <CheckboxGroup label="Certifications held" name="certificationsHeld" options={mergeOptionValues(profileOptions.certificationsHeld, profile.certificationsHeld)} selected={profile.certificationsHeld} />
-              <CheckboxGroup label="Accreditations" name="accreditations" options={mergeOptionValues(profileOptions.accreditations, profile.accreditations)} selected={profile.accreditations} />
+              {!isSoberLiving ? (
+                <CheckboxGroup label="Accreditations" name="accreditations" options={mergeOptionValues(profileOptions.accreditations, profile.accreditations)} selected={profile.accreditations} />
+              ) : null}
               {isSoberLiving ? (
                 <CheckboxGroup
                   label="Recovery Support Services"

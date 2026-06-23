@@ -157,7 +157,12 @@ function profileReadiness(profile: {
       ? Boolean(profile.totalBeds !== null && profile.bedsAvailable !== null)
       : profile.acceptingNewPatients !== null,
     Boolean(profile.populationServedOptions.length || profile.populationServed),
-    Boolean(profile.certificationsHeld.length || profile.accreditations.length || profile.clinicalFocus.length || profile.recoverySupportServices.length),
+    Boolean(
+      profile.certificationsHeld.length ||
+      (profile.type === "continued_care" && profile.accreditations.length) ||
+      profile.clinicalFocus.length ||
+      profile.recoverySupportServices.length
+    ),
     profile.goodNeighborPolicyAcknowledged || profile.type === "continued_care",
     Boolean(profile.photoReadiness.length)
   ];

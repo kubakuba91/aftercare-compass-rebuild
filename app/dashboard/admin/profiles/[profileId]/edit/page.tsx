@@ -455,7 +455,9 @@ export default async function AdminEditProfilePage({
                   </label>
                 ) : null}
                 <CheckboxGroup label="Certifications held" name="certificationsHeld" options={mergeOptionValues(profileOptions.certificationsHeld, profile.certificationsHeld)} selected={profile.certificationsHeld} />
-                <CheckboxGroup label="Accreditations" name="accreditations" options={mergeOptionValues(profileOptions.accreditations, profile.accreditations)} selected={profile.accreditations} />
+                {profile.type === ProfileType.continued_care ? (
+                  <CheckboxGroup label="Accreditations" name="accreditations" options={mergeOptionValues(profileOptions.accreditations, profile.accreditations)} selected={profile.accreditations} />
+                ) : null}
                 {profile.type === ProfileType.sober_living ? (
                   <CheckboxGroup
                     label="Recovery Support Services"

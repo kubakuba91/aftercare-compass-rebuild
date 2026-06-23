@@ -323,7 +323,6 @@ export default async function AdminCreateProfilePage({
                     </select>
                   </label>
                   <CheckboxGroup label="Certifications held" name="certificationsHeld" options={soberLivingOptions.certificationsHeld} />
-                  <CheckboxGroup label="Accreditations" name="accreditations" options={soberLivingOptions.accreditations} />
                   <CheckboxGroup label="Recovery Support Services" name="recoverySupportServices" options={recoverySupportServiceOptions} />
                   <CheckboxGroup label="Support services" name="supportServices" options={soberLivingOptions.supportServices} />
                 </div>

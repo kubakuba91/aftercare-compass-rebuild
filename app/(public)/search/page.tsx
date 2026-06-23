@@ -496,7 +496,7 @@ export default async function SearchPage({
                   ...profile.matAccepted,
                   ...profile.insuranceAccepted,
                   ...profile.certificationsHeld,
-                  ...profile.accreditations,
+                  ...(profile.type === ProfileType.sober_living ? [] : profile.accreditations),
                   ...(profile.type === ProfileType.sober_living ? profile.recoverySupportServices : profile.clinicalFocus)
                 ],
                 4

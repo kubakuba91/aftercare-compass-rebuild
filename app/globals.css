@@ -403,14 +403,13 @@ input[type="checkbox"] {
 }
 
 .ac-tabs--category-window {
-  display: grid;
-  width: 100%;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: inline-flex;
+  width: auto;
   overflow: hidden;
 }
 
 .ac-tabs--category-window .ac-tab {
-  width: 100%;
+  width: auto;
   min-width: 0;
 }
 

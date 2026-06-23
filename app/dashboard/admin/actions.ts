@@ -275,7 +275,10 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
         : null,
       certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
       accreditations: valuesFromForm(formData, "accreditations"),
-      clinicalFocus: valuesFromForm(formData, "clinicalFocus"),
+      clinicalFocus: type === ProfileType.sober_living ? [] : valuesFromForm(formData, "clinicalFocus"),
+      recoverySupportServices: type === ProfileType.sober_living
+        ? valuesFromForm(formData, "recoverySupportServices")
+        : [],
       supportServices: valuesFromForm(formData, "supportServices"),
       amenities: valuesFromForm(formData, "amenities"),
       insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
@@ -520,7 +523,10 @@ export async function updateAdminAftercareProfile(formData: FormData) {
       : null,
     certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
     accreditations: valuesFromForm(formData, "accreditations"),
-    clinicalFocus: valuesFromForm(formData, "clinicalFocus"),
+    clinicalFocus: profile.type === ProfileType.sober_living ? [] : valuesFromForm(formData, "clinicalFocus"),
+    recoverySupportServices: profile.type === ProfileType.sober_living
+      ? valuesFromForm(formData, "recoverySupportServices")
+      : [],
     supportServices: valuesFromForm(formData, "supportServices"),
     amenities: valuesFromForm(formData, "amenities"),
     insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),

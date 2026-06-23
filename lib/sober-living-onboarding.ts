@@ -42,6 +42,17 @@ export const recoveryResidenceLevelOptions = [
   "Level IV - Service provider"
 ] as const;
 
+export const recoverySupportServiceOptions = [
+  "Peer recovery support / coaching",
+  "House meetings & accountability",
+  "Required mutual aid / 12-step participation",
+  "MAT-friendly / MAT-supportive housing",
+  "Life skills & vocational support",
+  "Case management",
+  "Drug testing / breathalyzer monitoring",
+  "Curfew & house rules structure"
+] as const;
+
 export const averageLengthOptions = [
   "30 days",
   "60 days",
@@ -163,7 +174,7 @@ export const stepOneSchema = z.object({
   recoveryResidenceLevel: z.enum(recoveryResidenceLevelOptions).optional(),
   certificationsHeld: z.array(z.string()).default([]),
   accreditations: z.array(z.string()).default([]),
-  clinicalFocus: z.array(z.string()).default([]),
+  recoverySupportServices: z.array(z.string()).default([]),
   averageLengthOfStay: requiredText.max(80)
 });
 

@@ -21,6 +21,7 @@ import {
   medicationAdministrationOptions,
   preferredContactOptions,
   recoveryResidenceLevelOptions,
+  recoverySupportServiceOptions,
   roomTypeOptions,
   soberLivingSteps,
 } from "@/lib/sober-living-onboarding";
@@ -287,11 +288,11 @@ export default async function SoberLivingStepPage({
                     />
                   </div>
                   <div className="grid gap-2 text-sm font-medium">
-                    Clinical focus
+                    Recovery Support Services
                     <MultiSelectDropdown
-                      name="clinicalFocus"
-                      options={mergeOptionValues(profileOptions.clinicalFocus, selected(profile?.clinicalFocus))}
-                      selected={selected(profile?.clinicalFocus)}
+                      name="recoverySupportServices"
+                      options={mergeOptionValues(recoverySupportServiceOptions, selected(profile?.recoverySupportServices))}
+                      selected={selected(profile?.recoverySupportServices)}
                     />
                   </div>
                   <label className="grid gap-2 text-sm font-medium">

@@ -12,6 +12,7 @@ import {
   medicationAdministrationOptions,
   preferredContactOptions,
   recoveryResidenceLevelOptions,
+  recoverySupportServiceOptions,
   roomTypeOptions
 } from "@/lib/sober-living-onboarding";
 import {
@@ -323,7 +324,7 @@ export default async function AdminCreateProfilePage({
                   </label>
                   <CheckboxGroup label="Certifications held" name="certificationsHeld" options={soberLivingOptions.certificationsHeld} />
                   <CheckboxGroup label="Accreditations" name="accreditations" options={soberLivingOptions.accreditations} />
-                  <CheckboxGroup label="Clinical focus" name="clinicalFocus" options={soberLivingOptions.clinicalFocus} />
+                  <CheckboxGroup label="Recovery Support Services" name="recoverySupportServices" options={recoverySupportServiceOptions} />
                   <CheckboxGroup label="Support services" name="supportServices" options={soberLivingOptions.supportServices} />
                 </div>
                 <div className="admin-profile-type-section admin-profile-type-section--continued-care grid gap-5">

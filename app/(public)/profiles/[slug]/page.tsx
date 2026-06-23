@@ -758,9 +758,11 @@ export default async function PublicProfilePage({
                   <div>
                     <dt className="flex items-center gap-2 font-semibold text-foreground">
                       <PillBottle className="text-primary" size={16} />
-                      Clinical focus
+                      {isSoberLiving ? "Recovery Support Services" : "Clinical focus"}
                     </dt>
-                    <dd className="font-medium">{listOrFallback(profile.clinicalFocus)}</dd>
+                    <dd className="font-medium">
+                      {isSoberLiving ? listOrFallback(profile.recoverySupportServices) : listOrFallback(profile.clinicalFocus)}
+                    </dd>
                   </div>
                 </dl>
               </Card>

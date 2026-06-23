@@ -270,7 +270,8 @@ async function upsertSoberLivingDraftProfile(
       recoveryResidenceLevel: nullableText(String(draftData.recoveryResidenceLevel || "")),
       certificationsHeld: arrayFromDraft(draftData.certificationsHeld),
       accreditations: arrayFromDraft(draftData.accreditations),
-      clinicalFocus: arrayFromDraft(draftData.clinicalFocus),
+      clinicalFocus: [],
+      recoverySupportServices: arrayFromDraft(draftData.recoverySupportServices),
       averageLengthOfStay: String(draftData.averageLengthOfStay || ""),
       totalBeds: Number(draftData.totalBeds || 0),
       bedsAvailable: Number(draftData.bedsAvailable || 0),
@@ -457,7 +458,7 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
         recoveryResidenceLevel: formData.get("recoveryResidenceLevel") || undefined,
         certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
         accreditations: valuesFromForm(formData, "accreditations"),
-        clinicalFocus: valuesFromForm(formData, "clinicalFocus"),
+        recoverySupportServices: valuesFromForm(formData, "recoverySupportServices"),
         averageLengthOfStay: formData.get("averageLengthOfStay")
       });
 
@@ -651,7 +652,8 @@ export async function saveSoberLivingOnboardingStep(step: number, formData: Form
             recoveryResidenceLevel: nullableText(String(finalDraft.recoveryResidenceLevel || "")),
             certificationsHeld: arrayFromDraft(finalDraft.certificationsHeld),
             accreditations: arrayFromDraft(finalDraft.accreditations),
-            clinicalFocus: arrayFromDraft(finalDraft.clinicalFocus),
+            clinicalFocus: [],
+            recoverySupportServices: arrayFromDraft(finalDraft.recoverySupportServices),
             averageLengthOfStay: String(finalDraft.averageLengthOfStay || ""),
             totalBeds: Number(finalDraft.totalBeds || 0),
             bedsAvailable: Number(finalDraft.bedsAvailable || 0),

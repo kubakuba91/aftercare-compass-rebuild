@@ -402,6 +402,7 @@ export default async function SearchPage({
       certificationsHeld: true,
       accreditations: true,
       clinicalFocus: true,
+      recoverySupportServices: true,
       supportServices: true,
       insuranceAccepted: true,
       matAccepted: true,
@@ -496,7 +497,7 @@ export default async function SearchPage({
                   ...profile.insuranceAccepted,
                   ...profile.certificationsHeld,
                   ...profile.accreditations,
-                  ...profile.clinicalFocus
+                  ...(profile.type === ProfileType.sober_living ? profile.recoverySupportServices : profile.clinicalFocus)
                 ],
                 4
               );

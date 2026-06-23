@@ -180,7 +180,10 @@ export async function updateAftercareProfileDetails(formData: FormData) {
       : null,
     certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
     accreditations: valuesFromForm(formData, "accreditations"),
-    clinicalFocus: valuesFromForm(formData, "clinicalFocus"),
+    clinicalFocus: profile.type === ProfileType.sober_living ? [] : valuesFromForm(formData, "clinicalFocus"),
+    recoverySupportServices: profile.type === ProfileType.sober_living
+      ? valuesFromForm(formData, "recoverySupportServices")
+      : [],
     supportServices: valuesFromForm(formData, "supportServices"),
     amenities: valuesFromForm(formData, "amenities"),
     insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
@@ -365,7 +368,10 @@ export async function updateAftercareProfileContent(formData: FormData) {
         : null,
       certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
       accreditations: valuesFromForm(formData, "accreditations"),
-      clinicalFocus: valuesFromForm(formData, "clinicalFocus"),
+      clinicalFocus: profile.type === ProfileType.sober_living ? [] : valuesFromForm(formData, "clinicalFocus"),
+      recoverySupportServices: profile.type === ProfileType.sober_living
+        ? valuesFromForm(formData, "recoverySupportServices")
+        : [],
       supportServices: valuesFromForm(formData, "supportServices"),
       amenities: valuesFromForm(formData, "amenities"),
       medicationAdministration: nullableText(formData.get("medicationAdministration")),

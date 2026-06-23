@@ -33,11 +33,11 @@ export function DataSettingsCategoryTabs({
 
   return (
     <nav
-      className="ac-tabs ac-tabs--category-window min-w-0 flex-1"
+      className="ac-category-tabs"
       aria-label="Data settings categories"
       ref={viewportRef}
     >
-      <div className="ac-tabs__category-strip">
+      <div className="ac-category-tabs__strip">
         {categories.map((category) => {
           const selected = activeCategory === category.key;
 

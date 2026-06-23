@@ -1004,7 +1004,7 @@ export default async function AdminDashboardPage({
               </div>
               {reviewMessage ? <Badge tone="success">{reviewMessage}</Badge> : null}
             </div>
-            <div className="mt-6 flex w-full min-w-0 items-center gap-2 overflow-hidden">
+            <div className="ac-category-tabs-row mt-6">
               <Link
                 aria-label={`Previous data settings category: ${profileOptionCategories[previousDataCategory].label}`}
                 className="focus-ring inline-flex min-h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm transition hover:bg-surface-secondary"

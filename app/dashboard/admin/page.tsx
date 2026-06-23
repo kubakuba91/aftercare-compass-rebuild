@@ -193,6 +193,15 @@ export default async function AdminDashboardPage({
   const activeDataCategory = asProfileOptionCategory(query.dataCategory);
   const dataSettingCategories = profileOptionCategoryKeys();
   const activeDataCategoryIndex = Math.max(0, dataSettingCategories.indexOf(activeDataCategory));
+  const visibleDataCategoryCount = Math.min(3, dataSettingCategories.length);
+  const visibleDataCategoryStartIndex = Math.min(
+    Math.max(activeDataCategoryIndex - 1, 0),
+    Math.max(dataSettingCategories.length - visibleDataCategoryCount, 0)
+  );
+  const visibleDataSettingCategories = dataSettingCategories.slice(
+    visibleDataCategoryStartIndex,
+    visibleDataCategoryStartIndex + visibleDataCategoryCount
+  );
   const previousDataCategory =
     dataSettingCategories[(activeDataCategoryIndex - 1 + dataSettingCategories.length) % dataSettingCategories.length];
   const nextDataCategory = dataSettingCategories[(activeDataCategoryIndex + 1) % dataSettingCategories.length];
@@ -1006,20 +1015,20 @@ export default async function AdminDashboardPage({
               >
                 <ChevronLeft aria-hidden="true" size={18} />
               </Link>
-              <nav className="ac-tabs min-w-0 flex-1" aria-label="Data settings categories">
-                {dataSettingCategories.map((category) => {
+              <nav className="ac-tabs ac-tabs--category-window min-w-0 flex-1" aria-label="Data settings categories">
+                {visibleDataSettingCategories.map((category) => {
                   const meta = profileOptionCategories[category];
                   const activeCount = profileOptionGroups[category].filter((option) => option.isActive).length;
                   const selected = activeDataCategory === category;
 
                   return (
                     <Link
-                      className="focus-ring ac-tab"
+                      className="focus-ring ac-tab min-w-0"
                       data-active={selected ? "true" : "false"}
                       href={`/dashboard/admin?tab=data-settings&dataCategory=${category}`}
                       key={category}
                     >
-                      <span>{meta.label}</span>
+                      <span className="truncate">{meta.label}</span>
                       <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs font-semibold">
                         {activeCount}
                       </span>

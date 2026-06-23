@@ -402,6 +402,18 @@ input[type="checkbox"] {
   overflow-x: visible;
 }
 
+.ac-tabs--category-window {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.ac-tabs--category-window .ac-tab {
+  width: 100%;
+  min-width: 0;
+}
+
 .ac-tab {
   display: inline-flex;
   min-height: 2.75rem;

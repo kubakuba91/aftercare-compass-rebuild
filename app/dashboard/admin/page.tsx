@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { Building2, ChevronDown, ClipboardCheck, FileCheck2, Flag, Handshake, Home, Inbox, ListChecks, PlusCircle, Search } from "lucide-react";
+import { Building2, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, FileCheck2, Flag, Handshake, Home, Inbox, ListChecks, PlusCircle, Search } from "lucide-react";
 import {
   AdminReviewStatus,
   AdminReviewSubjectType,
@@ -191,6 +191,11 @@ export default async function AdminDashboardPage({
   ]);
   const activeTab = asAdminTab(query.tab);
   const activeDataCategory = asProfileOptionCategory(query.dataCategory);
+  const dataSettingCategories = profileOptionCategoryKeys();
+  const activeDataCategoryIndex = Math.max(0, dataSettingCategories.indexOf(activeDataCategory));
+  const previousDataCategory =
+    dataSettingCategories[(activeDataCategoryIndex - 1 + dataSettingCategories.length) % dataSettingCategories.length];
+  const nextDataCategory = dataSettingCategories[(activeDataCategoryIndex + 1) % dataSettingCategories.length];
   const reviewMessage = Array.isArray(query.reviewMessage) ? query.reviewMessage[0] : query.reviewMessage;
   const organizationSearchValue = Array.isArray(query.organizationSearch) ? query.organizationSearch[0] : query.organizationSearch;
   const organizationSearchTerm = organizationSearchValue?.trim() ?? "";
@@ -993,27 +998,43 @@ export default async function AdminDashboardPage({
               </div>
               {reviewMessage ? <Badge tone="success">{reviewMessage}</Badge> : null}
             </div>
-            <nav className="ac-tabs mt-6" aria-label="Data settings categories">
-              {profileOptionCategoryKeys().map((category) => {
-                const meta = profileOptionCategories[category];
-                const activeCount = profileOptionGroups[category].filter((option) => option.isActive).length;
-                const selected = activeDataCategory === category;
+            <div className="mt-6 flex max-w-full items-center gap-2 overflow-hidden">
+              <Link
+                aria-label={`Previous data settings category: ${profileOptionCategories[previousDataCategory].label}`}
+                className="focus-ring inline-flex min-h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm transition hover:bg-surface-secondary"
+                href={`/dashboard/admin?tab=data-settings&dataCategory=${previousDataCategory}`}
+              >
+                <ChevronLeft aria-hidden="true" size={18} />
+              </Link>
+              <nav className="ac-tabs min-w-0 flex-1" aria-label="Data settings categories">
+                {dataSettingCategories.map((category) => {
+                  const meta = profileOptionCategories[category];
+                  const activeCount = profileOptionGroups[category].filter((option) => option.isActive).length;
+                  const selected = activeDataCategory === category;
 
-                return (
-                  <Link
-                    className="focus-ring ac-tab"
-                    data-active={selected ? "true" : "false"}
-                    href={`/dashboard/admin?tab=data-settings&dataCategory=${category}`}
-                    key={category}
-                  >
-                    <span>{meta.label}</span>
-                    <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs font-semibold">
-                      {activeCount}
-                    </span>
-                  </Link>
-                );
-              })}
-            </nav>
+                  return (
+                    <Link
+                      className="focus-ring ac-tab"
+                      data-active={selected ? "true" : "false"}
+                      href={`/dashboard/admin?tab=data-settings&dataCategory=${category}`}
+                      key={category}
+                    >
+                      <span>{meta.label}</span>
+                      <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs font-semibold">
+                        {activeCount}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </nav>
+              <Link
+                aria-label={`Next data settings category: ${profileOptionCategories[nextDataCategory].label}`}
+                className="focus-ring inline-flex min-h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm transition hover:bg-surface-secondary"
+                href={`/dashboard/admin?tab=data-settings&dataCategory=${nextDataCategory}`}
+              >
+                <ChevronRight aria-hidden="true" size={18} />
+              </Link>
+            </div>
             {(() => {
               const category = activeDataCategory;
               const meta = profileOptionCategories[category];

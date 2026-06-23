@@ -344,7 +344,7 @@ export default async function AdminCreateProfilePage({
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className={labelClassName()}>
-                    Funding available
+                    Scholarship / funding available? (scholarship, state/grant funding, MDRN)
                     <select className={fieldClassName()} name="fundingAvailable">
                       <option value="">Not set</option>
                       <option value="yes">Yes</option>

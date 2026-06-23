@@ -409,7 +409,7 @@ export default async function AftercareProfileDetailPage({
                   <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className={labelClassName()}>
-                      Funding available
+                      Scholarship / funding available? (scholarship, state/grant funding, MDRN)
                       <select className={fieldClassName()} defaultValue={profile.fundingAvailable === null ? "" : profile.fundingAvailable ? "yes" : "no"} name="fundingAvailable">
                         <option value="">Not set</option>
                         <option value="yes">Yes</option>
@@ -468,7 +468,7 @@ export default async function AftercareProfileDetailPage({
                   <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className={labelClassName()}>
-                      Funding available
+                      Scholarship / funding available? (scholarship, state/grant funding, MDRN)
                       <select className={fieldClassName()} defaultValue={profile.fundingAvailable === null ? "" : profile.fundingAvailable ? "yes" : "no"} name="fundingAvailable">
                         <option value="">Not set</option>
                         <option value="yes">Yes</option>

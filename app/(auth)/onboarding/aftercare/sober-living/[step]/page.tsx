@@ -382,7 +382,7 @@ export default async function SoberLivingStepPage({
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
-                      {requiredLabel("Funding available?")}
+                      {requiredLabel("Scholarship / funding available? (scholarship, state/grant funding, MDRN)")}
                       <select name="fundingAvailable" defaultValue={profile?.fundingAvailable ? "yes" : "no"} className={fieldClassName()}>
                         <option value="no">No</option>
                         <option value="yes">Yes</option>

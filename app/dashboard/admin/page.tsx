@@ -50,6 +50,14 @@ function asAdminTab(value: string | string[] | undefined): AdminTab {
   return adminTabs.some((tab) => tab.key === selected) ? selected as AdminTab : "overview";
 }
 
+function asProfileOptionCategory(value: string | string[] | undefined) {
+  const selected = Array.isArray(value) ? value[0] : value;
+
+  return profileOptionCategoryKeys().includes(selected as ReturnType<typeof profileOptionCategoryKeys>[number])
+    ? selected as ReturnType<typeof profileOptionCategoryKeys>[number]
+    : profileOptionCategoryKeys()[0];
+}
+
 function formatValue(value: string | null | undefined) {
   return formatDisplayValue(value, { fallback: "Not set", titleCase: true });
 }
@@ -171,6 +179,7 @@ export default async function AdminDashboardPage({
 }: {
   searchParams: Promise<{
     tab?: string | string[];
+    dataCategory?: string | string[];
     reviewMessage?: string | string[];
     organizationSearch?: string | string[];
     profileSearch?: string | string[];
@@ -181,6 +190,7 @@ export default async function AdminDashboardPage({
     getProtectedAppUser("/dashboard/admin")
   ]);
   const activeTab = asAdminTab(query.tab);
+  const activeDataCategory = asProfileOptionCategory(query.dataCategory);
   const reviewMessage = Array.isArray(query.reviewMessage) ? query.reviewMessage[0] : query.reviewMessage;
   const organizationSearchValue = Array.isArray(query.organizationSearch) ? query.organizationSearch[0] : query.organizationSearch;
   const organizationSearchTerm = organizationSearchValue?.trim() ?? "";
@@ -969,12 +979,6 @@ export default async function AdminDashboardPage({
 
       {activeTab === "data-settings" ? (
         <div className="mt-6 grid gap-4">
-          <SummaryCards
-            items={profileOptionCategoryKeys().map((category) => [
-              profileOptionCategories[category].label,
-              profileOptionGroups[category].filter((option) => option.isActive).length.toString()
-            ])}
-          />
           <Card>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -989,125 +993,145 @@ export default async function AdminDashboardPage({
               </div>
               {reviewMessage ? <Badge tone="success">{reviewMessage}</Badge> : null}
             </div>
-            <div className="mt-6 grid gap-4 xl:grid-cols-2">
+            <nav className="ac-tabs mt-6" aria-label="Data settings categories">
               {profileOptionCategoryKeys().map((category) => {
                 const meta = profileOptionCategories[category];
-                const options = profileOptionGroups[category];
+                const activeCount = profileOptionGroups[category].filter((option) => option.isActive).length;
+                const selected = activeDataCategory === category;
 
                 return (
-                  <section className="ac-panel-card p-4" key={category}>
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-lg font-semibold">{meta.label}</h3>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">{meta.description}</p>
-                      </div>
-                      <Badge tone="neutral">
-                        {options.filter((option) => option.isActive).length} active
-                      </Badge>
-                    </div>
-                    <form action={addProfileOption} className="mt-4 flex flex-col gap-2 sm:flex-row">
-                      <input name="category" type="hidden" value={category} />
-                      <label className="sr-only" htmlFor={`${category}-label`}>Add {meta.label}</label>
-                      <input
-                        className="min-h-10 flex-1 rounded-md border border-border bg-white px-3 text-sm"
-                        id={`${category}-label`}
-                        name="label"
-                        placeholder={`Add ${meta.label.toLowerCase()} option`}
-                        required
-                      />
-                      <button className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground" type="submit">
-                        Add option
-                      </button>
-                    </form>
-                    <div className="mt-4 divide-y divide-border overflow-hidden rounded-md border border-border bg-white">
-                      {options.map((option) => (
-                        <div className="flex flex-wrap items-center justify-between gap-3 p-3" key={option.id}>
-                          <div className="min-w-0 flex-1">
-                            <form action={updateProfileOptionLabel} className="flex flex-col gap-2 sm:flex-row">
-                              <input name="optionId" type="hidden" value={option.id} />
-                              <input name="category" type="hidden" value={category} />
-                              <label className="sr-only" htmlFor={`${option.id}-edit-label`}>
-                                Edit {option.label}
-                              </label>
-                              <input
-                                className="min-h-9 min-w-0 flex-1 rounded-md border border-border bg-white px-3 text-sm font-semibold"
-                                defaultValue={option.label}
-                                id={`${option.id}-edit-label`}
-                                name="label"
-                                required
-                              />
-                              <button
-                                className="focus-ring inline-flex min-h-9 items-center justify-center rounded-md border border-border px-3 text-sm font-semibold"
-                                type="submit"
-                              >
-                                Save
-                              </button>
-                            </form>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {option.isActive ? "Available in dropdowns" : "Disabled for new selections"}
-                            </p>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              <form action={updateProfileOptionVisibility}>
-                                <input name="optionId" type="hidden" value={option.id} />
-                                <input name="category" type="hidden" value={category} />
-                                <input name="visibility" type="hidden" value="sober_living" />
-                                <button
-                                  aria-pressed={option.showForSoberLiving}
-                                  className="focus-ring inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition data-[active=true]:border-emerald-300 data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-800 data-[active=false]:border-border data-[active=false]:bg-white data-[active=false]:text-muted-foreground data-[active=false]:opacity-60"
-                                  data-active={option.showForSoberLiving ? "true" : "false"}
-                                  type="submit"
-                                >
-                                  {option.showForSoberLiving ? <span aria-hidden="true">✓</span> : null}
-                                  Sober living
-                                </button>
-                              </form>
-                              <form action={updateProfileOptionVisibility}>
-                                <input name="optionId" type="hidden" value={option.id} />
-                                <input name="category" type="hidden" value={category} />
-                                <input name="visibility" type="hidden" value="continued_care" />
-                                <button
-                                  aria-pressed={option.showForContinuedCare}
-                                  className="focus-ring inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition data-[active=true]:border-emerald-300 data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-800 data-[active=false]:border-border data-[active=false]:bg-white data-[active=false]:text-muted-foreground data-[active=false]:opacity-60"
-                                  data-active={option.showForContinuedCare ? "true" : "false"}
-                                  type="submit"
-                                >
-                                  {option.showForContinuedCare ? <span aria-hidden="true">✓</span> : null}
-                                  Continued care
-                                </button>
-                              </form>
-                            </div>
-                          </div>
-                          <form action={updateProfileOptionStatus}>
-                            <input name="optionId" type="hidden" value={option.id} />
-                            <input name="category" type="hidden" value={category} />
-                            <button
-                              aria-label={`${option.isActive ? "Disable" : "Enable"} ${option.label}`}
-                              aria-pressed={option.isActive}
-                              className="focus-ring inline-flex min-h-9 items-center gap-3 rounded-full border border-border bg-white px-2.5 py-1 text-sm font-semibold shadow-sm transition data-[active=true]:border-emerald-200 data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-800 data-[active=false]:text-muted-foreground"
-                              data-active={option.isActive ? "true" : "false"}
-                              name="isActive"
-                              type="submit"
-                              value={option.isActive ? "false" : "true"}
-                            >
-                              <span
-                                className="relative inline-flex h-5 w-9 shrink-0 rounded-full bg-muted transition data-[active=true]:bg-emerald-500"
-                                data-active={option.isActive ? "true" : "false"}
-                              >
-                                <span
-                                  className="absolute left-0.5 top-0.5 size-4 rounded-full bg-white shadow-sm transition-transform data-[active=true]:translate-x-4"
-                                  data-active={option.isActive ? "true" : "false"}
-                                />
-                              </span>
-                              <span>{option.isActive ? "Active" : "Off"}</span>
-                            </button>
-                          </form>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
+                  <Link
+                    className="focus-ring ac-tab"
+                    data-active={selected ? "true" : "false"}
+                    href={`/dashboard/admin?tab=data-settings&dataCategory=${category}`}
+                    key={category}
+                  >
+                    <span>{meta.label}</span>
+                    <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs font-semibold">
+                      {activeCount}
+                    </span>
+                  </Link>
                 );
               })}
-            </div>
+            </nav>
+            {(() => {
+              const category = activeDataCategory;
+              const meta = profileOptionCategories[category];
+              const options = profileOptionGroups[category];
+
+              return (
+                <section className="ac-panel-card mt-6 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-semibold">{meta.label}</h3>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">{meta.description}</p>
+                    </div>
+                    <Badge tone="neutral">
+                      {options.filter((option) => option.isActive).length} active
+                    </Badge>
+                  </div>
+                  <form action={addProfileOption} className="mt-4 flex flex-col gap-2 sm:flex-row">
+                    <input name="category" type="hidden" value={category} />
+                    <label className="sr-only" htmlFor={`${category}-label`}>Add {meta.label}</label>
+                    <input
+                      className="min-h-10 flex-1 rounded-md border border-border bg-white px-3 text-sm"
+                      id={`${category}-label`}
+                      name="label"
+                      placeholder={`Add ${meta.label.toLowerCase()} option`}
+                      required
+                    />
+                    <button className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground" type="submit">
+                      Add option
+                    </button>
+                  </form>
+                  <div className="mt-4 divide-y divide-border overflow-hidden rounded-md border border-border bg-white">
+                    {options.map((option) => (
+                      <div className="flex flex-wrap items-center justify-between gap-3 p-3" key={option.id}>
+                        <div className="min-w-0 flex-1">
+                          <form action={updateProfileOptionLabel} className="flex flex-col gap-2 sm:flex-row">
+                            <input name="optionId" type="hidden" value={option.id} />
+                            <input name="category" type="hidden" value={category} />
+                            <label className="sr-only" htmlFor={`${option.id}-edit-label`}>
+                              Edit {option.label}
+                            </label>
+                            <input
+                              className="min-h-9 min-w-0 flex-1 rounded-md border border-border bg-white px-3 text-sm font-semibold"
+                              defaultValue={option.label}
+                              id={`${option.id}-edit-label`}
+                              name="label"
+                              required
+                            />
+                            <button
+                              className="focus-ring inline-flex min-h-9 items-center justify-center rounded-md border border-border px-3 text-sm font-semibold"
+                              type="submit"
+                            >
+                              Save
+                            </button>
+                          </form>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {option.isActive ? "Available in dropdowns" : "Disabled for new selections"}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <form action={updateProfileOptionVisibility}>
+                              <input name="optionId" type="hidden" value={option.id} />
+                              <input name="category" type="hidden" value={category} />
+                              <input name="visibility" type="hidden" value="sober_living" />
+                              <button
+                                aria-pressed={option.showForSoberLiving}
+                                className="focus-ring inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition data-[active=true]:border-emerald-300 data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-800 data-[active=false]:border-border data-[active=false]:bg-white data-[active=false]:text-muted-foreground data-[active=false]:opacity-60"
+                                data-active={option.showForSoberLiving ? "true" : "false"}
+                                type="submit"
+                              >
+                                {option.showForSoberLiving ? <span aria-hidden="true">✓</span> : null}
+                                Sober living
+                              </button>
+                            </form>
+                            <form action={updateProfileOptionVisibility}>
+                              <input name="optionId" type="hidden" value={option.id} />
+                              <input name="category" type="hidden" value={category} />
+                              <input name="visibility" type="hidden" value="continued_care" />
+                              <button
+                                aria-pressed={option.showForContinuedCare}
+                                className="focus-ring inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition data-[active=true]:border-emerald-300 data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-800 data-[active=false]:border-border data-[active=false]:bg-white data-[active=false]:text-muted-foreground data-[active=false]:opacity-60"
+                                data-active={option.showForContinuedCare ? "true" : "false"}
+                                type="submit"
+                              >
+                                {option.showForContinuedCare ? <span aria-hidden="true">✓</span> : null}
+                                Continued care
+                              </button>
+                            </form>
+                          </div>
+                        </div>
+                        <form action={updateProfileOptionStatus}>
+                          <input name="optionId" type="hidden" value={option.id} />
+                          <input name="category" type="hidden" value={category} />
+                          <button
+                            aria-label={`${option.isActive ? "Disable" : "Enable"} ${option.label}`}
+                            aria-pressed={option.isActive}
+                            className="focus-ring inline-flex min-h-9 items-center gap-3 rounded-full border border-border bg-white px-2.5 py-1 text-sm font-semibold shadow-sm transition data-[active=true]:border-emerald-200 data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-800 data-[active=false]:text-muted-foreground"
+                            data-active={option.isActive ? "true" : "false"}
+                            name="isActive"
+                            type="submit"
+                            value={option.isActive ? "false" : "true"}
+                          >
+                            <span
+                              className="relative inline-flex h-5 w-9 shrink-0 rounded-full bg-muted transition data-[active=true]:bg-emerald-500"
+                              data-active={option.isActive ? "true" : "false"}
+                            >
+                              <span
+                                className="absolute left-0.5 top-0.5 size-4 rounded-full bg-white shadow-sm transition-transform data-[active=true]:translate-x-4"
+                                data-active={option.isActive ? "true" : "false"}
+                              />
+                            </span>
+                            <span>{option.isActive ? "Active" : "Off"}</span>
+                          </button>
+                        </form>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            })()}
           </Card>
         </div>
       ) : null}

@@ -58,11 +58,15 @@ function adminEditProfileHref(profileId: string, message: string) {
   return `/dashboard/admin/profiles/${profileId}/edit?${params.toString()}`;
 }
 
-function adminDataSettingsHref(message: string) {
+function adminDataSettingsHref(message: string, category?: ProfileOptionCategory | null) {
   const params = new URLSearchParams({
     tab: "data-settings",
     reviewMessage: message
   });
+
+  if (category) {
+    params.set("dataCategory", category);
+  }
 
   return `/dashboard/admin?${params.toString()}`;
 }
@@ -1085,7 +1089,7 @@ export async function addProfileOption(formData: FormData) {
 
   revalidatePath("/dashboard/admin");
   revalidatePath("/dashboard/aftercare");
-  redirect(adminDataSettingsHref(`${label} is available in ${profileOptionCategories[category].label}.`));
+  redirect(adminDataSettingsHref(`${label} is available in ${profileOptionCategories[category].label}.`, category));
 }
 
 export async function updateProfileOptionStatus(formData: FormData) {
@@ -1137,7 +1141,7 @@ export async function updateProfileOptionStatus(formData: FormData) {
   revalidatePath("/dashboard/aftercare");
   revalidatePath("/onboarding/aftercare/sober-living/1");
   revalidatePath("/onboarding/aftercare/continued-care/1");
-  redirect(adminDataSettingsHref(`${option.label} was ${isActive ? "enabled" : "disabled"}.`));
+  redirect(adminDataSettingsHref(`${option.label} was ${isActive ? "enabled" : "disabled"}.`, category));
 }
 
 export async function updateProfileOptionVisibility(formData: FormData) {
@@ -1197,7 +1201,7 @@ export async function updateProfileOptionVisibility(formData: FormData) {
   revalidatePath("/dashboard/aftercare");
   revalidatePath("/onboarding/aftercare/sober-living/1");
   revalidatePath("/onboarding/aftercare/continued-care/1");
-  redirect(adminDataSettingsHref(`${option.label} visibility updated.`));
+  redirect(adminDataSettingsHref(`${option.label} visibility updated.`, category));
 }
 
 export async function updateProfileOptionLabel(formData: FormData) {
@@ -1231,7 +1235,7 @@ export async function updateProfileOptionLabel(formData: FormData) {
   });
 
   if (duplicate && duplicate.id !== existingOption.id) {
-    redirect(adminDataSettingsHref(`${label} already exists in ${profileOptionCategories[category].label}.`));
+    redirect(adminDataSettingsHref(`${label} already exists in ${profileOptionCategories[category].label}.`, category));
   }
 
   const option = await prisma.profileOption.update({
@@ -1264,5 +1268,5 @@ export async function updateProfileOptionLabel(formData: FormData) {
   revalidatePath("/dashboard/aftercare");
   revalidatePath("/onboarding/aftercare/sober-living/1");
   revalidatePath("/onboarding/aftercare/continued-care/1");
-  redirect(adminDataSettingsHref(`${existingOption.label} was renamed to ${option.label}.`));
+  redirect(adminDataSettingsHref(`${existingOption.label} was renamed to ${option.label}.`, category));
 }

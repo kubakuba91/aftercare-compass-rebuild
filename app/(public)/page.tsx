@@ -3,11 +3,16 @@ import { Search } from "lucide-react";
 import Image from "next/image";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
+import { redirectToDashboardDestination } from "@/lib/protected-routing";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const { userId } = await auth();
+
+  if (userId) {
+    await redirectToDashboardDestination();
+  }
 
   return (
     <main>
@@ -21,8 +26,8 @@ export default async function HomePage() {
               src="/brand/logo-aftercare.png"
               width={280}
             />
-            <ButtonLink href={userId ? "/auth/complete" : "/sign-in"} variant="secondary">
-              {userId ? "Dashboard" : "Join or Login"}
+            <ButtonLink href="/sign-in" variant="secondary">
+              Join or Login
             </ButtonLink>
           </div>
 

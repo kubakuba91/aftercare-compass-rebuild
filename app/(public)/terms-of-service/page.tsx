@@ -1,3 +1,4 @@
+import { BackButton } from "@/components/public/back-button";
 import { Card } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ const termsSections: TermsSection[] = [
   {
     title: "1. Acceptance of Terms",
     paragraphs: [
-      "By accessing or using the Aftercare Compass platform (aftercarecompass.com), you agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree, you may not use the Platform. These Terms constitute a legally binding agreement between you and Aftercare Compass LLC."
+      "By accessing or using the Aftercare Compass platform (www.aftercarecompass.com), you agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree, you may not use the Platform. These Terms constitute a legally binding agreement between you and Aftercare Compass LLC."
     ]
   },
   {
@@ -98,6 +99,9 @@ const termsSections: TermsSection[] = [
 export default function TermsOfServicePage() {
   return (
     <main className="shell py-10">
+      <div className="mx-auto mb-4 flex max-w-4xl">
+        <BackButton />
+      </div>
       <Card className="mx-auto max-w-4xl p-0">
         <div className="border-b border-border px-6 py-7 sm:px-8">
           <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Legal</p>
@@ -111,8 +115,8 @@ export default function TermsOfServicePage() {
             </p>
             <p>
               <span className="font-semibold text-foreground">Website:</span>{" "}
-              <a className="font-medium text-foreground underline-offset-4 hover:underline" href="https://aftercarecompass.com">
-                aftercarecompass.com
+              <a className="font-medium text-foreground underline-offset-4 hover:underline" href="https://www.aftercarecompass.com">
+                www.aftercarecompass.com
               </a>
             </p>
             <p>
@@ -161,8 +165,8 @@ export default function TermsOfServicePage() {
               </p>
               <p>
                 Website:{" "}
-                <a className="font-medium text-foreground underline-offset-4 hover:underline" href="https://aftercarecompass.com">
-                  aftercarecompass.com
+                <a className="font-medium text-foreground underline-offset-4 hover:underline" href="https://www.aftercarecompass.com">
+                  www.aftercarecompass.com
                 </a>
               </p>
             </div>

@@ -681,6 +681,7 @@ export default async function AftercareDashboardPage({
   const canAddProfiles = canAddAnotherProfile(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
   const nextProfilePlan = nextProfileCapacityPlan(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
   const isContinuedCareOrganization = appUser.organization?.type === "aftercare_continued_care";
+  const continuedCareSmsConsentDescription = "By opting in, you agree to receive program-related notifications from Aftercare Compass, including prompts to update program availability, new referral alerts, placement acceptance updates, and changes to your account settings. Message frequency varies. Message and data rates may apply. Reply STOP to opt out at any time.";
   const profileNoun = isContinuedCareOrganization ? "program" : "home";
   const profileNounPlural = isContinuedCareOrganization ? "programs" : "homes";
   const profileTitle = isContinuedCareOrganization ? "Programs" : "Homes";
@@ -1903,6 +1904,8 @@ export default async function AftercareDashboardPage({
               ) : null}
               <SmsConsentCard
                 action={updateAccountSmsConsent}
+                consentDescription={isContinuedCareOrganization ? continuedCareSmsConsentDescription : undefined}
+                description={isContinuedCareOrganization ? "Receive program-related text notifications from Aftercare Compass for availability prompts, new referral alerts, placement acceptance updates, and account setting changes." : undefined}
                 message={accountMessage}
                 phone={appUser.phone}
                 smsOptIn={appUser.smsOptIn}

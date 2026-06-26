@@ -518,35 +518,6 @@ export async function removeAftercareManager(formData: FormData) {
   redirect(managersHref(`${managerName} was removed from this account.`));
 }
 
-export async function updateManagerSmsSettings(formData: FormData) {
-  const appUser = await getAftercareDashboardUser("/dashboard/aftercare?tab=managers");
-  const managerId = String(formData.get("managerId") || "");
-  const phone = normalizePhoneNumber(String(formData.get("phone") || ""));
-  const smsOptIn = formData.get("smsOptIn") === "yes";
-
-  if (appUser.role !== Role.aftercare_admin && appUser.id !== managerId) {
-    redirect(managersHref("Only admins can update manager SMS settings."));
-  }
-
-  if (smsOptIn && !phone) {
-    redirect(managersHref("Enter a valid phone number before enabling SMS."));
-  }
-
-  await prisma.user.updateMany({
-    where: {
-      id: managerId,
-      orgId: appUser.orgId
-    },
-    data: {
-      phone: phone || null,
-      smsOptIn: Boolean(phone && smsOptIn)
-    }
-  });
-
-  revalidatePath("/dashboard/aftercare");
-  redirect(managersHref("SMS settings updated."));
-}
-
 export async function sendBedAvailabilityTextCheck(formData: FormData) {
   const appUser = await getAftercareDashboardUser("/dashboard/aftercare");
   const profileId = String(formData.get("profileId") || "");

@@ -63,7 +63,6 @@ import {
   updateAftercareProfileStatusFromDashboard,
   updateAftercareAvailability,
   updateAccountSmsConsent,
-  updateManagerSmsSettings,
   updateReferralStatus,
   updateUserDisplayName
 } from "./actions";
@@ -1591,7 +1590,7 @@ export default async function AftercareDashboardPage({
                         {manager.isActive ? "Active" : "Inactive"}
                       </Badge>
                       <Badge tone={manager.smsOptIn && manager.phone ? "success" : "neutral"}>
-                        {manager.smsOptIn && manager.phone ? "SMS enabled" : "SMS off"}
+                        {manager.smsOptIn && manager.phone ? "Text notifications enabled" : "Text notifications off"}
                       </Badge>
                       {appUser.role === "aftercare_admin" &&
                       manager.role === "aftercare_manager" &&
@@ -1607,35 +1606,6 @@ export default async function AftercareDashboardPage({
                         </form>
                       ) : null}
                     </div>
-                    <form action={updateManagerSmsSettings} className="ac-panel-card grid gap-3 p-3 md:col-span-2">
-                      <input name="managerId" type="hidden" value={manager.id} />
-                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
-                        <label className="grid gap-2 text-sm font-medium">
-                          SMS phone
-                          <input
-                            className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
-                            defaultValue={manager.phone ?? ""}
-                            name="phone"
-                            placeholder="(555) 555-5555"
-                          />
-                        </label>
-                        <label className="flex min-h-10 items-center gap-2 text-sm font-medium">
-                          <input
-                            defaultChecked={manager.smsOptIn}
-                            name="smsOptIn"
-                            type="checkbox"
-                            value="yes"
-                          />
-                          Allow bed check texts
-                        </label>
-                        <button className="focus-ring min-h-10 rounded-md border border-border bg-white px-3 text-sm font-semibold">
-                          Save SMS
-                        </button>
-                      </div>
-                      <p className="text-xs leading-5 text-muted-foreground">
-                        Phone is only used for operational bed availability checks.
-                      </p>
-                    </form>
                   </div>
                 ))}
                 {pendingManagerInvites.map((invite) => (

@@ -51,50 +51,58 @@ const policySections: PolicySection[] = [
     ]
   },
   {
-    title: "5. Communications",
+    title: "5. Mobile Numbers and SMS Communications",
     paragraphs: [
-      "By opting in, you consent to receive SMS and email notifications from Aftercare Compass related to your account activity, referrals, availability, and platform events. You may opt out of SMS at any time by replying STOP. You may opt out of non-essential email by using the unsubscribe link in any message or by contacting admin@aftercarecompass.com.",
-      "Message and data rates may apply for SMS. Message frequency varies."
+      "By providing your mobile phone number and opting in to SMS notifications, you consent to receive text messages from Aftercare Compass related to your account activity, referrals, availability updates, and platform events.",
+      "Your mobile phone number will never be shared with third parties for marketing or promotional purposes. Mobile opt-in data and consent are not shared with any third party under any circumstances.",
+      "You may opt out of SMS at any time by replying STOP to any message. Reply HELP for assistance. You may also opt out by contacting admin@aftercarecompass.com.",
+      "Message frequency varies based on your account activity. Message and data rates may apply."
     ]
   },
   {
-    title: "6. Location and Address Privacy",
+    title: "6. Email Communications",
+    paragraphs: [
+      "By opting in, you consent to receive email notifications from Aftercare Compass related to your account and platform activity. You may opt out of non-essential email at any time by using the unsubscribe link in any message or by contacting admin@aftercarecompass.com."
+    ]
+  },
+  {
+    title: "7. Location and Address Privacy",
     paragraphs: [
       "Exact provider addresses are never displayed to public visitors or referent organizations. Public-facing pages and maps show city and state level location information only."
     ]
   },
   {
-    title: "7. Data Retention",
+    title: "8. Data Retention",
     paragraphs: [
       "We retain your information for as long as your account is active or as needed to provide services, meet legal obligations, and resolve disputes. You may request deletion of your account and associated data at any time, subject to legal retention requirements."
     ]
   },
   {
-    title: "8. Data Security",
+    title: "9. Data Security",
     paragraphs: [
       "We use industry-standard security measures to protect your information, including encrypted data transmission and access controls. Payment card data is processed exclusively by our billing provider under PCI-DSS compliance standards and is never stored by Aftercare Compass. No method of internet transmission is completely secure, and we cannot guarantee absolute security."
     ]
   },
   {
-    title: "9. Your Rights",
+    title: "10. Your Rights",
     paragraphs: [
       "You have the right to access, correct, or request deletion of your personal information at any time. To exercise these rights, contact us at admin@aftercarecompass.com."
     ]
   },
   {
-    title: "10. Cookies",
+    title: "11. Cookies",
     paragraphs: [
       "We use cookies to maintain session state and analyze Platform usage. You may disable cookies in your browser settings, though some Platform features may not function properly as a result."
     ]
   },
   {
-    title: "11. Children's Privacy",
+    title: "12. Children's Privacy",
     paragraphs: [
       "The Platform is not intended for individuals under the age of 18. We do not knowingly collect information from minors."
     ]
   },
   {
-    title: "12. Changes to This Policy",
+    title: "13. Changes to This Policy",
     paragraphs: [
       "We may update this Privacy Policy from time to time. Material changes will be communicated via email or a notice on the Platform. Continued use of the Platform after any update constitutes acceptance of the revised Policy."
     ]
@@ -158,7 +166,7 @@ export default function PrivacyPolicyPage() {
           ))}
 
           <section className="rounded-lg border border-border bg-muted/40 p-5">
-            <h2 className="text-xl font-semibold tracking-normal text-foreground">13. Contact Us</h2>
+            <h2 className="text-xl font-semibold tracking-normal text-foreground">14. Contact Us</h2>
             <div className="mt-3 space-y-2 text-sm leading-7 text-muted-foreground">
               <p>For questions or data requests related to this Privacy Policy:</p>
               <p className="font-medium text-foreground">Aftercare Compass LLC</p>

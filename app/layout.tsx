@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { SiteFooter } from "@/components/site-footer";
 import { hasValidClerkPublishableKey } from "@/lib/clerk-config";
 import "./globals.css";
 
@@ -31,7 +32,10 @@ export default function RootLayout({
 }>) {
   const body = (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <SiteFooter />
+      </body>
     </html>
   );
 

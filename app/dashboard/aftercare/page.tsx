@@ -21,6 +21,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { AftercareOverviewSelector } from "@/components/dashboard/aftercare-overview-selector";
 import { AftercareQuickAvailability } from "@/components/dashboard/aftercare-quick-availability";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
+import { SmsConsentCard } from "@/components/dashboard/sms-consent-card";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {
@@ -61,6 +62,7 @@ import {
   sendBedAvailabilityTextCheck,
   updateAftercareProfileStatusFromDashboard,
   updateAftercareAvailability,
+  updateAccountSmsConsent,
   updateManagerSmsSettings,
   updateReferralStatus,
   updateUserDisplayName
@@ -434,6 +436,7 @@ export default async function AftercareDashboardPage({
     screeningMessage?: string;
     invite?: string;
     managerMessage?: string;
+    accountMessage?: string;
     billingMessage?: string;
     billingView?: string;
     homesMessage?: string;
@@ -451,6 +454,7 @@ export default async function AftercareDashboardPage({
   const isPlanSelectionOpen = activeTab === "subscription" && query.billingView === "plans";
   const billingMessage = Array.isArray(query.billingMessage) ? query.billingMessage[0] : query.billingMessage;
   const homesMessage = Array.isArray(query.homesMessage) ? query.homesMessage[0] : query.homesMessage;
+  const accountMessage = Array.isArray(query.accountMessage) ? query.accountMessage[0] : query.accountMessage;
 
   const [profiles, leads, referrals, pendingDocumentCount, managers, pendingManagerInvites] = await Promise.all([
     prisma.aftercareProfile.findMany({
@@ -1897,6 +1901,12 @@ export default async function AftercareDashboardPage({
                   </div>
                 </form>
               ) : null}
+              <SmsConsentCard
+                action={updateAccountSmsConsent}
+                message={accountMessage}
+                phone={appUser.phone}
+                smsOptIn={appUser.smsOptIn}
+              />
               <div className="ac-panel-card mt-6 p-4">
                 <h3 className="font-semibold">Session</h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">

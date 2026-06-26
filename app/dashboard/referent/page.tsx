@@ -19,6 +19,7 @@ import { ProfileType, Role } from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { PhoneScreeningSlotPicker } from "@/components/dashboard/phone-screening-slot-picker";
+import { SmsConsentCard } from "@/components/dashboard/sms-consent-card";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatBillingStatus, getBillingPlan, getBillingPlansWithStripePrices } from "@/lib/billing";
@@ -38,7 +39,8 @@ import {
   bookPhoneScreeningSlot,
   removePendingReferentInvite,
   removeReferentManager,
-  updateReferentDisplayName
+  updateReferentDisplayName,
+  updateReferentSmsConsent
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -110,6 +112,7 @@ export default async function ReferentDashboardPage({
     edit?: string | string[];
     teamMessage?: string | string[];
     billingMessage?: string | string[];
+    accountMessage?: string | string[];
     billingView?: string | string[];
     referralMessage?: string | string[];
   }>;
@@ -123,6 +126,7 @@ export default async function ReferentDashboardPage({
   const isEditingDisplayName = activeTab === "account" && edit === "displayName";
   const teamMessage = Array.isArray(query.teamMessage) ? query.teamMessage[0] : query.teamMessage;
   const billingMessage = Array.isArray(query.billingMessage) ? query.billingMessage[0] : query.billingMessage;
+  const accountMessage = Array.isArray(query.accountMessage) ? query.accountMessage[0] : query.accountMessage;
   const referralMessage = Array.isArray(query.referralMessage) ? query.referralMessage[0] : query.referralMessage;
   const billingView = Array.isArray(query.billingView) ? query.billingView[0] : query.billingView;
   const isPlanSelectionOpen = activeTab === "subscription" && billingView === "plans";
@@ -828,6 +832,13 @@ export default async function ReferentDashboardPage({
               </div>
             </form>
           ) : null}
+
+          <SmsConsentCard
+            action={updateReferentSmsConsent}
+            message={accountMessage}
+            phone={appUser.phone}
+            smsOptIn={appUser.smsOptIn}
+          />
 
           <div className="ac-panel-card mt-6 p-4">
             <h3 className="font-semibold">Session</h3>

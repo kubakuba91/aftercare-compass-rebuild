@@ -5,12 +5,16 @@ export function SmsConsentCard({
   action,
   phone,
   smsOptIn,
-  message
+  message,
+  description = "Receive account-related text messages from Aftercare Compass for prompts to update availability within your account dashboard, new referral activity, placement acceptance, and changes to account settings. Only active account holders will receive these messages.",
+  consentDescription = "I agree to receive account-related text messages from Aftercare Compass at the mobile number provided. Message frequency varies. Message and data rates may apply. Reply HELP for help or STOP to cancel."
 }: {
   action: (formData: FormData) => void | Promise<void>;
   phone?: string | null;
   smsOptIn?: boolean;
   message?: string | null;
+  description?: string;
+  consentDescription?: string;
 }) {
   return (
     <div className="ac-panel-card mt-6 p-4">
@@ -18,9 +22,7 @@ export function SmsConsentCard({
         <div>
           <h3 className="font-semibold">Text message notifications</h3>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-            Receive account-related text messages from Aftercare Compass for prompts to update availability within your
-            account dashboard, new referral activity, placement acceptance, and changes to account settings. Only active
-            account holders will receive these messages.
+            {description}
           </p>
         </div>
         {smsOptIn ? (
@@ -69,9 +71,7 @@ export function SmsConsentCard({
             value="yes"
           />
           <span className="leading-6">
-            I agree to receive account-related text messages from Aftercare Compass at the mobile number provided.
-            Message frequency varies. Message and data rates may apply. Reply HELP for help or STOP to cancel. I agree
-            to the{" "}
+            {consentDescription} I agree to the{" "}
             <Link className="font-semibold text-primary underline-offset-4 hover:underline" href="/terms-of-service">
               Terms of Service
             </Link>{" "}

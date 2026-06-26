@@ -121,9 +121,6 @@ export default function TermsOfServicePage() {
                 admin@aftercarecompass.com
               </a>
             </p>
-            <p className="sm:col-span-2">
-              <span className="font-semibold text-foreground">Jurisdiction:</span> Commonwealth of Pennsylvania
-            </p>
           </div>
         </div>
 

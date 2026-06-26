@@ -33,7 +33,9 @@ export default function RootLayout({
   const body = (
     <html lang="en">
       <body>
-        {children}
+        <div className="site-content">
+          {children}
+        </div>
         <SiteFooter />
       </body>
     </html>

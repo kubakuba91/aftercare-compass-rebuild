@@ -52,11 +52,22 @@
   box-sizing: border-box;
 }
 
+html {
+  min-height: 100%;
+}
+
 body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
   margin: 0;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+.site-content {
+  flex: 1 0 auto;
 }
 
 a {

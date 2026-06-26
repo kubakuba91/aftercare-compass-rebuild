@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { formatPhoneForDisplay } from "@/lib/phone";
 
 export function SmsConsentCard({
   action,
@@ -16,6 +15,20 @@ export function SmsConsentCard({
   description?: string;
   consentDescription?: string;
 }) {
+  if (smsOptIn) {
+    return (
+      <div className="ac-panel-card mt-6 p-4">
+        <p className="text-sm font-semibold">Text notifications enabled.</p>
+        <form action={action} className="mt-4">
+          <input name="intent" type="hidden" value="optOut" />
+          <button className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold text-destructive">
+            Stop text notifications
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className="ac-panel-card mt-6 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -25,26 +38,14 @@ export function SmsConsentCard({
             {description}
           </p>
         </div>
-        {smsOptIn ? (
-          <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            Enabled
-          </span>
-        ) : (
-          <span className="rounded-full border border-border bg-surface-secondary px-3 py-1 text-xs font-semibold text-muted-foreground">
-            Not enabled
-          </span>
-        )}
+        <span className="rounded-full border border-border bg-surface-secondary px-3 py-1 text-xs font-semibold text-muted-foreground">
+          Not enabled
+        </span>
       </div>
 
       {message ? (
         <p className="ac-callout mt-4 p-3 text-sm font-semibold text-foreground">
           {message}
-        </p>
-      ) : null}
-
-      {smsOptIn ? (
-        <p className="mt-4 text-sm font-semibold">
-          Text notifications are enabled for {formatPhoneForDisplay(phone)}.
         </p>
       ) : null}
 
@@ -90,14 +91,6 @@ export function SmsConsentCard({
         </div>
       </form>
 
-      {smsOptIn ? (
-        <form action={action} className="mt-3">
-          <input name="intent" type="hidden" value="optOut" />
-          <button className="focus-ring min-h-10 rounded-md border border-border bg-white px-4 text-sm font-semibold text-destructive">
-            Stop text notifications
-          </button>
-        </form>
-      ) : null}
     </div>
   );
 }

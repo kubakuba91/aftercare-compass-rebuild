@@ -8,6 +8,7 @@ import {
   populationOptions,
   specialtyPopulationOptions
 } from "@/lib/sober-living-onboarding";
+import { cn } from "@/lib/utils";
 
 type PublicSearchHeaderProps = {
   isSignedIn?: boolean;
@@ -71,7 +72,7 @@ export function PublicSearchHeader({
             width={48}
           />
         </Link>
-        <form action="/search" className="relative grid flex-1 gap-2 md:grid-cols-[340px_1fr_128px_160px]">
+        <form action="/search" className="relative grid min-w-0 flex-1 gap-2 md:grid-cols-[340px_minmax(180px,1fr)_128px_160px]">
           <div className="grid h-14 gap-1.5 overflow-hidden rounded-lg border border-[#12185f] bg-[#12185f] p-2 sm:grid-cols-2">
             <label className="focus-within:ring-ring flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-4 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
               <input
@@ -94,7 +95,7 @@ export function PublicSearchHeader({
               Continued Care
             </label>
           </div>
-          <label className="focus-within:ring-ring flex h-14 items-center gap-2 rounded-lg border border-border bg-white px-4 shadow-sm focus-within:ring-2">
+          <label className="focus-within:ring-ring flex h-14 min-w-0 items-center gap-2 rounded-lg border border-border bg-white px-4 shadow-sm focus-within:ring-2">
             <span className="sr-only">Search by city, state, or program name</span>
             <Search aria-hidden="true" className="shrink-0 text-muted-foreground" size={18} />
             <input
@@ -236,7 +237,10 @@ export function PublicSearchHeader({
           ) : null}
         </form>
         <Link
-          className="focus-ring inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm font-semibold"
+          className={cn(
+            "focus-ring inline-flex h-14 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm font-semibold",
+            isSignedIn ? "w-14" : "min-w-28 whitespace-nowrap px-4"
+          )}
           href={isSignedIn ? "/auth/complete" : "/sign-in"}
         >
           {isSignedIn ? (

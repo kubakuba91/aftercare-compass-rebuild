@@ -29,6 +29,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { aftercareProfileIdWhereForUser, aftercareProfileWhereForUser } from "@/lib/aftercare-access";
 import { richTextHtml } from "@/lib/rich-text";
 import { prisma } from "@/lib/prisma";
 import { formatPhotoLimit, getAftercarePhotoLimit } from "@/lib/feature-gates";
@@ -189,10 +190,7 @@ export default async function AftercareProfileDetailPage({
 
   const [{ profileId }, query] = await Promise.all([params, searchParams]);
   const profile = await prisma.aftercareProfile.findFirst({
-    where: {
-      id: profileId,
-      orgId: appUser.orgId ?? undefined
-    },
+    where: aftercareProfileIdWhereForUser(appUser, profileId),
     include: {
       leads: { select: { id: true }, take: 1 },
       referrals: { select: { id: true }, take: 1 },
@@ -242,9 +240,9 @@ export default async function AftercareProfileDetailPage({
     isSoberLiving
       ? prisma.aftercareProfile.findMany({
           where: {
-            orgId: appUser.orgId,
+            ...aftercareProfileWhereForUser(appUser),
+            id: { notIn: Array.from(associatedContinuedCareIds) },
             type: "continued_care",
-            id: { notIn: Array.from(associatedContinuedCareIds) }
           },
           orderBy: { programName: "asc" },
           select: {

@@ -88,6 +88,10 @@ export async function getCurrentAppUser() {
       id: true,
       orgId: true,
       role: true,
+      aftercareManagerScope: true,
+      aftercareProfileAssignments: {
+        select: { profileId: true }
+      },
       organization: {
         select: { type: true }
       }
@@ -109,6 +113,7 @@ export async function getCurrentAppUser() {
     (invitedReferentOrg || organizationInvite?.organization.type === OrganizationType.referent
       ? Role.referent_manager
       : Role.aftercare_manager);
+  const aftercareManagerScope = organizationInvite?.aftercareManagerScope;
 
   const user = appUser
     ? await prisma.user.update({
@@ -120,6 +125,9 @@ export async function getCurrentAppUser() {
           lastName: identity.lastName,
           role: invitedRole,
           orgId: invitedOrgId,
+          ...(invitedRole === Role.aftercare_manager && aftercareManagerScope
+            ? { aftercareManagerScope }
+            : {}),
           emailVerified: identity.emailVerified,
           emailVerifiedAt: identity.emailVerified ? new Date() : null
         },
@@ -133,6 +141,9 @@ export async function getCurrentAppUser() {
           lastName: identity.lastName,
           role: invitedRole,
           orgId: invitedOrgId,
+          ...(invitedRole === Role.aftercare_manager && aftercareManagerScope
+            ? { aftercareManagerScope }
+            : {}),
           emailVerified: identity.emailVerified,
           emailVerifiedAt: identity.emailVerified ? new Date() : null
         },
@@ -140,12 +151,28 @@ export async function getCurrentAppUser() {
       });
 
   if (organizationInvite) {
-    await prisma.organizationInvite.update({
-      where: { id: organizationInvite.id },
-      data: {
-        status: "accepted",
-        acceptedByUserId: user.id,
-        acceptedAt: new Date()
+    await prisma.$transaction(async (tx) => {
+      await tx.organizationInvite.update({
+        where: { id: organizationInvite.id },
+        data: {
+          status: "accepted",
+          acceptedByUserId: user.id,
+          acceptedAt: new Date()
+        }
+      });
+
+      if (
+        invitedRole === Role.aftercare_manager &&
+        organizationInvite.aftercareManagerScope === "assigned_profiles" &&
+        organizationInvite.aftercareProfileAssignments.length
+      ) {
+        await tx.aftercareProfileManagerAssignment.createMany({
+          data: organizationInvite.aftercareProfileAssignments.map((assignment) => ({
+            userId: user.id,
+            profileId: assignment.profileId
+          })),
+          skipDuplicates: true
+        });
       }
     });
   }

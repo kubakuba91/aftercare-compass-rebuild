@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { ProfileStatus, ProfileType, ReferralStatus, Role } from "@prisma/client";
+import { AftercareManagerScope, ProfileStatus, ProfileType, ReferralStatus, Role } from "@prisma/client";
 import { z } from "zod";
+import { aftercareProfileIdWhereForUser, aftercareProfileWhereForUser } from "@/lib/aftercare-access";
 import { availabilityReplyExample } from "@/lib/availability-sms";
 import { notifyReferralStatusChanged, sendOrganizationInviteEmail } from "@/lib/email-notifications";
 import {
@@ -136,6 +137,37 @@ function emailsFromText(value: string) {
 
 const emailListSchema = z.array(z.string().email()).min(1);
 
+function managerScopeFromForm(formData: FormData) {
+  const rawScope = String(formData.get("managerScope") || "");
+  const scope = rawScope === AftercareManagerScope.assigned_profiles
+    ? AftercareManagerScope.assigned_profiles
+    : AftercareManagerScope.all_profiles;
+  const profileIds = Array.from(
+    new Set(formData.getAll("profileIds").map((value) => String(value)).filter(Boolean))
+  );
+
+  return {
+    scope,
+    profileIds: scope === AftercareManagerScope.assigned_profiles ? profileIds : []
+  };
+}
+
+async function validManagerAssignmentProfileIds(orgId: string, profileIds: string[]) {
+  if (!profileIds.length) {
+    return [];
+  }
+
+  const profiles = await prisma.aftercareProfile.findMany({
+    where: {
+      id: { in: profileIds },
+      orgId
+    },
+    select: { id: true }
+  });
+
+  return profiles.map((profile) => profile.id);
+}
+
 function smsToken() {
   return `AC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
@@ -150,10 +182,7 @@ export async function updateAftercareProfileStatusFromDashboard(formData: FormDa
   }
 
   const profile = await prisma.aftercareProfile.findFirst({
-    where: {
-      id: profileId,
-      orgId: appUser.orgId
-    },
+    where: aftercareProfileIdWhereForUser(appUser, profileId),
     select: {
       id: true,
       slug: true,
@@ -195,10 +224,7 @@ export async function updateAftercareAvailability(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
 
   const profile = await prisma.aftercareProfile.findFirst({
-    where: {
-      id: profileId,
-      orgId: appUser.orgId
-    },
+    where: aftercareProfileIdWhereForUser(appUser, profileId),
     select: {
       id: true,
       type: true,
@@ -326,6 +352,7 @@ export async function inviteAftercareManagers(formData: FormData) {
 
   const emails = emailsFromText(String(formData.get("emails") || ""));
   const parsedEmails = emailListSchema.safeParse(emails);
+  const managerAssignment = managerScopeFromForm(formData);
 
   if (!parsedEmails.success) {
     redirect(managersHref("Enter at least one valid email address.", true));
@@ -350,6 +377,9 @@ export async function inviteAftercareManagers(formData: FormData) {
         select: {
           email: true
         }
+      },
+      profiles: {
+        select: { id: true }
       }
     }
   });
@@ -359,6 +389,22 @@ export async function inviteAftercareManagers(formData: FormData) {
   }
 
   const managerLimit = getAftercareManagerLimit(organization.subscriptionPlan);
+  const organizationProfileIds = new Set(organization.profiles.map((profile) => profile.id));
+
+  if (
+    managerAssignment.scope === AftercareManagerScope.assigned_profiles &&
+    !managerAssignment.profileIds.length
+  ) {
+    redirect(managersHref("Choose at least one home or use All homes.", true));
+  }
+
+  if (
+    managerAssignment.scope === AftercareManagerScope.assigned_profiles &&
+    managerAssignment.profileIds.some((profileId) => !organizationProfileIds.has(profileId))
+  ) {
+    redirect(managersHref("Choose homes from this organization only.", true));
+  }
+
   const activeUserCount = organization.users.filter((user) => user.isActive).length;
   const pendingInviteEmails = new Set(organization.invites.map((invite) => invite.email.toLowerCase()));
   const existingOrgEmails = new Set(organization.users.map((user) => user.email.toLowerCase()));
@@ -403,25 +449,45 @@ export async function inviteAftercareManagers(formData: FormData) {
         data: {
           orgId: appUser.orgId,
           role: Role.aftercare_manager,
+          aftercareManagerScope: managerAssignment.scope,
           isActive: true
         }
       })
     )
   );
 
+  if (unattachedUsers.length && managerAssignment.profileIds.length) {
+    await prisma.aftercareProfileManagerAssignment.createMany({
+      data: unattachedUsers.flatMap((user) =>
+        managerAssignment.profileIds.map((profileId) => ({
+          userId: user.id,
+          profileId
+        }))
+      ),
+      skipDuplicates: true
+    });
+  }
+
   const attachedEmails = new Set(unattachedUsers.map((user) => user.email.toLowerCase()));
   const inviteEmails = newEmails.filter((email) => !attachedEmails.has(email));
 
   if (inviteEmails.length) {
-    await prisma.organizationInvite.createMany({
-      data: inviteEmails.map((email) => ({
-        orgId: appUser.orgId,
-        email,
-        role: Role.aftercare_manager,
-        invitedByUserId: appUser.id
-      })),
-      skipDuplicates: true
-    });
+    await Promise.all(
+      inviteEmails.map((email) =>
+        prisma.organizationInvite.create({
+          data: {
+            orgId: appUser.orgId,
+            email,
+            role: Role.aftercare_manager,
+            invitedByUserId: appUser.id,
+            aftercareManagerScope: managerAssignment.scope,
+            aftercareProfileAssignments: {
+              create: managerAssignment.profileIds.map((profileId) => ({ profileId }))
+            }
+          }
+        })
+      )
+    );
   }
 
   const inviterName = [appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email;
@@ -438,6 +504,82 @@ export async function inviteAftercareManagers(formData: FormData) {
 
   revalidatePath("/dashboard/aftercare");
   redirect(managersHref(inviteDeliveryMessage(newEmails.length, emailResults), emailResults.some((result) => result.status !== "sent")));
+}
+
+export async function updateAftercareManagerAssignments(formData: FormData) {
+  const appUser = await getAftercareDashboardUser("/dashboard/aftercare?tab=managers");
+
+  if (appUser.role !== Role.aftercare_admin) {
+    redirect(managersHref("Only aftercare admins can edit manager assignments."));
+  }
+
+  const managerId = String(formData.get("managerId") || "");
+  const managerAssignment = managerScopeFromForm(formData);
+
+  if (!managerId) {
+    redirect(managersHref("Manager not found."));
+  }
+
+  if (
+    managerAssignment.scope === AftercareManagerScope.assigned_profiles &&
+    !managerAssignment.profileIds.length
+  ) {
+    redirect(managersHref("Choose at least one home or use All homes."));
+  }
+
+  const [manager, validProfileIds] = await Promise.all([
+    prisma.user.findFirst({
+      where: {
+        id: managerId,
+        orgId: appUser.orgId,
+        role: Role.aftercare_manager
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true
+      }
+    }),
+    validManagerAssignmentProfileIds(appUser.orgId, managerAssignment.profileIds)
+  ]);
+
+  if (!manager) {
+    redirect(managersHref("Manager not found."));
+  }
+
+  if (
+    managerAssignment.scope === AftercareManagerScope.assigned_profiles &&
+    validProfileIds.length !== managerAssignment.profileIds.length
+  ) {
+    redirect(managersHref("Choose homes from this organization only."));
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: manager.id },
+      data: { aftercareManagerScope: managerAssignment.scope }
+    });
+
+    await tx.aftercareProfileManagerAssignment.deleteMany({
+      where: { userId: manager.id }
+    });
+
+    if (managerAssignment.scope === AftercareManagerScope.assigned_profiles) {
+      await tx.aftercareProfileManagerAssignment.createMany({
+        data: validProfileIds.map((profileId) => ({
+          userId: manager.id,
+          profileId
+        })),
+        skipDuplicates: true
+      });
+    }
+  });
+
+  const managerName = [manager.firstName, manager.lastName].filter(Boolean).join(" ") || manager.email;
+
+  revalidatePath("/dashboard/aftercare");
+  redirect(managersHref(`${managerName} assignments updated.`));
 }
 
 export async function removeAftercareManagerInvite(formData: FormData) {
@@ -512,6 +654,10 @@ export async function removeAftercareManager(formData: FormData) {
     }
   });
 
+  await prisma.aftercareProfileManagerAssignment.deleteMany({
+    where: { userId: manager.id }
+  });
+
   const managerName = [manager.firstName, manager.lastName].filter(Boolean).join(" ") || manager.email;
 
   revalidatePath("/dashboard/aftercare");
@@ -526,8 +672,7 @@ export async function sendBedAvailabilityTextCheck(formData: FormData) {
   const [profile, manager] = await Promise.all([
     prisma.aftercareProfile.findFirst({
       where: {
-        id: profileId,
-        orgId: appUser.orgId,
+        ...aftercareProfileIdWhereForUser(appUser, profileId),
         type: ProfileType.sober_living
       },
       select: {
@@ -548,7 +693,20 @@ export async function sendBedAvailabilityTextCheck(formData: FormData) {
         orgId: appUser.orgId,
         isActive: true,
         smsOptIn: true,
-        phone: { not: null }
+        phone: { not: null },
+        OR: [
+          { role: Role.aftercare_admin },
+          {
+            role: Role.aftercare_manager,
+            aftercareManagerScope: AftercareManagerScope.all_profiles
+          },
+          {
+            role: Role.aftercare_manager,
+            aftercareProfileAssignments: {
+              some: { profileId }
+            }
+          }
+        ]
       },
       select: {
         id: true,
@@ -622,10 +780,7 @@ export async function addPhoneScreeningWindow(formData: FormData) {
   const endMinute = minuteFromTime(formData.get("endTime"));
 
   const profile = await prisma.aftercareProfile.findFirst({
-    where: {
-      id: profileId,
-      orgId: appUser.orgId
-    },
+    where: aftercareProfileIdWhereForUser(appUser, profileId),
     select: {
       id: true,
       organization: {
@@ -683,9 +838,7 @@ export async function deletePhoneScreeningWindow(formData: FormData) {
   const window = await prisma.phoneScreeningWindow.findFirst({
     where: {
       id: windowId,
-      profile: {
-        orgId: appUser.orgId
-      }
+      profile: aftercareProfileWhereForUser(appUser)
     },
     select: {
       id: true,
@@ -718,7 +871,8 @@ export async function updateReferralStatus(formData: FormData) {
   const referral = await prisma.referral.findFirst({
     where: {
       id: referralId,
-      aftercareOrgId: appUser.orgId
+      aftercareOrgId: appUser.orgId,
+      aftercareProfile: aftercareProfileWhereForUser(appUser)
     },
     select: {
       id: true,

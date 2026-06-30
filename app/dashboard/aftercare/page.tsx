@@ -24,6 +24,7 @@ import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-butto
 import { SmsConsentCard } from "@/components/dashboard/sms-consent-card";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { aftercareProfileWhereForUser } from "@/lib/aftercare-access";
 import {
   RowActionsMenu,
   RowActionsMenuButton,
@@ -63,6 +64,7 @@ import {
   updateAftercareProfileStatusFromDashboard,
   updateAftercareAvailability,
   updateAccountSmsConsent,
+  updateAftercareManagerAssignments,
   updateReferralStatus,
   updateUserDisplayName
 } from "./actions";
@@ -132,6 +134,86 @@ function nextProfileCapacityPlan(planKey: string | null | undefined, currentProf
 
     return limit === "unlimited" || currentProfileCount < limit;
   }) ?? null;
+}
+
+function managerAssignmentSummary({
+  scope,
+  assignments,
+  profileNounPlural
+}: {
+  scope: string;
+  assignments: Array<{ profile: { programName: string } }>;
+  profileNounPlural: string;
+}) {
+  if (scope !== "assigned_profiles") {
+    return `All ${profileNounPlural}`;
+  }
+
+  const names = assignments
+    .map((assignment) => assignment.profile.programName)
+    .sort((a, b) => a.localeCompare(b));
+
+  return names.length ? names.join(", ") : `No ${profileNounPlural} assigned`;
+}
+
+function ManagerAssignmentFields({
+  profileOptions,
+  defaultScope = "all_profiles",
+  defaultProfileIds = [],
+  profileNounPlural,
+  disabled = false
+}: {
+  profileOptions: Array<{ id: string; programName: string }>;
+  defaultScope?: string;
+  defaultProfileIds?: string[];
+  profileNounPlural: string;
+  disabled?: boolean;
+}) {
+  const selectedProfileIds = new Set(defaultProfileIds);
+  const assignedByDefault = defaultScope === "assigned_profiles";
+
+  return (
+    <fieldset className="grid gap-3 rounded-lg border border-border p-3">
+      <legend className="px-1 text-sm font-semibold">Manager access</legend>
+      <label className="flex items-center gap-2 text-sm font-medium">
+        <input
+          defaultChecked={!assignedByDefault}
+          disabled={disabled}
+          name="managerScope"
+          type="radio"
+          value="all_profiles"
+        />
+        All {profileNounPlural}
+      </label>
+      <label className="flex items-center gap-2 text-sm font-medium">
+        <input
+          defaultChecked={assignedByDefault}
+          disabled={disabled}
+          name="managerScope"
+          type="radio"
+          value="assigned_profiles"
+        />
+        Selected {profileNounPlural}
+      </label>
+      <div className="grid gap-2 border-t border-border pt-3">
+        {profileOptions.map((profile) => (
+          <label className="flex items-center gap-2 text-sm" key={profile.id}>
+            <input
+              defaultChecked={selectedProfileIds.has(profile.id)}
+              disabled={disabled}
+              name="profileIds"
+              type="checkbox"
+              value={profile.id}
+            />
+            {profile.programName}
+          </label>
+        ))}
+      </div>
+      <p className="text-xs leading-5 text-muted-foreground">
+        Assignment is required. Use All {profileNounPlural} for organization-wide access.
+      </p>
+    </fieldset>
+  );
 }
 
 function profileReadiness(profile: {
@@ -454,10 +536,11 @@ export default async function AftercareDashboardPage({
   const billingMessage = Array.isArray(query.billingMessage) ? query.billingMessage[0] : query.billingMessage;
   const homesMessage = Array.isArray(query.homesMessage) ? query.homesMessage[0] : query.homesMessage;
   const accountMessage = Array.isArray(query.accountMessage) ? query.accountMessage[0] : query.accountMessage;
+  const profileAccessWhere = aftercareProfileWhereForUser(appUser);
 
   const [profiles, leads, referrals, pendingDocumentCount, managers, pendingManagerInvites] = await Promise.all([
     prisma.aftercareProfile.findMany({
-      where: { orgId: appUser.orgId },
+      where: profileAccessWhere,
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,
@@ -534,7 +617,10 @@ export default async function AftercareDashboardPage({
       }
     }),
     prisma.lead.findMany({
-      where: { aftercareOrgId: appUser.orgId },
+      where: {
+        aftercareOrgId: appUser.orgId,
+        profile: profileAccessWhere
+      },
       orderBy: { createdAt: "desc" },
       take: 5,
       select: {
@@ -549,7 +635,8 @@ export default async function AftercareDashboardPage({
     }),
     prisma.referral.findMany({
       where: {
-        aftercareOrgId: appUser.orgId
+        aftercareOrgId: appUser.orgId,
+        aftercareProfile: profileAccessWhere
       },
       orderBy: { createdAt: "desc" },
       take: 200,
@@ -584,7 +671,7 @@ export default async function AftercareDashboardPage({
     prisma.verificationDocument.findMany({
       where: {
         status: "pending",
-        profile: { orgId: appUser.orgId }
+        profile: profileAccessWhere
       },
       select: { profileId: true }
     }),
@@ -600,6 +687,17 @@ export default async function AftercareDashboardPage({
         isActive: true,
         phone: true,
         smsOptIn: true,
+        aftercareManagerScope: true,
+        aftercareProfileAssignments: {
+          select: {
+            profile: {
+              select: {
+                id: true,
+                programName: true
+              }
+            }
+          }
+        },
         updatedAt: true
       }
     }),
@@ -613,6 +711,17 @@ export default async function AftercareDashboardPage({
       select: {
         id: true,
         email: true,
+        aftercareManagerScope: true,
+        aftercareProfileAssignments: {
+          select: {
+            profile: {
+              select: {
+                id: true,
+                programName: true
+              }
+            }
+          }
+        },
         createdAt: true
       }
     })
@@ -665,7 +774,17 @@ export default async function AftercareDashboardPage({
 
     return Date.now() - lastUpdated.getTime() > 1000 * 60 * 60 * 24 * 7;
   }).length;
-  const smsEnabledManagers = managers.filter((manager) => manager.isActive && manager.smsOptIn && manager.phone);
+  const smsEnabledManagers = managers.filter((manager) => {
+    if (!manager.isActive || !manager.smsOptIn || !manager.phone) {
+      return false;
+    }
+
+    if (!selectedProfile || manager.role === "aftercare_admin" || manager.aftercareManagerScope !== "assigned_profiles") {
+      return true;
+    }
+
+    return manager.aftercareProfileAssignments.some((assignment) => assignment.profile.id === selectedProfile.id);
+  });
   const aftercareManagerLimit = currentAftercarePlan(appUser.organization?.subscriptionPlan).managers;
   const aftercareManagerUsage = managers.filter((manager) => manager.isActive).length + pendingManagerInvites.length;
   const canInviteMoreManagers = aftercareManagerLimit === "unlimited" || aftercareManagerUsage < aftercareManagerLimit;
@@ -684,6 +803,9 @@ export default async function AftercareDashboardPage({
   const profileNoun = isContinuedCareOrganization ? "program" : "home";
   const profileNounPlural = isContinuedCareOrganization ? "programs" : "homes";
   const profileTitle = isContinuedCareOrganization ? "Programs" : "Homes";
+  const managerAssignmentProfileOptions = profiles
+    .map((profile) => ({ id: profile.id, programName: profile.programName }))
+    .sort((a, b) => a.programName.localeCompare(b.programName));
   const aftercareBillingPlan = getBillingPlan("aftercare", appUser.organization?.subscriptionPlan);
   const aftercareBillingCycle = appUser.organization?.subscriptionBillingCycle === "annual" ? "annual" : "monthly";
   const aftercareCurrentPriceLabel =
@@ -1577,14 +1699,27 @@ export default async function AftercareDashboardPage({
               </div>
               <div className="mt-5 grid gap-3">
                 {managers.map((manager) => (
-                  <div key={manager.id} className="ac-panel-card flex flex-col justify-between gap-3 p-4 md:flex-row md:items-center">
-                    <div>
+                  <div key={manager.id} className="ac-panel-card grid gap-4 p-4">
+                    <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                      <div>
                       <p className="font-semibold">
                         {[manager.firstName, manager.lastName].filter(Boolean).join(" ") || manager.email}
                       </p>
                       <p className="mt-1 text-sm text-muted-foreground">{manager.email}</p>
+                      {manager.role === "aftercare_manager" ? (
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          Access:{" "}
+                          <span className="font-semibold text-foreground">
+                            {managerAssignmentSummary({
+                              scope: manager.aftercareManagerScope,
+                              assignments: manager.aftercareProfileAssignments,
+                              profileNounPlural
+                            })}
+                          </span>
+                        </p>
+                      ) : null}
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                       <Badge>{manager.role.replaceAll("_", " ")}</Badge>
                       <Badge tone={manager.isActive ? "success" : "warning"}>
                         {manager.isActive ? "Active" : "Inactive"}
@@ -1605,7 +1740,26 @@ export default async function AftercareDashboardPage({
                           </ConfirmSubmitButton>
                         </form>
                       ) : null}
+                      </div>
                     </div>
+                    {appUser.role === "aftercare_admin" &&
+                    manager.role === "aftercare_manager" &&
+                    manager.id !== appUser.id ? (
+                      <form action={updateAftercareManagerAssignments} className="grid gap-3 border-t border-border pt-4">
+                        <input name="managerId" type="hidden" value={manager.id} />
+                        <ManagerAssignmentFields
+                          defaultProfileIds={manager.aftercareProfileAssignments.map((assignment) => assignment.profile.id)}
+                          defaultScope={manager.aftercareManagerScope}
+                          profileNounPlural={profileNounPlural}
+                          profileOptions={managerAssignmentProfileOptions}
+                        />
+                        <div className="flex justify-end">
+                          <button className="focus-ring min-h-9 rounded-md border border-border bg-white px-3 text-sm font-semibold">
+                            Save access
+                          </button>
+                        </div>
+                      </form>
+                    ) : null}
                   </div>
                 ))}
                 {pendingManagerInvites.map((invite) => (
@@ -1614,6 +1768,16 @@ export default async function AftercareDashboardPage({
                       <p className="font-semibold">{invite.email}</p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         Invited {formatDate(invite.createdAt)}. They will be added as a manager when they create an account with this email.
+                      </p>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Access:{" "}
+                        <span className="font-semibold text-foreground">
+                          {managerAssignmentSummary({
+                            scope: invite.aftercareManagerScope,
+                            assignments: invite.aftercareProfileAssignments,
+                            profileNounPlural
+                          })}
+                        </span>
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -1935,6 +2099,11 @@ export default async function AftercareDashboardPage({
               <p className="text-xs leading-5 text-muted-foreground">
                 Separate emails with commas, spaces, or new lines. Paid plan limits are checked before invites are saved.
               </p>
+              <ManagerAssignmentFields
+                disabled={!canInviteMoreManagers}
+                profileNounPlural={profileNounPlural}
+                profileOptions={managerAssignmentProfileOptions}
+              />
               {!canInviteMoreManagers ? (
                 <p className="ac-callout p-3 text-sm font-semibold">
                   Upgrade the aftercare plan to add more managers.

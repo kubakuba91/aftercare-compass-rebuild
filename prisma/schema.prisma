@@ -98,6 +98,11 @@ enum ProfileClaimStatus {
   cancelled
 }
 
+enum AftercareManagerScope {
+  all_profiles
+  assigned_profiles
+}
+
 model ProfileOption {
   id        String   @id @default(cuid())
   category  String
@@ -119,6 +124,7 @@ model User {
   email           String        @unique
   phone           String?
   smsOptIn        Boolean       @default(false)
+  aftercareManagerScope AftercareManagerScope @default(all_profiles)
   firstName       String?
   lastName        String?
   role            Role
@@ -142,6 +148,7 @@ model User {
   acceptedOrganizationInvites   OrganizationInvite[]        @relation("OrganizationInviteAcceptedUser")
   availabilitySmsChecks         AvailabilitySmsCheck[]
   bookedPhoneScreenings         PhoneScreeningAppointment[] @relation("PhoneScreeningBookedBy")
+  aftercareProfileAssignments   AftercareProfileManagerAssignment[]
   reviewedAdminReviews          AdminReview[]               @relation("AdminReviewReviewer")
   submittedProfileClaimRequests ProfileClaimRequest[]       @relation("ProfileClaimRequester")
   reviewedProfileClaimRequests  ProfileClaimRequest[]       @relation("ProfileClaimReviewer")
@@ -209,6 +216,8 @@ model OrganizationInvite {
   acceptedAt       DateTime?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
+  aftercareManagerScope AftercareManagerScope @default(all_profiles)
+  aftercareProfileAssignments OrganizationInviteProfileAssignment[]
 
   @@unique([orgId, email])
   @@index([email, status])
@@ -347,6 +356,8 @@ model AftercareProfile {
   phoneScreeningAppointments PhoneScreeningAppointment[]
   adminReviews               AdminReview[]
   claimRequests              ProfileClaimRequest[]
+  managerAssignments         AftercareProfileManagerAssignment[]
+  inviteAssignments          OrganizationInviteProfileAssignment[]
   continuedCareAssociations  ProfileAssociation[]        @relation("SoberLivingAssociations")
   soberLivingAssociations    ProfileAssociation[]        @relation("ContinuedCareAssociations")
 
@@ -355,6 +366,31 @@ model AftercareProfile {
   @@index([publicCity, publicState])
   @@index([verificationTier])
   @@index([ownershipStatus])
+}
+
+model AftercareProfileManagerAssignment {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileId String
+  profile   AftercareProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([userId, profileId])
+  @@index([profileId])
+}
+
+model OrganizationInviteProfileAssignment {
+  id        String             @id @default(cuid())
+  inviteId  String
+  invite    OrganizationInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  profileId String
+  profile   AftercareProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdAt DateTime           @default(now())
+
+  @@unique([inviteId, profileId])
+  @@index([profileId])
 }
 
 model ProfileAssociation {

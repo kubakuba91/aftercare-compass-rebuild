@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Prisma, ProfileStatus, ProfileType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getAftercareProfileLimit, isWithinPlanLimit } from "@/lib/feature-gates";
+import { aftercareProfileIdWhereForUser } from "@/lib/aftercare-access";
 import { currencyText, moveInCostText, numberFromForm } from "@/lib/form-utils";
 import { geocodeProfileAddress } from "@/lib/geocoding";
 import { imagesFromFormData, uploadProfileImagesForProfile } from "@/lib/profile-images";
@@ -774,10 +775,7 @@ export async function uploadCompletedAftercareOnboardingImages(formData: FormDat
 
   const profileId = String(formData.get("profileId") || "");
   const profile = await prisma.aftercareProfile.findFirst({
-    where: {
-      id: profileId,
-      orgId: appUser.orgId
-    },
+    where: aftercareProfileIdWhereForUser(appUser, profileId),
     select: {
       id: true,
       orgId: true,

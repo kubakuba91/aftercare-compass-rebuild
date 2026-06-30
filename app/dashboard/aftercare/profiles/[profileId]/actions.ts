@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ProfileStatus, ProfileType } from "@prisma/client";
+import { aftercareProfileIdWhereForUser } from "@/lib/aftercare-access";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
 import {
   canManageAftercareProfile,
@@ -23,10 +24,7 @@ import { valuesFromForm } from "@/lib/sober-living-onboarding";
 async function getOwnedProfile(profileId: string) {
   const appUser = await getAftercareDashboardUser(`/dashboard/aftercare/profiles/${profileId}`);
   const profile = await prisma.aftercareProfile.findFirst({
-    where: {
-      id: profileId,
-      orgId: appUser.orgId ?? undefined
-    },
+    where: aftercareProfileIdWhereForUser(appUser, profileId),
     include: {
       organization: {
         select: {
@@ -490,8 +488,7 @@ export async function addAssociatedContinuedCareProgram(formData: FormData) {
 
   const continuedCareProfile = await prisma.aftercareProfile.findFirst({
     where: {
-      id: continuedCareProfileId,
-      orgId: appUser.orgId,
+      ...aftercareProfileIdWhereForUser(appUser, continuedCareProfileId),
       type: ProfileType.continued_care
     },
     select: { id: true }

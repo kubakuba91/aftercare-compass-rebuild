@@ -16,6 +16,8 @@ import { getActiveProfileOptionValues } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { approximatePublicPoint, milesBetween, searchCenterFromQuery } from "@/lib/public-location";
 import { richTextToPlainText } from "@/lib/rich-text";
+import { continuedCareDurationOptions } from "@/lib/continued-care-onboarding";
+import { averageLengthOptions } from "@/lib/sober-living-onboarding";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -222,6 +224,9 @@ export default async function SearchPage({
     duration?: string | string[];
     amenity?: string | string[];
     mat?: string | string[];
+    levelOfCare?: string | string[];
+    clinicalFocus?: string | string[];
+    insurance?: string | string[];
     verified?: string | string[];
     availability?: string | string[];
     filters?: string | string[];
@@ -247,40 +252,38 @@ export default async function SearchPage({
     appUser?.role === Role.referent_admin || appUser?.role === Role.referent_manager;
   const favoriteProfileIds = new Set(appUser?.favorites.map((favorite) => favorite.profileId) ?? []);
   const q = firstFromQuery(query.q)?.trim() || "";
-  const profileOptions = await getActiveProfileOptionValues();
   const rawType = firstFromQuery(query.type);
   const type = rawType === "continued_care" ? "continued_care" : "sober_living";
+  const profileOptions = await getActiveProfileOptionValues(type);
   const population = valuesFromQuery(query.population).filter((value) =>
     profileOptions.populationServed.includes(value)
   );
   const specialty = valuesFromQuery(query.specialty).filter((value) =>
     profileOptions.specialtyPopulations.includes(value)
   );
-  const minPrice = numberFromQuery(query.minPrice);
-  const maxPrice = numberFromQuery(query.maxPrice);
+  const minPrice = type === "sober_living" ? numberFromQuery(query.minPrice) : undefined;
+  const maxPrice = type === "sober_living" ? numberFromQuery(query.maxPrice) : undefined;
   const radiusMiles = numberFromQuery(query.radius);
-  const duration = firstFromQuery(query.duration) || "";
-  const amenities = valuesFromQuery(query.amenity).filter((value) =>
+  const durationOptions = type === "continued_care" ? continuedCareDurationOptions : averageLengthOptions;
+  const requestedDuration = firstFromQuery(query.duration) || "";
+  const duration = durationOptions.some((option) => option === requestedDuration) ? requestedDuration : "";
+  const amenities = type === "sober_living" ? valuesFromQuery(query.amenity).filter((value) =>
     profileOptions.amenities.includes(value)
-  );
+  ) : [];
   const mat = valuesFromQuery(query.mat).filter((value) => profileOptions.matAccepted.includes(value));
+  const levelsOfCare = type === "continued_care" ? valuesFromQuery(query.levelOfCare).filter((value) =>
+    profileOptions.levelsOfCare.includes(value)
+  ) : [];
+  const clinicalFocus = type === "continued_care" ? valuesFromQuery(query.clinicalFocus).filter((value) =>
+    profileOptions.clinicalFocus.includes(value)
+  ) : [];
+  const insurance = type === "continued_care" ? valuesFromQuery(query.insurance).filter((value) =>
+    profileOptions.insuranceAccepted.includes(value)
+  ) : [];
   const verified = firstFromQuery(query.verified) === "yes";
   const availability = firstFromQuery(query.availability) === "available" ? "available" : "";
   const showFilters = firstFromQuery(query.filters) === "1";
   const selectedListingId = firstFromQuery(query.selected);
-  const filterParams = new URLSearchParams();
-
-  for (const [key, value] of Object.entries(query)) {
-    if (key === "filters") {
-      continue;
-    }
-
-    for (const item of valuesFromQuery(value)) {
-      filterParams.append(key, item);
-    }
-  }
-
-  filterParams.set("filters", showFilters ? "0" : "1");
 
   function selectedListingHref(profileId: string) {
     const params = new URLSearchParams();
@@ -324,6 +327,18 @@ export default async function SearchPage({
 
   if (mat.length) {
     andFilters.push({ matAccepted: { hasSome: mat } });
+  }
+
+  if (levelsOfCare.length) {
+    andFilters.push({ levelsOfCare: { hasSome: levelsOfCare } });
+  }
+
+  if (clinicalFocus.length) {
+    andFilters.push({ clinicalFocus: { hasSome: clinicalFocus } });
+  }
+
+  if (insurance.length) {
+    andFilters.push({ insuranceAccepted: { hasSome: insurance } });
   }
 
   if (verified) {
@@ -455,20 +470,28 @@ export default async function SearchPage({
       <PublicSearchHeader
         amenities={amenities}
         amenityOptions={profileOptions.amenities}
-        clearHref="/search"
+        clearHref={`/search?type=${type}`}
         defaultAvailability={availability}
         defaultLocation={q}
         defaultType={type}
         duration={duration}
-        filtersHref={`/search?${filterParams.toString()}`}
         isSignedIn={isSignedIn}
+        insurance={insurance}
+        insuranceOptions={profileOptions.insuranceAccepted}
+        clinicalFocus={clinicalFocus}
+        clinicalFocusOptions={profileOptions.clinicalFocus}
+        levelsOfCare={levelsOfCare}
+        levelOfCareOptions={profileOptions.levelsOfCare}
         mat={mat}
+        matOptions={profileOptions.matAccepted}
         maxPrice={maxPrice}
         minPrice={minPrice}
         population={population}
+        populationOptions={profileOptions.populationServed}
         radiusMiles={radiusMiles}
         showFilters={showFilters}
         specialty={specialty}
+        specialtyOptions={profileOptions.specialtyPopulations}
         verified={verified}
       />
       <main className="shell py-8">

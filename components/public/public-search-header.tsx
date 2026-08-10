@@ -4,10 +4,14 @@ import { Search, SlidersHorizontal, UserCircle } from "lucide-react";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import {
   averageLengthOptions,
+  insuranceOptions,
   matOptions,
   populationOptions,
   specialtyPopulationOptions
 } from "@/lib/sober-living-onboarding";
+import { continuedCareDurationOptions } from "@/lib/continued-care-onboarding";
+import { levelsOfCareOptions } from "@/lib/levels-of-care";
+import { clinicalFocusOptions } from "@/lib/profile-options";
 import { cn } from "@/lib/utils";
 
 type PublicSearchHeaderProps = {
@@ -16,10 +20,11 @@ type PublicSearchHeaderProps = {
   defaultLocation?: string;
   defaultAvailability?: string;
   showFilters?: boolean;
-  filtersHref?: string;
   clearHref?: string;
   population?: string[];
+  populationOptions?: string[];
   specialty?: string[];
+  specialtyOptions?: string[];
   minPrice?: number;
   maxPrice?: number;
   radiusMiles?: number;
@@ -27,6 +32,13 @@ type PublicSearchHeaderProps = {
   amenities?: string[];
   amenityOptions?: string[];
   mat?: string[];
+  matOptions?: string[];
+  levelsOfCare?: string[];
+  levelOfCareOptions?: string[];
+  clinicalFocus?: string[];
+  clinicalFocusOptions?: string[];
+  insurance?: string[];
+  insuranceOptions?: string[];
   verified?: boolean;
 };
 
@@ -36,10 +48,11 @@ export function PublicSearchHeader({
   defaultLocation = "",
   defaultAvailability = "",
   showFilters = false,
-  filtersHref = "/search?filters=1",
   clearHref = "/search",
   population = [],
+  populationOptions: availablePopulationOptions = [...populationOptions],
   specialty = [],
+  specialtyOptions: availableSpecialtyOptions = [...specialtyPopulationOptions],
   minPrice,
   maxPrice,
   radiusMiles,
@@ -47,16 +60,28 @@ export function PublicSearchHeader({
   amenities = [],
   amenityOptions = [],
   mat = [],
+  matOptions: availableMatOptions = [...matOptions],
+  levelsOfCare = [],
+  levelOfCareOptions: availableLevelOfCareOptions = [...levelsOfCareOptions],
+  clinicalFocus = [],
+  clinicalFocusOptions: availableClinicalFocusOptions = [...clinicalFocusOptions],
+  insurance = [],
+  insuranceOptions: availableInsuranceOptions = [...insuranceOptions],
   verified = false
 }: PublicSearchHeaderProps) {
+  const isContinuedCare = defaultType === "continued_care";
+  const durationOptions = isContinuedCare ? continuedCareDurationOptions : averageLengthOptions;
   const activeFilterCount = [
     population.length,
     specialty.length,
-    minPrice !== undefined || maxPrice !== undefined ? 1 : 0,
+    !isContinuedCare && (minPrice !== undefined || maxPrice !== undefined) ? 1 : 0,
     radiusMiles !== undefined ? 1 : 0,
     duration ? 1 : 0,
-    amenities.length,
+    isContinuedCare ? 0 : amenities.length,
     mat.length,
+    isContinuedCare ? levelsOfCare.length : 0,
+    isContinuedCare ? clinicalFocus.length : 0,
+    isContinuedCare ? insurance.length : 0,
     verified ? 1 : 0
   ].reduce((sum, value) => sum + (typeof value === "number" ? value : 0), 0);
 
@@ -105,9 +130,11 @@ export function PublicSearchHeader({
               placeholder="City, state, or name"
             />
           </label>
-          <Link
+          <button
             className="focus-ring flex h-14 items-center justify-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold"
-            href={filtersHref}
+            name="filters"
+            type="submit"
+            value={showFilters ? "0" : "1"}
           >
             <SlidersHorizontal size={16} />
             Filters
@@ -116,21 +143,37 @@ export function PublicSearchHeader({
                 {activeFilterCount}
               </span>
             ) : null}
-          </Link>
+          </button>
           <button className="focus-ring h-14 rounded-lg bg-[#12185f] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#0d1249]">
             Search
           </button>
-          {!showFilters && defaultAvailability === "available" ? (
-            <input name="availability" type="hidden" value="available" />
+          {!showFilters ? (
+            <>
+              {population.map((value) => <input key={`population-${value}`} name="population" type="hidden" value={value} />)}
+              {specialty.map((value) => <input key={`specialty-${value}`} name="specialty" type="hidden" value={value} />)}
+              {!isContinuedCare && minPrice !== undefined ? <input name="minPrice" type="hidden" value={minPrice} /> : null}
+              {!isContinuedCare && maxPrice !== undefined ? <input name="maxPrice" type="hidden" value={maxPrice} /> : null}
+              {radiusMiles !== undefined ? <input name="radius" type="hidden" value={radiusMiles} /> : null}
+              {duration ? <input name="duration" type="hidden" value={duration} /> : null}
+              {!isContinuedCare ? amenities.map((value) => <input key={`amenity-${value}`} name="amenity" type="hidden" value={value} />) : null}
+              {mat.map((value) => <input key={`mat-${value}`} name="mat" type="hidden" value={value} />)}
+              {isContinuedCare ? levelsOfCare.map((value) => <input key={`level-${value}`} name="levelOfCare" type="hidden" value={value} />) : null}
+              {isContinuedCare ? clinicalFocus.map((value) => <input key={`clinical-${value}`} name="clinicalFocus" type="hidden" value={value} />) : null}
+              {isContinuedCare ? insurance.map((value) => <input key={`insurance-${value}`} name="insurance" type="hidden" value={value} />) : null}
+              {verified ? <input name="verified" type="hidden" value="yes" /> : null}
+              {defaultAvailability === "available" ? <input name="availability" type="hidden" value="available" /> : null}
+            </>
           ) : null}
           {showFilters ? (
             <div className="absolute left-0 top-[calc(100%+0.75rem)] z-50 grid w-full min-w-0 gap-4 rounded-lg border border-border bg-white p-5 shadow-lg md:left-auto md:right-[168px] md:w-[min(100vw-2rem,420px)]">
-              <h2 className="text-lg font-semibold">Filter Options</h2>
+              <h2 className="text-lg font-semibold">
+                {isContinuedCare ? "Continued Care Filters" : "Sober Living Filters"}
+              </h2>
               <label className="grid gap-2 text-sm font-medium">
-                Population Served
+                Gender Served
                 <MultiSelectDropdown
                   name="population"
-                  options={populationOptions}
+                  options={availablePopulationOptions}
                   placeholder="Select population..."
                   selected={population}
                 />
@@ -140,33 +183,21 @@ export function PublicSearchHeader({
                 <MultiSelectDropdown
                   closeOnSelect
                   name="specialty"
-                  options={specialtyPopulationOptions}
+                  options={availableSpecialtyOptions}
                   placeholder="Select specialty populations..."
                   selected={specialty}
                 />
               </label>
-              <div className="grid gap-2">
-                <span className="text-sm font-medium">Price per week</span>
-                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
-                  <input
-                    className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm"
-                    defaultValue={minPrice ?? ""}
-                    min="0"
-                    name="minPrice"
-                    placeholder="$ Min"
-                    type="number"
-                  />
-                  <span className="text-sm text-muted-foreground">to</span>
-                  <input
-                    className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm"
-                    defaultValue={maxPrice ?? ""}
-                    min="0"
-                    name="maxPrice"
-                    placeholder="$ Max"
-                    type="number"
-                  />
+              {!isContinuedCare ? (
+                <div className="grid gap-2">
+                  <span className="text-sm font-medium">Price per week</span>
+                  <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+                    <input className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm" defaultValue={minPrice ?? ""} min="0" name="minPrice" placeholder="$ Min" type="number" />
+                    <span className="text-sm text-muted-foreground">to</span>
+                    <input className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm" defaultValue={maxPrice ?? ""} min="0" name="maxPrice" placeholder="$ Max" type="number" />
+                  </div>
                 </div>
-              </div>
+              ) : null}
               <label className="grid gap-2 text-sm font-medium">
                 Distance from search location
                 <select
@@ -189,27 +220,39 @@ export function PublicSearchHeader({
                 Average Program Duration
                 <select className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm" defaultValue={duration} name="duration">
                   <option value="">Select duration...</option>
-                  {averageLengthOptions.map((option) => (
+                  {durationOptions.map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>
                   ))}
                 </select>
               </label>
+              {isContinuedCare ? (
+                <>
+                  <label className="grid gap-2 text-sm font-medium">
+                    Levels of Care
+                    <MultiSelectDropdown name="levelOfCare" options={availableLevelOfCareOptions} placeholder="Select levels of care..." selected={levelsOfCare} />
+                  </label>
+                  <label className="grid gap-2 text-sm font-medium">
+                    Clinical Focus
+                    <MultiSelectDropdown name="clinicalFocus" options={availableClinicalFocusOptions} placeholder="Select clinical focus..." selected={clinicalFocus} />
+                  </label>
+                  <label className="grid gap-2 text-sm font-medium">
+                    Insurance / Payment Accepted
+                    <MultiSelectDropdown name="insurance" options={availableInsuranceOptions} placeholder="Select insurance or payment..." selected={insurance} />
+                  </label>
+                </>
+              ) : (
+                <label className="grid gap-2 text-sm font-medium">
+                  Amenities
+                  <MultiSelectDropdown name="amenity" options={amenityOptions} placeholder="Select amenities..." selected={amenities} />
+                </label>
+              )}
               <label className="grid gap-2 text-sm font-medium">
-                Specialties / Amenities
-                <MultiSelectDropdown
-                  name="amenity"
-                  options={amenityOptions}
-                  placeholder="Select amenities..."
-                  selected={amenities}
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-medium">
-                Restricted Medications
+                MAT Medications Accepted
                 <MultiSelectDropdown
                   name="mat"
-                  options={matOptions}
+                  options={availableMatOptions}
                   placeholder="Select medications..."
                   selected={mat}
                 />
@@ -225,7 +268,7 @@ export function PublicSearchHeader({
                   type="checkbox"
                   value="available"
                 />
-                Available now
+                {isContinuedCare ? "Accepting new patients" : "Available now"}
               </label>
               <Link
                 className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold text-muted-foreground"

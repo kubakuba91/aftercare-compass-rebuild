@@ -107,7 +107,7 @@ function ContactForm({
         <h2 className="font-semibold">Contact this program</h2>
       </div>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">
-        Send a contact request to the provider. This creates an internal lead for their team.
+        Send a contact request to the provider.
       </p>
       {notice ? (
         <div className="ac-panel-card mt-4 p-3 text-sm font-semibold">
@@ -312,7 +312,7 @@ function ClaimProfileCard({
         <h2 className="font-semibold">Claim this profile</h2>
       </div>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">
-        Request access if you manage this home or program. A system admin will verify the relationship before transferring the listing.
+        Request access if you manage this home or program.
       </p>
       {statusMessage ? (
         <div className={`mt-4 rounded-md border p-3 text-sm font-semibold ${statusMessage.tone}`}>
@@ -541,14 +541,6 @@ export default async function PublicProfilePage({
                   profileId={profile.id}
                   programName={profile.programName}
                 />
-                {profile.ownershipStatus !== ProfileOwnershipStatus.claimed ? (
-                  <Link
-                    className="focus-ring inline-flex min-h-10 items-center rounded-full border border-border bg-white px-4 text-sm font-semibold shadow-sm transition hover:bg-surface-secondary"
-                    href={`/profiles/${profile.slug}?claim=open#claim`}
-                  >
-                    {profile.ownershipStatus === ProfileOwnershipStatus.claim_pending ? "View claim status" : "Claim this profile"}
-                  </Link>
-                ) : null}
               </div>
               {priceLabel || moveInCostLabel ? (
                 <div className="shrink-0 text-right">

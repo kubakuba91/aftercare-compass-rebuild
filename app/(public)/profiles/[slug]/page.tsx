@@ -24,6 +24,30 @@ function listOrFallback(values: string[], fallback = "Not listed") {
   return values.length ? values.join(", ") : fallback;
 }
 
+function populationsServed(values: string[], legacyValue: string | null) {
+  if (values.length) {
+    return values;
+  }
+
+  if (legacyValue === "men") {
+    return ["Men"];
+  }
+
+  if (legacyValue === "women") {
+    return ["Women"];
+  }
+
+  if (legacyValue === "lgbtq") {
+    return ["LGBTQ+"];
+  }
+
+  if (legacyValue === "both") {
+    return ["Men", "Women"];
+  }
+
+  return [];
+}
+
 function availabilityText(profile: {
   type: string;
   bedsAvailable: number | null;
@@ -425,6 +449,7 @@ export default async function PublicProfilePage({
   const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
   const priceLabel = formatPricePerWeek(profile.pricePerWeek);
   const moveInCostLabel = formatMoveInCost(profile.moveInCost);
+  const servedPopulations = populationsServed(profile.populationServedOptions, profile.populationServed);
   const admissionsPhone = profile.admissionsContactPhone?.trim() ?? "";
   const isReferent = appUser?.role.startsWith("referent") ?? false;
   const isAftercareUser = appUser?.role.startsWith("aftercare") ?? false;
@@ -517,6 +542,17 @@ export default async function PublicProfilePage({
               <MapPin size={16} />
               {publicLocation || "Location not listed"} · Exact address is private
             </p>
+            {servedPopulations.length ? (
+              <section aria-labelledby="populations-served-heading" className="mt-4 flex flex-wrap items-center gap-2">
+                <h2 className="mr-1 flex items-center gap-2 text-sm font-semibold" id="populations-served-heading">
+                  <Users aria-hidden="true" className="text-primary" size={17} />
+                  Populations served
+                </h2>
+                {servedPopulations.map((population) => (
+                  <Badge key={population}>{population}</Badge>
+                ))}
+              </section>
+            ) : null}
             {admissionsPhone ? (
               <div className="mt-5 flex flex-col gap-4 rounded-[1.5rem] border border-border bg-surface p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">

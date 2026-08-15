@@ -8,6 +8,7 @@ import { notifyNewPublicLead, notifyNewReferral, notifyProfileClaimSubmitted } f
 import { canReceiveDirectReferrals, canSubmitReferrals } from "@/lib/feature-gates";
 import { hasHumanTrapValue } from "@/lib/form-utils";
 import { prisma } from "@/lib/prisma";
+import { findClaimOutreachByToken, normalizeOutreachEmail } from "@/lib/profile-claim-outreach";
 import { publicLeadSchema } from "@/lib/validations/lead";
 import { profileClaimRequestSchema } from "@/lib/validations/profile-claim";
 import { forbiddenDirectIdentifierFields, referralSchema } from "@/lib/validations/referral";
@@ -178,7 +179,8 @@ export async function createProfileClaimRequest(formData: FormData) {
     claimantRole: formData.get("claimantRole"),
     claimantOrganization: formData.get("claimantOrganization"),
     relationshipToProgram: formData.get("relationshipToProgram"),
-    notes: formData.get("notes") || undefined
+    notes: formData.get("notes") || undefined,
+    claimOutreachToken: formData.get("claimOutreachToken") || undefined
   });
   const slug = String(formData.get("slug") || "");
 
@@ -248,6 +250,16 @@ export async function createProfileClaimRequest(formData: FormData) {
     profile.type === "sober_living"
       ? OrganizationType.aftercare_sober_living
       : OrganizationType.aftercare_continued_care;
+  const claimOutreach = parsed.data.claimOutreachToken
+    ? await findClaimOutreachByToken(parsed.data.claimOutreachToken, profile.id)
+    : null;
+
+  if (parsed.data.claimOutreachToken && !claimOutreach) {
+    redirect(`/profiles/${parsed.data.slug}?claim=invite_invalid`);
+  }
+  if (claimOutreach && normalizeOutreachEmail(parsed.data.claimantEmail) !== claimOutreach.recipientEmail) {
+    redirect(`/profiles/${parsed.data.slug}?claimToken=${encodeURIComponent(parsed.data.claimOutreachToken!)}&claim=invite_email#claim`);
+  }
 
   if (!appUser.orgId || !appUser.organization) {
     const organization = await prisma.organization.create({
@@ -317,6 +329,18 @@ export async function createProfileClaimRequest(formData: FormData) {
         ownershipStatus: "claim_pending"
       }
     });
+
+    if (claimOutreach) {
+      await tx.profileClaimOutreach.update({
+        where: { id: claimOutreach.id },
+        data: {
+          status: "claim_completed",
+          claimStartedAt: claimOutreach.claimStartedAt || new Date(),
+          claimCompletedAt: new Date(),
+          claimRequestId: createdClaim.id
+        }
+      });
+    }
 
     return createdClaim;
   });

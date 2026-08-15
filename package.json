@@ -31,6 +31,7 @@
     "react-hook-form": "latest",
     "resend": "latest",
     "stripe": "latest",
+    "svix": "^1.99.1",
     "tailwind-merge": "latest",
     "zod": "latest",
     "zustand": "latest"

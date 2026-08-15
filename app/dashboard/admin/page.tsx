@@ -19,6 +19,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { TransientToast } from "@/components/ui/transient-toast";
 import {
   RowActionsMenu,
   RowActionsMenuButton,
@@ -30,7 +31,7 @@ import { getProtectedAppUser } from "@/lib/protected-routing";
 import { formatDate, formatValue as formatDisplayValue } from "@/lib/format-utils";
 import { getProfileOptionGroups, profileOptionCategories, profileOptionCategoryKeys } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
-import { addProfileOption, reviewOnboardingSubmission, reviewProfileClaimRequest, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus, updateProfileOptionVisibility } from "./actions";
+import { addProfileOption, reviewOnboardingSubmission, reviewProfileClaimRequest, sendProfileClaimOutreach, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus, updateProfileOptionVisibility } from "./actions";
 import { DataSettingsCategoryTabs } from "./data-settings-category-tabs";
 
 export const dynamic = "force-dynamic";
@@ -373,6 +374,8 @@ export default async function AdminDashboardPage({
         type: true,
         status: true,
         ownershipStatus: true,
+        admissionsContactEmail: true,
+        lastClaimOutreachAt: true,
         verificationTier: true,
         publicCity: true,
         publicState: true,
@@ -625,6 +628,7 @@ export default async function AdminDashboardPage({
 
   return (
     <main className="shell py-8">
+      {reviewMessage ? <TransientToast message={reviewMessage} /> : null}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="flex items-start gap-4">
           <Image
@@ -913,7 +917,6 @@ export default async function AdminDashboardPage({
                 </form>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {reviewMessage ? <Badge tone="success">{reviewMessage}</Badge> : null}
                 <details className="group relative">
                   <summary className="focus-ring inline-flex min-h-10 cursor-pointer list-none items-center justify-center gap-2 rounded-full border border-border bg-white px-4 text-sm font-semibold shadow-sm transition hover:border-primary/40">
                     <PlusCircle size={16} />
@@ -959,6 +962,7 @@ export default async function AdminDashboardPage({
                   <th className="py-3 pr-4">Status</th>
                   <th className="py-3 pr-4">Availability</th>
                   <th className="py-3 pr-4">Requests</th>
+                  <th className="py-3 pr-4">Last contacted</th>
                   <th className="py-3 pr-4">Updated</th>
                   <th className="py-3 text-right">Actions</th>
                 </tr>
@@ -991,6 +995,9 @@ export default async function AdminDashboardPage({
                     </td>
                     <td className="py-4 pr-4">{availabilityText(profile)}</td>
                     <td className="py-4 pr-4">{profile._count.referrals + profile._count.leads}</td>
+                    <td className="py-4 pr-4 text-muted-foreground">
+                      {profile.lastClaimOutreachAt ? formatDate(profile.lastClaimOutreachAt) : "Never"}
+                    </td>
                     <td className="py-4 pr-4 text-muted-foreground">{formatDate(profile.updatedAt)}</td>
                     <td className="py-4 text-right">
                       <RowActionsMenu label={`${profile.programName} actions`}>
@@ -1009,6 +1016,29 @@ export default async function AdminDashboardPage({
                         >
                           Edit listing
                         </RowActionsMenuLink>
+                        {profile.ownershipStatus === ProfileOwnershipStatus.unclaimed ? (
+                          <>
+                            <RowActionsMenuDivider />
+                            {profile.admissionsContactEmail ? (
+                              <form action={sendProfileClaimOutreach}>
+                                <input name="profileId" type="hidden" value={profile.id} />
+                                <ConfirmSubmitButton
+                                  className="block w-full rounded-md px-3 py-2 text-left text-sm transition hover:bg-surface-secondary"
+                                  message={`Send a claim invitation to ${profile.admissionsContactEmail}?`}
+                                >
+                                  <span className="font-semibold">Send claim invitation</span>
+                                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                                    Email {profile.admissionsContactEmail}. Limited to once every 14 days.
+                                  </span>
+                                </ConfirmSubmitButton>
+                              </form>
+                            ) : (
+                              <p className="px-3 py-2 text-xs text-muted-foreground">
+                                Add an intake contact email to send a claim invitation.
+                              </p>
+                            )}
+                          </>
+                        ) : null}
                         <RowActionsMenuDivider />
                         {profile.status === ProfileStatus.unpublished ? (
                           <form action={updateAdminProfileStatus}>
@@ -1042,7 +1072,7 @@ export default async function AdminDashboardPage({
                   </tr>
                 )) : (
                   <tr>
-                    <td className="py-8 text-center text-sm text-muted-foreground" colSpan={9}>
+                    <td className="py-8 text-center text-sm text-muted-foreground" colSpan={10}>
                       No homes or programs found.
                     </td>
                   </tr>
@@ -1068,7 +1098,6 @@ export default async function AdminDashboardPage({
                   Disabled values stay on existing profiles but stop showing as new choices.
                 </p>
               </div>
-              {reviewMessage ? <Badge tone="success">{reviewMessage}</Badge> : null}
             </div>
             <div className="ac-category-tabs-row mt-6">
               <Link
@@ -1294,11 +1323,6 @@ export default async function AdminDashboardPage({
             </div>
             <Badge tone="warning">{pendingClaimCount} pending</Badge>
           </div>
-          {reviewMessage ? (
-            <p className="ac-panel-card mt-4 p-3 text-sm font-semibold text-primary">
-              {reviewMessage}
-            </p>
-          ) : null}
           <div className="mt-5 overflow-x-auto">
             <table className="w-full min-w-[1080px] text-left text-sm">
               <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
@@ -1416,11 +1440,6 @@ export default async function AdminDashboardPage({
               </div>
               <Badge tone="warning">{pendingProfileVerificationCount} pending</Badge>
             </div>
-            {reviewMessage ? (
-              <p className="ac-panel-card mt-4 p-3 text-sm font-semibold text-primary">
-                {reviewMessage}
-              </p>
-            ) : null}
             <div className="mt-5 overflow-x-auto">
               <table className="w-full min-w-[980px] text-left text-sm">
                 <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">

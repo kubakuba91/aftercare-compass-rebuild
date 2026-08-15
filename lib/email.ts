@@ -4,6 +4,7 @@ type EmailInput = {
   html: string;
   text: string;
   attachments?: EmailAttachment[];
+  headers?: Record<string, string>;
 };
 
 type EmailAttachment = {
@@ -137,6 +138,9 @@ async function sendMailgunEmail(input: EmailInput & { to: string[] }) {
       attachment.filename
     );
   });
+  Object.entries(input.headers || {}).forEach(([name, value]) => {
+    formData.set(`h:${name}`, value);
+  });
 
   try {
     const response = await fetch(`${mailgunBaseUrl}/${mailgunDomain}/messages`, {
@@ -150,13 +154,14 @@ async function sendMailgunEmail(input: EmailInput & { to: string[] }) {
     if (!response.ok) {
       const errorBody = await response.text();
       console.error("Mailgun email failed", response.status, errorBody);
-      return { status: "failed" };
+      return { status: "failed" as const, provider: "mailgun" as const };
     }
 
-    return { status: "sent" };
+    const payload = await response.json().catch(() => null) as { id?: string } | null;
+    return { status: "sent" as const, provider: "mailgun" as const, messageId: payload?.id || null };
   } catch (error) {
     console.error("Mailgun email failed", error);
-    return { status: "failed" };
+    return { status: "failed" as const, provider: "mailgun" as const };
   }
 }
 
@@ -178,6 +183,7 @@ async function sendResendEmail(input: EmailInput & { to: string[] }) {
         subject: input.subject,
         html: input.html,
         text: input.text,
+        headers: input.headers,
         attachments: input.attachments?.map((attachment) => ({
           filename: attachment.filename,
           content: Buffer.from(attachment.content).toString("base64"),
@@ -189,12 +195,13 @@ async function sendResendEmail(input: EmailInput & { to: string[] }) {
     if (!response.ok) {
       const errorBody = await response.text();
       console.error("Resend email failed", response.status, errorBody);
-      return { status: "failed" };
+      return { status: "failed" as const, provider: "resend" as const };
     }
 
-    return { status: "sent" };
+    const payload = await response.json().catch(() => null) as { id?: string } | null;
+    return { status: "sent" as const, provider: "resend" as const, messageId: payload?.id || null };
   } catch (error) {
     console.error("Resend email failed", error);
-    return { status: "failed" };
+    return { status: "failed" as const, provider: "resend" as const };
   }
 }

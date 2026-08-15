@@ -24,6 +24,14 @@ import { sanitizeRichText } from "@/lib/rich-text";
 import { valuesFromForm } from "@/lib/sober-living-onboarding";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { slugify } from "@/lib/slug";
+import {
+  claimOutreachCooldownDays,
+  claimOutreachExpirationDays,
+  createClaimOutreachToken,
+  hashClaimOutreachToken,
+  normalizeOutreachEmail,
+  sendClaimOutreachEmail
+} from "@/lib/profile-claim-outreach";
 
 function adminReviewHref(message: string) {
   const params = new URLSearchParams({
@@ -372,6 +380,131 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
   revalidatePath("/search");
   revalidatePath(`/profiles/${profile.slug}`);
   redirect(adminProfileHref(`${profile.programName} was added as an unclaimed ${profileLabelForMessage(type)} profile.${imageUploadMessage}`));
+}
+
+export async function sendProfileClaimOutreach(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+  if (appUser.role !== Role.system_admin) redirect("/dashboard");
+
+  const profileId = String(formData.get("profileId") || "");
+  const profile = await prisma.aftercareProfile.findUnique({
+    where: { id: profileId },
+    select: {
+      id: true,
+      programName: true,
+      publicCity: true,
+      publicState: true,
+      ownershipStatus: true,
+      lastClaimOutreachAt: true,
+      admissionsContactEmail: true,
+      intakeContactName: true
+    }
+  });
+
+  if (!profile || profile.ownershipStatus !== ProfileOwnershipStatus.unclaimed) {
+    redirect(adminProfileHref("Claim invitations are available only for unclaimed profiles."));
+  }
+
+  const recipientEmail = normalizeOutreachEmail(profile.admissionsContactEmail || "");
+  if (!recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+    redirect(adminProfileHref("Add a valid intake contact email before sending a claim invitation."));
+  }
+
+  if (!process.env.COMPANY_POSTAL_ADDRESS?.trim()) {
+    redirect(adminProfileHref("Set COMPANY_POSTAL_ADDRESS before sending commercial claim invitations."));
+  }
+
+  const suppression = await prisma.emailSuppression.findUnique({
+    where: { email: recipientEmail },
+    select: { id: true }
+  });
+
+  if (suppression) {
+    redirect(adminProfileHref(`${recipientEmail} has unsubscribed from profile-claim invitations.`));
+  }
+  const cooldownCutoff = new Date(Date.now() - claimOutreachCooldownDays * 24 * 60 * 60 * 1000);
+  const reservedAt = new Date();
+  const reservation = await prisma.aftercareProfile.updateMany({
+    where: {
+      id: profile.id,
+      OR: [{ lastClaimOutreachAt: null }, { lastClaimOutreachAt: { lte: cooldownCutoff } }]
+    },
+    data: { lastClaimOutreachAt: reservedAt }
+  });
+  if (!reservation.count) {
+    const availableAt = new Date((profile.lastClaimOutreachAt || reservedAt).getTime() + claimOutreachCooldownDays * 24 * 60 * 60 * 1000);
+    redirect(adminProfileHref(`A claim invitation was already sent recently. Try again after ${availableAt.toLocaleDateString("en-US")}.`));
+  }
+
+  const token = createClaimOutreachToken();
+  const outreach = await prisma.profileClaimOutreach.create({
+    data: {
+      profileId: profile.id,
+      sentByUserId: appUser.id,
+      recipientEmail,
+      recipientName: profile.intakeContactName,
+      tokenHash: hashClaimOutreachToken(token),
+      expiresAt: new Date(Date.now() + claimOutreachExpirationDays * 24 * 60 * 60 * 1000)
+    }
+  }).catch(async () => {
+    await prisma.aftercareProfile.updateMany({
+      where: { id: profile.id, lastClaimOutreachAt: reservedAt },
+      data: { lastClaimOutreachAt: profile.lastClaimOutreachAt }
+    });
+    return null;
+  });
+  if (!outreach) {
+    redirect(adminProfileHref("The claim invitation could not be prepared. Please try again."));
+  }
+  const result = await sendClaimOutreachEmail({
+    outreachId: outreach.id,
+    token,
+    recipientEmail,
+    recipientName: profile.intakeContactName,
+    programName: profile.programName,
+    city: profile.publicCity,
+    state: profile.publicState
+  });
+  const sent = result.status === "sent";
+  const reason = "reason" in result ? result.reason : null;
+
+  await prisma.$transaction([
+    prisma.profileClaimOutreach.update({
+      where: { id: outreach.id },
+      data: {
+        status: sent ? "sent" : result.status === "skipped" ? "skipped" : "failed",
+        provider: "provider" in result ? result.provider : null,
+        providerMessageId: "messageId" in result ? result.messageId : null,
+        sentAt: sent ? new Date() : null,
+        errorMessage: sent ? null : reason || "Email provider rejected the message."
+      }
+    }),
+    prisma.adminAuditLog.create({
+      data: {
+        actorUserId: appUser.id,
+        action: sent ? "profile_claim_outreach_sent" : "profile_claim_outreach_failed",
+        entityType: "ProfileClaimOutreach",
+        entityId: outreach.id,
+        metadata: {
+          profileId: profile.id,
+          recipientEmail,
+          provider: "provider" in result ? result.provider : null,
+          status: result.status
+        }
+      }
+    }),
+    ...(!sent
+      ? [prisma.aftercareProfile.updateMany({
+          where: { id: profile.id, lastClaimOutreachAt: reservedAt },
+          data: { lastClaimOutreachAt: profile.lastClaimOutreachAt }
+        })]
+      : [])
+  ]);
+
+  revalidatePath("/dashboard/admin");
+  redirect(adminProfileHref(sent
+    ? `Claim invitation sent to ${recipientEmail}.`
+    : "The claim invitation could not be sent. Check the email configuration and try again."));
 }
 
 function profileLabelForMessage(type: ProfileType) {

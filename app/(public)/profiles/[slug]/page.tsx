@@ -6,6 +6,7 @@ import { BadgeCheck, CheckCircle2, HandHeart, Mail, MapPin, Phone, PillBottle, S
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { ExpandableRichText } from "@/components/public/expandable-rich-text";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
+import { ClaimOutreachStartTracker } from "@/components/public/claim-outreach-start-tracker";
 import { ProfileOwnershipBadge } from "@/components/public/profile-ownership-badge";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
@@ -14,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { getClerkSessionUserId, getCurrentAppUser, getRequiredClerkIdentity } from "@/lib/current-user";
 import { canDisplayVerifiedBadge, canReceiveDirectReferrals, canSubmitReferrals, canUseLiveAvailability } from "@/lib/feature-gates";
 import { formatPhoneForDisplay, normalizePhoneNumber } from "@/lib/phone";
+import { findClaimOutreachByToken } from "@/lib/profile-claim-outreach";
 import { prisma } from "@/lib/prisma";
 import { richTextHtml } from "@/lib/rich-text";
 import { createProfileClaimRequest, createProfileReferral, createPublicProfileLead } from "./actions";
@@ -155,13 +157,17 @@ function PlaceClientForm({
   referralStatus,
   userName,
   userEmail,
-  organizationName
+  organizationName,
+  claimOutreachToken,
+  invitedEmail
 }: {
   profile: { id: string; slug: string };
   referralStatus?: string;
   userName: string;
   userEmail: string;
   organizationName: string;
+  claimOutreachToken?: string;
+  invitedEmail?: string;
 }) {
   return (
     <Card className="h-fit">
@@ -271,7 +277,9 @@ function ClaimProfileCard({
   canClaim,
   userName,
   userEmail,
-  organizationName
+  organizationName,
+  claimOutreachToken,
+  invitedEmail
 }: {
   profile: { id: string; slug: string; programName: string; ownershipStatus: ProfileOwnershipStatus };
   claimStatus?: string;
@@ -280,6 +288,8 @@ function ClaimProfileCard({
   userName: string;
   userEmail: string;
   organizationName: string;
+  claimOutreachToken?: string;
+  invitedEmail?: string;
 }) {
   const claimMessages: Record<string, { tone: string; message: string }> = {
     submitted: { tone: "border-emerald-200 bg-emerald-50 text-emerald-800", message: "Claim request submitted. Our team will review it before transferring access." },
@@ -288,9 +298,12 @@ function ClaimProfileCard({
     invalid: { tone: "border-accent/30 bg-accent/10", message: "Please complete your role, organization, and relationship to this program before submitting." },
     provider_required: { tone: "border-accent/30 bg-accent/10", message: "Use an aftercare provider account to claim this profile." },
     provider_type: { tone: "border-accent/30 bg-accent/10", message: "This profile type does not match your provider account." },
-    unavailable: { tone: "border-accent/30 bg-accent/10", message: "This profile has already been claimed." }
+    unavailable: { tone: "border-accent/30 bg-accent/10", message: "This profile has already been claimed." },
+    invite_invalid: { tone: "border-accent/30 bg-accent/10", message: "This claim invitation is invalid or expired. You can still use the standard claim form." },
+    invite_email: { tone: "border-accent/30 bg-accent/10", message: "Use the invited work email shown in the form to submit this claim." }
   };
   const statusMessage = claimStatus ? claimMessages[claimStatus] : null;
+  const claimReturnPath = `/profiles/${profile.slug}${claimOutreachToken ? `?claimToken=${encodeURIComponent(claimOutreachToken)}` : ""}#claim`;
 
   return (
     <Card className="h-fit">
@@ -313,21 +326,23 @@ function ClaimProfileCard({
         <div className="mt-5 flex flex-wrap gap-3">
           <Link
             className="focus-ring inline-flex min-h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-            href={`/sign-in?redirect_url=${encodeURIComponent(`/profiles/${profile.slug}`)}`}
+            href={`/sign-in?redirect_url=${encodeURIComponent(claimReturnPath)}`}
           >
             Sign in to claim
           </Link>
           <Link
             className="focus-ring inline-flex min-h-10 items-center rounded-md border border-border bg-white px-4 text-sm font-semibold"
-            href={`/sign-up?redirect_url=${encodeURIComponent(`/profiles/${profile.slug}`)}`}
+            href={`/sign-up?redirect_url=${encodeURIComponent(claimReturnPath)}`}
           >
             Create account
           </Link>
         </div>
       ) : canClaim ? (
         <form action={createProfileClaimRequest} className="mt-5 grid gap-3">
+          {claimOutreachToken ? <ClaimOutreachStartTracker token={claimOutreachToken} /> : null}
           <input name="profileId" type="hidden" value={profile.id} />
           <input name="slug" type="hidden" value={profile.slug} />
+          {claimOutreachToken ? <input name="claimOutreachToken" type="hidden" value={claimOutreachToken} /> : null}
           <input aria-hidden="true" autoComplete="off" className="hidden" name="companyWebsite" tabIndex={-1} />
           <label className="grid gap-2 text-sm font-medium">
             Your name
@@ -335,7 +350,7 @@ function ClaimProfileCard({
           </label>
           <label className="grid gap-2 text-sm font-medium">
             Work email
-            <input className="min-h-10 rounded-md border border-border px-3" defaultValue={userEmail} name="claimantEmail" required type="email" />
+            <input className="min-h-10 rounded-md border border-border px-3" defaultValue={invitedEmail || userEmail} name="claimantEmail" readOnly={Boolean(invitedEmail)} required type="email" />
           </label>
           <label className="grid gap-2 text-sm font-medium">
             Phone
@@ -375,7 +390,7 @@ export default async function PublicProfilePage({
   searchParams
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ lead?: string; referral?: string; preview?: string; claim?: string }>;
+  searchParams: Promise<{ lead?: string; referral?: string; preview?: string; claim?: string; claimToken?: string }>;
 }) {
   const [{ slug }, query, appUser, clerkUserId] = await Promise.all([
     params,
@@ -442,6 +457,11 @@ export default async function PublicProfilePage({
   if (profile.status !== "published" && !canPreviewDraft) {
     notFound();
   }
+
+  const claimOutreach = query.claimToken
+    ? await findClaimOutreachByToken(query.claimToken, profile.id)
+    : null;
+  const claimStatus = query.claim || (query.claimToken && !claimOutreach ? "invite_invalid" : undefined);
 
   const isSoberLiving = profile.type === "sober_living";
   const profileShowsLiveAvailability = !isSoberLiving || canUseLiveAvailability(profile.organization, profile);
@@ -891,7 +911,9 @@ export default async function PublicProfilePage({
         {profile.ownershipStatus !== ProfileOwnershipStatus.claimed ? (
           <ClaimProfileCard
             canClaim={canClaimProfile}
-            claimStatus={query.claim}
+            claimStatus={claimStatus}
+            claimOutreachToken={claimOutreach ? query.claimToken : undefined}
+            invitedEmail={claimOutreach?.recipientEmail}
             isSignedIn={Boolean(clerkUserId)}
             organizationName={appUser?.organization?.name || ""}
             profile={profile}

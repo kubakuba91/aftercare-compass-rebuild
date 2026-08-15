@@ -154,6 +154,7 @@ model User {
   reviewedProfileClaimRequests  ProfileClaimRequest[]       @relation("ProfileClaimReviewer")
   adminAuditLogs                AdminAuditLog[]             @relation("AdminAuditLogActor")
   providerImportBatches        ProviderImportBatch[]        @relation("ProviderImportBatchActor")
+  sentProfileClaimOutreaches   ProfileClaimOutreach[]        @relation("ProfileClaimOutreachSender")
 
   @@index([orgId])
 }
@@ -265,6 +266,7 @@ model AftercareProfile {
   claimedByUserId                String?
   seededByUserId                 String?
   importMatchKey                 String?                @unique
+  lastClaimOutreachAt            DateTime?
   streetAddress                  String?
   city                           String
   state                          String
@@ -358,6 +360,7 @@ model AftercareProfile {
   phoneScreeningAppointments PhoneScreeningAppointment[]
   adminReviews               AdminReview[]
   claimRequests              ProfileClaimRequest[]
+  claimOutreaches            ProfileClaimOutreach[]
   managerAssignments         AftercareProfileManagerAssignment[]
   inviteAssignments          OrganizationInviteProfileAssignment[]
   continuedCareAssociations  ProfileAssociation[]        @relation("SoberLivingAssociations")
@@ -476,6 +479,46 @@ model ProfileClaimRequest {
   @@index([claimantUserId])
   @@index([claimantEmail])
   @@index([status, submittedAt])
+}
+
+model ProfileClaimOutreach {
+  id                 String           @id @default(cuid())
+  profileId          String
+  profile            AftercareProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  sentByUserId       String?
+  sentByUser         User?            @relation("ProfileClaimOutreachSender", fields: [sentByUserId], references: [id], onDelete: SetNull)
+  recipientEmail     String
+  recipientName      String?
+  tokenHash          String           @unique
+  status             String           @default("pending")
+  provider           String?
+  providerMessageId  String?          @unique
+  errorMessage       String?
+  expiresAt          DateTime
+  sentAt             DateTime?
+  deliveredAt        DateTime?
+  clickedAt          DateTime?
+  claimStartedAt     DateTime?
+  claimCompletedAt   DateTime?
+  claimRequestId     String?
+  unsubscribedAt     DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([profileId, createdAt])
+  @@index([recipientEmail, createdAt])
+  @@index([status, createdAt])
+}
+
+model EmailSuppression {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  reason            String   @default("unsubscribe")
+  sourceOutreachId  String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([createdAt])
 }
 
 model AdminAuditLog {

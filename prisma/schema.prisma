@@ -153,6 +153,7 @@ model User {
   submittedProfileClaimRequests ProfileClaimRequest[]       @relation("ProfileClaimRequester")
   reviewedProfileClaimRequests  ProfileClaimRequest[]       @relation("ProfileClaimReviewer")
   adminAuditLogs                AdminAuditLog[]             @relation("AdminAuditLogActor")
+  providerImportBatches        ProviderImportBatch[]        @relation("ProviderImportBatchActor")
 
   @@index([orgId])
 }
@@ -263,6 +264,7 @@ model AftercareProfile {
   claimedAt                      DateTime?
   claimedByUserId                String?
   seededByUserId                 String?
+  importMatchKey                 String?                @unique
   streetAddress                  String?
   city                           String
   state                          String
@@ -366,6 +368,48 @@ model AftercareProfile {
   @@index([publicCity, publicState])
   @@index([verificationTier])
   @@index([ownershipStatus])
+}
+
+model ProviderImportBatch {
+  id                       String              @id @default(cuid())
+  actorUserId              String?
+  actorUser                User?               @relation("ProviderImportBatchActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  sourceFileName           String
+  status                   String              @default("validated")
+  totalRows                Int                 @default(0)
+  newOrganizationCount     Int                 @default(0)
+  newLocationCount         Int                 @default(0)
+  matchedLocationCount     Int                 @default(0)
+  rejectedRowCount         Int                 @default(0)
+  committedAt              DateTime?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  rows                     ProviderImportRow[]
+
+  @@index([createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([status, createdAt])
+}
+
+model ProviderImportRow {
+  id                 String              @id @default(cuid())
+  importBatchId      String
+  importBatch        ProviderImportBatch @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+  rowNumber          Int
+  rawData            Json
+  normalizedData     Json?
+  previewAction      String
+  status             String              @default("validated")
+  errorReasons       String[]            @default([])
+  organizationId     String?
+  profileId          String?
+  resultMessage      String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@unique([importBatchId, rowNumber])
+  @@index([importBatchId, status])
+  @@index([profileId])
 }
 
 model AftercareProfileManagerAssignment {

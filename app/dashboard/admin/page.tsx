@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { Building2, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, FileCheck2, Flag, Handshake, Home, Inbox, ListChecks, PlusCircle, Search } from "lucide-react";
+import { Building2, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, FileCheck2, FileUp, Flag, Handshake, Home, Inbox, ListChecks, PlusCircle, Search } from "lucide-react";
 import {
   AdminReviewStatus,
   AdminReviewSubjectType,
@@ -878,6 +878,11 @@ export default async function AdminDashboardPage({
                     </Link>
                     <Link className="rounded-sm px-3 py-2 transition hover:bg-surface-secondary" href="/dashboard/admin/profiles/new?type=continued_care">
                       Continued Care Program
+                    </Link>
+                    <div className="my-1 border-t border-border" />
+                    <Link className="flex items-center gap-2 rounded-sm px-3 py-2 transition hover:bg-surface-secondary" href="/dashboard/admin/imports">
+                      <FileUp size={16} />
+                      Bulk upload CSV
                     </Link>
                   </div>
                 </details>

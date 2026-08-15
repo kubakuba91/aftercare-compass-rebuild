@@ -8,6 +8,23 @@ import { maxContinuedCareStep } from "@/lib/continued-care-onboarding";
 import { maxReferentStep } from "@/lib/referent-onboarding";
 import { maxSoberLivingStep } from "@/lib/sober-living-onboarding";
 
+async function pendingProfileClaimPath(userId: string) {
+  const pendingClaim = await prisma.profileClaimRequest.findFirst({
+    where: {
+      claimantUserId: userId,
+      status: "pending"
+    },
+    orderBy: { submittedAt: "desc" },
+    select: {
+      profile: {
+        select: { slug: true }
+      }
+    }
+  });
+
+  return pendingClaim ? `/profiles/${pendingClaim.profile.slug}?claim=pending` : null;
+}
+
 export async function getProtectedAppUser(_returnTo: string) {
   if (!hasDatabaseConfig()) {
     redirect("/setup?missing=database");
@@ -111,6 +128,12 @@ export async function getAuthenticatedLandingPath() {
   });
 
   if (profiles.length === 0) {
+    const pendingClaimPath = await pendingProfileClaimPath(appUser.id);
+
+    if (pendingClaimPath) {
+      return pendingClaimPath;
+    }
+
     const profileType =
       appUser.organization?.type === OrganizationType.aftercare_continued_care
         ? "continued_care"
@@ -174,7 +197,13 @@ export async function getAftercareDashboardUser(returnTo = "/dashboard/aftercare
   return appUser as typeof appUser & { orgId: string };
 }
 
-export async function redirectIncompleteAftercareOnboarding(orgId: string) {
+export async function redirectIncompleteAftercareOnboarding({
+  orgId,
+  userId
+}: {
+  orgId: string;
+  userId: string;
+}) {
   const profiles = await prisma.aftercareProfile.findMany({
     where: { orgId },
     orderBy: { updatedAt: "desc" },
@@ -187,6 +216,12 @@ export async function redirectIncompleteAftercareOnboarding(orgId: string) {
   });
 
   if (profiles.length === 0) {
+    const pendingClaimPath = await pendingProfileClaimPath(userId);
+
+    if (pendingClaimPath) {
+      redirect(pendingClaimPath);
+    }
+
     const organization = await prisma.organization.findUnique({
       where: { id: orgId },
       select: { type: true }

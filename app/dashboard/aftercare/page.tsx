@@ -525,7 +525,10 @@ export default async function AftercareDashboardPage({
   }>;
 }) {
   const appUser = await getAftercareDashboardUser();
-  await redirectIncompleteAftercareOnboarding(appUser.orgId);
+  await redirectIncompleteAftercareOnboarding({
+    orgId: appUser.orgId,
+    userId: appUser.id
+  });
 
   const query = await searchParams;
   const { tab } = query;

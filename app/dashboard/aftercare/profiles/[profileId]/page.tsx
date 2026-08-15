@@ -186,7 +186,10 @@ export default async function AftercareProfileDetailPage({
   searchParams: Promise<{ message?: string }>;
 }) {
   const appUser = await getAftercareDashboardUser("/dashboard/aftercare");
-  await redirectIncompleteAftercareOnboarding(appUser.orgId);
+  await redirectIncompleteAftercareOnboarding({
+    orgId: appUser.orgId,
+    userId: appUser.id
+  });
 
   const [{ profileId }, query] = await Promise.all([params, searchParams]);
   const profile = await prisma.aftercareProfile.findFirst({

@@ -8,6 +8,7 @@ import {
   LeadStatus,
   OrganizationType,
   Prisma,
+  ProfileOwnershipStatus,
   ProfileStatus,
   ProfileType,
   ReferralStatus,
@@ -184,6 +185,8 @@ export default async function AdminDashboardPage({
     reviewMessage?: string | string[];
     organizationSearch?: string | string[];
     profileSearch?: string | string[];
+    profileOwnership?: string | string[];
+    profileOwnershipSort?: string | string[];
   }>;
 }) {
   const [query, appUser] = await Promise.all([
@@ -203,6 +206,23 @@ export default async function AdminDashboardPage({
   const organizationSearchLower = organizationSearchTerm.toLowerCase();
   const profileSearchValue = Array.isArray(query.profileSearch) ? query.profileSearch[0] : query.profileSearch;
   const profileSearchTerm = profileSearchValue?.trim() ?? "";
+  const profileOwnershipValue = Array.isArray(query.profileOwnership) ? query.profileOwnership[0] : query.profileOwnership;
+  const profileOwnership = Object.values(ProfileOwnershipStatus).includes(profileOwnershipValue as ProfileOwnershipStatus)
+    ? profileOwnershipValue as ProfileOwnershipStatus
+    : null;
+  const profileOwnershipSortValue = Array.isArray(query.profileOwnershipSort)
+    ? query.profileOwnershipSort[0]
+    : query.profileOwnershipSort;
+  const profileOwnershipSort = profileOwnershipSortValue === "asc" || profileOwnershipSortValue === "desc"
+    ? profileOwnershipSortValue
+    : null;
+  const nextProfileOwnershipSort = profileOwnershipSort === "asc" ? "desc" : "asc";
+  const ownershipSortParams = new URLSearchParams({ tab: "profiles", profileOwnershipSort: nextProfileOwnershipSort });
+  if (profileSearchTerm) ownershipSortParams.set("profileSearch", profileSearchTerm);
+  if (profileOwnership) ownershipSortParams.set("profileOwnership", profileOwnership);
+  const clearProfileSearchParams = new URLSearchParams({ tab: "profiles" });
+  if (profileOwnership) clearProfileSearchParams.set("profileOwnership", profileOwnership);
+  if (profileOwnershipSort) clearProfileSearchParams.set("profileOwnershipSort", profileOwnershipSort);
   const organizationSearchTypes = organizationSearchTerm
     ? [
         organizationSearchLower.includes("referent") ? OrganizationType.referent : null,
@@ -329,8 +349,9 @@ export default async function AdminDashboardPage({
       }
     }),
     prisma.aftercareProfile.findMany({
-      where: profileSearchTerm
-        ? {
+      where: {
+        ...(profileSearchTerm
+          ? {
             OR: [
               { programName: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } },
               { publicCity: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } },
@@ -338,8 +359,12 @@ export default async function AdminDashboardPage({
               { organization: { name: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } } }
             ]
           }
-        : undefined,
-      orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
+          : {}),
+        ...(profileOwnership ? { ownershipStatus: profileOwnership } : {})
+      },
+      orderBy: profileOwnershipSort
+        ? [{ ownershipStatus: profileOwnershipSort }, { programName: "asc" }]
+        : [{ status: "asc" }, { updatedAt: "desc" }],
       take: 75,
       select: {
         id: true,
@@ -347,6 +372,7 @@ export default async function AdminDashboardPage({
         programName: true,
         type: true,
         status: true,
+        ownershipStatus: true,
         verificationTier: true,
         publicCity: true,
         publicState: true,
@@ -841,6 +867,8 @@ export default async function AdminDashboardPage({
                 </div>
                 <form className="flex w-full items-center gap-2 lg:w-[420px]" method="get">
                   <input name="tab" type="hidden" value="profiles" />
+                  {profileOwnership ? <input name="profileOwnership" type="hidden" value={profileOwnership} /> : null}
+                  {profileOwnershipSort ? <input name="profileOwnershipSort" type="hidden" value={profileOwnershipSort} /> : null}
                   <label className="sr-only" htmlFor="profileSearch">Search homes and programs</label>
                   <div className="focus-within:ring-ring flex min-h-10 flex-1 items-center gap-2 rounded-full border border-border bg-white px-4 shadow-sm focus-within:ring-2">
                     <Search aria-hidden="true" className="shrink-0 text-muted-foreground" size={16} />
@@ -857,11 +885,31 @@ export default async function AdminDashboardPage({
                   {profileSearchTerm ? (
                     <Link
                       className="focus-ring inline-flex min-h-10 items-center justify-center rounded-full border border-border bg-white px-3 text-sm font-semibold shadow-sm"
-                      href="/dashboard/admin?tab=profiles"
+                      href={`/dashboard/admin?${clearProfileSearchParams.toString()}`}
                     >
                       Clear
                     </Link>
                   ) : null}
+                </form>
+                <form className="flex items-center gap-2" method="get">
+                  <input name="tab" type="hidden" value="profiles" />
+                  {profileSearchTerm ? <input name="profileSearch" type="hidden" value={profileSearchTerm} /> : null}
+                  {profileOwnershipSort ? <input name="profileOwnershipSort" type="hidden" value={profileOwnershipSort} /> : null}
+                  <label className="sr-only" htmlFor="profileOwnership">Filter by claim status</label>
+                  <select
+                    className="min-h-10 rounded-full border border-border bg-white px-3 text-sm font-semibold shadow-sm"
+                    defaultValue={profileOwnership || ""}
+                    id="profileOwnership"
+                    name="profileOwnership"
+                  >
+                    <option value="">All claim statuses</option>
+                    <option value={ProfileOwnershipStatus.claimed}>Claimed</option>
+                    <option value={ProfileOwnershipStatus.unclaimed}>Unclaimed</option>
+                    <option value={ProfileOwnershipStatus.claim_pending}>Claim pending</option>
+                  </select>
+                  <button className="focus-ring min-h-10 rounded-full border border-border bg-white px-3 text-sm font-semibold shadow-sm" type="submit">
+                    Apply
+                  </button>
                 </form>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -888,18 +936,26 @@ export default async function AdminDashboardPage({
                 </details>
               </div>
             </div>
-            {profileSearchTerm ? (
+            {profileSearchTerm || profileOwnership ? (
               <p className="mt-3 text-sm text-muted-foreground">
-                Showing {profiles.length} {profiles.length === 1 ? "result" : "results"} for &quot;{profileSearchTerm}&quot;.
+                Showing {profiles.length} {profiles.length === 1 ? "profile" : "profiles"}
+                {profileSearchTerm ? <> matching &quot;{profileSearchTerm}&quot;</> : null}
+                {profileOwnership ? <> with status {formatValue(profileOwnership)}</> : null}.
               </p>
             ) : null}
             <div className="mt-5 overflow-x-auto">
-              <table className="w-full min-w-[980px] text-left text-sm">
+              <table className="w-full min-w-[1080px] text-left text-sm">
               <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="py-3 pr-4">Profile</th>
                   <th className="py-3 pr-4">Organization</th>
                   <th className="py-3 pr-4">Type</th>
+                  <th className="py-3 pr-4">
+                    <Link className="inline-flex items-center gap-1 underline-offset-4 hover:underline" href={`/dashboard/admin?${ownershipSortParams.toString()}`}>
+                      Claim status
+                      <span aria-hidden="true">{profileOwnershipSort === "asc" ? "↑" : profileOwnershipSort === "desc" ? "↓" : "↕"}</span>
+                    </Link>
+                  </th>
                   <th className="py-3 pr-4">Status</th>
                   <th className="py-3 pr-4">Availability</th>
                   <th className="py-3 pr-4">Requests</th>
@@ -925,6 +981,11 @@ export default async function AdminDashboardPage({
                       <p className="mt-1 text-xs text-muted-foreground">{profile.organization._count.users} users</p>
                     </td>
                     <td className="py-4 pr-4"><Badge>{profileLabel(profile.type)}</Badge></td>
+                    <td className="py-4 pr-4">
+                      <Badge tone={profile.ownershipStatus === ProfileOwnershipStatus.claimed ? "success" : profile.ownershipStatus === ProfileOwnershipStatus.unclaimed ? "warning" : "neutral"}>
+                        {formatValue(profile.ownershipStatus)}
+                      </Badge>
+                    </td>
                     <td className="py-4 pr-4">
                       <Badge tone={statusTone(profile.status)}>{formatValue(profile.status)}</Badge>
                     </td>
@@ -981,7 +1042,7 @@ export default async function AdminDashboardPage({
                   </tr>
                 )) : (
                   <tr>
-                    <td className="py-8 text-center text-sm text-muted-foreground" colSpan={8}>
+                    <td className="py-8 text-center text-sm text-muted-foreground" colSpan={9}>
                       No homes or programs found.
                     </td>
                   </tr>

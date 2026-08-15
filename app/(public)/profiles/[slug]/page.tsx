@@ -101,7 +101,7 @@ function ContactForm({
   notice?: string;
 }) {
   return (
-    <Card className="h-fit scroll-mt-24" id="claim">
+    <Card className="h-fit scroll-mt-24" id="contact">
       <div className="flex items-center gap-2">
         <Mail size={18} />
         <h2 className="font-semibold">Contact this program</h2>
@@ -303,10 +303,10 @@ function ClaimProfileCard({
     invite_email: { tone: "border-accent/30 bg-accent/10", message: "Use the invited work email shown in the form to submit this claim." }
   };
   const statusMessage = claimStatus ? claimMessages[claimStatus] : null;
-  const claimReturnPath = `/profiles/${profile.slug}${claimOutreachToken ? `?claimToken=${encodeURIComponent(claimOutreachToken)}` : ""}#claim`;
+  const claimReturnPath = `/profiles/${profile.slug}${claimOutreachToken ? `?claimToken=${encodeURIComponent(claimOutreachToken)}` : "?claim=open"}#claim`;
 
   return (
-    <Card className="h-fit">
+    <Card className="h-fit scroll-mt-24" id="claim">
       <div className="flex items-center gap-2">
         <ShieldCheck size={18} />
         <h2 className="font-semibold">Claim this profile</h2>
@@ -541,6 +541,14 @@ export default async function PublicProfilePage({
                   profileId={profile.id}
                   programName={profile.programName}
                 />
+                {profile.ownershipStatus !== ProfileOwnershipStatus.claimed ? (
+                  <Link
+                    className="focus-ring inline-flex min-h-10 items-center rounded-full border border-border bg-white px-4 text-sm font-semibold shadow-sm transition hover:bg-surface-secondary"
+                    href={`/profiles/${profile.slug}?claim=open#claim`}
+                  >
+                    {profile.ownershipStatus === ProfileOwnershipStatus.claim_pending ? "View claim status" : "Claim this profile"}
+                  </Link>
+                ) : null}
               </div>
               {priceLabel || moveInCostLabel ? (
                 <div className="shrink-0 text-right">
@@ -645,6 +653,19 @@ export default async function PublicProfilePage({
           </div>
 
           <div className="mt-5 grid gap-4">
+            {profile.ownershipStatus !== ProfileOwnershipStatus.claimed && (query.claim || query.claimToken) ? (
+              <ClaimProfileCard
+                canClaim={canClaimProfile}
+                claimStatus={claimStatus}
+                claimOutreachToken={claimOutreach ? query.claimToken : undefined}
+                invitedEmail={claimOutreach?.recipientEmail}
+                isSignedIn={Boolean(clerkUserId)}
+                organizationName={appUser?.organization?.name || ""}
+                profile={profile}
+                userEmail={claimantEmail}
+                userName={claimantName}
+              />
+            ) : null}
             {!isSoberLiving ? (
               <Card>
                 <CheckCircle2 className="text-primary" size={22} />
@@ -908,19 +929,7 @@ export default async function PublicProfilePage({
           </div>
         </section>
 
-        {profile.ownershipStatus !== ProfileOwnershipStatus.claimed ? (
-          <ClaimProfileCard
-            canClaim={canClaimProfile}
-            claimStatus={claimStatus}
-            claimOutreachToken={claimOutreach ? query.claimToken : undefined}
-            invitedEmail={claimOutreach?.recipientEmail}
-            isSignedIn={Boolean(clerkUserId)}
-            organizationName={appUser?.organization?.name || ""}
-            profile={profile}
-            userEmail={claimantEmail}
-            userName={claimantName}
-          />
-        ) : isReferent && profileAcceptsDirectReferrals && referentCanSubmitReferrals ? (
+        {isReferent && profileAcceptsDirectReferrals && referentCanSubmitReferrals ? (
           <PlaceClientForm
             organizationName={appUser?.organization?.name || ""}
             profile={profile}

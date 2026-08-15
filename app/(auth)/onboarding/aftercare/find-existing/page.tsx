@@ -210,7 +210,7 @@ export default async function FindExistingAftercareProfilePage({
                 const image = profile.images[0];
                 const claimHref = profile.ownershipStatus === ProfileOwnershipStatus.claimed
                   ? `/profiles/${profile.slug}`
-                  : `/profiles/${profile.slug}#claim`;
+                  : `/profiles/${profile.slug}?claim=open#claim`;
 
                 return (
                   <ProfileClaimPreviewCard

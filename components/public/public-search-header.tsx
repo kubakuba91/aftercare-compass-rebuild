@@ -130,6 +130,9 @@ export function PublicSearchHeader({
               placeholder="City, state, or name"
             />
           </label>
+          <button hidden type="submit">
+            Search
+          </button>
           <button
             className="focus-ring flex h-14 items-center justify-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold"
             name="filters"
@@ -144,7 +147,7 @@ export function PublicSearchHeader({
               </span>
             ) : null}
           </button>
-          <button className="focus-ring h-14 rounded-lg bg-[#12185f] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#0d1249]">
+          <button className="focus-ring h-14 rounded-lg bg-[#12185f] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#0d1249]" type="submit">
             Search
           </button>
           {!showFilters ? (

@@ -134,14 +134,7 @@ export default async function HomePage() {
                   </label>
                 </div>
 
-                <div className="focus-within:ring-ring flex min-h-16 items-center gap-3 rounded-2xl border border-border bg-white px-5 shadow-sm focus-within:ring-2">
-                  <button
-                    aria-label="Search"
-                    className="focus-ring inline-flex size-10 shrink-0 items-center justify-center rounded-full text-primary hover:bg-muted"
-                    type="submit"
-                  >
-                    <Search aria-hidden="true" size={28} />
-                  </button>
+                <div className="focus-within:ring-ring flex min-h-16 w-full max-w-[520px] items-center gap-3 rounded-2xl border border-border bg-white py-2 pl-5 pr-2 shadow-sm focus-within:ring-2">
                   <label className="sr-only" htmlFor="homepage-search">
                     Search by city, state, or program name
                   </label>
@@ -151,6 +144,13 @@ export default async function HomePage() {
                     className="!min-h-0 min-w-0 flex-1 appearance-none !border-0 !bg-transparent !p-0 text-base font-medium !shadow-none outline-none placeholder:text-muted-foreground focus:!border-0 focus:!shadow-none focus:ring-0"
                     placeholder="City, state, or program name"
                   />
+                  <button
+                    aria-label="Search"
+                    className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full text-primary hover:bg-muted"
+                    type="submit"
+                  >
+                    <Search aria-hidden="true" size={28} />
+                  </button>
                 </div>
               </form>
             </div>

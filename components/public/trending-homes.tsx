@@ -134,7 +134,7 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
         </div>
 
         <Link
-          className="focus-ring mt-2 inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-white px-5 text-sm font-semibold shadow-sm hover:bg-muted"
+          className="focus-ring mx-auto mt-2 flex min-h-11 w-fit items-center justify-center rounded-md border border-border bg-white px-5 text-sm font-semibold shadow-sm hover:bg-muted"
           href="/search?type=sober_living&q=Lancaster%2C+PA"
         >
           View all Lancaster homes

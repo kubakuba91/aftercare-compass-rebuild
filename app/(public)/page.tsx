@@ -1,9 +1,13 @@
 import { auth } from "@clerk/nextjs/server";
+import { ProfileType } from "@prisma/client";
 import { Search } from "lucide-react";
 import Image from "next/image";
+import { TrendingHomes } from "@/components/public/trending-homes";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { dashboardAppUrl } from "@/lib/app-urls";
+import { canUseLiveAvailability } from "@/lib/feature-gates";
+import { prisma } from "@/lib/prisma";
 import { redirectToDashboardDestination } from "@/lib/protected-routing";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +18,65 @@ export default async function HomePage() {
   if (userId) {
     await redirectToDashboardDestination();
   }
+
+  const trendingProfiles = await prisma.aftercareProfile.findMany({
+    where: {
+      publicCity: { equals: "Lancaster", mode: "insensitive" },
+      publicState: { equals: "PA", mode: "insensitive" },
+      status: "published",
+      type: ProfileType.sober_living
+    },
+    orderBy: [
+      { favorites: { _count: "desc" } },
+      { verificationTier: "desc" },
+      { updatedAt: "desc" }
+    ],
+    take: 8,
+    select: {
+      id: true,
+      slug: true,
+      programName: true,
+      publicCity: true,
+      publicState: true,
+      bedsAvailable: true,
+      pricePerWeek: true,
+      recoveryResidenceLevel: true,
+      ownershipStatus: true,
+      organization: {
+        select: {
+          subscriptionPlan: true,
+          subscriptionStatus: true,
+          type: true
+        }
+      },
+      images: {
+        orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
+        take: 1,
+        select: {
+          altText: true,
+          url: true
+        }
+      }
+    }
+  });
+
+  const trendingHomes = trendingProfiles.map((profile) => {
+    const showLiveAvailability = canUseLiveAvailability(profile.organization, profile);
+    const isAvailable = showLiveAvailability && Boolean(profile.bedsAvailable && profile.bedsAvailable > 0);
+
+    return {
+      id: profile.id,
+      slug: profile.slug,
+      programName: profile.programName,
+      location: [profile.publicCity, profile.publicState].filter(Boolean).join(", "),
+      photoUrl: profile.images[0]?.url ?? null,
+      photoAlt: profile.images[0]?.altText || profile.programName,
+      priceLabel: profile.pricePerWeek ? `$${profile.pricePerWeek.toLocaleString()}/week` : "Contact for pricing",
+      availabilityLabel: isAvailable ? `${profile.bedsAvailable} bed${profile.bedsAvailable === 1 ? "" : "s"} available` : "Call for availability",
+      isAvailable,
+      recoveryResidenceLevel: profile.recoveryResidenceLevel
+    };
+  });
 
   return (
     <main>
@@ -32,7 +95,7 @@ export default async function HomePage() {
             </ButtonLink>
           </div>
 
-          <div className="relative mt-5 min-h-[560px] overflow-hidden rounded-lg border border-border">
+          <div className="relative mt-5 min-h-[500px] overflow-hidden rounded-lg border border-border">
             <Image
               alt=""
               aria-hidden="true"
@@ -44,16 +107,16 @@ export default async function HomePage() {
             />
             <div className="absolute inset-0 bg-black/35" aria-hidden="true" />
 
-            <div className="relative max-w-3xl px-6 py-20 md:px-20 md:py-28">
+            <div className="relative max-w-5xl px-6 py-14 md:px-20 md:py-16">
               <h1 className="text-4xl font-semibold leading-tight tracking-normal text-white md:text-6xl">
                 Close the gap. Change the outcome.
               </h1>
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-white">
+              <p className="mt-4 max-w-4xl text-lg leading-8 text-white">
                 Finding the right next step for your client shouldn&apos;t take the whole day. Aftercare Compass connects your
                 team with real-time availability across every level of aftercare — for the next chapter in their journey.
               </p>
 
-              <form action="/search" className="mt-8 grid max-w-4xl gap-3">
+              <form action="/search" className="mt-6 grid max-w-4xl gap-3">
                 <div className="grid w-fit overflow-hidden rounded-md border border-[#12185f] bg-[#12185f] p-1 shadow-sm sm:grid-cols-2">
                   <label className="focus-within:ring-ring flex min-h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded px-5 text-sm font-semibold text-white transition has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2 md:px-7">
                     <input
@@ -94,6 +157,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <TrendingHomes homes={trendingHomes} />
 
       <section className="shell grid gap-4 py-10 md:grid-cols-3">
         <Card className="grid gap-4">

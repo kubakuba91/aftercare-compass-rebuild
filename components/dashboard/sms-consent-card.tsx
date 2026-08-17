@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { publicAppUrl } from "@/lib/app-urls";
 
 export function SmsConsentCard({
   action,
@@ -73,11 +74,17 @@ export function SmsConsentCard({
           />
           <span className="leading-6">
             {consentDescription} I agree to the{" "}
-            <Link className="font-semibold text-primary underline-offset-4 hover:underline" href="/terms-of-service">
+            <Link
+              className="font-semibold text-primary underline-offset-4 hover:underline"
+              href={publicAppUrl("/terms-of-service")}
+            >
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link className="font-semibold text-primary underline-offset-4 hover:underline" href="/privacy-policy">
+            <Link
+              className="font-semibold text-primary underline-offset-4 hover:underline"
+              href={publicAppUrl("/privacy-policy")}
+            >
               Privacy Policy
             </Link>
             .

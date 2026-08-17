@@ -134,23 +134,23 @@ export default async function HomePage() {
                   </label>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-[minmax(0,520px)_250px]">
-                  <label className="focus-within:ring-ring flex min-h-16 items-center gap-3 rounded-2xl border border-border bg-white px-5 shadow-sm focus-within:ring-2">
-                    <span className="sr-only">Search by city, state, or program name</span>
-                    <Search className="shrink-0 text-primary" size={28} />
-                    <input
-                      name="q"
-                      className="!min-h-0 min-w-0 flex-1 appearance-none !border-0 !bg-transparent !p-0 text-base font-medium !shadow-none outline-none placeholder:text-muted-foreground focus:!border-0 focus:!shadow-none focus:ring-0"
-                      placeholder="City, state, or program name"
-                    />
-                  </label>
-
+                <div className="focus-within:ring-ring flex min-h-16 items-center gap-3 rounded-2xl border border-border bg-white px-5 shadow-sm focus-within:ring-2">
                   <button
+                    aria-label="Search"
+                    className="focus-ring inline-flex size-10 shrink-0 items-center justify-center rounded-full text-primary hover:bg-muted"
                     type="submit"
-                    className="focus-ring min-h-16 rounded-2xl bg-[#12185f] px-8 text-lg font-semibold text-white shadow-sm hover:bg-[#0d1249]"
                   >
-                    Search
+                    <Search aria-hidden="true" size={28} />
                   </button>
+                  <label className="sr-only" htmlFor="homepage-search">
+                    Search by city, state, or program name
+                  </label>
+                  <input
+                    id="homepage-search"
+                    name="q"
+                    className="!min-h-0 min-w-0 flex-1 appearance-none !border-0 !bg-transparent !p-0 text-base font-medium !shadow-none outline-none placeholder:text-muted-foreground focus:!border-0 focus:!shadow-none focus:ring-0"
+                    placeholder="City, state, or program name"
+                  />
                 </div>
               </form>
             </div>

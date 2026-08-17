@@ -1,4 +1,5 @@
 import { Role } from "@prisma/client";
+import { dashboardAppUrl } from "@/lib/app-urls";
 import { createCalendarEvent } from "@/lib/calendar";
 import { appUrl, emailButton, emailField, emailShell, escapeHtml, sendTransactionalEmail, uniqueEmailRecipients } from "@/lib/email";
 import { formatValue as formatDisplayValue } from "@/lib/format-utils";
@@ -97,7 +98,7 @@ export async function notifyNewPublicLead(leadId: string) {
     return;
   }
 
-  const dashboardLink = appUrl(`/dashboard/aftercare?tab=overview&profileId=${lead.profileId}`);
+  const dashboardLink = dashboardAppUrl(`/dashboard/aftercare?tab=overview&profileId=${lead.profileId}`);
   const profileLink = appUrl(`/profiles/${lead.profile.slug}`);
   await createUserNotifications({
     users: lead.aftercareOrg.users,
@@ -156,7 +157,7 @@ export async function notifyProfileClaimSubmitted(claimRequestId: string) {
     return;
   }
 
-  const adminLink = appUrl("/dashboard/admin?tab=claims");
+  const adminLink = dashboardAppUrl("/dashboard/admin?tab=claims");
   const profileLink = appUrl(`/profiles/${claim.profile.slug}?preview=1`);
 
   await createUserNotifications({
@@ -233,7 +234,7 @@ export async function notifyProfileClaimApproved(claimRequestId: string) {
     return;
   }
 
-  const dashboardLink = appUrl("/dashboard/aftercare?tab=homes");
+  const dashboardLink = dashboardAppUrl("/dashboard/aftercare?tab=homes");
   return sendTransactionalEmail({
     to: claim.claimantEmail,
     subject: `Claim approved: ${claim.profile.programName}`,
@@ -320,7 +321,7 @@ export async function notifyNewReferral(referralId: string) {
     return;
   }
 
-  const dashboardLink = appUrl(`/dashboard/aftercare?tab=overview&profileId=${referral.aftercareProfileId}&referralId=${referral.id}`);
+  const dashboardLink = dashboardAppUrl(`/dashboard/aftercare?tab=overview&profileId=${referral.aftercareProfileId}&referralId=${referral.id}`);
   await createUserNotifications({
     users: referral.aftercareOrg.users,
     type: "referral.created",
@@ -386,7 +387,7 @@ export async function notifyReferralStatusChanged(referralId: string) {
     return;
   }
 
-  const dashboardLink = appUrl("/dashboard/referent");
+  const dashboardLink = dashboardAppUrl("/dashboard/referent");
   const status = formatValue(referral.status);
   await createUserNotifications({
     users: referral.referentOrg.users,
@@ -458,8 +459,8 @@ export async function notifyPhoneScreeningBooked(appointmentId: string) {
   }
 
   const scheduledFor = formatPhoneScreeningDateTime(appointment.startsAt, appointment.timezone);
-  const aftercareDashboardLink = appUrl(`/dashboard/aftercare?tab=overview&profileId=${appointment.aftercareProfileId}&referralId=${appointment.referralId}`);
-  const referentDashboardLink = appUrl("/dashboard/referent?tab=referrals");
+  const aftercareDashboardLink = dashboardAppUrl(`/dashboard/aftercare?tab=overview&profileId=${appointment.aftercareProfileId}&referralId=${appointment.referralId}`);
+  const referentDashboardLink = dashboardAppUrl("/dashboard/referent?tab=referrals");
   const calendarInvite = createCalendarEvent({
     uid: `phone-screening-${appointment.id}@aftercarecompass.com`,
     title: `Phone screening: ${appointment.aftercareProfile.programName}`,
@@ -554,7 +555,7 @@ export async function sendOrganizationInviteEmail(input: {
   role: Role;
   invitedByName?: string | null;
 }) {
-  const signupLink = appUrl(`/sign-up?redirect_url=${encodeURIComponent("/auth/complete")}`);
+  const signupLink = dashboardAppUrl(`/sign-up?redirect_url=${encodeURIComponent("/auth/complete")}`);
   const body = emailShell(
     "You have been invited",
     `

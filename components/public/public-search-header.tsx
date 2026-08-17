@@ -12,6 +12,7 @@ import {
 import { continuedCareDurationOptions } from "@/lib/continued-care-onboarding";
 import { levelsOfCareOptions } from "@/lib/levels-of-care";
 import { clinicalFocusOptions } from "@/lib/profile-options";
+import { dashboardAppUrl } from "@/lib/app-urls";
 import { cn } from "@/lib/utils";
 
 type PublicSearchHeaderProps = {
@@ -287,7 +288,7 @@ export function PublicSearchHeader({
             "focus-ring inline-flex h-14 shrink-0 items-center justify-center rounded-lg border border-border px-3 text-sm font-semibold",
             isSignedIn ? "w-14" : "min-w-28 whitespace-nowrap px-4"
           )}
-          href={isSignedIn ? "/auth/complete" : "/sign-in"}
+          href={dashboardAppUrl(isSignedIn ? "/auth/complete" : "/sign-in")}
         >
           {isSignedIn ? (
             <>

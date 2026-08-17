@@ -1,6 +1,67 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
+import {
+  configuredAppHosts,
+  dashboardAppOrigin,
+  hasSeparateDashboardOrigin,
+  publicAppOrigin
+} from "@/lib/app-urls";
 import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
+
+const dashboardSurfacePrefixes = [
+  "/dashboard",
+  "/sign-in",
+  "/sign-up",
+  "/auth",
+  "/onboarding",
+  "/setup"
+] as const;
+
+const publicSurfacePrefixes = [
+  "/search",
+  "/profiles",
+  "/privacy-policy",
+  "/terms-of-service",
+  "/claim-profile"
+] as const;
+
+function matchesPrefix(pathname: string, prefixes: readonly string[]) {
+  return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
+function redirectToOrigin(req: NextRequest, origin: string, pathname = req.nextUrl.pathname) {
+  const destination = new URL(`${pathname}${req.nextUrl.search}`, origin);
+  return NextResponse.redirect(destination);
+}
+
+function requestHost(req: NextRequest) {
+  const forwardedHost = req.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  return forwardedHost || req.headers.get("host") || req.nextUrl.host;
+}
+
+function canonicalSurfaceRedirect(req: NextRequest) {
+  if (!hasSeparateDashboardOrigin()) {
+    return null;
+  }
+
+  const { publicHost, dashboardHost } = configuredAppHosts();
+  const host = requestHost(req);
+  const pathname = req.nextUrl.pathname;
+
+  if (host === publicHost && matchesPrefix(pathname, dashboardSurfacePrefixes)) {
+    return redirectToOrigin(req, dashboardAppOrigin());
+  }
+
+  if (host === dashboardHost && pathname === "/") {
+    return redirectToOrigin(req, dashboardAppOrigin(), "/dashboard");
+  }
+
+  if (host === dashboardHost && matchesPrefix(pathname, publicSurfacePrefixes)) {
+    return redirectToOrigin(req, publicAppOrigin());
+  }
+
+  return null;
+}
 
 const isProtectedRoute = createRouteMatcher([
   "/auth/complete(.*)",
@@ -32,6 +93,12 @@ const authMiddleware = clerkMiddleware(async (auth, req) => {
 });
 
 export default function middleware(req: NextRequest, event: NextFetchEvent) {
+  const canonicalRedirect = canonicalSurfaceRedirect(req);
+
+  if (canonicalRedirect) {
+    return canonicalRedirect;
+  }
+
   if (!hasValidClerkRuntimeConfig()) {
     const url = new URL(req.url);
 

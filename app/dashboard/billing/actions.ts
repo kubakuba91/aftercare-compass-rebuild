@@ -10,13 +10,10 @@ import {
   planBelongsToAudience,
   subscriptionStatusFromStripe
 } from "@/lib/billing";
+import { dashboardAppUrl } from "@/lib/app-urls";
 import { prisma } from "@/lib/prisma";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { getStripe, hasStripeConfig } from "@/lib/stripe";
-
-function appUrl() {
-  return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
-}
 
 function billingReturnPath(audience: "referent" | "aftercare", message?: string) {
   const path = audience === "referent" ? "/dashboard/referent" : "/dashboard/aftercare";
@@ -174,8 +171,8 @@ export async function createBillingCheckoutSession(formData: FormData) {
       customerId = await createCustomer();
     }
 
-    const successUrl = `${appUrl()}${billingReturnPath(audience, "Subscription updated.")}`;
-    const cancelUrl = `${appUrl()}${billingReturnPath(audience, "Checkout cancelled.")}`;
+    const successUrl = dashboardAppUrl(billingReturnPath(audience, "Subscription updated."));
+    const cancelUrl = dashboardAppUrl(billingReturnPath(audience, "Checkout cancelled."));
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -336,7 +333,7 @@ export async function createBillingPortalSession(formData: FormData) {
 
   const session = await getStripe().billingPortal.sessions.create({
     customer: organization.stripeCustomerId,
-    return_url: `${appUrl()}${billingReturnPath(audience)}`
+    return_url: dashboardAppUrl(billingReturnPath(audience))
   });
 
   redirect(session.url);

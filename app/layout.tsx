@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { SiteFooter } from "@/components/site-footer";
+import { dashboardAppUrl } from "@/lib/app-urls";
 import { hasValidClerkPublishableKey } from "@/lib/clerk-config";
 import "./globals.css";
 
@@ -48,10 +49,10 @@ export default function RootLayout({
   return (
     <ClerkProvider
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-      signInForceRedirectUrl="/auth/complete"
-      signInFallbackRedirectUrl="/auth/complete"
-      signUpForceRedirectUrl="/auth/complete"
-      signUpFallbackRedirectUrl="/auth/complete"
+      signInForceRedirectUrl={dashboardAppUrl("/auth/complete")}
+      signInFallbackRedirectUrl={dashboardAppUrl("/auth/complete")}
+      signUpForceRedirectUrl={dashboardAppUrl("/auth/complete")}
+      signUpFallbackRedirectUrl={dashboardAppUrl("/auth/complete")}
     >
       {body}
     </ClerkProvider>

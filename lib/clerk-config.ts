@@ -29,8 +29,20 @@ export const clerkEnvRequirements = [
   },
   {
     key: "NEXT_PUBLIC_APP_URL",
-    valueHint: "Your Vercel URL, without a trailing slash",
-    valid: Boolean(process.env.NEXT_PUBLIC_APP_URL)
+    valueHint: "Legacy fallback app URL, without a trailing slash",
+    valid: Boolean(
+      process.env.NEXT_PUBLIC_APP_URL ||
+        (process.env.NEXT_PUBLIC_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_DASHBOARD_APP_URL)
+    )
+  },
+  {
+    key: "NEXT_PUBLIC_PUBLIC_APP_URL",
+    valueHint: "Public site origin, for example https://www.aftercarecompass.com",
+    valid: Boolean(process.env.NEXT_PUBLIC_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL)
+  },
+  {
+    key: "NEXT_PUBLIC_DASHBOARD_APP_URL",
+    valueHint: "Dashboard origin, for example https://dashboard.aftercarecompass.com",
+    valid: Boolean(process.env.NEXT_PUBLIC_DASHBOARD_APP_URL || process.env.NEXT_PUBLIC_APP_URL)
   }
 ] as const;
-

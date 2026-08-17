@@ -1,3 +1,5 @@
+import { publicAppUrl } from "@/lib/app-urls";
+
 type EmailInput = {
   to: string | string[];
   subject: string;
@@ -20,10 +22,7 @@ const mailgunBaseUrl = process.env.MAILGUN_BASE_URL || "https://api.mailgun.net/
 const emailFrom = process.env.MAILGUN_FROM_EMAIL || process.env.EMAIL_FROM;
 
 export function appUrl(path = "/") {
-  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-
-  return `${baseUrl}${normalizedPath}`;
+  return publicAppUrl(path);
 }
 
 export function uniqueEmailRecipients(recipients: Array<string | null | undefined>) {

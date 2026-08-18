@@ -155,8 +155,23 @@ model User {
   adminAuditLogs                AdminAuditLog[]             @relation("AdminAuditLogActor")
   providerImportBatches        ProviderImportBatch[]        @relation("ProviderImportBatchActor")
   sentProfileClaimOutreaches   ProfileClaimOutreach[]        @relation("ProfileClaimOutreachSender")
+  smsOptInConsents             SmsOptInConsent[]
 
   @@index([orgId])
+}
+
+model SmsOptInConsent {
+  id          String   @id @default(cuid())
+  phone       String   @unique
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  consentText String
+  consentedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([consentedAt])
 }
 
 model OnboardingDraft {

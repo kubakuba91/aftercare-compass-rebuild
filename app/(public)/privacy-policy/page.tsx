@@ -54,7 +54,7 @@ const policySections: PolicySection[] = [
     title: "5. Mobile Numbers and SMS Communications",
     paragraphs: [
       "By providing your mobile phone number and opting in to SMS notifications, you consent to receive text messages from Aftercare Compass related to your account activity, referrals, availability updates, and platform events.",
-      "Your mobile phone number will never be shared with third parties for marketing or promotional purposes. Mobile opt-in data and consent are not shared with any third party under any circumstances.",
+      "Mobile opt-in data is never shared with third parties for marketing or promotional purposes. Your mobile phone number and SMS consent are used only to provide requested operational messages and to support the services needed to deliver them.",
       "You may opt out of SMS at any time by replying STOP to any message. Reply HELP for assistance. You may also opt out by contacting admin@aftercarecompass.com.",
       "Message frequency varies based on your account activity. Message and data rates may apply."
     ]

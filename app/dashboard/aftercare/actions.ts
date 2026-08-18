@@ -15,7 +15,6 @@ import {
   isWithinPlanLimit
 } from "@/lib/feature-gates";
 import { numberFromForm } from "@/lib/form-utils";
-import { normalizePhoneNumber } from "@/lib/phone";
 import { phoneScreeningTimezone } from "@/lib/phone-screening";
 import { canTransitionReferral, referralStatuses } from "@/lib/product-rules";
 import { prisma } from "@/lib/prisma";
@@ -308,39 +307,19 @@ export async function updateAccountSmsConsent(formData: FormData) {
   const appUser = await getAftercareDashboardUser("/dashboard/aftercare?tab=account");
   const intent = String(formData.get("intent") || "");
 
-  if (intent === "optOut") {
-    await prisma.user.update({
-      where: { id: appUser.id },
-      data: {
-        smsOptIn: false
-      }
-    });
-
-    revalidatePath("/dashboard/aftercare");
-    redirect("/dashboard/aftercare?tab=account&accountMessage=Text notifications disabled.");
-  }
-
-  const phone = normalizePhoneNumber(String(formData.get("phone") || ""));
-  const smsConsent = formData.get("smsConsent") === "yes";
-
-  if (!phone) {
-    redirect("/dashboard/aftercare?tab=account&accountMessage=Enter a valid mobile phone number.");
-  }
-
-  if (!smsConsent) {
-    redirect("/dashboard/aftercare?tab=account&accountMessage=Check the consent box to enable text notifications.");
+  if (intent !== "optOut") {
+    redirect("/dashboard/aftercare?tab=account");
   }
 
   await prisma.user.update({
     where: { id: appUser.id },
     data: {
-      phone,
-      smsOptIn: true
+      smsOptIn: false
     }
   });
 
   revalidatePath("/dashboard/aftercare");
-  redirect("/dashboard/aftercare?tab=account&accountMessage=Text notifications enabled.");
+  redirect("/dashboard/aftercare?tab=account&accountMessage=Text notifications disabled.");
 }
 
 export async function inviteAftercareManagers(formData: FormData) {

@@ -835,10 +835,9 @@ export default async function ReferentDashboardPage({
 
           <SmsConsentCard
             action={updateReferentSmsConsent}
-            consentDescription="By opting in, you agree to receive referral-related notifications from Aftercare Compass, including updates on submitted placements, status changes, acceptance confirmations, and follow-up actions. Message frequency varies. Message and data rates may apply. Reply STOP to opt out at any time."
             description="Receive referral-related text notifications from Aftercare Compass for submitted placements, status changes, acceptance confirmations, and follow-up actions."
             message={accountMessage}
-            phone={appUser.phone}
+            returnToPath="/dashboard/referent?tab=account"
             smsOptIn={appUser.smsOptIn}
           />
 

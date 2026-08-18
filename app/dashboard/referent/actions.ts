@@ -6,7 +6,6 @@ import { ReferralStatus, Role } from "@prisma/client";
 import { z } from "zod";
 import { notifyPhoneScreeningBooked, sendOrganizationInviteEmail } from "@/lib/email-notifications";
 import { canReceiveDirectReferrals, canSubmitReferrals, getReferentTeamLimit, isWithinPlanLimit } from "@/lib/feature-gates";
-import { normalizePhoneNumber } from "@/lib/phone";
 import { generatePhoneScreeningSlots, phoneScreeningTimezone } from "@/lib/phone-screening";
 import { prisma } from "@/lib/prisma";
 import { getProtectedAppUser } from "@/lib/protected-routing";
@@ -412,37 +411,17 @@ export async function updateReferentSmsConsent(formData: FormData) {
 
   const intent = String(formData.get("intent") || "");
 
-  if (intent === "optOut") {
-    await prisma.user.update({
-      where: { id: appUser.id },
-      data: {
-        smsOptIn: false
-      }
-    });
-
-    revalidatePath("/dashboard/referent");
-    redirect("/dashboard/referent?tab=account&accountMessage=Text notifications disabled.");
-  }
-
-  const phone = normalizePhoneNumber(String(formData.get("phone") || ""));
-  const smsConsent = formData.get("smsConsent") === "yes";
-
-  if (!phone) {
-    redirect("/dashboard/referent?tab=account&accountMessage=Enter a valid mobile phone number.");
-  }
-
-  if (!smsConsent) {
-    redirect("/dashboard/referent?tab=account&accountMessage=Check the consent box to enable text notifications.");
+  if (intent !== "optOut") {
+    redirect("/dashboard/referent?tab=account");
   }
 
   await prisma.user.update({
     where: { id: appUser.id },
     data: {
-      phone,
-      smsOptIn: true
+      smsOptIn: false
     }
   });
 
   revalidatePath("/dashboard/referent");
-  redirect("/dashboard/referent?tab=account&accountMessage=Text notifications enabled.");
+  redirect("/dashboard/referent?tab=account&accountMessage=Text notifications disabled.");
 }

@@ -21,6 +21,7 @@ const publicSurfacePrefixes = [
   "/search",
   "/profiles",
   "/privacy-policy",
+  "/sms-opt-in",
   "/terms-of-service",
   "/claim-profile"
 ] as const;

@@ -1,20 +1,18 @@
 import Link from "next/link";
-import { publicAppUrl } from "@/lib/app-urls";
+import { dashboardAppUrl, publicAppUrl } from "@/lib/app-urls";
 
 export function SmsConsentCard({
   action,
-  phone,
   smsOptIn,
   message,
   description = "Receive account-related text messages from Aftercare Compass for prompts to update availability within your account dashboard, new referral activity, placement acceptance, and changes to account settings. Only active account holders will receive these messages.",
-  consentDescription = "I agree to receive account-related text messages from Aftercare Compass at the mobile number provided. Message frequency varies. Message and data rates may apply. Reply HELP for help or STOP to cancel."
+  returnToPath
 }: {
   action: (formData: FormData) => void | Promise<void>;
-  phone?: string | null;
   smsOptIn?: boolean;
   message?: string | null;
   description?: string;
-  consentDescription?: string;
+  returnToPath: string;
 }) {
   if (smsOptIn) {
     return (
@@ -50,54 +48,14 @@ export function SmsConsentCard({
         </p>
       ) : null}
 
-      <form action={action} className="mt-4 grid gap-4">
-        <input name="intent" type="hidden" value="optIn" />
-        <label className="grid gap-2 text-sm font-medium">
-          Mobile phone number
-          <input
-            className="min-h-10 rounded-md border border-border bg-white px-3 text-sm"
-            defaultValue={phone ?? ""}
-            inputMode="tel"
-            name="phone"
-            placeholder="(555) 555-1234"
-            type="tel"
-          />
-        </label>
-
-        <label className="flex items-start gap-3 rounded-md border border-border bg-surface-secondary p-3 text-sm">
-          <input
-            className="mt-1 size-4 shrink-0"
-            name="smsConsent"
-            required
-            type="checkbox"
-            value="yes"
-          />
-          <span className="leading-6">
-            {consentDescription} I agree to the{" "}
-            <Link
-              className="font-semibold text-primary underline-offset-4 hover:underline"
-              href={publicAppUrl("/terms-of-service")}
-            >
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link
-              className="font-semibold text-primary underline-offset-4 hover:underline"
-              href={publicAppUrl("/privacy-policy")}
-            >
-              Privacy Policy
-            </Link>
-            .
-          </span>
-        </label>
-
-        <div className="flex flex-wrap gap-2">
-          <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
-            Yes, I agree to be notified by text
-          </button>
-        </div>
-      </form>
-
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link
+          className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+          href={publicAppUrl(`/sms-opt-in?returnTo=${encodeURIComponent(dashboardAppUrl(returnToPath))}`)}
+        >
+          Set up text notifications
+        </Link>
+      </div>
     </div>
   );
 }

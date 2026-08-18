@@ -40,8 +40,8 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
   }
 
   return (
-    <section aria-labelledby="trending-homes-heading" className="border-b border-border bg-white">
-      <div className="shell py-10 md:py-12">
+    <section aria-labelledby="trending-homes-heading" className="w-full border-b border-border bg-white">
+      <div className="shell w-full py-10 md:py-12">
         <div className="flex items-end justify-between gap-5">
           <div>
             <h2 id="trending-homes-heading" className="text-2xl font-semibold md:text-3xl">
@@ -74,12 +74,12 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
 
         <div
           ref={listRef}
-          className="mt-6 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="mt-6 flex w-full snap-x snap-mandatory gap-5 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {homes.map((home) => (
             <Link
               key={home.id}
-              className="focus-ring group w-[min(82vw,340px)] shrink-0 snap-start overflow-hidden rounded-xl border border-border bg-white shadow-sm transition-shadow hover:shadow-lg"
+              className="focus-ring group w-full shrink-0 snap-start overflow-hidden rounded-xl border border-border bg-white shadow-sm transition-shadow hover:shadow-lg sm:w-[340px]"
               href={`/profiles/${home.slug}`}
             >
               <article>
@@ -89,7 +89,7 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
                       alt={home.photoAlt}
                       className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                       fill
-                      sizes="(max-width: 640px) 82vw, 340px"
+                      sizes="(max-width: 640px) calc(100vw - 32px), 340px"
                       src={home.photoUrl}
                       unoptimized
                     />

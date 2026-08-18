@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrganizationType, ProfileOwnershipStatus } from "@prisma/client";
-import { BadgeCheck, CheckCircle2, HandHeart, Mail, MapPin, Phone, PillBottle, Send, ShieldCheck, Users, Video } from "lucide-react";
+import { BadgeCheck, CheckCircle2, Globe2, HandHeart, Mail, MapPin, Phone, PillBottle, Send, ShieldCheck, Users, Video } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
 import { BackLink } from "@/components/public/back-link";
@@ -90,6 +90,21 @@ function telHref(value: string) {
   const fallback = value.replace(/[^\d+]/g, "");
 
   return `tel:${normalized || fallback}`;
+}
+
+function publicWebsiteHref(value: string | null) {
+  const website = value?.trim();
+
+  if (!website) {
+    return null;
+  }
+
+  try {
+    const url = new URL(website);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 function ContactForm({
@@ -473,6 +488,7 @@ export default async function PublicProfilePage({
   const moveInCostLabel = formatMoveInCost(profile.moveInCost);
   const servedPopulations = populationsServed(profile.populationServedOptions, profile.populationServed);
   const admissionsPhone = profile.admissionsContactPhone?.trim() ?? "";
+  const websiteHref = publicWebsiteHref(profile.websiteUrl);
   const isReferent = appUser?.role.startsWith("referent") ?? false;
   const isAftercareUser = appUser?.role.startsWith("aftercare") ?? false;
   const profileAcceptsDirectReferrals = canReceiveDirectReferrals(profile.organization, profile);
@@ -569,25 +585,42 @@ export default async function PublicProfilePage({
                 ))}
               </section>
             ) : null}
-            {admissionsPhone ? (
+            {admissionsPhone || websiteHref ? (
               <div className="mt-5 flex flex-col gap-4 rounded-[1.5rem] border border-border bg-surface p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-foreground">
-                    <Phone aria-hidden="true" size={20} />
+                    {admissionsPhone ? <Phone aria-hidden="true" size={20} /> : <Globe2 aria-hidden="true" size={20} />}
                   </span>
                   <div>
-                    <p className="font-semibold">Call for availability</p>
+                    <p className="font-semibold">{admissionsPhone ? "Call for availability" : "Visit program website"}</p>
                     <p className="text-sm text-muted-foreground">
-                      Speak with admissions about current openings.
+                      {admissionsPhone
+                        ? "Speak with admissions or learn more on their website."
+                        : "Learn more directly from this program."}
                     </p>
                   </div>
                 </div>
-                <a
-                  className="focus-ring inline-flex min-h-11 items-center justify-center rounded-full bg-default px-5 text-sm font-semibold text-default-foreground transition hover:bg-surface-tertiary"
-                  href={telHref(admissionsPhone)}
-                >
-                  {formatPhoneForDisplay(admissionsPhone)}
-                </a>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  {admissionsPhone ? (
+                    <a
+                      className="focus-ring inline-flex min-h-11 items-center justify-center rounded-full bg-default px-5 text-sm font-semibold text-default-foreground transition hover:bg-surface-tertiary"
+                      href={telHref(admissionsPhone)}
+                    >
+                      {formatPhoneForDisplay(admissionsPhone)}
+                    </a>
+                  ) : null}
+                  {websiteHref ? (
+                    <a
+                      className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-surface px-5 text-sm font-semibold text-foreground transition hover:bg-surface-secondary"
+                      href={websiteHref}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      <Globe2 aria-hidden="true" size={17} />
+                      Visit website
+                    </a>
+                  ) : null}
+                </div>
               </div>
             ) : null}
             {profile.images.length ? (

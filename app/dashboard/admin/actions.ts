@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   AdminReviewStatus,
   AdminReviewSubjectType,
+  AftercareManagerScope,
   OrganizationType,
   ProfileOwnershipStatus,
   ProfileStatus,
@@ -12,6 +13,7 @@ import {
   Role,
   SubscriptionStatus
 } from "@prisma/client";
+import { availabilityReplyExample } from "@/lib/availability-sms";
 import { notifyProfileClaimApproved, notifyProfileClaimRejected } from "@/lib/email-notifications";
 import { geocodeProfileAddress } from "@/lib/geocoding";
 import { moveInCostText, nullableText, numberFromForm } from "@/lib/form-utils";
@@ -24,6 +26,7 @@ import { sanitizeRichText } from "@/lib/rich-text";
 import { valuesFromForm } from "@/lib/sober-living-onboarding";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { slugify } from "@/lib/slug";
+import { sendSms } from "@/lib/sms";
 import {
   claimOutreachCooldownDays,
   claimOutreachExpirationDays,
@@ -64,6 +67,137 @@ function adminEditProfileHref(profileId: string, message: string) {
   const params = new URLSearchParams({ message });
 
   return `/dashboard/admin/profiles/${profileId}/edit?${params.toString()}`;
+}
+
+function smsToken() {
+  return `AC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+}
+
+export async function sendAdminBedAvailabilityTextCheck(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const profileId = String(formData.get("profileId") || "");
+  const managerId = String(formData.get("managerId") || "");
+  const profile = await prisma.aftercareProfile.findFirst({
+    where: {
+      id: profileId,
+      type: ProfileType.sober_living
+    },
+    select: {
+      id: true,
+      orgId: true,
+      programName: true,
+      bedsMen: true,
+      bedsWomen: true,
+      bedsLgbtq: true,
+      bedsMenAvailable: true,
+      bedsWomenAvailable: true,
+      bedsLgbtqAvailable: true
+    }
+  });
+
+  if (!profile) {
+    redirect(adminProfileHref("Sober living profile was not found."));
+  }
+
+  const manager = await prisma.user.findFirst({
+    where: {
+      id: managerId,
+      orgId: profile.orgId,
+      isActive: true,
+      smsOptIn: true,
+      phone: { not: null },
+      OR: [
+        { role: Role.aftercare_admin },
+        {
+          role: Role.aftercare_manager,
+          aftercareManagerScope: AftercareManagerScope.all_profiles
+        },
+        {
+          role: Role.aftercare_manager,
+          aftercareProfileAssignments: {
+            some: { profileId: profile.id }
+          }
+        }
+      ]
+    },
+    select: {
+      id: true,
+      phone: true
+    }
+  });
+
+  if (!manager?.phone) {
+    redirect(adminEditProfileHref(profile.id, "Choose an SMS-enabled manager for this home."));
+  }
+
+  const token = smsToken();
+  const body =
+    `Aftercare Compass bed check for ${profile.programName}. ` +
+    `Current: MEN ${profile.bedsMenAvailable ?? 0}/${profile.bedsMen ?? 0}, ` +
+    `WOMEN ${profile.bedsWomenAvailable ?? 0}/${profile.bedsWomen ?? 0}, ` +
+    `LGBTQ ${profile.bedsLgbtqAvailable ?? 0}/${profile.bedsLgbtq ?? 0}. ` +
+    `Reply: ${token} MEN # WOMEN # LGBTQ #. Or NO CHANGE.`;
+
+  const check = await prisma.availabilitySmsCheck.create({
+    data: {
+      token,
+      orgId: profile.orgId,
+      profileId: profile.id,
+      userId: manager.id,
+      phone: manager.phone,
+      outboundBody: body
+    }
+  });
+
+  try {
+    await sendSms({ to: manager.phone, body });
+    await prisma.$transaction([
+      prisma.availabilitySmsCheck.update({
+        where: { id: check.id },
+        data: {
+          status: "sent",
+          sentAt: new Date()
+        }
+      }),
+      prisma.adminAuditLog.create({
+        data: {
+          actorUserId: appUser.id,
+          action: "bed_availability_check_sent",
+          entityType: "AftercareProfile",
+          entityId: profile.id,
+          metadata: {
+            managerId: manager.id,
+            phone: manager.phone,
+            token
+          }
+        }
+      })
+    ]);
+  } catch (error) {
+    await prisma.availabilitySmsCheck.update({
+      where: { id: check.id },
+      data: {
+        status: "failed",
+        errorMessage: error instanceof Error ? error.message : "SMS send failed"
+      }
+    });
+
+    redirect(
+      adminEditProfileHref(
+        profile.id,
+        `SMS could not be sent. Check Twilio configuration. ${availabilityReplyExample()}`
+      )
+    );
+  }
+
+  revalidatePath(`/dashboard/admin/profiles/${profile.id}/edit`);
+  revalidatePath("/dashboard/aftercare");
+  redirect(adminEditProfileHref(profile.id, "Bed check text sent."));
 }
 
 function adminDataSettingsHref(message: string, category?: ProfileOptionCategory | null) {

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Save, ShieldCheck, Star, Trash2 } from "lucide-react";
+import { ArrowLeft, MessageSquareText, Save, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
-import { ProfileStatus, ProfileType, Role } from "@prisma/client";
+import { AftercareManagerScope, ProfileStatus, ProfileType, Role } from "@prisma/client";
 import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
 import { PopulationBedFields } from "@/components/dashboard/population-bed-fields";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
@@ -28,10 +28,12 @@ import {
 } from "@/lib/continued-care-onboarding";
 import { formatPhotoLimit, getAftercarePhotoLimit } from "@/lib/feature-gates";
 import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-options";
+import { formatPhoneForDisplay } from "@/lib/phone";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
 import {
   removeAdminProfileImage,
+  sendAdminBedAvailabilityTextCheck,
   setAdminProfileCoverImage,
   updateAdminAftercareProfile,
   uploadAdminProfileImages
@@ -176,6 +178,38 @@ export default async function AdminEditProfilePage({
   if (!profile) {
     redirect("/dashboard/admin?tab=profiles&reviewMessage=Listing%20was%20not%20found.");
   }
+
+  const smsEnabledManagers = profile.type === ProfileType.sober_living
+    ? await prisma.user.findMany({
+        where: {
+          orgId: profile.orgId,
+          isActive: true,
+          smsOptIn: true,
+          phone: { not: null },
+          OR: [
+            { role: Role.aftercare_admin },
+            {
+              role: Role.aftercare_manager,
+              aftercareManagerScope: AftercareManagerScope.all_profiles
+            },
+            {
+              role: Role.aftercare_manager,
+              aftercareProfileAssignments: {
+                some: { profileId: profile.id }
+              }
+            }
+          ]
+        },
+        orderBy: [{ role: "asc" }, { email: "asc" }],
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true
+        }
+      })
+    : [];
 
   const profileOptions = await getActiveProfileOptionValues(profile.type);
 
@@ -618,6 +652,43 @@ export default async function AdminEditProfilePage({
             <Save size={16} />
             Save changes
           </button>
+
+          {profile.type === ProfileType.sober_living ? (
+            <Card>
+              <MessageSquareText className="text-primary" size={24} />
+              <h2 className="mt-3 font-semibold">Send bed check</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Ask an SMS-enabled home manager to confirm current bed availability.
+              </p>
+              <form action={sendAdminBedAvailabilityTextCheck} className="mt-4 grid gap-3">
+                <input name="profileId" type="hidden" value={profile.id} />
+                <select
+                  className={fieldClassName()}
+                  disabled={!smsEnabledManagers.length}
+                  name="managerId"
+                  required
+                >
+                  <option value="">Select SMS-enabled manager</option>
+                  {smsEnabledManagers.map((manager) => (
+                    <option key={manager.id} value={manager.id}>
+                      {[manager.firstName, manager.lastName].filter(Boolean).join(" ") || manager.email} · {formatPhoneForDisplay(manager.phone)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!smsEnabledManagers.length}
+                >
+                  Send bed check text
+                </button>
+              </form>
+              {!smsEnabledManagers.length ? (
+                <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                  This home has no active manager with SMS consent and a phone number.
+                </p>
+              ) : null}
+            </Card>
+          ) : null}
 
           <Card>
             <ShieldCheck className="text-primary" size={24} />

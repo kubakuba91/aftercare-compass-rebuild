@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { parseAvailabilityReply, availabilityReplyExample } from "@/lib/availability-sms";
-import { normalizePhoneNumber } from "@/lib/phone";
+import { formatPhoneForDisplay, normalizePhoneNumber } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -30,9 +30,15 @@ export async function POST(request: Request) {
     return twiml(`We could not read that availability update. ${availabilityReplyExample()}`);
   }
 
+  const phoneCandidates = Array.from(new Set([
+    from,
+    formatPhoneForDisplay(from),
+    from.replace(/^\+1/, "")
+  ]));
+
   const check = await prisma.availabilitySmsCheck.findFirst({
     where: {
-      phone: from,
+      phone: { in: phoneCandidates },
       status: { in: ["pending", "sent"] },
       ...(parsed.token ? { token: parsed.token } : {})
     },

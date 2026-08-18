@@ -19,7 +19,7 @@ import { geocodeProfileAddress } from "@/lib/geocoding";
 import { moveInCostText, nullableText, numberFromForm } from "@/lib/form-utils";
 import { imagesFromFormData, removeProfileImageForProfile, uploadProfileImagesForProfile } from "@/lib/profile-images";
 import { populationBedTotalsFromForm } from "@/lib/population-beds";
-import { normalizePhoneForStorage } from "@/lib/phone";
+import { normalizePhoneForStorage, normalizePhoneNumber } from "@/lib/phone";
 import { profileOptionCategories, profileOptionCategoryKeys, type ProfileOptionCategory } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
@@ -139,7 +139,9 @@ export async function sendAdminBedAvailabilityTextCheck(formData: FormData) {
     redirect(adminEditProfileHref(profile.id, "Choose which SMS-enabled manager should receive this bed check."));
   }
 
-  if (!manager?.phone) {
+  const managerPhone = normalizePhoneNumber(manager?.phone || "");
+
+  if (!manager?.phone || !managerPhone) {
     redirect(
       returnToProfiles
         ? adminProfileHref(`${profile.programName} has no SMS-enabled manager available.`)
@@ -161,13 +163,13 @@ export async function sendAdminBedAvailabilityTextCheck(formData: FormData) {
       orgId: profile.orgId,
       profileId: profile.id,
       userId: manager.id,
-      phone: manager.phone,
+      phone: managerPhone,
       outboundBody: body
     }
   });
 
   try {
-    await sendSms({ to: manager.phone, body });
+    await sendSms({ to: managerPhone, body });
     await prisma.$transaction([
       prisma.availabilitySmsCheck.update({
         where: { id: check.id },
@@ -184,7 +186,7 @@ export async function sendAdminBedAvailabilityTextCheck(formData: FormData) {
           entityId: profile.id,
           metadata: {
             managerId: manager.id,
-            phone: manager.phone,
+            phone: managerPhone,
             token
           }
         }

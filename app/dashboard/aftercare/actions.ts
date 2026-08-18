@@ -15,6 +15,7 @@ import {
   isWithinPlanLimit
 } from "@/lib/feature-gates";
 import { numberFromForm } from "@/lib/form-utils";
+import { normalizePhoneNumber } from "@/lib/phone";
 import { phoneScreeningTimezone } from "@/lib/phone-screening";
 import { canTransitionReferral, referralStatuses } from "@/lib/product-rules";
 import { prisma } from "@/lib/prisma";
@@ -698,7 +699,9 @@ export async function sendBedAvailabilityTextCheck(formData: FormData) {
     redirect("/dashboard/aftercare?tab=overview");
   }
 
-  if (!manager?.phone) {
+  const managerPhone = normalizePhoneNumber(manager?.phone || "");
+
+  if (!manager?.phone || !managerPhone) {
     redirect(smsHref(profile.id, "Choose a manager with SMS enabled first."));
   }
 
@@ -716,13 +719,13 @@ export async function sendBedAvailabilityTextCheck(formData: FormData) {
       orgId: appUser.orgId,
       profileId: profile.id,
       userId: manager.id,
-      phone: manager.phone,
+      phone: managerPhone,
       outboundBody: body
     }
   });
 
   try {
-    await sendSms({ to: manager.phone, body });
+    await sendSms({ to: managerPhone, body });
     await prisma.availabilitySmsCheck.update({
       where: { id: check.id },
       data: {

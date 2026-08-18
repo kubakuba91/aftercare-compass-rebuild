@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recovery-card";
+import { BackLink } from "@/components/public/back-link";
 import { Card } from "@/components/ui/card";
 import { enterpriseSalesHref, getBillingPlansWithStripePrices } from "@/lib/billing";
 import { isClerkIdentityError } from "@/lib/current-user";
@@ -340,13 +341,13 @@ export default async function ReferentStepPage({
               <div className="fixed inset-x-0 bottom-0 border-t border-border bg-white p-4 lg:left-[320px]">
                 <div className="mx-auto flex max-w-3xl gap-3">
                   {currentStep > 1 ? (
-                    <Link className="focus-ring inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold" href={`/onboarding/referent/${currentStep - 1}`}>
+                    <BackLink className="flex-1 justify-center" href={`/onboarding/referent/${currentStep - 1}`}>
                       Back
-                    </Link>
+                    </BackLink>
                   ) : (
-                    <Link className="focus-ring inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold" href="/onboarding/account-type">
+                    <BackLink className="flex-1 justify-center" href="/onboarding/account-type">
                       Back
-                    </Link>
+                    </BackLink>
                   )}
                   <button className="focus-ring min-h-11 flex-1 rounded-md bg-[#121b57] px-4 text-sm font-semibold text-white">
                     {currentStep === maxReferentStep ? "Finish" : "Next"}

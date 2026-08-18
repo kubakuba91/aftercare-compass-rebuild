@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { OrganizationType, ProfileOwnershipStatus } from "@prisma/client";
 import { BadgeCheck, CheckCircle2, HandHeart, Mail, MapPin, Phone, PillBottle, Send, ShieldCheck, Users, Video } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
+import { BackLink } from "@/components/public/back-link";
 import { ExpandableRichText } from "@/components/public/expandable-rich-text";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { ClaimOutreachStartTracker } from "@/components/public/claim-outreach-start-tracker";
@@ -511,9 +512,9 @@ export default async function PublicProfilePage({
       />
       <main className="shell py-8">
         <div className="mb-5">
-          <Link className="text-sm font-semibold text-primary" href="/search">
+          <BackLink href="/search">
             Back to search
-          </Link>
+          </BackLink>
         </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">

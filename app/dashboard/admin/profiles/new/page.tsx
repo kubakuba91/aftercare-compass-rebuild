@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Save, ShieldCheck } from "lucide-react";
+import { Save, ShieldCheck } from "lucide-react";
 import { ProfileStatus, ProfileType, Role } from "@prisma/client";
 import { PopulationBedFields } from "@/components/dashboard/population-bed-fields";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
+import { BackLink } from "@/components/public/back-link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {
@@ -106,10 +106,9 @@ export default async function AdminCreateProfilePage({
 
   return (
     <main className="shell py-8">
-      <Link className="inline-flex items-center gap-2 text-sm font-semibold text-primary" href="/dashboard/admin?tab=profiles">
-        <ArrowLeft size={16} />
+      <BackLink href="/dashboard/admin?tab=profiles">
         Back to homes & programs
-      </Link>
+      </BackLink>
 
       <div className="mt-5 flex flex-col justify-between gap-4 border-b border-border pb-5 md:flex-row md:items-end">
         <div>

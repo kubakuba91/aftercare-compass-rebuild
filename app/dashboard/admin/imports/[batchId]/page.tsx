@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Role } from "@prisma/client";
+import { BackLink } from "@/components/public/back-link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
@@ -17,7 +18,7 @@ export default async function ProviderImportPreviewPage({ params, searchParams }
   const canCommit = batch.status === "validated" && batch.rows.some((row) => row.status === "validated");
 
   return <main className="shell py-8">
-    <Link className="text-sm font-semibold text-primary" href="/dashboard/admin/imports">← Back to imports</Link>
+    <BackLink href="/dashboard/admin/imports">Back to imports</BackLink>
     <div className="mt-5 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5"><div><h1 className="text-3xl font-semibold">Import preview</h1><p className="mt-2 text-sm text-muted-foreground">{batch.sourceFileName}</p></div><Link className="rounded-md border border-border px-4 py-2 text-sm font-semibold" href={`/dashboard/admin/imports/${batch.id}/results`}>Download results CSV</Link></div>
     {query.committed ? <div className="mt-5 rounded-md border border-success/30 bg-success/10 p-3 text-sm">Import completed. Searchable locations are now live.</div> : null}
     <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

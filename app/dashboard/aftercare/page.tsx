@@ -18,6 +18,7 @@ import {
   X
 } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { BackLink } from "@/components/public/back-link";
 import { AftercareOverviewSelector } from "@/components/dashboard/aftercare-overview-selector";
 import { AftercareQuickAvailability } from "@/components/dashboard/aftercare-quick-availability";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
@@ -1821,9 +1822,9 @@ export default async function AftercareDashboardPage({
                         Your current plan is marked below. Choose a monthly or annual billing cycle before changing plans.
                       </p>
                     </div>
-                    <Link className="focus-ring ac-button ac-button--secondary" href="/dashboard/aftercare?tab=subscription">
+                    <BackLink href="/dashboard/aftercare?tab=subscription" surface="panel">
                       Back to current plan
-                    </Link>
+                    </BackLink>
                   </div>
 
                   <div className="mt-5 overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">

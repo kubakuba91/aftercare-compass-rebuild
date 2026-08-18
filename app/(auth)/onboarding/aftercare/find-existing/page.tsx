@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Building2, Home, Search } from "lucide-react";
 import { Prisma, ProfileOwnershipStatus, ProfileType } from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { BackLink } from "@/components/public/back-link";
 import { ProfileClaimPreviewCard } from "@/components/profile-claim-preview-card";
 import { Card } from "@/components/ui/card";
 import { getCurrentAppUser } from "@/lib/current-user";
@@ -236,12 +237,9 @@ export default async function FindExistingAftercareProfilePage({
       </div>
 
       <div className="mx-auto mt-6 flex max-w-5xl flex-wrap items-center justify-between gap-3">
-        <Link
-          className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-white px-5 text-sm font-semibold"
-          href="/onboarding/account-type"
-        >
+        <BackLink href="/onboarding/account-type">
           Back to account type
-        </Link>
+        </BackLink>
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold text-muted-foreground">or</span>
           <Link

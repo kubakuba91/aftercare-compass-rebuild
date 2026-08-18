@@ -1,12 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft, BedDouble, Building2, CheckCircle2, CircleAlert, Eye, ImagePlus, Save, ShieldCheck, Star, Trash2 } from "lucide-react";
+import { BedDouble, Building2, CheckCircle2, CircleAlert, Eye, ImagePlus, Save, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { PopulationBedFields } from "@/components/dashboard/population-bed-fields";
 import { ProfileEditorTabs } from "@/components/dashboard/profile-editor-tabs";
 import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
+import { BackLink } from "@/components/public/back-link";
 import { getAftercareProfileReadiness } from "@/lib/aftercare-profile-readiness";
 import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-options";
 import {
@@ -261,10 +262,9 @@ export default async function AftercareProfileDetailPage({
 
   return (
     <main className="shell py-8">
-      <Link className="inline-flex items-center gap-2 text-sm font-semibold text-primary" href="/dashboard/aftercare?tab=homes">
-        <ArrowLeft size={16} />
+      <BackLink href="/dashboard/aftercare?tab=homes">
         Back to homes
-      </Link>
+      </BackLink>
 
       <div className="mt-5 flex flex-col justify-between gap-4 border-b border-border pb-5 md:flex-row md:items-end">
         <div>

@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { CircleCheckBig, MessageSquareText, ShieldCheck } from "lucide-react";
-import { BackLink } from "@/components/public/back-button";
+import { BackLink } from "@/components/public/back-link";
 import { publicAppUrl } from "@/lib/app-urls";
 import { safeSmsReturnDestination } from "@/lib/sms-consent";
 import { submitSmsOptIn } from "./actions";

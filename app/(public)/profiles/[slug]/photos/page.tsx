@@ -1,7 +1,7 @@
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProfileStatus } from "@prisma/client";
+import { BackLink } from "@/components/public/back-link";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { Card } from "@/components/ui/card";
 import { getCurrentAppUser } from "@/lib/current-user";
@@ -71,12 +71,11 @@ export default async function ProfilePhotosPage({
       />
       <main className="shell py-8">
         <div className="mb-5">
-          <Link
-            className="text-sm font-semibold text-primary"
+          <BackLink
             href={`/profiles/${profile.slug}${canPreviewDraft ? "?preview=1" : ""}`}
           >
             Back to profile
-          </Link>
+          </BackLink>
         </div>
 
         <Card>

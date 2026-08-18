@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Download, FileUp } from "lucide-react";
 import { Role } from "@prisma/client";
+import { BackLink } from "@/components/public/back-link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatDate } from "@/lib/format-utils";
@@ -21,7 +22,7 @@ export default async function ProviderImportsPage({ searchParams }: { searchPara
   });
 
   return <main className="shell py-8">
-    <Link className="text-sm font-semibold text-primary" href="/dashboard/admin?tab=profiles">← Back to Homes & Programs</Link>
+    <BackLink href="/dashboard/admin?tab=profiles">Back to Homes & Programs</BackLink>
     <div className="mt-5 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
       <div><h1 className="text-3xl font-semibold">Provider CSV imports</h1><p className="mt-2 text-sm text-muted-foreground">Validate, preview, and import organizations with their locations.</p></div>
       <Link className="inline-flex min-h-10 items-center gap-2 rounded-md border border-border px-4 text-sm font-semibold" href="/dashboard/admin/imports/template"><Download size={16}/> Download template</Link>

@@ -17,6 +17,7 @@ import {
 import { redirect } from "next/navigation";
 import { ProfileType, Role } from "@prisma/client";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { BackLink } from "@/components/public/back-link";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
 import { PhoneScreeningSlotPicker } from "@/components/dashboard/phone-screening-slot-picker";
 import { SmsConsentCard } from "@/components/dashboard/sms-consent-card";
@@ -384,9 +385,9 @@ export default async function ReferentDashboardPage({
                     Your current plan is marked below. Choose a monthly or annual billing cycle before changing plans.
                   </p>
                 </div>
-                <Link className="focus-ring ac-button ac-button--secondary" href="/dashboard/referent?tab=subscription">
+                <BackLink href="/dashboard/referent?tab=subscription" surface="panel">
                   Back to current plan
-                </Link>
+                </BackLink>
               </div>
 
               <div className="mt-5 overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { OrganizationType, ProfileOwnershipStatus } from "@prisma/client";
 import { BadgeCheck, CheckCircle2, HandHeart, Mail, MapPin, Phone, PillBottle, Send, ShieldCheck, Users, Video } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
+import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
 import { BackLink } from "@/components/public/back-link";
 import { ExpandableRichText } from "@/components/public/expandable-rich-text";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
@@ -593,14 +593,14 @@ export default async function PublicProfilePage({
             {profile.images.length ? (
               <div className="mt-6 grid gap-3 md:grid-cols-[1.35fr_1fr]">
                 <div className="relative min-h-[28rem] overflow-hidden rounded-[1.25rem] border border-border bg-muted">
-                  <Image
+                  <AdaptiveProfileImage
                     alt={profile.images[0]?.altText || profile.programName}
-                    className="object-cover"
-                    fill
+                    focalX={profile.images[0].focalX}
+                    focalY={profile.images[0].focalY}
+                    mode={profile.images[0].presentationMode}
                     priority
                     sizes="(min-width: 1024px) 680px, 100vw"
                     src={profile.images[0].url}
-                    unoptimized
                   />
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
@@ -609,13 +609,13 @@ export default async function PublicProfilePage({
 
                     return (
                     <div key={image.id} className="relative min-h-40 overflow-hidden rounded-[1.25rem] border border-border bg-muted">
-                      <Image
+                      <AdaptiveProfileImage
                         alt={image.altText || profile.programName}
-                        className="object-cover"
-                        fill
+                        focalX={image.focalX}
+                        focalY={image.focalY}
+                        mode={image.presentationMode}
                         sizes="(min-width: 1024px) 280px, 50vw"
                         src={image.url}
-                        unoptimized
                       />
                       {showAllPhotosLink ? (
                         <Link

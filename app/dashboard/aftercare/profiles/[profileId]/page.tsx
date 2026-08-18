@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { BedDouble, Building2, CheckCircle2, CircleAlert, Eye, ImagePlus, Save, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { ConfirmSubmitButton } from "@/components/dashboard/confirm-submit-button";
+import { ProfileImagePresentationEditor } from "@/components/dashboard/profile-image-presentation-editor";
 import { PopulationBedFields } from "@/components/dashboard/population-bed-fields";
 import { ProfileEditorTabs } from "@/components/dashboard/profile-editor-tabs";
 import { ProfileImageUploader } from "@/components/dashboard/profile-image-uploader";
@@ -44,6 +44,7 @@ import {
   uploadAftercareProfileImages,
   removeAftercareProfileImage,
   setAftercareProfileCoverImage,
+  updateAftercareProfileImagePresentation,
   addAssociatedContinuedCareProgram,
   removeAssociatedContinuedCareProgram
 } from "./actions";
@@ -656,22 +657,18 @@ export default async function AftercareProfileDetailPage({
                 <div className="mt-5 grid gap-4 md:grid-cols-2">
                   {profile.images.map((image) => (
                     <div key={image.id} className="overflow-hidden rounded-md border border-border bg-white">
-                      <div className="relative aspect-[4/3] bg-muted">
-                        <Image
-                          alt={image.altText || profile.programName}
-                          className="object-cover"
-                          fill
-                          sizes="(min-width: 1024px) 320px, 100vw"
-                          src={image.url}
-                          unoptimized
-                        />
-                        {image.isCover ? (
-                          <Badge className="absolute left-3 top-3" tone="verified">
-                            Cover
-                          </Badge>
-                        ) : null}
-                      </div>
+                      <ProfileImagePresentationEditor
+                        action={updateAftercareProfileImagePresentation}
+                        alt={image.altText || profile.programName}
+                        focalX={image.focalX}
+                        focalY={image.focalY}
+                        imageId={image.id}
+                        mode={image.presentationMode}
+                        profileId={profile.id}
+                        src={image.url}
+                      />
                       <div className="flex flex-wrap gap-2 p-3">
+                        {image.isCover ? <Badge tone="verified">Cover</Badge> : null}
                         {!image.isCover ? (
                           <form action={setAftercareProfileCoverImage}>
                             <input name="profileId" type="hidden" value={profile.id} />

@@ -1052,6 +1052,63 @@ export async function setAdminProfileCoverImage(formData: FormData) {
   redirect(adminEditProfileHref(profile.id, "Cover image updated."));
 }
 
+export async function updateAdminProfileImagePresentation(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const profileId = String(formData.get("profileId") || "");
+  const imageId = String(formData.get("imageId") || "");
+  const requestedMode = String(formData.get("presentationMode") || "auto");
+  const presentationMode = requestedMode === "photo" || requestedMode === "graphic" ? requestedMode : "auto";
+  const requestedFocalX = Number.parseInt(String(formData.get("focalX") ?? "50"), 10);
+  const requestedFocalY = Number.parseInt(String(formData.get("focalY") ?? "50"), 10);
+  const focalX = Number.isFinite(requestedFocalX) ? Math.min(100, Math.max(0, requestedFocalX)) : 50;
+  const focalY = Number.isFinite(requestedFocalY) ? Math.min(100, Math.max(0, requestedFocalY)) : 50;
+  const profile = await prisma.aftercareProfile.findUnique({
+    where: { id: profileId },
+    select: { id: true, programName: true, slug: true }
+  });
+
+  if (!profile) {
+    redirect(adminProfileHref("Listing was not found."));
+  }
+
+  const image = await prisma.profileImage.findFirst({
+    where: { id: imageId, profileId: profile.id },
+    select: { id: true }
+  });
+
+  if (!image) {
+    redirect(adminEditProfileHref(profile.id, "Image not found."));
+  }
+
+  await prisma.$transaction([
+    prisma.profileImage.update({
+      where: { id: image.id },
+      data: { focalX, focalY, presentationMode }
+    }),
+    prisma.adminAuditLog.create({
+      data: {
+        actorUserId: appUser.id,
+        action: "profile_image_presentation_updated",
+        entityType: "AftercareProfile",
+        entityId: profile.id,
+        metadata: { focalX, focalY, imageId: image.id, presentationMode, profileName: profile.programName }
+      }
+    })
+  ]);
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath(`/dashboard/admin/profiles/${profile.id}/edit`);
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+  revalidatePath(`/profiles/${profile.slug}/photos`);
+  redirect(adminEditProfileHref(profile.id, "Image fit updated."));
+}
+
 export async function removeAdminProfileImage(formData: FormData) {
   const appUser = await getProtectedAppUser("/dashboard/admin");
 

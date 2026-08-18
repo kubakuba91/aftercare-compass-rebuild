@@ -457,6 +457,39 @@ export async function setAftercareProfileCoverImage(formData: FormData) {
   redirect(profileHref(profile.id, "Cover image updated."));
 }
 
+export async function updateAftercareProfileImagePresentation(formData: FormData) {
+  const profileId = String(formData.get("profileId") || "");
+  const imageId = String(formData.get("imageId") || "");
+  const requestedMode = String(formData.get("presentationMode") || "auto");
+  const presentationMode = requestedMode === "photo" || requestedMode === "graphic" ? requestedMode : "auto";
+  const requestedFocalX = Number.parseInt(String(formData.get("focalX") ?? "50"), 10);
+  const requestedFocalY = Number.parseInt(String(formData.get("focalY") ?? "50"), 10);
+  const focalX = Number.isFinite(requestedFocalX) ? Math.min(100, Math.max(0, requestedFocalX)) : 50;
+  const focalY = Number.isFinite(requestedFocalY) ? Math.min(100, Math.max(0, requestedFocalY)) : 50;
+  const profile = await getOwnedProfile(profileId);
+  ensureProfileCanBeEdited(profile);
+  const image = await prisma.profileImage.findFirst({
+    where: { id: imageId, profileId: profile.id },
+    select: { id: true }
+  });
+
+  if (!image) {
+    redirect(profileHref(profile.id, "Image not found."));
+  }
+
+  await prisma.profileImage.update({
+    where: { id: image.id },
+    data: { focalX, focalY, presentationMode }
+  });
+
+  revalidatePath("/dashboard/aftercare");
+  revalidatePath(profileHref(profile.id));
+  revalidatePath("/search");
+  revalidatePath(`/profiles/${profile.slug}`);
+  revalidatePath(`/profiles/${profile.slug}/photos`);
+  redirect(profileHref(profile.id, "Image fit updated."));
+}
+
 export async function removeAftercareProfileImage(formData: FormData) {
   const profileId = String(formData.get("profileId") || "");
   const imageId = String(formData.get("imageId") || "");

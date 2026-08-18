@@ -54,6 +54,9 @@ export default async function HomePage() {
         take: 1,
         select: {
           altText: true,
+          focalX: true,
+          focalY: true,
+          presentationMode: true,
           url: true
         }
       }
@@ -71,6 +74,9 @@ export default async function HomePage() {
       location: [profile.publicCity, profile.publicState].filter(Boolean).join(", "),
       photoUrl: profile.images[0]?.url ?? null,
       photoAlt: profile.images[0]?.altText || profile.programName,
+      photoFocalX: profile.images[0]?.focalX ?? 50,
+      photoFocalY: profile.images[0]?.focalY ?? 50,
+      photoPresentationMode: profile.images[0]?.presentationMode ?? "auto",
       priceLabel: profile.pricePerWeek ? `$${profile.pricePerWeek.toLocaleString()}/week` : "Contact for pricing",
       availabilityLabel: isAvailable ? `${profile.bedsAvailable} bed${profile.bedsAvailable === 1 ? "" : "s"} available` : "Call for availability",
       isAvailable,

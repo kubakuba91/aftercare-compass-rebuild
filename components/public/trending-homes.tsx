@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { BedDouble, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
 import { Badge } from "@/components/ui/badge";
 
 export type TrendingHome = {
@@ -13,6 +13,9 @@ export type TrendingHome = {
   location: string;
   photoUrl: string | null;
   photoAlt: string;
+  photoFocalX: number;
+  photoFocalY: number;
+  photoPresentationMode: string;
   priceLabel: string;
   availabilityLabel: string;
   isAvailable: boolean;
@@ -85,13 +88,13 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
               <article>
                 <div className="relative aspect-[16/10] overflow-hidden bg-muted">
                   {home.photoUrl ? (
-                    <Image
+                    <AdaptiveProfileImage
                       alt={home.photoAlt}
-                      className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                      fill
+                      focalX={home.photoFocalX}
+                      focalY={home.photoFocalY}
+                      mode={home.photoPresentationMode}
                       sizes="(max-width: 640px) calc(100vw - 32px), 340px"
                       src={home.photoUrl}
-                      unoptimized
                     />
                   ) : (
                     <div

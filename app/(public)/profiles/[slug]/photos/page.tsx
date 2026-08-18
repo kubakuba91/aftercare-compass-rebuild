@@ -1,6 +1,6 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ProfileStatus } from "@prisma/client";
+import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
 import { BackLink } from "@/components/public/back-link";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { Card } from "@/components/ui/card";
@@ -40,6 +40,9 @@ export default async function ProfilePhotosPage({
         select: {
           id: true,
           altText: true,
+          focalX: true,
+          focalY: true,
+          presentationMode: true,
           url: true
         }
       }
@@ -93,13 +96,13 @@ export default async function ProfilePhotosPage({
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {profile.images.map((image) => (
                 <div key={image.id} className="relative aspect-[4/3] overflow-hidden rounded-[1.25rem] border border-border bg-muted">
-                  <Image
+                  <AdaptiveProfileImage
                     alt={image.altText || profile.programName}
-                    className="object-cover"
-                    fill
+                    focalX={image.focalX}
+                    focalY={image.focalY}
+                    mode={image.presentationMode}
                     sizes="(min-width: 1024px) 31vw, (min-width: 640px) 48vw, 100vw"
                     src={image.url}
-                    unoptimized
                   />
                 </div>
               ))}

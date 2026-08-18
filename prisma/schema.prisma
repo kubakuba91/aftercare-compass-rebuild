@@ -552,16 +552,19 @@ model AdminAuditLog {
 }
 
 model ProfileImage {
-  id          String           @id @default(cuid())
-  profileId   String
-  profile     AftercareProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  url         String
-  storagePath String
-  altText     String?
-  sortOrder   Int              @default(0)
-  isCover     Boolean          @default(false)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id               String           @id @default(cuid())
+  profileId        String
+  profile          AftercareProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  url              String
+  storagePath      String
+  altText          String?
+  sortOrder        Int              @default(0)
+  isCover          Boolean          @default(false)
+  presentationMode String           @default("auto")
+  focalX           Int              @default(50)
+  focalY           Int              @default(50)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   @@index([profileId, sortOrder])
   @@index([profileId, isCover])

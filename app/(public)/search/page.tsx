@@ -1,10 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma, ProfileOwnershipStatus, ProfileType, Role, SubscriptionStatus } from "@prisma/client";
 import { MapPin } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
+import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
 import { ProfileOwnershipBadge } from "@/components/public/profile-ownership-badge";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
@@ -435,7 +435,10 @@ export default async function SearchPage({
         select: {
           id: true,
           url: true,
-          altText: true
+          altText: true,
+          focalX: true,
+          focalY: true,
+          presentationMode: true
         }
       }
     }
@@ -560,13 +563,13 @@ export default async function SearchPage({
                   <Link className="focus-ring grid gap-0 md:grid-cols-[190px_1fr]" href={`/profiles/${profile.slug}`}>
                     <div className="relative min-h-40 bg-muted md:min-h-0">
                       {profile.images[0] ? (
-                        <Image
+                        <AdaptiveProfileImage
                           alt={profile.images[0].altText || profile.programName}
-                          className="object-cover"
-                          fill
+                          focalX={profile.images[0].focalX}
+                          focalY={profile.images[0].focalY}
+                          mode={profile.images[0].presentationMode}
                           sizes="190px"
                           src={profile.images[0].url}
-                          unoptimized
                         />
                       ) : (
                         <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(20,184,166,0.18),rgba(30,64,175,0.12)),linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:100%_100%,34px_34px,34px_34px]" />

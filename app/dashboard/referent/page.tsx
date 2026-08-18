@@ -22,7 +22,7 @@ import { PhoneScreeningSlotPicker } from "@/components/dashboard/phone-screening
 import { SmsConsentCard } from "@/components/dashboard/sms-consent-card";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { formatBillingStatus, getBillingPlan, getBillingPlansWithStripePrices } from "@/lib/billing";
+import { enterpriseSalesHref, formatBillingStatus, getBillingPlan, getBillingPlansWithStripePrices } from "@/lib/billing";
 import { canDisplayVerifiedBadge, canReceiveDirectReferrals, getReferentTeamLimit } from "@/lib/feature-gates";
 import { formatDate } from "@/lib/format-utils";
 import {
@@ -290,7 +290,9 @@ export default async function ReferentDashboardPage({
   const referentBillingPlans = await getBillingPlansWithStripePrices("referent");
   const referentBillingCycle = organization?.subscriptionBillingCycle === "annual" ? "annual" : "monthly";
   const referentCurrentPriceLabel =
-    referentBillingPlans.find((plan) => plan.key === referentBillingPlan.key)?.priceLabels[referentBillingCycle] ?? "Custom";
+    referentBillingPlan.monthlyPrice === null
+      ? organization?.subscriptionStatus === "trialing" ? "Trialing" : "Contact sales for pricing"
+      : referentBillingPlans.find((plan) => plan.key === referentBillingPlan.key)?.priceLabels[referentBillingCycle] ?? "Not configured";
 
   return (
     <main className="shell py-8">
@@ -410,7 +412,9 @@ export default async function ReferentDashboardPage({
                               {isCurrentPlan ? <Badge tone="success">Current</Badge> : null}
                             </div>
                           </td>
-                          <td className="px-4 py-4 align-top font-semibold">{plan.priceLabels.monthly}</td>
+                          <td className="px-4 py-4 align-top font-semibold">
+                            {plan.monthlyPrice === null ? <span className="text-muted-foreground">—</span> : plan.priceLabels.monthly}
+                          </td>
                           <td className="px-4 py-4 align-top">{formatPlanLimit(planTeamLimit(plan.key))}</td>
                           <td className="px-4 py-4 align-top text-muted-foreground">
                             <ul className="grid gap-1">
@@ -420,22 +424,30 @@ export default async function ReferentDashboardPage({
                             </ul>
                           </td>
                           <td className="px-4 py-4 align-top">
-                            <form action={changeBillingPlan} className="flex justify-end gap-2">
-                              <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
-                              <input name="plan" type="hidden" value={plan.key} />
-                              <select
-                                aria-label={`${plan.label} billing cycle`}
-                                className="min-h-10 max-w-32 rounded-md border border-border bg-white px-3 text-sm"
-                                name="billingCycle"
-                                defaultValue={organization?.subscriptionBillingCycle || "monthly"}
-                              >
-                                <option value="monthly">Monthly</option>
-                                <option value="annual">Annual</option>
-                              </select>
-                              <button className="focus-ring ac-button ac-button--primary min-h-10">
-                                {isCurrentPlan ? "Update" : "Choose"}
-                              </button>
-                            </form>
+                            {plan.monthlyPrice === null ? (
+                              <div className="flex justify-end">
+                                <a className="focus-ring ac-button ac-button--primary min-h-10" href={enterpriseSalesHref}>
+                                  Contact sales
+                                </a>
+                              </div>
+                            ) : (
+                              <form action={changeBillingPlan} className="flex justify-end gap-2">
+                                <input name="returnTo" type="hidden" value="/dashboard/referent?tab=subscription" />
+                                <input name="plan" type="hidden" value={plan.key} />
+                                <select
+                                  aria-label={`${plan.label} billing cycle`}
+                                  className="min-h-10 max-w-32 rounded-md border border-border bg-white px-3 text-sm"
+                                  name="billingCycle"
+                                  defaultValue={organization?.subscriptionBillingCycle || "monthly"}
+                                >
+                                  <option value="monthly">Monthly</option>
+                                  <option value="annual">Annual</option>
+                                </select>
+                                <button className="focus-ring ac-button ac-button--primary min-h-10">
+                                  {isCurrentPlan ? "Update" : "Choose"}
+                                </button>
+                              </form>
+                            )}
                           </td>
                         </tr>
                       );

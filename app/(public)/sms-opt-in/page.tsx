@@ -1,7 +1,8 @@
 import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, MessageSquareText, ShieldCheck } from "lucide-react";
+import { CircleCheckBig, MessageSquareText, ShieldCheck } from "lucide-react";
+import { BackLink } from "@/components/public/back-button";
 import { publicAppUrl } from "@/lib/app-urls";
 import { safeSmsReturnDestination } from "@/lib/sms-consent";
 import { submitSmsOptIn } from "./actions";
@@ -16,7 +17,7 @@ export const metadata = {
 export default async function SmsOptInPage({
   searchParams
 }: {
-  searchParams: Promise<{ message?: string; returnTo?: string }>;
+  searchParams: Promise<{ message?: string; returnTo?: string; success?: string }>;
 }) {
   const [query, requestHeaders] = await Promise.all([searchParams, headers()]);
   const returnTo = safeSmsReturnDestination(query.returnTo || requestHeaders.get("referer"));
@@ -24,13 +25,9 @@ export default async function SmsOptInPage({
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.13),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(30,64,175,0.14),transparent_40%)] px-4 py-10 sm:py-16">
       <div className="mx-auto w-full max-w-2xl">
-        <Link
-          className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-md px-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
-          href={returnTo}
-        >
-          <ArrowLeft aria-hidden="true" size={18} />
+        <BackLink href={returnTo} surface="page">
           Back
-        </Link>
+        </BackLink>
 
         <section className="ac-card mt-4 overflow-hidden p-0 shadow-xl" aria-labelledby="sms-opt-in-heading">
           <div className="border-b border-border bg-white px-6 py-7 sm:px-9">
@@ -65,6 +62,23 @@ export default async function SmsOptInPage({
             </p>
           </div>
 
+          {query.success === "1" ? (
+            <div className="grid gap-6 bg-white px-6 py-9 text-center sm:px-9 sm:py-12" role="status">
+              <span className="mx-auto inline-flex size-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <CircleCheckBig aria-hidden="true" size={36} strokeWidth={2.25} />
+              </span>
+              <p className="mx-auto max-w-lg text-lg leading-8 text-muted-foreground">
+                <strong className="font-semibold text-foreground">You&apos;re all set!</strong> You&apos;ll receive SMS updates from
+                Aftercare Compass about referral status, screening, and scheduling. Reply STOP at any time to unsubscribe.
+              </p>
+              <Link
+                className="focus-ring ac-button ac-button--primary mx-auto w-full max-w-sm justify-center rounded-xl text-base shadow-sm"
+                href={returnTo}
+              >
+                Continue
+              </Link>
+            </div>
+          ) : (
           <form action={submitSmsOptIn} className="grid gap-6 bg-white px-6 py-7 sm:px-9 sm:py-9">
             <input name="returnTo" type="hidden" value={returnTo} />
             <label className="absolute -left-[10000px] top-auto size-px overflow-hidden" aria-hidden="true">
@@ -126,6 +140,7 @@ export default async function SmsOptInPage({
               Your consent is recorded securely. We&apos;ll send a confirmation text after you submit.
             </p>
           </form>
+          )}
         </section>
       </div>
     </main>

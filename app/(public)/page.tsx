@@ -109,7 +109,8 @@ export default async function HomePage() {
 
             <div className="relative max-w-5xl px-6 py-14 md:px-20 md:py-16">
               <h1 className="text-4xl font-semibold leading-tight tracking-normal text-white md:text-6xl">
-                Close the gap. Change the outcome.
+                <span className="block">Close the gap.</span>
+                <span className="block">Change the outcome.</span>
               </h1>
               <p className="mt-4 max-w-4xl text-lg leading-8 text-white">
                 Finding the right next step for your client shouldn&apos;t take the whole day. Aftercare Compass connects your

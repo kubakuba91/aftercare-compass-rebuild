@@ -831,9 +831,14 @@ export default async function AdminDashboardPage({
                       <td className="py-4 pr-4">{organization._count.profiles}</td>
                       <td className="py-4 pr-4">{requestCount}</td>
                       <td className="py-4 pr-4">
-                        <Badge tone={statusTone(organization.subscriptionStatus || "draft")}>
-                          {organization.subscriptionPlan || formatValue(organization.subscriptionStatus || "Not set")}
-                        </Badge>
+                        <div className="flex flex-wrap gap-2">
+                          {organization.subscriptionPlan ? (
+                            <Badge>{formatValue(organization.subscriptionPlan)}</Badge>
+                          ) : null}
+                          <Badge tone={statusTone(organization.subscriptionStatus || "draft")}>
+                            {formatValue(organization.subscriptionStatus || "Not set")}
+                          </Badge>
+                        </div>
                       </td>
                       <td className="py-4 pr-4 text-muted-foreground">{formatDate(organization.createdAt)}</td>
                     </tr>

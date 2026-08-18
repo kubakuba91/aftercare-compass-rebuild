@@ -128,6 +128,41 @@ a.focus-ring:active,
   transform: translateY(0);
 }
 
+.ac-back-button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 12px;
+  padding-inline: 20px;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ac-back-button--page {
+  border: 1px solid var(--border);
+  background: #fff;
+  box-shadow: var(--control-shadow);
+}
+
+.ac-back-button--page:hover {
+  background: var(--surface-secondary);
+}
+
+.ac-back-button--panel {
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ac-back-button--panel:hover {
+  background: var(--surface-secondary);
+}
+
+.ac-back-button--page.focus-ring:focus:not(:focus-visible) {
+  box-shadow: var(--control-shadow);
+}
+
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
 select,
 textarea {

@@ -19,6 +19,13 @@ function optInErrorUrl(message: string, returnTo: string) {
   return destination.toString();
 }
 
+function optInSuccessUrl(returnTo: string) {
+  const destination = new URL(publicAppUrl("/sms-opt-in"));
+  destination.searchParams.set("success", "1");
+  destination.searchParams.set("returnTo", returnTo);
+  return destination.toString();
+}
+
 export async function submitSmsOptIn(formData: FormData) {
   const returnTo = safeSmsReturnDestination(String(formData.get("returnTo") || ""));
   const honeypot = String(formData.get("companyWebsite") || "").trim();
@@ -80,13 +87,7 @@ export async function submitSmsOptIn(formData: FormData) {
     });
   } catch (error) {
     console.error("SMS opt-in confirmation failed", error);
-    redirect(
-      optInErrorUrl(
-        "Your consent was saved, but we could not send the confirmation text. Please try again later.",
-        returnTo
-      )
-    );
   }
 
-  redirect(returnTo);
+  redirect(optInSuccessUrl(returnTo));
 }

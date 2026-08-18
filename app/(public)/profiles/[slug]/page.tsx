@@ -129,19 +129,19 @@ function ContactForm({
         <input name="slug" type="hidden" value={profile.slug} />
         <input aria-hidden="true" autoComplete="off" className="hidden" name="companyWebsite" tabIndex={-1} />
         <label className="grid gap-2 text-sm font-medium">
-          Name
+          <span>Name <span className="text-muted-foreground">(required)</span></span>
           <input className="min-h-10 rounded-md border border-border px-3" name="name" required />
         </label>
         <label className="grid gap-2 text-sm font-medium">
-          Email
+          <span>Email <span className="text-muted-foreground">(required)</span></span>
           <input className="min-h-10 rounded-md border border-border px-3" name="email" required type="email" />
         </label>
         <label className="grid gap-2 text-sm font-medium">
-          Phone
+          <span>Phone <span className="text-muted-foreground">(optional)</span></span>
           <input className="min-h-10 rounded-md border border-border px-3" name="phone" />
         </label>
         <label className="grid gap-2 text-sm font-medium">
-          Message
+          <span>Message <span className="text-muted-foreground">(required)</span></span>
           <textarea className="min-h-28 rounded-md border border-border p-3" name="message" required />
         </label>
         <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
@@ -466,6 +466,7 @@ export default async function PublicProfilePage({
   const isSoberLiving = profile.type === "sober_living";
   const profileShowsLiveAvailability = !isSoberLiving || canUseLiveAvailability(profile.organization, profile);
   const profileShowsVerifiedBadge = canDisplayVerifiedBadge(profile.organization, profile);
+  const availabilityLabel = availabilityText(profile, profileShowsLiveAvailability);
   const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
   const priceLabel = formatPricePerWeek(profile.pricePerWeek);
   const moveInCostLabel = formatMoveInCost(profile.moveInCost);
@@ -524,15 +525,9 @@ export default async function PublicProfilePage({
                 <div className="flex flex-wrap gap-2">
                   <TrustBadge isVerified={profileShowsVerifiedBadge} verificationTier={profile.verificationTier} />
                   <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
-                  <Badge
-                    tone={
-                      (isSoberLiving ? profileShowsLiveAvailability && profile.bedsAvailable : profile.acceptingNewPatients)
-                        ? "success"
-                        : "warning"
-                    }
-                  >
-                    {availabilityText(profile, profileShowsLiveAvailability)}
-                  </Badge>
+                  {availabilityLabel !== "Call for availability" ? (
+                    <Badge tone="success">{availabilityLabel}</Badge>
+                  ) : null}
                 </div>
                 <FavoriteListingButton
                   canFavorite={isReferent}

@@ -5,6 +5,7 @@ import { aftercarePlans, referentPlans } from "@/lib/plans";
 import { getStripe, hasStripeConfig } from "@/lib/stripe";
 
 export const billingCycleOptions = ["monthly", "annual"] as const;
+export const enterpriseSalesHref = "mailto:admin@aftercarecompass.com?subject=Aftercare%20Compass%20Enterprise";
 
 export type BillingCycle = (typeof billingCycleOptions)[number];
 export type BillingPlanAudience = "referent" | "aftercare";

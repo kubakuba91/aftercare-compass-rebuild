@@ -6,6 +6,6 @@ export const publicLeadSchema = z.object({
   name: z.string().min(1).max(120),
   email: z.string().email(),
   phone: z.string().max(40).optional(),
-  message: z.string().min(10).max(2000),
+  message: z.string().trim().min(1).max(2000),
   companyWebsite: z.string().max(0).optional()
 });

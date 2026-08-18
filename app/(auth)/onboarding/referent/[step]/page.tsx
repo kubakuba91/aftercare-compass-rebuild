@@ -4,7 +4,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import { OnboardingRecoveryCard } from "@/components/onboarding/onboarding-recovery-card";
 import { Card } from "@/components/ui/card";
-import { getBillingPlansWithStripePrices } from "@/lib/billing";
+import { enterpriseSalesHref, getBillingPlansWithStripePrices } from "@/lib/billing";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { referentPlans } from "@/lib/plans";
@@ -268,12 +268,28 @@ export default async function ReferentStepPage({
                 <>
                   <div className="text-sm font-medium">Plan preference</div>
                   <div className="ac-panel-card p-4 text-sm text-muted-foreground">
-                    Billing is skipped during beta onboarding. Choose a preference now, or continue with the default Professional plan.
+                    Billing is skipped during alpha onboarding. Choose a preference now, or continue with the default Professional plan.
                   </div>
                   <div className="grid gap-3">
                     {referentPlanOptions.map((planKey) => {
                       const plan = referentPlans[planKey];
                       const price = referentBillingPlans.find((billingPlan) => billingPlan.key === planKey)?.priceLabels.monthly ?? "Custom";
+
+                      if (planKey === "enterprise") {
+                        return (
+                          <div key={planKey} className="ac-panel-card grid gap-3 p-4">
+                            <div>
+                              <span className="block font-semibold">{plan.label}</span>
+                              <span className="mt-1 block text-sm text-muted-foreground">
+                                Unlimited team members · Messaging included · Custom support
+                              </span>
+                            </div>
+                            <a className="focus-ring ac-button ac-button--secondary w-fit" href={enterpriseSalesHref}>
+                              Contact sales
+                            </a>
+                          </div>
+                        );
+                      }
 
                       return (
                         <label key={planKey} className="ac-panel-card grid gap-2 p-4">
@@ -282,7 +298,7 @@ export default async function ReferentStepPage({
                               type="radio"
                               name="selectedPlan"
                               value={planKey}
-                              defaultChecked={(referentDetails?.selectedPlan ?? "professional") === planKey}
+                              defaultChecked={(referentDetails?.selectedPlan === "enterprise" ? "professional" : referentDetails?.selectedPlan ?? "professional") === planKey}
                             />
                             <span>
                               <span className="block font-semibold">{plan.label}</span>

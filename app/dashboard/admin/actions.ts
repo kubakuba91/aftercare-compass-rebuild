@@ -1061,8 +1061,8 @@ export async function updateAdminProfileImagePresentation(formData: FormData) {
 
   const profileId = String(formData.get("profileId") || "");
   const imageId = String(formData.get("imageId") || "");
-  const requestedMode = String(formData.get("presentationMode") || "auto");
-  const presentationMode = requestedMode === "photo" || requestedMode === "graphic" ? requestedMode : "auto";
+  const requestedMode = String(formData.get("presentationMode") || "photo");
+  const presentationMode = requestedMode === "auto" || requestedMode === "graphic" ? requestedMode : "photo";
   const requestedFocalX = Number.parseInt(String(formData.get("focalX") ?? "50"), 10);
   const requestedFocalY = Number.parseInt(String(formData.get("focalY") ?? "50"), 10);
   const focalX = Number.isFinite(requestedFocalX) ? Math.min(100, Math.max(0, requestedFocalX)) : 50;

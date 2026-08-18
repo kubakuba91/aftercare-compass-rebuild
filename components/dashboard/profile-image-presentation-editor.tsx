@@ -41,7 +41,7 @@ const presentationOptions: Array<{
 ];
 
 function validMode(value: string): ProfileImagePresentationMode {
-  return value === "photo" || value === "graphic" ? value : "auto";
+  return value === "auto" || value === "graphic" ? value : "photo";
 }
 
 export function ProfileImagePresentationEditor({

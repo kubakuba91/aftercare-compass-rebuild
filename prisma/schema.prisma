@@ -560,7 +560,7 @@ model ProfileImage {
   altText          String?
   sortOrder        Int              @default(0)
   isCover          Boolean          @default(false)
-  presentationMode String           @default("auto")
+  presentationMode String           @default("photo")
   focalX           Int              @default(50)
   focalY           Int              @default(50)
   createdAt        DateTime         @default(now())

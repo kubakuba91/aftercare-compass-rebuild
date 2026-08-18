@@ -23,7 +23,7 @@ export function AdaptiveProfileImage({
   className,
   focalX,
   focalY,
-  mode = "auto",
+  mode = "photo",
   priority = false,
   sizes,
   src

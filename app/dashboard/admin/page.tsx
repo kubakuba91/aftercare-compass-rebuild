@@ -31,7 +31,7 @@ import { getProtectedAppUser } from "@/lib/protected-routing";
 import { formatDate, formatValue as formatDisplayValue } from "@/lib/format-utils";
 import { getProfileOptionGroups, profileOptionCategories, profileOptionCategoryKeys } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
-import { addProfileOption, reviewOnboardingSubmission, reviewProfileClaimRequest, sendProfileClaimOutreach, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus, updateProfileOptionVisibility } from "./actions";
+import { addProfileOption, reviewOnboardingSubmission, reviewProfileClaimRequest, sendAdminBedAvailabilityTextCheck, sendProfileClaimOutreach, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus, updateProfileOptionVisibility } from "./actions";
 import { DataSettingsCategoryTabs } from "./data-settings-category-tabs";
 
 export const dynamic = "force-dynamic";
@@ -1021,6 +1021,21 @@ export default async function AdminDashboardPage({
                         >
                           Edit listing
                         </RowActionsMenuLink>
+                        {profile.type === ProfileType.sober_living ? (
+                          <form action={sendAdminBedAvailabilityTextCheck}>
+                            <input name="profileId" type="hidden" value={profile.id} />
+                            <input name="returnTo" type="hidden" value="profiles" />
+                            <ConfirmSubmitButton
+                              className="block w-full rounded-md px-3 py-2 text-left text-sm transition hover:bg-surface-secondary"
+                              message={`Send a bed check text for ${profile.programName}?`}
+                            >
+                              <span className="font-semibold">Send bed check</span>
+                              <span className="mt-0.5 block text-xs text-muted-foreground">
+                                Text the home&apos;s SMS-enabled manager.
+                              </span>
+                            </ConfirmSubmitButton>
+                          </form>
+                        ) : null}
                         {profile.ownershipStatus === ProfileOwnershipStatus.unclaimed ? (
                           <>
                             <RowActionsMenuDivider />

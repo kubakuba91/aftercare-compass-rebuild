@@ -7,3 +7,5 @@ coverage
 *.tsbuildinfo
 prisma/dev.db
 
+.vercel
+.env*

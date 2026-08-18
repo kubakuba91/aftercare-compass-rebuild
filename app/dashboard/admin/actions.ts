@@ -82,6 +82,7 @@ export async function sendAdminBedAvailabilityTextCheck(formData: FormData) {
 
   const profileId = String(formData.get("profileId") || "");
   const managerId = String(formData.get("managerId") || "");
+  const returnToProfiles = String(formData.get("returnTo") || "") === "profiles";
   const profile = await prisma.aftercareProfile.findFirst({
     where: {
       id: profileId,
@@ -104,9 +105,9 @@ export async function sendAdminBedAvailabilityTextCheck(formData: FormData) {
     redirect(adminProfileHref("Sober living profile was not found."));
   }
 
-  const manager = await prisma.user.findFirst({
+  const managers = await prisma.user.findMany({
     where: {
-      id: managerId,
+      ...(managerId ? { id: managerId } : {}),
       orgId: profile.orgId,
       isActive: true,
       smsOptIn: true,
@@ -128,11 +129,22 @@ export async function sendAdminBedAvailabilityTextCheck(formData: FormData) {
     select: {
       id: true,
       phone: true
-    }
+    },
+    orderBy: { createdAt: "asc" },
+    take: managerId ? 1 : 2
   });
+  const manager = managers[0];
+
+  if (!managerId && managers.length > 1) {
+    redirect(adminEditProfileHref(profile.id, "Choose which SMS-enabled manager should receive this bed check."));
+  }
 
   if (!manager?.phone) {
-    redirect(adminEditProfileHref(profile.id, "Choose an SMS-enabled manager for this home."));
+    redirect(
+      returnToProfiles
+        ? adminProfileHref(`${profile.programName} has no SMS-enabled manager available.`)
+        : adminEditProfileHref(profile.id, "Choose an SMS-enabled manager for this home.")
+    );
   }
 
   const token = smsToken();
@@ -187,17 +199,18 @@ export async function sendAdminBedAvailabilityTextCheck(formData: FormData) {
       }
     });
 
-    redirect(
-      adminEditProfileHref(
-        profile.id,
-        `SMS could not be sent. Check Twilio configuration. ${availabilityReplyExample()}`
-      )
-    );
+    const message = `SMS could not be sent. Check Twilio configuration. ${availabilityReplyExample()}`;
+    redirect(returnToProfiles ? adminProfileHref(message) : adminEditProfileHref(profile.id, message));
   }
 
   revalidatePath(`/dashboard/admin/profiles/${profile.id}/edit`);
+  revalidatePath("/dashboard/admin");
   revalidatePath("/dashboard/aftercare");
-  redirect(adminEditProfileHref(profile.id, "Bed check text sent."));
+  redirect(
+    returnToProfiles
+      ? adminProfileHref(`Bed check text sent for ${profile.programName}.`)
+      : adminEditProfileHref(profile.id, "Bed check text sent.")
+  );
 }
 
 function adminDataSettingsHref(message: string, category?: ProfileOptionCategory | null) {

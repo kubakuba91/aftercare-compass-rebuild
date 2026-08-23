@@ -15,6 +15,7 @@ import { geocodeSearchQuery } from "@/lib/geocoding";
 import { getActiveProfileOptionValues } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { approximatePublicPoint, milesBetween, searchCenterFromQuery } from "@/lib/public-location";
+import { profilePlaceholderAlt, profilePlaceholderImage } from "@/lib/public-profile-placeholder";
 import { richTextToPlainText } from "@/lib/rich-text";
 import { continuedCareDurationOptions } from "@/lib/continued-care-onboarding";
 import { averageLengthOptions } from "@/lib/sober-living-onboarding";
@@ -588,7 +589,11 @@ export default async function SearchPage({
                           src={profile.images[0].url}
                         />
                       ) : (
-                        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(20,184,166,0.18),rgba(30,64,175,0.12)),linear-gradient(90deg,rgba(15,23,42,0.08)_1px,transparent_1px),linear-gradient(rgba(15,23,42,0.08)_1px,transparent_1px)] bg-[size:100%_100%,34px_34px,34px_34px]" />
+                        <AdaptiveProfileImage
+                          alt={profilePlaceholderAlt(profile.type)}
+                          sizes="190px"
+                          src={profilePlaceholderImage(profile.type)}
+                        />
                       )}
                       <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-1 text-xs font-semibold">
                         {index + 1}

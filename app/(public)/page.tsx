@@ -7,6 +7,7 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { dashboardAppUrl } from "@/lib/app-urls";
 import { canUseLiveAvailability } from "@/lib/feature-gates";
+import { profilePlaceholderAlt, profilePlaceholderImage } from "@/lib/public-profile-placeholder";
 import { prisma } from "@/lib/prisma";
 import { redirectToDashboardDestination } from "@/lib/protected-routing";
 
@@ -36,6 +37,7 @@ export default async function HomePage() {
       id: true,
       slug: true,
       programName: true,
+      type: true,
       publicCity: true,
       publicState: true,
       bedsAvailable: true,
@@ -72,8 +74,8 @@ export default async function HomePage() {
       slug: profile.slug,
       programName: profile.programName,
       location: [profile.publicCity, profile.publicState].filter(Boolean).join(", "),
-      photoUrl: profile.images[0]?.url ?? null,
-      photoAlt: profile.images[0]?.altText || profile.programName,
+      photoUrl: profile.images[0]?.url ?? profilePlaceholderImage(profile.type),
+      photoAlt: profile.images[0]?.altText || (profile.images[0] ? profile.programName : profilePlaceholderAlt(profile.type)),
       photoFocalX: profile.images[0]?.focalX ?? 50,
       photoFocalY: profile.images[0]?.focalY ?? 50,
       photoPresentationMode: profile.images[0]?.presentationMode ?? "photo",

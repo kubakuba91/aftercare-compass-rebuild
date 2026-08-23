@@ -4,6 +4,7 @@ import { OrganizationType, ProfileOwnershipStatus } from "@prisma/client";
 import { BadgeCheck, CheckCircle2, Globe2, HandHeart, Mail, MapPin, Phone, PillBottle, Send, ShieldCheck, Users, Video } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
+import { profilePlaceholderAlt, profilePlaceholderImage } from "@/lib/public-profile-placeholder";
 import { BackLink } from "@/components/public/back-link";
 import { ExpandableRichText } from "@/components/public/expandable-rich-text";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
@@ -664,11 +665,13 @@ export default async function PublicProfilePage({
                 </div>
               </div>
             ) : (
-              <div className="mt-6 rounded-lg border border-dashed border-border bg-muted/40 p-6">
-                <p className="text-sm font-semibold">Photos not added yet</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  This provider has not uploaded profile images yet.
-                </p>
+              <div className="relative mt-6 min-h-[28rem] overflow-hidden rounded-[1.25rem] border border-border bg-muted">
+                <AdaptiveProfileImage
+                  alt={profilePlaceholderAlt(profile.type)}
+                  priority
+                  sizes="(min-width: 1024px) 960px, 100vw"
+                  src={profilePlaceholderImage(profile.type)}
+                />
               </div>
             )}
           </div>

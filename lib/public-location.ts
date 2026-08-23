@@ -179,20 +179,12 @@ export function searchCenterFromQuery(query: string): { lat: number; lng: number
     return null;
   }
 
-  const compact = normalized.replace(/\s*,\s*/g, ",");
-  const compactParts = compact.split(",");
+  const possibleState = normalizeState(normalized);
 
-  const parts = normalized.split(" ");
-  const queryParts = compactParts.length === 2 ? compactParts : parts;
-  const stateCandidate = compactParts.length === 2 ? compactParts[1] : parts.at(-1) || "";
-  const possibleState = normalizeState(stateCandidate);
-
-  if (possibleState in stateCenters && queryParts.length === 1) {
-    const stateCenter = stateCenters[possibleState];
-    return { lat: stateCenter[0], lng: stateCenter[1] };
-  }
-
-  if (possibleState in stateCenters && queryParts.length > 1) {
+  // A state-only search can use its approximate center without an external
+  // geocoding request. City/state searches must be geocoded; using the state
+  // center for them makes short radius searches measure from the wrong place.
+  if (possibleState in stateCenters) {
     const stateCenter = stateCenters[possibleState];
     return { lat: stateCenter[0], lng: stateCenter[1] };
   }

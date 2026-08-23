@@ -263,7 +263,10 @@ export default async function SearchPage({
   );
   const minPrice = type === "sober_living" ? numberFromQuery(query.minPrice) : undefined;
   const maxPrice = type === "sober_living" ? numberFromQuery(query.maxPrice) : undefined;
-  const radiusMiles = numberFromQuery(query.radius);
+  const requestedRadiusMiles = numberFromQuery(query.radius);
+  const radiusMiles = requestedRadiusMiles !== undefined && requestedRadiusMiles > 0
+    ? requestedRadiusMiles
+    : undefined;
   const durationOptions = type === "continued_care" ? continuedCareDurationOptions : averageLengthOptions;
   const requestedDuration = firstFromQuery(query.duration) || "";
   const duration = durationOptions.some((option) => option === requestedDuration) ? requestedDuration : "";
@@ -284,6 +287,7 @@ export default async function SearchPage({
   const availability = firstFromQuery(query.availability) === "available" ? "available" : "";
   const showFilters = firstFromQuery(query.filters) === "1";
   const selectedListingId = firstFromQuery(query.selected);
+  const radiusCenter = radiusMiles ? searchCenterFromQuery(q) ?? await geocodeSearchQuery(q) : null;
 
   function selectedListingHref(profileId: string) {
     const params = new URLSearchParams();
@@ -370,7 +374,10 @@ export default async function SearchPage({
     });
   }
 
-  if (q) {
+  // Once a radius has a geographic center, the distance check is the location
+  // filter. Keeping the text-location predicate here would exclude valid nearby
+  // listings in neighboring cities before their distance can be calculated.
+  if (q && !radiusCenter) {
     andFilters.push({
       OR: [
         { programName: { contains: q, mode: Prisma.QueryMode.insensitive } },
@@ -389,7 +396,7 @@ export default async function SearchPage({
   const rawProfiles = await prisma.aftercareProfile.findMany({
     where,
     orderBy: [{ verificationTier: "desc" }, { updatedAt: "desc" }],
-    take: radiusMiles ? 200 : 50,
+    ...(radiusCenter ? {} : { take: 50 }),
     select: {
       id: true,
       slug: true,
@@ -443,9 +450,9 @@ export default async function SearchPage({
       }
     }
   });
-  const radiusCenter = radiusMiles ? searchCenterFromQuery(q) ?? await geocodeSearchQuery(q) : null;
-  const profiles = radiusMiles && radiusCenter
-    ? rawProfiles
+  const profiles = radiusMiles
+    ? radiusCenter
+      ? rawProfiles
         .map((profile) => {
           const point = approximatePublicPoint({
             id: profile.id,
@@ -466,6 +473,7 @@ export default async function SearchPage({
         .sort((first, second) => first.distanceMiles - second.distanceMiles)
         .slice(0, 50)
         .map((item) => item.profile)
+      : []
     : rawProfiles;
 
   return (
@@ -509,6 +517,14 @@ export default async function SearchPage({
 
       <div className="grid gap-5 py-6 lg:grid-cols-[minmax(0,2fr)_minmax(360px,1fr)] lg:items-start">
         <div className="grid gap-4">
+          {radiusMiles && !radiusCenter ? (
+            <Card className="border-amber-200 bg-amber-50">
+              <h2 className="font-semibold text-amber-950">We couldn&apos;t locate that search area</h2>
+              <p className="mt-1 text-sm leading-6 text-amber-900">
+                Enter a city and state, then try the {radiusMiles}-mile distance filter again.
+              </p>
+            </Card>
+          ) : null}
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-semibold">{profiles.length} listings</p>
           </div>

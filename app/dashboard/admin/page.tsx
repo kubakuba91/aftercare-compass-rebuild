@@ -31,7 +31,8 @@ import { getProtectedAppUser } from "@/lib/protected-routing";
 import { formatDate, formatValue as formatDisplayValue } from "@/lib/format-utils";
 import { getProfileOptionGroups, profileOptionCategories, profileOptionCategoryKeys } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
-import { addProfileOption, reviewOnboardingSubmission, reviewProfileClaimRequest, sendAdminBedAvailabilityTextCheck, sendProfileClaimOutreach, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus, updateProfileOptionVisibility } from "./actions";
+import { getSearchFilterSettings, searchFilterDefinitions } from "@/lib/search-filter-settings";
+import { addProfileOption, moveSearchFilterSetting, reviewOnboardingSubmission, reviewProfileClaimRequest, sendAdminBedAvailabilityTextCheck, sendProfileClaimOutreach, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus, updateProfileOptionVisibility, updateSearchFilterSetting } from "./actions";
 import { DataSettingsCategoryTabs } from "./data-settings-category-tabs";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +48,38 @@ const adminTabs = [
 ] as const;
 
 type AdminTab = (typeof adminTabs)[number]["key"];
+const profileSortKeys = ["name", "organization", "location", "type", "claim", "verification"] as const;
+type ProfileSortKey = (typeof profileSortKeys)[number];
+type SortDirection = "asc" | "desc";
+
+function firstQueryValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function positiveInteger(value: string | string[] | undefined, fallback: number) {
+  const parsed = Number(firstQueryValue(value));
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function asProfileSortKey(value: string | string[] | undefined): ProfileSortKey {
+  const selected = firstQueryValue(value);
+  return profileSortKeys.includes(selected as ProfileSortKey) ? selected as ProfileSortKey : "name";
+}
+
+function asSortDirection(value: string | string[] | undefined): SortDirection {
+  return firstQueryValue(value) === "desc" ? "desc" : "asc";
+}
+
+function profileOrderBy(sort: ProfileSortKey, direction: SortDirection): Prisma.AftercareProfileOrderByWithRelationInput[] {
+  const tieBreaker: Prisma.AftercareProfileOrderByWithRelationInput = { programName: "asc" };
+
+  if (sort === "organization") return [{ organization: { name: direction } }, tieBreaker];
+  if (sort === "location") return [{ publicState: direction }, { publicCity: direction }, tieBreaker];
+  if (sort === "type") return [{ type: direction }, tieBreaker];
+  if (sort === "claim") return [{ ownershipStatus: direction }, tieBreaker];
+  if (sort === "verification") return [{ verificationTier: direction }, tieBreaker];
+  return [{ programName: direction }];
+}
 
 function asAdminTab(value: string | string[] | undefined): AdminTab {
   const selected = Array.isArray(value) ? value[0] : value;
@@ -187,7 +220,10 @@ export default async function AdminDashboardPage({
     organizationSearch?: string | string[];
     profileSearch?: string | string[];
     profileOwnership?: string | string[];
-    profileOwnershipSort?: string | string[];
+    profileSort?: string | string[];
+    profileDirection?: string | string[];
+    profilePage?: string | string[];
+    profilePageSize?: string | string[];
   }>;
 }) {
   const [query, appUser] = await Promise.all([
@@ -201,29 +237,57 @@ export default async function AdminDashboardPage({
   const previousDataCategory =
     dataSettingCategories[(activeDataCategoryIndex - 1 + dataSettingCategories.length) % dataSettingCategories.length];
   const nextDataCategory = dataSettingCategories[(activeDataCategoryIndex + 1) % dataSettingCategories.length];
-  const reviewMessage = Array.isArray(query.reviewMessage) ? query.reviewMessage[0] : query.reviewMessage;
-  const organizationSearchValue = Array.isArray(query.organizationSearch) ? query.organizationSearch[0] : query.organizationSearch;
+  const reviewMessage = firstQueryValue(query.reviewMessage);
+  const organizationSearchValue = firstQueryValue(query.organizationSearch);
   const organizationSearchTerm = organizationSearchValue?.trim() ?? "";
   const organizationSearchLower = organizationSearchTerm.toLowerCase();
-  const profileSearchValue = Array.isArray(query.profileSearch) ? query.profileSearch[0] : query.profileSearch;
+  const profileSearchValue = firstQueryValue(query.profileSearch);
   const profileSearchTerm = profileSearchValue?.trim() ?? "";
-  const profileOwnershipValue = Array.isArray(query.profileOwnership) ? query.profileOwnership[0] : query.profileOwnership;
+  const profileOwnershipValue = firstQueryValue(query.profileOwnership);
   const profileOwnership = Object.values(ProfileOwnershipStatus).includes(profileOwnershipValue as ProfileOwnershipStatus)
     ? profileOwnershipValue as ProfileOwnershipStatus
     : null;
-  const profileOwnershipSortValue = Array.isArray(query.profileOwnershipSort)
-    ? query.profileOwnershipSort[0]
-    : query.profileOwnershipSort;
-  const profileOwnershipSort = profileOwnershipSortValue === "asc" || profileOwnershipSortValue === "desc"
-    ? profileOwnershipSortValue
-    : null;
-  const nextProfileOwnershipSort = profileOwnershipSort === "asc" ? "desc" : "asc";
-  const ownershipSortParams = new URLSearchParams({ tab: "profiles", profileOwnershipSort: nextProfileOwnershipSort });
-  if (profileSearchTerm) ownershipSortParams.set("profileSearch", profileSearchTerm);
-  if (profileOwnership) ownershipSortParams.set("profileOwnership", profileOwnership);
+  const selectedProfileSort = asProfileSortKey(query.profileSort);
+  const selectedProfileDirection = asSortDirection(query.profileDirection);
+  const profilePage = positiveInteger(query.profilePage, 1);
+  const requestedProfilePageSize = positiveInteger(query.profilePageSize, 25);
+  const profilePageSize = [25, 50, 100].includes(requestedProfilePageSize) ? requestedProfilePageSize : 25;
+  const profileWhere: Prisma.AftercareProfileWhereInput = {
+    ...(profileSearchTerm
+      ? {
+        OR: [
+          { programName: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } },
+          { publicCity: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } },
+          { publicState: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } },
+          { organization: { name: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } } }
+        ]
+      }
+      : {}),
+    ...(profileOwnership ? { ownershipStatus: profileOwnership } : {})
+  };
+  const profileTableParams = new URLSearchParams({
+    tab: "profiles",
+    profileSort: selectedProfileSort,
+    profileDirection: selectedProfileDirection,
+    profilePageSize: profilePageSize.toString()
+  });
+  if (profileSearchTerm) profileTableParams.set("profileSearch", profileSearchTerm);
+  if (profileOwnership) profileTableParams.set("profileOwnership", profileOwnership);
+  const profileTableHref = (overrides: Record<string, string | null>) => {
+    const params = new URLSearchParams(profileTableParams);
+    Object.entries(overrides).forEach(([key, value]) => value === null ? params.delete(key) : params.set(key, value));
+    return `/dashboard/admin?${params.toString()}`;
+  };
+  const profileSortHref = (sort: ProfileSortKey) => profileTableHref({
+    profileSort: sort,
+    profileDirection: selectedProfileSort === sort && selectedProfileDirection === "asc" ? "desc" : "asc",
+    profilePage: null
+  });
   const clearProfileSearchParams = new URLSearchParams({ tab: "profiles" });
   if (profileOwnership) clearProfileSearchParams.set("profileOwnership", profileOwnership);
-  if (profileOwnershipSort) clearProfileSearchParams.set("profileOwnershipSort", profileOwnershipSort);
+  clearProfileSearchParams.set("profileSort", selectedProfileSort);
+  clearProfileSearchParams.set("profileDirection", selectedProfileDirection);
+  clearProfileSearchParams.set("profilePageSize", profilePageSize.toString());
   const organizationSearchTypes = organizationSearchTerm
     ? [
         organizationSearchLower.includes("referent") ? OrganizationType.referent : null,
@@ -259,6 +323,7 @@ export default async function AdminDashboardPage({
     currentReferralResponses,
     previousReferralResponses,
     organizations,
+    profileTotal,
     profiles,
     referrals,
     leads,
@@ -266,7 +331,8 @@ export default async function AdminDashboardPage({
     applicationReviews,
     verificationDocuments,
     flags,
-    profileOptionGroups
+    profileOptionGroups,
+    searchFilterSettings
   ] = await Promise.all([
     prisma.organization.groupBy({
       by: ["type"],
@@ -349,24 +415,12 @@ export default async function AdminDashboardPage({
         }
       }
     }),
+    prisma.aftercareProfile.count({ where: profileWhere }),
     prisma.aftercareProfile.findMany({
-      where: {
-        ...(profileSearchTerm
-          ? {
-            OR: [
-              { programName: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } },
-              { publicCity: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } },
-              { publicState: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } },
-              { organization: { name: { contains: profileSearchTerm, mode: Prisma.QueryMode.insensitive } } }
-            ]
-          }
-          : {}),
-        ...(profileOwnership ? { ownershipStatus: profileOwnership } : {})
-      },
-      orderBy: profileOwnershipSort
-        ? [{ ownershipStatus: profileOwnershipSort }, { programName: "asc" }]
-        : [{ status: "asc" }, { updatedAt: "desc" }],
-      take: 75,
+      where: profileWhere,
+      orderBy: profileOrderBy(selectedProfileSort, selectedProfileDirection),
+      skip: (profilePage - 1) * profilePageSize,
+      take: profilePageSize,
       select: {
         id: true,
         slug: true,
@@ -568,7 +622,8 @@ export default async function AdminDashboardPage({
         }
       }
     }),
-    getProfileOptionGroups({ includeInactive: true })
+    getProfileOptionGroups({ includeInactive: true }),
+    getSearchFilterSettings()
   ]);
 
   const countOrganizations = (type: OrganizationType) =>
@@ -601,6 +656,12 @@ export default async function AdminDashboardPage({
     label: profileOptionCategories[category].label,
     activeCount: profileOptionGroups[category].filter((option) => option.isActive).length
   }));
+  const profilePageCount = Math.max(1, Math.ceil(profileTotal / profilePageSize));
+  const profileRangeStart = profileTotal ? (profilePage - 1) * profilePageSize + 1 : 0;
+  const profileRangeEnd = Math.min(profilePage * profilePageSize, profileTotal);
+  const profileSortIndicator = (sort: ProfileSortKey) => selectedProfileSort === sort
+    ? selectedProfileDirection === "asc" ? "↑" : "↓"
+    : "↕";
   const recentRequests = [
     ...referrals.map((referral) => ({
       id: referral.id,
@@ -877,7 +938,9 @@ export default async function AdminDashboardPage({
                 <form className="flex w-full items-center gap-2 lg:w-[420px]" method="get">
                   <input name="tab" type="hidden" value="profiles" />
                   {profileOwnership ? <input name="profileOwnership" type="hidden" value={profileOwnership} /> : null}
-                  {profileOwnershipSort ? <input name="profileOwnershipSort" type="hidden" value={profileOwnershipSort} /> : null}
+                  <input name="profileSort" type="hidden" value={selectedProfileSort} />
+                  <input name="profileDirection" type="hidden" value={selectedProfileDirection} />
+                  <input name="profilePageSize" type="hidden" value={profilePageSize} />
                   <label className="sr-only" htmlFor="profileSearch">Search homes and programs</label>
                   <div className="focus-within:ring-ring flex min-h-10 flex-1 items-center gap-2 rounded-full border border-border bg-white px-4 shadow-sm focus-within:ring-2">
                     <Search aria-hidden="true" className="shrink-0 text-muted-foreground" size={16} />
@@ -903,7 +966,9 @@ export default async function AdminDashboardPage({
                 <form className="flex items-center gap-2" method="get">
                   <input name="tab" type="hidden" value="profiles" />
                   {profileSearchTerm ? <input name="profileSearch" type="hidden" value={profileSearchTerm} /> : null}
-                  {profileOwnershipSort ? <input name="profileOwnershipSort" type="hidden" value={profileOwnershipSort} /> : null}
+                  <input name="profileSort" type="hidden" value={selectedProfileSort} />
+                  <input name="profileDirection" type="hidden" value={selectedProfileDirection} />
+                  <input name="profilePageSize" type="hidden" value={profilePageSize} />
                   <label className="sr-only" htmlFor="profileOwnership">Filter by claim status</label>
                   <select
                     className="min-h-10 rounded-full border border-border bg-white px-3 text-sm font-semibold shadow-sm"
@@ -922,6 +987,27 @@ export default async function AdminDashboardPage({
                 </form>
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                <form className="flex items-center gap-2" method="get">
+                  <input name="tab" type="hidden" value="profiles" />
+                  {profileSearchTerm ? <input name="profileSearch" type="hidden" value={profileSearchTerm} /> : null}
+                  {profileOwnership ? <input name="profileOwnership" type="hidden" value={profileOwnership} /> : null}
+                  <input name="profileSort" type="hidden" value={selectedProfileSort} />
+                  <input name="profileDirection" type="hidden" value={selectedProfileDirection} />
+                  <label className="sr-only" htmlFor="profilePageSize">Rows per page</label>
+                  <select
+                    className="min-h-10 rounded-full border border-border bg-white px-3 text-sm font-semibold shadow-sm"
+                    defaultValue={profilePageSize}
+                    id="profilePageSize"
+                    name="profilePageSize"
+                  >
+                    <option value="25">25 rows</option>
+                    <option value="50">50 rows</option>
+                    <option value="100">100 rows</option>
+                  </select>
+                  <button className="focus-ring min-h-10 rounded-full border border-border bg-white px-3 text-sm font-semibold shadow-sm" type="submit">
+                    Apply
+                  </button>
+                </form>
                 <details className="group relative">
                   <summary className="focus-ring inline-flex min-h-10 cursor-pointer list-none items-center justify-center gap-2 rounded-full border border-border bg-white px-4 text-sm font-semibold shadow-sm transition hover:border-primary/40">
                     <PlusCircle size={16} />
@@ -944,24 +1030,44 @@ export default async function AdminDashboardPage({
                 </details>
               </div>
             </div>
-            {profileSearchTerm || profileOwnership ? (
-              <p className="mt-3 text-sm text-muted-foreground">
-                Showing {profiles.length} {profiles.length === 1 ? "profile" : "profiles"}
-                {profileSearchTerm ? <> matching &quot;{profileSearchTerm}&quot;</> : null}
-                {profileOwnership ? <> with status {formatValue(profileOwnership)}</> : null}.
-              </p>
-            ) : null}
-            <div className="mt-5 overflow-x-auto">
-              <table className="w-full min-w-[1080px] text-left text-sm">
-              <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+            <p className="mt-3 text-sm text-muted-foreground">
+              Showing {profileRangeStart}–{profileRangeEnd} of {profileTotal} {profileTotal === 1 ? "profile" : "profiles"}
+              {profileSearchTerm ? <> matching &quot;{profileSearchTerm}&quot;</> : null}
+              {profileOwnership ? <> with status {formatValue(profileOwnership)}</> : null}.
+            </p>
+            <div className="mt-5 max-h-[70vh] overflow-auto rounded-md border border-border">
+              <table className="w-full min-w-[1240px] border-separate border-spacing-0 text-left text-sm">
+              <thead className="sticky top-0 z-10 bg-white text-xs uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_var(--border)]">
                 <tr>
-                  <th className="py-3 pr-4">Profile</th>
-                  <th className="py-3 pr-4">Organization</th>
-                  <th className="py-3 pr-4">Type</th>
+                  <th className="px-4 py-3">
+                    <Link className="inline-flex items-center gap-1 underline-offset-4 hover:underline" href={profileSortHref("name")}>
+                      Name <span aria-hidden="true">{profileSortIndicator("name")}</span>
+                    </Link>
+                  </th>
                   <th className="py-3 pr-4">
-                    <Link className="inline-flex items-center gap-1 underline-offset-4 hover:underline" href={`/dashboard/admin?${ownershipSortParams.toString()}`}>
+                    <Link className="inline-flex items-center gap-1 underline-offset-4 hover:underline" href={profileSortHref("organization")}>
+                      Organization <span aria-hidden="true">{profileSortIndicator("organization")}</span>
+                    </Link>
+                  </th>
+                  <th className="py-3 pr-4">
+                    <Link className="inline-flex items-center gap-1 underline-offset-4 hover:underline" href={profileSortHref("location")}>
+                      City / State <span aria-hidden="true">{profileSortIndicator("location")}</span>
+                    </Link>
+                  </th>
+                  <th className="py-3 pr-4">
+                    <Link className="inline-flex items-center gap-1 underline-offset-4 hover:underline" href={profileSortHref("type")}>
+                      Type <span aria-hidden="true">{profileSortIndicator("type")}</span>
+                    </Link>
+                  </th>
+                  <th className="py-3 pr-4">
+                    <Link className="inline-flex items-center gap-1 underline-offset-4 hover:underline" href={profileSortHref("claim")}>
                       Claim status
-                      <span aria-hidden="true">{profileOwnershipSort === "asc" ? "↑" : profileOwnershipSort === "desc" ? "↓" : "↕"}</span>
+                      <span aria-hidden="true">{profileSortIndicator("claim")}</span>
+                    </Link>
+                  </th>
+                  <th className="py-3 pr-4">
+                    <Link className="inline-flex items-center gap-1 underline-offset-4 hover:underline" href={profileSortHref("verification")}>
+                      Verification <span aria-hidden="true">{profileSortIndicator("verification")}</span>
                     </Link>
                   </th>
                   <th className="py-3 pr-4">Status</th>
@@ -975,7 +1081,7 @@ export default async function AdminDashboardPage({
               <tbody>
                 {profiles.length ? profiles.map((profile) => (
                   <tr className="border-b border-border last:border-0" key={profile.id}>
-                    <td className="py-4 pr-4">
+                    <td className="py-4 pl-4 pr-4">
                       {profile.status === ProfileStatus.published ? (
                         <Link className="font-semibold underline-offset-4 hover:underline" href={`/profiles/${profile.slug}?preview=1`}>
                           {profile.programName}
@@ -983,16 +1089,23 @@ export default async function AdminDashboardPage({
                       ) : (
                         <span className="font-semibold">{profile.programName}</span>
                       )}
-                      <p className="mt-1 text-xs text-muted-foreground">{[profile.publicCity, profile.publicState].filter(Boolean).join(", ")}</p>
                     </td>
                     <td className="py-4 pr-4">
                       <p className="font-medium">{profile.organization.name}</p>
                       <p className="mt-1 text-xs text-muted-foreground">{profile.organization._count.users} users</p>
                     </td>
+                    <td className="py-4 pr-4 text-muted-foreground">
+                      {[profile.publicCity, profile.publicState].filter(Boolean).join(", ") || "Not set"}
+                    </td>
                     <td className="py-4 pr-4"><Badge>{profileLabel(profile.type)}</Badge></td>
                     <td className="py-4 pr-4">
                       <Badge tone={profile.ownershipStatus === ProfileOwnershipStatus.claimed ? "success" : profile.ownershipStatus === ProfileOwnershipStatus.unclaimed ? "warning" : "neutral"}>
                         {formatValue(profile.ownershipStatus)}
+                      </Badge>
+                    </td>
+                    <td className="py-4 pr-4">
+                      <Badge tone={profile.verificationTier >= 2 ? "verified" : "neutral"}>
+                        {profile.verificationTier >= 2 ? `Tier ${profile.verificationTier} verified` : "Unverified"}
                       </Badge>
                     </td>
                     <td className="py-4 pr-4">
@@ -1092,13 +1205,32 @@ export default async function AdminDashboardPage({
                   </tr>
                 )) : (
                   <tr>
-                    <td className="py-8 text-center text-sm text-muted-foreground" colSpan={10}>
+                    <td className="py-8 text-center text-sm text-muted-foreground" colSpan={12}>
                       No homes or programs found.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
+            </div>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">Page {Math.min(profilePage, profilePageCount)} of {profilePageCount}</p>
+              <div className="flex items-center gap-2">
+                {profilePage > 1 ? (
+                  <Link className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-semibold" href={profileTableHref({ profilePage: (profilePage - 1).toString() })}>
+                    Previous
+                  </Link>
+                ) : (
+                  <span className="inline-flex min-h-10 items-center justify-center rounded-md border border-border bg-muted px-4 text-sm font-semibold text-muted-foreground">Previous</span>
+                )}
+                {profilePage < profilePageCount ? (
+                  <Link className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground" href={profileTableHref({ profilePage: (profilePage + 1).toString() })}>
+                    Next
+                  </Link>
+                ) : (
+                  <span className="inline-flex min-h-10 items-center justify-center rounded-md bg-muted px-4 text-sm font-semibold text-muted-foreground">Next</span>
+                )}
+              </div>
             </div>
           </Card>
         </div>
@@ -1114,10 +1246,99 @@ export default async function AdminDashboardPage({
                   <h2 className="text-xl font-semibold">Data settings</h2>
                 </div>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                  Manage the dropdown options used in onboarding, profile editing, and system admin listing creation.
-                  Disabled values stay on existing profiles but stop showing as new choices.
+                  Manage public search filters and the dropdown options used in onboarding, profile editing, and listing creation.
+                  Existing profile values are preserved when a filter or option is disabled.
                 </p>
               </div>
+            </div>
+            <section className="ac-panel-card mt-6 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold">Public search filters</h3>
+                  <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
+                    Control which core filters appear, their order, whether they are required, and whether supported filters accept one or multiple values.
+                  </p>
+                </div>
+                <Badge tone="neutral">{searchFilterSettings.filter((setting) => setting.isActive).length} active</Badge>
+              </div>
+              <div className="mt-4 divide-y divide-border overflow-hidden rounded-md border border-border bg-white">
+                {searchFilterSettings.map((setting, index) => {
+                  const definition = searchFilterDefinitions[setting.key];
+
+                  return (
+                    <div className="grid gap-3 p-4 xl:grid-cols-[minmax(220px,1.2fr)_minmax(560px,3fr)_auto] xl:items-end" key={setting.key}>
+                      <div>
+                        <p className="font-semibold">{setting.label}</p>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">{definition.description}</p>
+                      </div>
+                      <form action={updateSearchFilterSetting} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                        <input name="key" type="hidden" value={setting.key} />
+                        <label className="grid gap-1 text-xs font-semibold text-muted-foreground sm:col-span-2">
+                          Display label
+                          <input className="min-h-10 rounded-md border border-border bg-white px-3 text-sm text-foreground" defaultValue={setting.label} name="label" required />
+                        </label>
+                        <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
+                          Status
+                          <select className="min-h-10 rounded-md border border-border bg-white px-2 text-sm text-foreground" defaultValue={String(setting.isActive)} name="isActive">
+                            <option value="true">Active</option>
+                            <option value="false">Off</option>
+                          </select>
+                        </label>
+                        <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
+                          Requirement
+                          <select className="min-h-10 rounded-md border border-border bg-white px-2 text-sm text-foreground" defaultValue={String(setting.isRequired)} name="isRequired">
+                            <option value="false">Optional</option>
+                            <option value="true">Required</option>
+                          </select>
+                        </label>
+                        <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
+                          Selection
+                          <select className="min-h-10 rounded-md border border-border bg-white px-2 text-sm text-foreground disabled:bg-muted" defaultValue={setting.selectionMode} disabled={!definition.configurableSelectionMode} name="selectionMode">
+                            <option value="single">Single</option>
+                            <option value="multiple">Multiple</option>
+                          </select>
+                          {!definition.configurableSelectionMode ? <input name="selectionMode" type="hidden" value={setting.selectionMode} /> : null}
+                        </label>
+                        <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
+                          Sober living
+                          <select className="min-h-10 rounded-md border border-border bg-white px-2 text-sm text-foreground disabled:bg-muted" defaultValue={String(setting.showForSoberLiving)} disabled={!definition.showForSoberLiving} name="showForSoberLiving">
+                            <option value="true">Show</option>
+                            <option value="false">Hide</option>
+                          </select>
+                          {!definition.showForSoberLiving ? <input name="showForSoberLiving" type="hidden" value="false" /> : null}
+                        </label>
+                        <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
+                          Continued care
+                          <select className="min-h-10 rounded-md border border-border bg-white px-2 text-sm text-foreground disabled:bg-muted" defaultValue={String(setting.showForContinuedCare)} disabled={!definition.showForContinuedCare} name="showForContinuedCare">
+                            <option value="true">Show</option>
+                            <option value="false">Hide</option>
+                          </select>
+                          {!definition.showForContinuedCare ? <input name="showForContinuedCare" type="hidden" value="false" /> : null}
+                        </label>
+                        <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground sm:col-span-2 lg:col-span-3 xl:col-span-6" type="submit">
+                          Save filter
+                        </button>
+                      </form>
+                      <div className="flex gap-2 xl:justify-end">
+                        <form action={moveSearchFilterSetting}>
+                          <input name="key" type="hidden" value={setting.key} />
+                          <button aria-label={`Move ${setting.label} up`} className="focus-ring inline-flex size-10 items-center justify-center rounded-md border border-border bg-white text-sm font-semibold disabled:bg-muted disabled:text-muted-foreground" disabled={index === 0} name="direction" value="up">↑</button>
+                        </form>
+                        <form action={moveSearchFilterSetting}>
+                          <input name="key" type="hidden" value={setting.key} />
+                          <button aria-label={`Move ${setting.label} down`} className="focus-ring inline-flex size-10 items-center justify-center rounded-md border border-border bg-white text-sm font-semibold disabled:bg-muted disabled:text-muted-foreground" disabled={index === searchFilterSettings.length - 1} name="direction" value="down">↓</button>
+                        </form>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+            <div className="mt-8 border-t border-border pt-6">
+              <h3 className="text-lg font-semibold">Filter and profile option values</h3>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Add, rename, disable, and target individual choices without removing values already saved to profiles.
+              </p>
             </div>
             <div className="ac-category-tabs-row mt-6">
               <Link

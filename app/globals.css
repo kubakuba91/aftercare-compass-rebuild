@@ -5,7 +5,7 @@
 .default,
 [data-theme="light"],
 [data-theme="default"] {
-  --accent: oklch(62.04% 0.195 253.83);
+  --accent: #10195e;
   --accent-foreground: oklch(99.11% 0 0);
   --background: oklch(97.02% 0.0015 253.83);
   --border: oklch(90% 0.0015 253.83);
@@ -332,7 +332,7 @@ input[type="checkbox"] {
 }
 
 .ac-button--primary:hover {
-  background: oklch(56% 0.195 253.83);
+  background: #0b124a;
 }
 
 .ac-button--secondary {

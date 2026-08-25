@@ -118,6 +118,22 @@ model ProfileOption {
   @@index([category, isActive, sortOrder])
 }
 
+model SearchFilterSetting {
+  id                   String   @id @default(cuid())
+  key                  String   @unique
+  label                String
+  isActive             Boolean  @default(true)
+  isRequired           Boolean  @default(false)
+  selectionMode        String   @default("single")
+  showForSoberLiving   Boolean  @default(true)
+  showForContinuedCare Boolean  @default(true)
+  sortOrder            Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
 model User {
   id              String        @id @default(cuid())
   clerkUserId     String        @unique

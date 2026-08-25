@@ -12,6 +12,7 @@ import {
 import { continuedCareDurationOptions } from "@/lib/continued-care-onboarding";
 import { levelsOfCareOptions } from "@/lib/levels-of-care";
 import { clinicalFocusOptions } from "@/lib/profile-options";
+import { defaultSearchFilterSetting, searchFilterKeys, type SearchFilterSettingRow } from "@/lib/search-filter-settings";
 import { dashboardAppUrl } from "@/lib/app-urls";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +30,8 @@ type PublicSearchHeaderProps = {
   minPrice?: number;
   maxPrice?: number;
   radiusMiles?: number;
-  duration?: string;
+  duration?: string[];
+  searchFilterSettings?: SearchFilterSettingRow[];
   amenities?: string[];
   amenityOptions?: string[];
   mat?: string[];
@@ -57,7 +59,8 @@ export function PublicSearchHeader({
   minPrice,
   maxPrice,
   radiusMiles,
-  duration = "",
+  duration = [],
+  searchFilterSettings = searchFilterKeys().map((key) => defaultSearchFilterSetting(key)),
   amenities = [],
   amenityOptions = [],
   mat = [],
@@ -72,12 +75,13 @@ export function PublicSearchHeader({
 }: PublicSearchHeaderProps) {
   const isContinuedCare = defaultType === "continued_care";
   const durationOptions = isContinuedCare ? continuedCareDurationOptions : averageLengthOptions;
+  const searchFilterByKey = new Map(searchFilterSettings.map((setting) => [setting.key, setting]));
   const activeFilterCount = [
-    population.length,
+    searchFilterByKey.has("population") ? population.length : 0,
     specialty.length,
-    !isContinuedCare && (minPrice !== undefined || maxPrice !== undefined) ? 1 : 0,
-    radiusMiles !== undefined ? 1 : 0,
-    duration ? 1 : 0,
+    searchFilterByKey.has("price") && !isContinuedCare && (minPrice !== undefined || maxPrice !== undefined) ? 1 : 0,
+    searchFilterByKey.has("distance") && radiusMiles !== undefined ? 1 : 0,
+    searchFilterByKey.has("duration") ? duration.length : 0,
     isContinuedCare ? 0 : amenities.length,
     mat.length,
     isContinuedCare ? levelsOfCare.length : 0,
@@ -85,6 +89,81 @@ export function PublicSearchHeader({
     isContinuedCare ? insurance.length : 0,
     verified ? 1 : 0
   ].reduce((sum, value) => sum + (typeof value === "number" ? value : 0), 0);
+
+  function requiredLabel(label: string, required: boolean) {
+    return required ? `${label} (required)` : label;
+  }
+
+  function renderCoreFilter(setting: SearchFilterSettingRow) {
+    if (setting.key === "population") {
+      return (
+        <label className="grid gap-2 text-sm font-medium" key={setting.key}>
+          {requiredLabel(setting.label, setting.isRequired)}
+          {setting.selectionMode === "multiple" ? (
+            <MultiSelectDropdown
+              name="population"
+              options={availablePopulationOptions}
+              placeholder="Select population..."
+              selected={population}
+            />
+          ) : (
+            <select className="min-h-10 w-full rounded-md border border-border bg-white px-3 text-sm" defaultValue={population[0] || ""} name="population" required={setting.isRequired}>
+              <option value="">Select population...</option>
+              {availablePopulationOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          )}
+        </label>
+      );
+    }
+
+    if (setting.key === "price" && !isContinuedCare) {
+      return (
+        <div className="grid gap-2" key={setting.key}>
+          <span className="text-sm font-medium">{requiredLabel(setting.label, setting.isRequired)}</span>
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+            <input className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm" defaultValue={minPrice ?? ""} min="0" name="minPrice" placeholder="$ Min" required={setting.isRequired} type="number" />
+            <span className="text-sm text-muted-foreground">to</span>
+            <input className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm" defaultValue={maxPrice ?? ""} min="0" name="maxPrice" placeholder="$ Max" type="number" />
+          </div>
+        </div>
+      );
+    }
+
+    if (setting.key === "distance") {
+      return (
+        <label className="grid gap-2 text-sm font-medium" key={setting.key}>
+          {requiredLabel(setting.label, setting.isRequired)}
+          <select className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm" defaultValue={radiusMiles ?? ""} name="radius" required={setting.isRequired}>
+            <option value="">Any distance</option>
+            <option value="5">Within 5 miles</option>
+            <option value="10">Within 10 miles</option>
+            <option value="25">Within 25 miles</option>
+            <option value="50">Within 50 miles</option>
+            <option value="100">Within 100 miles</option>
+          </select>
+          <span className="text-xs leading-5 text-muted-foreground">Uses public city-level locations. Enter a city and state for best results.</span>
+        </label>
+      );
+    }
+
+    if (setting.key === "duration") {
+      return (
+        <label className="grid gap-2 text-sm font-medium" key={setting.key}>
+          {requiredLabel(setting.label, setting.isRequired)}
+          {setting.selectionMode === "multiple" ? (
+            <MultiSelectDropdown name="duration" options={durationOptions} placeholder="Select duration..." selected={duration} />
+          ) : (
+            <select className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm" defaultValue={duration[0] || ""} name="duration" required={setting.isRequired}>
+              <option value="">Select duration...</option>
+              {durationOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          )}
+        </label>
+      );
+    }
+
+    return null;
+  }
 
   return (
     <header className="relative z-30 border-b border-border bg-white">
@@ -153,12 +232,12 @@ export function PublicSearchHeader({
           </button>
           {!showFilters ? (
             <>
-              {population.map((value) => <input key={`population-${value}`} name="population" type="hidden" value={value} />)}
+              {searchFilterByKey.has("population") ? population.map((value) => <input key={`population-${value}`} name="population" type="hidden" value={value} />) : null}
               {specialty.map((value) => <input key={`specialty-${value}`} name="specialty" type="hidden" value={value} />)}
-              {!isContinuedCare && minPrice !== undefined ? <input name="minPrice" type="hidden" value={minPrice} /> : null}
-              {!isContinuedCare && maxPrice !== undefined ? <input name="maxPrice" type="hidden" value={maxPrice} /> : null}
-              {radiusMiles !== undefined ? <input name="radius" type="hidden" value={radiusMiles} /> : null}
-              {duration ? <input name="duration" type="hidden" value={duration} /> : null}
+              {searchFilterByKey.has("price") && !isContinuedCare && minPrice !== undefined ? <input name="minPrice" type="hidden" value={minPrice} /> : null}
+              {searchFilterByKey.has("price") && !isContinuedCare && maxPrice !== undefined ? <input name="maxPrice" type="hidden" value={maxPrice} /> : null}
+              {searchFilterByKey.has("distance") && radiusMiles !== undefined ? <input name="radius" type="hidden" value={radiusMiles} /> : null}
+              {searchFilterByKey.has("duration") ? duration.map((value) => <input key={`duration-${value}`} name="duration" type="hidden" value={value} />) : null}
               {!isContinuedCare ? amenities.map((value) => <input key={`amenity-${value}`} name="amenity" type="hidden" value={value} />) : null}
               {mat.map((value) => <input key={`mat-${value}`} name="mat" type="hidden" value={value} />)}
               {isContinuedCare ? levelsOfCare.map((value) => <input key={`level-${value}`} name="levelOfCare" type="hidden" value={value} />) : null}
@@ -173,15 +252,7 @@ export function PublicSearchHeader({
               <h2 className="text-lg font-semibold">
                 {isContinuedCare ? "Continued Care Filters" : "Sober Living Filters"}
               </h2>
-              <label className="grid gap-2 text-sm font-medium">
-                Gender Served
-                <MultiSelectDropdown
-                  name="population"
-                  options={availablePopulationOptions}
-                  placeholder="Select population..."
-                  selected={population}
-                />
-              </label>
+              {searchFilterSettings.map(renderCoreFilter)}
               <label className="grid gap-2 text-sm font-medium">
                 Specialty Populations Served
                 <MultiSelectDropdown
@@ -191,45 +262,6 @@ export function PublicSearchHeader({
                   placeholder="Select specialty populations..."
                   selected={specialty}
                 />
-              </label>
-              {!isContinuedCare ? (
-                <div className="grid gap-2">
-                  <span className="text-sm font-medium">Price per week</span>
-                  <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
-                    <input className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm" defaultValue={minPrice ?? ""} min="0" name="minPrice" placeholder="$ Min" type="number" />
-                    <span className="text-sm text-muted-foreground">to</span>
-                    <input className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm" defaultValue={maxPrice ?? ""} min="0" name="maxPrice" placeholder="$ Max" type="number" />
-                  </div>
-                </div>
-              ) : null}
-              <label className="grid gap-2 text-sm font-medium">
-                Distance from search location
-                <select
-                  className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm"
-                  defaultValue={radiusMiles ?? ""}
-                  name="radius"
-                >
-                  <option value="">Any distance</option>
-                  <option value="5">Within 5 miles</option>
-                  <option value="10">Within 10 miles</option>
-                  <option value="25">Within 25 miles</option>
-                  <option value="50">Within 50 miles</option>
-                  <option value="100">Within 100 miles</option>
-                </select>
-                <span className="text-xs leading-5 text-muted-foreground">
-                  Uses public city-level locations. Enter a city and state for best results.
-                </span>
-              </label>
-              <label className="grid gap-2 text-sm font-medium">
-                Average Program Duration
-                <select className="min-h-10 w-full min-w-0 rounded-md border border-border bg-white px-3 text-sm" defaultValue={duration} name="duration">
-                  <option value="">Select duration...</option>
-                  {durationOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
               </label>
               {isContinuedCare ? (
                 <>

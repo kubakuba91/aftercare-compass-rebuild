@@ -23,6 +23,13 @@ import { normalizePhoneForStorage, normalizePhoneNumber } from "@/lib/phone";
 import { profileOptionCategories, profileOptionCategoryKeys, type ProfileOptionCategory } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
+import {
+  defaultSearchFilterSetting,
+  getSearchFilterSettings,
+  isSearchFilterKey,
+  isSearchFilterSelectionMode,
+  searchFilterDefinitions
+} from "@/lib/search-filter-settings";
 import { valuesFromForm } from "@/lib/sober-living-onboarding";
 import { getProtectedAppUser } from "@/lib/protected-routing";
 import { slugify } from "@/lib/slug";
@@ -234,6 +241,129 @@ function profileOptionCategory(value: FormDataEntryValue | null): ProfileOptionC
   return profileOptionCategoryKeys().includes(category as ProfileOptionCategory)
     ? category as ProfileOptionCategory
     : null;
+}
+
+export async function updateSearchFilterSetting(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const keyValue = String(formData.get("key") || "");
+
+  if (!isSearchFilterKey(keyValue)) {
+    redirect(adminDataSettingsHref("Search filter was not found."));
+  }
+
+  const fallback = defaultSearchFilterSetting(keyValue);
+  const definition = searchFilterDefinitions[keyValue];
+  const requestedMode = String(formData.get("selectionMode") || fallback.selectionMode);
+  const selectionMode = definition.configurableSelectionMode && isSearchFilterSelectionMode(requestedMode)
+    ? requestedMode
+    : fallback.selectionMode;
+  const label = String(formData.get("label") || fallback.label).trim().replace(/\s+/g, " ") || fallback.label;
+  const setting = await prisma.searchFilterSetting.upsert({
+    where: { key: keyValue },
+    update: {
+      label,
+      isActive: String(formData.get("isActive") || "") === "true",
+      isRequired: String(formData.get("isRequired") || "") === "true",
+      selectionMode,
+      showForSoberLiving: String(formData.get("showForSoberLiving") || "") === "true",
+      showForContinuedCare: String(formData.get("showForContinuedCare") || "") === "true"
+    },
+    create: {
+      key: keyValue,
+      label,
+      isActive: String(formData.get("isActive") || "") === "true",
+      isRequired: String(formData.get("isRequired") || "") === "true",
+      selectionMode,
+      showForSoberLiving: String(formData.get("showForSoberLiving") || "") === "true",
+      showForContinuedCare: String(formData.get("showForContinuedCare") || "") === "true",
+      sortOrder: fallback.sortOrder
+    }
+  });
+
+  await prisma.adminAuditLog.create({
+    data: {
+      actorUserId: appUser.id,
+      action: "search_filter_setting_updated",
+      entityType: "SearchFilterSetting",
+      entityId: setting.id,
+      metadata: {
+        key: setting.key,
+        label: setting.label,
+        isActive: setting.isActive,
+        isRequired: setting.isRequired,
+        selectionMode: setting.selectionMode,
+        showForSoberLiving: setting.showForSoberLiving,
+        showForContinuedCare: setting.showForContinuedCare
+      }
+    }
+  });
+
+  revalidatePath("/search");
+  revalidatePath("/dashboard/admin");
+  redirect(adminDataSettingsHref(`${setting.label} search filter updated.`));
+}
+
+export async function moveSearchFilterSetting(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/admin");
+
+  if (appUser.role !== Role.system_admin) {
+    redirect("/dashboard");
+  }
+
+  const keyValue = String(formData.get("key") || "");
+  const direction = String(formData.get("direction") || "");
+
+  if (!isSearchFilterKey(keyValue) || (direction !== "up" && direction !== "down")) {
+    redirect(adminDataSettingsHref("Choose a valid filter and direction."));
+  }
+
+  const settings = await getSearchFilterSettings();
+  const currentIndex = settings.findIndex((setting) => setting.key === keyValue);
+  const swapIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+  if (currentIndex < 0 || swapIndex < 0 || swapIndex >= settings.length) {
+    redirect(adminDataSettingsHref("That search filter is already at the end of the list."));
+  }
+
+  const current = settings[currentIndex];
+  const swap = settings[swapIndex];
+  const upsertSetting = (setting: typeof current, sortOrder: number) => prisma.searchFilterSetting.upsert({
+    where: { key: setting.key },
+    update: { sortOrder },
+    create: {
+      key: setting.key,
+      label: setting.label,
+      isActive: setting.isActive,
+      isRequired: setting.isRequired,
+      selectionMode: setting.selectionMode,
+      showForSoberLiving: setting.showForSoberLiving,
+      showForContinuedCare: setting.showForContinuedCare,
+      sortOrder
+    }
+  });
+
+  await prisma.$transaction([
+    upsertSetting(current, swap.sortOrder),
+    upsertSetting(swap, current.sortOrder),
+    prisma.adminAuditLog.create({
+      data: {
+        actorUserId: appUser.id,
+        action: "search_filter_setting_reordered",
+        entityType: "SearchFilterSetting",
+        entityId: current.key,
+        metadata: { key: current.key, direction }
+      }
+    })
+  ]);
+
+  revalidatePath("/search");
+  revalidatePath("/dashboard/admin");
+  redirect(adminDataSettingsHref(`${current.label} moved ${direction}.`));
 }
 
 function defaultProfileOptionIndex(optionId: string, category: ProfileOptionCategory) {

@@ -1,13 +1,22 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { OrganizationType, Role } from "@prisma/client";
+import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
 import { prisma } from "@/lib/prisma";
 
 export async function getClerkSessionUserId() {
+  if (!hasValidClerkRuntimeConfig()) {
+    return null;
+  }
+
   const { userId } = await auth();
   return userId;
 }
 
 export async function getRequiredClerkIdentity() {
+  if (!hasValidClerkRuntimeConfig()) {
+    throw new Error("Authentication required");
+  }
+
   const clerkUser = await currentUser();
 
   if (!clerkUser) {

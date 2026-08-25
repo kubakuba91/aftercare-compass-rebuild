@@ -2,10 +2,11 @@ import { auth } from "@clerk/nextjs/server";
 import { ProfileType } from "@prisma/client";
 import { Search } from "lucide-react";
 import Image from "next/image";
+import { MarketingHeader } from "@/components/marketing-header";
 import { TrendingHomes } from "@/components/public/trending-homes";
-import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
-import { dashboardAppUrl } from "@/lib/app-urls";
+import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
+import { hasDatabaseConfig } from "@/lib/database-status";
 import { canUseLiveAvailability } from "@/lib/feature-gates";
 import { profilePlaceholderAlt, profilePlaceholderImage } from "@/lib/public-profile-placeholder";
 import { prisma } from "@/lib/prisma";
@@ -14,13 +15,13 @@ import { redirectToDashboardDestination } from "@/lib/protected-routing";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const { userId } = await auth();
+  const userId = hasValidClerkRuntimeConfig() ? (await auth()).userId : null;
 
   if (userId) {
     await redirectToDashboardDestination();
   }
 
-  const trendingProfiles = await prisma.aftercareProfile.findMany({
+  const trendingProfiles = hasDatabaseConfig() ? await prisma.aftercareProfile.findMany({
     where: {
       publicCity: { equals: "Lancaster", mode: "insensitive" },
       publicState: { equals: "PA", mode: "insensitive" },
@@ -63,7 +64,7 @@ export default async function HomePage() {
         }
       }
     }
-  });
+  }) : [];
 
   const trendingHomes = trendingProfiles.map((profile) => {
     const showLiveAvailability = canUseLiveAvailability(profile.organization, profile);
@@ -87,23 +88,12 @@ export default async function HomePage() {
   });
 
   return (
-    <main>
+    <>
+      <MarketingHeader />
+      <main>
       <section className="border-b border-border bg-white">
         <div className="shell py-5">
-          <div className="flex items-center justify-between gap-4">
-            <Image
-              alt="Aftercare Compass"
-              className="h-12 w-auto object-contain sm:h-14"
-              height={80}
-              src="/brand/logo-aftercare.png"
-              width={280}
-            />
-            <ButtonLink href={dashboardAppUrl("/sign-in")} variant="secondary">
-              Join or Login
-            </ButtonLink>
-          </div>
-
-          <div className="relative mt-5 min-h-[500px] overflow-hidden rounded-lg border border-border">
+          <div className="relative min-h-[500px] overflow-hidden rounded-lg border border-border">
             <Image
               alt=""
               aria-hidden="true"
@@ -222,6 +212,7 @@ export default async function HomePage() {
           </div>
         </Card>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

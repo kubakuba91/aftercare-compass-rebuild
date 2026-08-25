@@ -10,9 +10,11 @@ import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
 import { canDisplayVerifiedBadge, canUseLiveAvailability } from "@/lib/feature-gates";
 import { geocodeSearchQuery } from "@/lib/geocoding";
 import { getActiveProfileOptionValues } from "@/lib/profile-options";
+import { getSearchFilterSettings } from "@/lib/search-filter-settings";
 import { prisma } from "@/lib/prisma";
 import { approximatePublicPoint, milesBetween, searchCenterFromQuery } from "@/lib/public-location";
 import { profilePlaceholderAlt, profilePlaceholderImage } from "@/lib/public-profile-placeholder";
@@ -234,7 +236,10 @@ export default async function SearchPage({
     selected?: string | string[];
   }>;
 }) {
-  const [query, session] = await Promise.all([searchParams, auth()]);
+  const [query, session] = await Promise.all([
+    searchParams,
+    hasValidClerkRuntimeConfig() ? auth() : Promise.resolve({ userId: null })
+  ]);
   const appUser = session.userId
     ? await prisma.user.findUnique({
         where: { clerkUserId: session.userId },
@@ -255,22 +260,36 @@ export default async function SearchPage({
   const q = firstFromQuery(query.q)?.trim() || "";
   const rawType = firstFromQuery(query.type);
   const type = rawType === "continued_care" ? "continued_care" : "sober_living";
-  const profileOptions = await getActiveProfileOptionValues(type);
-  const population = valuesFromQuery(query.population).filter((value) =>
+  const [profileOptions, searchFilterSettings] = await Promise.all([
+    getActiveProfileOptionValues(type),
+    getSearchFilterSettings({ includeInactive: false, profileType: type })
+  ]);
+  const searchFilterByKey = new Map(searchFilterSettings.map((setting) => [setting.key, setting]));
+  const populationSetting = searchFilterByKey.get("population");
+  const selectedPopulations = valuesFromQuery(query.population).filter((value) =>
     profileOptions.populationServed.includes(value)
   );
+  const population = populationSetting
+    ? populationSetting.selectionMode === "multiple" ? selectedPopulations : selectedPopulations.slice(0, 1)
+    : [];
   const specialty = valuesFromQuery(query.specialty).filter((value) =>
     profileOptions.specialtyPopulations.includes(value)
   );
-  const minPrice = type === "sober_living" ? numberFromQuery(query.minPrice) : undefined;
-  const maxPrice = type === "sober_living" ? numberFromQuery(query.maxPrice) : undefined;
+  const priceFilterEnabled = searchFilterByKey.has("price") && type === "sober_living";
+  const minPrice = priceFilterEnabled ? numberFromQuery(query.minPrice) : undefined;
+  const maxPrice = priceFilterEnabled ? numberFromQuery(query.maxPrice) : undefined;
   const requestedRadiusMiles = numberFromQuery(query.radius);
-  const radiusMiles = requestedRadiusMiles !== undefined && requestedRadiusMiles > 0
+  const radiusMiles = searchFilterByKey.has("distance") && requestedRadiusMiles !== undefined && requestedRadiusMiles > 0
     ? requestedRadiusMiles
     : undefined;
   const durationOptions = type === "continued_care" ? continuedCareDurationOptions : averageLengthOptions;
-  const requestedDuration = firstFromQuery(query.duration) || "";
-  const duration = durationOptions.some((option) => option === requestedDuration) ? requestedDuration : "";
+  const durationSetting = searchFilterByKey.get("duration");
+  const requestedDurations = valuesFromQuery(query.duration).filter((value) =>
+    durationOptions.some((option) => option === value)
+  );
+  const durations = durationSetting
+    ? durationSetting.selectionMode === "multiple" ? requestedDurations : requestedDurations.slice(0, 1)
+    : [];
   const amenities = type === "sober_living" ? valuesFromQuery(query.amenity).filter((value) =>
     profileOptions.amenities.includes(value)
   ) : [];
@@ -322,8 +341,8 @@ export default async function SearchPage({
     andFilters.push({ specialtyPopulations: { hasSome: specialty } });
   }
 
-  if (duration) {
-    andFilters.push({ averageLengthOfStay: duration });
+  if (durations.length) {
+    andFilters.push({ averageLengthOfStay: { in: durations } });
   }
 
   if (amenities.length) {
@@ -486,7 +505,7 @@ export default async function SearchPage({
         defaultAvailability={availability}
         defaultLocation={q}
         defaultType={type}
-        duration={duration}
+        duration={durations}
         isSignedIn={isSignedIn}
         insurance={insurance}
         insuranceOptions={profileOptions.insuranceAccepted}
@@ -501,6 +520,7 @@ export default async function SearchPage({
         population={population}
         populationOptions={profileOptions.populationServed}
         radiusMiles={radiusMiles}
+        searchFilterSettings={searchFilterSettings}
         showFilters={showFilters}
         specialty={specialty}
         specialtyOptions={profileOptions.specialtyPopulations}

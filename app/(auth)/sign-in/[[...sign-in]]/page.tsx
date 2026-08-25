@@ -10,12 +10,6 @@ import { hasValidClerkPublishableKey } from "@/lib/clerk-config";
 export const dynamic = "force-dynamic";
 
 export default async function SignInPage() {
-  const { userId } = await auth();
-
-  if (userId) {
-    redirect("/auth/complete");
-  }
-
   if (!hasValidClerkPublishableKey()) {
     return (
       <main className="shell flex min-h-screen items-center justify-center py-10">
@@ -30,6 +24,12 @@ export default async function SignInPage() {
         </Card>
       </main>
     );
+  }
+
+  const { userId } = await auth();
+
+  if (userId) {
+    redirect("/auth/complete");
   }
 
   return (

@@ -5,6 +5,7 @@ import { MapPin } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
+import { LoadMoreListings } from "@/components/public/load-more-listings";
 import { ProfileOwnershipBadge } from "@/components/public/profile-ownership-badge";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
@@ -24,6 +25,8 @@ import { averageLengthOptions } from "@/lib/sober-living-onboarding";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+
+const SEARCH_PAGE_SIZE = 50;
 
 const stateAliases: Record<string, string> = {
   alabama: "AL",
@@ -234,6 +237,7 @@ export default async function SearchPage({
     availability?: string | string[];
     filters?: string | string[];
     selected?: string | string[];
+    page?: string | string[];
   }>;
 }) {
   const [query, session] = await Promise.all([
@@ -307,6 +311,9 @@ export default async function SearchPage({
   const availability = firstFromQuery(query.availability) === "available" ? "available" : "";
   const showFilters = firstFromQuery(query.filters) === "1";
   const selectedListingId = firstFromQuery(query.selected);
+  const requestedPage = numberFromQuery(query.page);
+  const page = requestedPage && requestedPage > 0 ? Math.floor(requestedPage) : 1;
+  const resultLimit = page * SEARCH_PAGE_SIZE;
   const radiusCenter = radiusMiles ? searchCenterFromQuery(q) ?? await geocodeSearchQuery(q) : null;
 
   function selectedListingHref(profileId: string) {
@@ -325,6 +332,23 @@ export default async function SearchPage({
     params.set("selected", profileId);
 
     return `/search?${params.toString()}#listing-${profileId}`;
+  }
+
+  function pageHref(nextPage: number) {
+    const params = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(query)) {
+      if (key === "page") {
+        continue;
+      }
+
+      for (const item of valuesFromQuery(value)) {
+        params.append(key, item);
+      }
+    }
+
+    params.set("page", nextPage.toString());
+    return `/search?${params.toString()}`;
   }
 
   const andFilters: Prisma.AftercareProfileWhereInput[] = [{ status: "published" }];
@@ -413,10 +437,10 @@ export default async function SearchPage({
     AND: andFilters
   };
 
-  const rawProfiles = await prisma.aftercareProfile.findMany({
+  const profileQuery = {
     where,
-    orderBy: [{ verificationTier: "desc" }, { updatedAt: "desc" }],
-    ...(radiusCenter ? {} : { take: 50 }),
+    orderBy: [{ verificationTier: "desc" }, { updatedAt: "desc" }, { id: "asc" }],
+    ...(radiusCenter ? {} : { take: resultLimit }),
     select: {
       id: true,
       slug: true,
@@ -469,10 +493,13 @@ export default async function SearchPage({
         }
       }
     }
-  });
-  const profiles = radiusMiles
-    ? radiusCenter
-      ? rawProfiles
+  } satisfies Prisma.AftercareProfileFindManyArgs;
+  const [rawProfiles, databaseTotal] = await Promise.all([
+    prisma.aftercareProfile.findMany(profileQuery),
+    radiusCenter ? Promise.resolve(null) : prisma.aftercareProfile.count({ where })
+  ]);
+  const radiusMatches = radiusMiles && radiusCenter
+    ? rawProfiles
         .map((profile) => {
           const point = approximatePublicPoint({
             id: profile.id,
@@ -491,10 +518,11 @@ export default async function SearchPage({
         })
         .filter((item) => item.distanceMiles <= radiusMiles)
         .sort((first, second) => first.distanceMiles - second.distanceMiles)
-        .slice(0, 50)
         .map((item) => item.profile)
-      : []
-    : rawProfiles;
+    : null;
+  const totalListings = radiusMiles ? radiusMatches?.length ?? 0 : databaseTotal ?? rawProfiles.length;
+  const profiles = radiusMiles ? radiusMatches?.slice(0, resultLimit) ?? [] : rawProfiles;
+  const hasMoreListings = profiles.length < totalListings;
 
   return (
     <>
@@ -547,7 +575,7 @@ export default async function SearchPage({
             </Card>
           ) : null}
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold">{profiles.length} listings</p>
+            <p className="text-sm font-semibold">{totalListings} listings</p>
           </div>
           {profiles.length ? (
             profiles.map((profile, index) => {
@@ -688,6 +716,12 @@ export default async function SearchPage({
               </p>
             </Card>
           )}
+          <LoadMoreListings
+            hasMore={hasMoreListings}
+            loadedCount={profiles.length}
+            nextHref={pageHref(page + 1)}
+            totalCount={totalListings}
+          />
         </div>
         <ApproximateLocationMap
           listings={profiles.map((profile) => ({

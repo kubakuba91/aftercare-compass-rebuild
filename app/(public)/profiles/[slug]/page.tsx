@@ -8,6 +8,7 @@ import { profilePlaceholderAlt, profilePlaceholderImage } from "@/lib/public-pro
 import { BackLink } from "@/components/public/back-link";
 import { ExpandableRichText } from "@/components/public/expandable-rich-text";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
+import { ClaimProfileDialog } from "@/components/public/claim-profile-dialog";
 import { ClaimOutreachStartTracker } from "@/components/public/claim-outreach-start-tracker";
 import { ProfileOwnershipBadge } from "@/components/public/profile-ownership-badge";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
@@ -323,13 +324,14 @@ function ClaimProfileCard({
   const claimReturnPath = `/profiles/${profile.slug}${claimOutreachToken ? `?claimToken=${encodeURIComponent(claimOutreachToken)}` : "?claim=open"}#claim`;
 
   return (
-    <Card className="h-fit scroll-mt-24" id="claim">
+    <div className="p-6">
       <div className="flex items-center gap-2">
         <ShieldCheck size={18} />
-        <h2 className="font-semibold">Claim this profile</h2>
+        <h2 className="pr-8 text-xl font-semibold" id="claim-dialog-title">Claim this profile</h2>
+        <span className="sr-only"> — {profile.programName}</span>
       </div>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">
-        Request access if you manage this home or program.
+        Request access if you manage {profile.programName}.
       </p>
       {statusMessage ? (
         <div className={`mt-4 rounded-md border p-3 text-sm font-semibold ${statusMessage.tone}`}>
@@ -337,7 +339,9 @@ function ClaimProfileCard({
         </div>
       ) : null}
 
-      {profile.ownershipStatus === ProfileOwnershipStatus.claim_pending ? (
+      {profile.ownershipStatus === ProfileOwnershipStatus.claimed ? (
+        <p className="mt-4 text-sm text-muted-foreground">This profile has already been claimed.</p>
+      ) : profile.ownershipStatus === ProfileOwnershipStatus.claim_pending ? (
         <p className="mt-4 text-sm font-semibold text-muted-foreground">This claim is currently being reviewed.</p>
       ) : !isSignedIn ? (
         <div className="mt-5 flex flex-wrap gap-3">
@@ -398,7 +402,7 @@ function ClaimProfileCard({
           Claiming is available from an aftercare provider account that matches this profile type.
         </p>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -554,13 +558,23 @@ export default async function PublicProfilePage({
                   profileId={profile.id}
                   programName={profile.programName}
                 />
-                {profile.ownershipStatus !== ProfileOwnershipStatus.claimed ? (
-                  <Link
-                    className="focus-ring inline-flex min-h-10 items-center rounded-full border border-border bg-white px-4 text-sm font-semibold shadow-sm transition hover:bg-surface-secondary"
-                    href={`/profiles/${profile.slug}?claim=open#claim`}
+                {profile.ownershipStatus !== ProfileOwnershipStatus.claimed || query.claim === "unavailable" ? (
+                  <ClaimProfileDialog
+                    label={profile.ownershipStatus === ProfileOwnershipStatus.claim_pending ? "Under Review" : "Claim this profile"}
+                    showTrigger={profile.ownershipStatus !== ProfileOwnershipStatus.claimed}
                   >
-                    {profile.ownershipStatus === ProfileOwnershipStatus.claim_pending ? "Under Review" : "Claim this profile"}
-                  </Link>
+                    <ClaimProfileCard
+                      canClaim={canClaimProfile}
+                      claimStatus={claimStatus}
+                      claimOutreachToken={claimOutreach ? query.claimToken : undefined}
+                      invitedEmail={claimOutreach?.recipientEmail}
+                      isSignedIn={Boolean(clerkUserId)}
+                      organizationName={appUser?.organization?.name || ""}
+                      profile={profile}
+                      userEmail={claimantEmail}
+                      userName={claimantName}
+                    />
+                  </ClaimProfileDialog>
                 ) : null}
               </div>
               {priceLabel || moveInCostLabel ? (
@@ -685,19 +699,6 @@ export default async function PublicProfilePage({
           </div>
 
           <div className="mt-5 grid gap-4">
-            {profile.ownershipStatus !== ProfileOwnershipStatus.claimed && (query.claim || query.claimToken) ? (
-              <ClaimProfileCard
-                canClaim={canClaimProfile}
-                claimStatus={claimStatus}
-                claimOutreachToken={claimOutreach ? query.claimToken : undefined}
-                invitedEmail={claimOutreach?.recipientEmail}
-                isSignedIn={Boolean(clerkUserId)}
-                organizationName={appUser?.organization?.name || ""}
-                profile={profile}
-                userEmail={claimantEmail}
-                userName={claimantName}
-              />
-            ) : null}
             {!isSoberLiving ? (
               <Card>
                 <CheckCircle2 className="text-primary" size={22} />

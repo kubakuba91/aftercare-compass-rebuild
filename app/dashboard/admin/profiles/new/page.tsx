@@ -1,3 +1,4 @@
+import { AdminDeliveryFields } from "@/components/onboarding/admin-delivery-fields";
 import { redirect } from "next/navigation";
 import { Save, ShieldCheck } from "lucide-react";
 import { ProfileStatus, ProfileType, Role } from "@prisma/client";
@@ -20,8 +21,7 @@ import {
   clientAcceptanceMethodOptions,
   languageServedOptions,
   medicationServiceOptions,
-  programmingScheduleOptions,
-  telehealthModeOptions
+  programmingScheduleOptions
 } from "@/lib/continued-care-onboarding";
 import { getActiveProfileOptionValues } from "@/lib/profile-options";
 import { getProtectedAppUser } from "@/lib/protected-routing";
@@ -169,22 +169,7 @@ export default async function AdminCreateProfilePage({
                     License number
                     <input className={fieldClassName()} name="stateLicenseNumber" />
                   </label>
-                  <label className={labelClassName()}>
-                    Street address
-                    <input className={fieldClassName()} name="streetAddress" />
-                  </label>
-                  <label className={labelClassName()}>
-                    City
-                    <input className={fieldClassName()} name="city" required />
-                  </label>
-                  <label className={labelClassName()}>
-                    State
-                    <input className={fieldClassName()} maxLength={2} name="state" required />
-                  </label>
-                  <label className={labelClassName()}>
-                    ZIP
-                    <input className={fieldClassName()} name="zip" />
-                  </label>
+                  <AdminDeliveryFields type={initialType} />
                   <label className={labelClassName()}>
                     Intake phone
                     <input className={fieldClassName()} name="admissionsContactPhone" />
@@ -271,15 +256,7 @@ export default async function AdminCreateProfilePage({
                         <option value="no">No</option>
                       </select>
                     </label>
-                    <label className={labelClassName()}>
-                      Delivery Model
-                      <select className={fieldClassName()} name="telehealthMode">
-                        <option value="">Select one</option>
-                        {telehealthModeOptions.map((option) => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    </label>
+
                   </div>
                   <div className="mt-4 grid gap-4">
                     <CheckboxGroup label="Levels of care" name="levelsOfCare" options={continuedCareOptions.levelsOfCare} />
@@ -347,9 +324,11 @@ export default async function AdminCreateProfilePage({
                 </div>
                 <div className="admin-profile-type-section admin-profile-type-section--sober-living">
                   <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={soberLivingOptions.insuranceAccepted} />
+
                 </div>
                 <div className="admin-profile-type-section admin-profile-type-section--continued-care">
                   <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={continuedCareOptions.insuranceAccepted} />
+                    <label className={labelClassName()}>Insurance notes<textarea className={textareaClassName()} name="insuranceNotes" /></label>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className={labelClassName()}>

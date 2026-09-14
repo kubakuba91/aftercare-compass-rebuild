@@ -134,6 +134,7 @@ export function PublicSearchHeader({
     }
 
     if (setting.key === "distance") {
+      if (delivery === "virtual" || virtualState) return null;
       return (
         <label className="grid gap-2 text-sm font-medium" key={setting.key}>
           {requiredLabel(setting.label, setting.isRequired)}

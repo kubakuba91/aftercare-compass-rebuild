@@ -1,4 +1,4 @@
-import { virtualStates, isVirtualOnly, coverageLabel } from "@/lib/virtual-care";
+import { virtualStates, isVirtualOnly, coverageLabel, virtualSearchSelection } from "@/lib/virtual-care";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma, ProfileOwnershipStatus, ProfileType, Role, SubscriptionStatus } from "@prisma/client";
@@ -286,8 +286,12 @@ export default async function SearchPage({
   const priceFilterEnabled = searchFilterByKey.has("price") && type === "sober_living";
   const minPrice = priceFilterEnabled ? numberFromQuery(query.minPrice) : undefined;
   const maxPrice = priceFilterEnabled ? numberFromQuery(query.maxPrice) : undefined;
+  const selection = virtualSearchSelection(query.delivery, query.virtualState);
+  query.delivery = selection.delivery;
+  query.virtualState = selection.virtualState;
+  const virtualSearch = selection.virtualSearch;
   const requestedRadiusMiles = numberFromQuery(query.radius);
-  const radiusMiles = searchFilterByKey.has("distance") && requestedRadiusMiles !== undefined && requestedRadiusMiles > 0
+  const radiusMiles = !virtualSearch && searchFilterByKey.has("distance") && requestedRadiusMiles !== undefined && requestedRadiusMiles > 0
     ? requestedRadiusMiles
     : undefined;
   const durationOptions = type === "continued_care" ? continuedCareDurationOptions : averageLengthOptions;
@@ -427,7 +431,7 @@ export default async function SearchPage({
   // Once a radius has a geographic center, the distance check is the location
   // filter. Keeping the text-location predicate here would exclude valid nearby
   // listings in neighboring cities before their distance can be calculated.
-  if (q && !radiusCenter) {
+  if (q && !radiusCenter && !query.virtualState) {
     andFilters.push({
       OR: [
         { programName: { contains: q, mode: Prisma.QueryMode.insensitive } },
@@ -584,7 +588,7 @@ export default async function SearchPage({
           </div>
         </div>
 
-      <div className="grid gap-5 py-6 lg:grid-cols-[minmax(0,2fr)_minmax(360px,1fr)] lg:items-start">
+      <div className={`grid gap-5 py-6 ${virtualSearch ? "" : "lg:grid-cols-[minmax(0,2fr)_minmax(360px,1fr)] lg:items-start"}`}>
         <div className="grid gap-4">
           {radiusMiles && !radiusCenter ? (
             <Card className="border-amber-200 bg-amber-50">
@@ -743,7 +747,7 @@ export default async function SearchPage({
             totalCount={totalListings}
           />
         </div>
-        <ApproximateLocationMap
+        {virtualSearch ? null : <ApproximateLocationMap
           listings={profiles.filter((profile) => !isVirtualOnly(profile)).map((profile) => ({
             id: profile.id,
             slug: profile.slug,
@@ -763,7 +767,7 @@ export default async function SearchPage({
             selectionHref: selectedListingHref(profile.id)
           }))}
           selectedListingId={selectedListingId}
-        />
+        />}
       </div>
       </main>
     </>

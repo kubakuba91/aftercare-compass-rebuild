@@ -1,5 +1,7 @@
 "use server";
 
+import { adminDeliveryData } from "@/lib/admin-delivery";
+
 import { virtualOrganizationPlanError } from "@/lib/virtual-care-billing";
 
 import { revalidatePath } from "next/cache";
@@ -469,7 +471,7 @@ function systemSeedOrgId(type: ProfileType) {
     : "system-unclaimed-continued-care";
 }
 
-async function getOrCreateSystemSeedOrg(type: ProfileType) {
+async function getOrCreateSystemSeedOrg(type: ProfileType, virtual = false) {
   const orgType = type === ProfileType.sober_living
     ? OrganizationType.aftercare_sober_living
     : OrganizationType.aftercare_continued_care;
@@ -478,12 +480,12 @@ async function getOrCreateSystemSeedOrg(type: ProfileType) {
     : "Unclaimed Continued Care Listings";
 
   return prisma.organization.upsert({
-    where: { id: systemSeedOrgId(type) },
+    where: { id: virtual ? "system-unclaimed-virtual-care" : systemSeedOrgId(type) },
     update: {},
     create: {
-      id: systemSeedOrgId(type),
+      id: virtual ? "system-unclaimed-virtual-care" : systemSeedOrgId(type),
       type: orgType,
-      name,
+      name: virtual ? "Unclaimed Virtual Continued Care Listings" : name,
       subscriptionPlan: "claimed_listing",
       subscriptionStatus: SubscriptionStatus.active
     },
@@ -509,15 +511,18 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
     ? ProfileStatus.draft
     : ProfileStatus.published;
 
-  if (!programName || !city || !state) {
+  const delivery = adminDeliveryData(type, formData);
+  if (delivery.error) redirect(adminProfileHref(delivery.error));
+
+  if (!programName || (!delivery.virtual && (!city || !state))) {
     redirect(adminProfileHref(`${type === ProfileType.sober_living ? "Residence name" : "Program name"}, city, and state are required.`));
   }
 
   const [org, slug] = await Promise.all([
-    getOrCreateSystemSeedOrg(type),
+    getOrCreateSystemSeedOrg(type, delivery.virtual),
     uniqueProfileSlug(programName)
   ]);
-  const coordinates = await geocodeProfileAddress({
+  const coordinates = delivery.virtual ? null : await geocodeProfileAddress({
     idSeed: slug,
     streetAddress,
     city,
@@ -627,7 +632,8 @@ export async function createUnclaimedAftercareProfile(formData: FormData) {
             pricePerWeek: numberFromForm(formData.get("pricePerWeek")),
             moveInCost: moveInCostText(formData.get("moveInCost"))
           }),
-      ...(coordinates ?? {})
+      ...(coordinates ?? {}),
+      ...delivery.data
     }
   });
 
@@ -875,7 +881,7 @@ export async function updateAdminAftercareProfile(formData: FormData) {
   const city = String(formData.get("city") || "").trim();
   const state = String(formData.get("state") || "").trim();
 
-  if (!profileId || !programName || !city || !state) {
+  if (!profileId || !programName) {
     redirect(adminProfileHref("Listing name, city, and state are required."));
   }
 
@@ -886,12 +892,25 @@ export async function updateAdminAftercareProfile(formData: FormData) {
       type: true,
       slug: true,
       programName: true,
-      status: true
+      status: true,
+      orgId: true,
+      ownershipStatus: true,
+      organization: { select: { subscriptionPlan: true } }
     }
   });
 
   if (!profile) {
     redirect(adminProfileHref("Listing was not found."));
+  }
+
+  const delivery = adminDeliveryData(profile.type, formData);
+  if (delivery.error) redirect(adminEditProfileHref(profile.id, delivery.error));
+  if (!delivery.virtual && (!city || !state)) redirect(adminEditProfileHref(profile.id, "City and state are required for in-person profiles."));
+  if (profile.ownershipStatus !== ProfileOwnershipStatus.unclaimed) {
+    const planError = await virtualOrganizationPlanError(profile.orgId, profile.organization.subscriptionPlan || "claimed_listing", {
+      id: profile.id, type: profile.type, telehealthMode: delivery.data.telehealthMode || null, statesServed: delivery.data.statesServed || []
+    });
+    if (planError) redirect(adminEditProfileHref(profile.id, planError));
   }
 
   const requestedStatus = String(formData.get("status") || "");
@@ -910,7 +929,7 @@ export async function updateAdminAftercareProfile(formData: FormData) {
     redirect(adminEditProfileHref(profile.id, `Enter a valid 10-digit ${profile.type === ProfileType.sober_living ? "intake phone" : "admissions phone"} number.`));
   }
 
-  const coordinates = await geocodeProfileAddress({
+  const coordinates = delivery.virtual ? null : await geocodeProfileAddress({
     idSeed: profile.slug,
     streetAddress,
     city,
@@ -1026,7 +1045,8 @@ export async function updateAdminAftercareProfile(formData: FormData) {
     where: { id: profile.id },
     data: {
       ...baseData,
-      ...typeSpecificData
+      ...typeSpecificData,
+      ...delivery.data
     }
   });
 

@@ -18,3 +18,9 @@ export function virtualPlanCovers(plan: string, states: readonly string[], profi
   const plans = ["virtual_basic", "virtual_growth", "virtual_network"];
   return plans.indexOf(plan) >= plans.indexOf(requiredVirtualPlan(states, profiles, managers));
 }
+
+export function virtualSearchSelection(delivery?: string, state?: string) {
+  const virtualState = delivery !== "in-person" && (virtualStates as readonly string[]).includes(state || "") ? state : undefined;
+  const selectedDelivery = virtualState ? "virtual" : delivery;
+  return { delivery: selectedDelivery, virtualState, virtualSearch: selectedDelivery === "virtual" };
+}

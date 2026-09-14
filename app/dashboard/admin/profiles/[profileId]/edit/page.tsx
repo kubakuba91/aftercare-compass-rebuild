@@ -1,3 +1,4 @@
+import { AdminDeliveryFields } from "@/components/onboarding/admin-delivery-fields";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MessageSquareText, Save, ShieldCheck, Star, Trash2 } from "lucide-react";
@@ -24,8 +25,7 @@ import {
   clientAcceptanceMethodOptions,
   languageServedOptions,
   medicationServiceOptions,
-  programmingScheduleOptions,
-  telehealthModeOptions
+  programmingScheduleOptions
 } from "@/lib/continued-care-onboarding";
 import { formatPhotoLimit, getAftercarePhotoLimit } from "@/lib/feature-gates";
 import { getActiveProfileOptionValues, mergeOptionValues } from "@/lib/profile-options";
@@ -293,22 +293,7 @@ export default async function AdminEditProfilePage({
                     License number
                     <input className={fieldClassName()} defaultValue={textValue(profile.stateLicenseNumber)} name="stateLicenseNumber" />
                   </label>
-                  <label className={labelClassName()}>
-                    Street address
-                    <input className={fieldClassName()} defaultValue={textValue(profile.streetAddress)} name="streetAddress" />
-                  </label>
-                  <label className={labelClassName()}>
-                    City
-                    <input className={fieldClassName()} defaultValue={profile.city} name="city" required />
-                  </label>
-                  <label className={labelClassName()}>
-                    State
-                    <input className={fieldClassName()} defaultValue={profile.state} maxLength={2} name="state" required />
-                  </label>
-                  <label className={labelClassName()}>
-                    ZIP
-                    <input className={fieldClassName()} defaultValue={textValue(profile.zip)} name="zip" />
-                  </label>
+                  <AdminDeliveryFields type={profile.type} initial={profile} />
                   <label className={labelClassName()}>
                     {profile.type === ProfileType.sober_living ? "Intake phone" : "Admissions phone"}
                     <input className={fieldClassName()} defaultValue={textValue(profile.admissionsContactPhone)} name="admissionsContactPhone" />
@@ -370,6 +355,7 @@ export default async function AdminEditProfilePage({
                       </label>
                     </div>
                     <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
+
                     <div className="grid gap-4 md:grid-cols-2">
                       <label className={labelClassName()}>
                         Scholarship / funding available? (scholarship, state/grant funding, MDRN)
@@ -405,15 +391,7 @@ export default async function AdminEditProfilePage({
                           <option value="no">No</option>
                         </select>
                       </label>
-                      <label className={labelClassName()}>
-                        Delivery Model
-                        <select className={fieldClassName()} defaultValue={textValue(profile.telehealthMode)} name="telehealthMode">
-                          <option value="">Select one</option>
-                          {telehealthModeOptions.map((option) => (
-                            <option key={option} value={option}>{option}</option>
-                          ))}
-                        </select>
-                      </label>
+
                     </div>
                     <CheckboxGroup label="Levels of care" name="levelsOfCare" options={mergeOptionValues(profileOptions.levelsOfCare, profile.levelsOfCare)} selected={profile.levelsOfCare} />
                     <CheckboxGroup
@@ -429,6 +407,7 @@ export default async function AdminEditProfilePage({
                       selected={profile.languagesServed}
                     />
                     <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
+                    <label className={labelClassName()}>Insurance notes<textarea className={textareaClassName()} name="insuranceNotes" defaultValue={textValue(profile.insuranceNotes)} /></label>
                     <div className="grid gap-4 md:grid-cols-2">
                       <label className={labelClassName()}>
                         Scholarship / funding available? (scholarship, state/grant funding, MDRN)

@@ -241,7 +241,7 @@ export async function updateAftercareAvailability(formData: FormData) {
   }
 
   if (!canUseLiveAvailability(appUser.organization, profile)) {
-    redirect(overviewHref(profile.id, "Live availability updates are available on Professional, Verified, and Network plans."));
+    redirect(overviewHref(profile.id, "Live availability updates require a plan that includes availability updates."));
   }
 
   if (profile.type === ProfileType.sober_living) {
@@ -375,14 +375,14 @@ export async function inviteAftercareManagers(formData: FormData) {
     managerAssignment.scope === AftercareManagerScope.assigned_profiles &&
     !managerAssignment.profileIds.length
   ) {
-    redirect(managersHref("Choose at least one home or use All homes.", true));
+    redirect(managersHref("Choose at least one profile or assign access to all profiles.", true));
   }
 
   if (
     managerAssignment.scope === AftercareManagerScope.assigned_profiles &&
     managerAssignment.profileIds.some((profileId) => !organizationProfileIds.has(profileId))
   ) {
-    redirect(managersHref("Choose homes from this organization only.", true));
+    redirect(managersHref("Choose profiles from this organization only.", true));
   }
 
   const activeUserCount = organization.users.filter((user) => user.isActive).length;
@@ -504,7 +504,7 @@ export async function updateAftercareManagerAssignments(formData: FormData) {
     managerAssignment.scope === AftercareManagerScope.assigned_profiles &&
     !managerAssignment.profileIds.length
   ) {
-    redirect(managersHref("Choose at least one home or use All homes."));
+    redirect(managersHref("Choose at least one profile or assign access to all profiles."));
   }
 
   const [manager, validProfileIds] = await Promise.all([
@@ -532,7 +532,7 @@ export async function updateAftercareManagerAssignments(formData: FormData) {
     managerAssignment.scope === AftercareManagerScope.assigned_profiles &&
     validProfileIds.length !== managerAssignment.profileIds.length
   ) {
-    redirect(managersHref("Choose homes from this organization only."));
+    redirect(managersHref("Choose profiles from this organization only."));
   }
 
   await prisma.$transaction(async (tx) => {
@@ -871,7 +871,7 @@ export async function updateReferralStatus(formData: FormData) {
   }
 
   if (nextStatus === ReferralStatus.placed && !canUsePlacementTracking(appUser.organization)) {
-    redirect("/dashboard/aftercare?referralError=Placement tracking is available on Verified and Network plans.");
+    redirect("/dashboard/aftercare?referralError=Referral tracking requires a plan that includes tracking.");
   }
 
   await prisma.referral.update({

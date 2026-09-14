@@ -19,6 +19,7 @@ import { getClerkSessionUserId, getCurrentAppUser, getRequiredClerkIdentity } fr
 import { canDisplayVerifiedBadge, canReceiveDirectReferrals, canSubmitReferrals, canUseLiveAvailability } from "@/lib/feature-gates";
 import { formatPhoneForDisplay, normalizePhoneNumber } from "@/lib/phone";
 import { findClaimOutreachByToken } from "@/lib/profile-claim-outreach";
+import { dashboardAppUrl } from "@/lib/app-urls";
 import { prisma } from "@/lib/prisma";
 import { richTextHtml } from "@/lib/rich-text";
 import { createProfileClaimRequest, createProfileReferral, createPublicProfileLead } from "./actions";
@@ -345,18 +346,18 @@ function ClaimProfileCard({
         <p className="mt-4 text-sm font-semibold text-muted-foreground">This claim is currently being reviewed.</p>
       ) : !isSignedIn ? (
         <div className="mt-5 flex flex-wrap gap-3">
-          <Link
+          <a
             className="focus-ring inline-flex min-h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-            href={`/sign-in?redirect_url=${encodeURIComponent(claimReturnPath)}`}
+            href={dashboardAppUrl(`/sign-in?redirect_url=${encodeURIComponent(claimReturnPath)}`)}
           >
             Sign in to claim
-          </Link>
-          <Link
+          </a>
+          <a
             className="focus-ring inline-flex min-h-10 items-center rounded-md border border-border bg-white px-4 text-sm font-semibold"
-            href={`/sign-up?redirect_url=${encodeURIComponent(claimReturnPath)}`}
+            href={dashboardAppUrl(`/sign-up?redirect_url=${encodeURIComponent(claimReturnPath)}`)}
           >
             Create account
-          </Link>
+          </a>
         </div>
       ) : canClaim ? (
         <form action={createProfileClaimRequest} className="mt-5 grid gap-3">

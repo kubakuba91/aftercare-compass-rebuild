@@ -554,6 +554,14 @@ export default async function PublicProfilePage({
                   profileId={profile.id}
                   programName={profile.programName}
                 />
+                {profile.ownershipStatus !== ProfileOwnershipStatus.claimed ? (
+                  <Link
+                    className="focus-ring inline-flex min-h-10 items-center rounded-full border border-border bg-white px-4 text-sm font-semibold shadow-sm transition hover:bg-surface-secondary"
+                    href={`/profiles/${profile.slug}?claim=open#claim`}
+                  >
+                    {profile.ownershipStatus === ProfileOwnershipStatus.claim_pending ? "Under Review" : "Claim this profile"}
+                  </Link>
+                ) : null}
               </div>
               {priceLabel || moveInCostLabel ? (
                 <div className="shrink-0 text-right">

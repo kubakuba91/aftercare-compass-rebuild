@@ -2,12 +2,19 @@ import { SignUp } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { publicAppUrl } from "@/lib/app-urls";
 import { Card } from "@/components/ui/card";
 import { hasValidClerkPublishableKey } from "@/lib/clerk-config";
 
+import { claimReturnPath } from "@/lib/claim-return-path";
+
 export const dynamic = "force-dynamic";
 
-export default async function SignUpPage() {
+export default async function SignUpPage({ searchParams }: {
+  searchParams: Promise<{ redirect_url?: string | string[] }>;
+}) {
+  const returnPath = claimReturnPath((await searchParams).redirect_url);
+  const destination = returnPath ? publicAppUrl(returnPath) : "/auth/complete";
   if (!hasValidClerkPublishableKey()) {
     return (
       <main className="shell flex min-h-screen items-center justify-center py-10">
@@ -27,7 +34,7 @@ export default async function SignUpPage() {
   const { userId } = await auth();
 
   if (userId) {
-    redirect("/auth/complete");
+    redirect(destination);
   }
 
   return (
@@ -35,9 +42,9 @@ export default async function SignUpPage() {
       <SignUp
         routing="path"
         path="/sign-up"
-        signInUrl="/sign-in"
-        forceRedirectUrl="/auth/complete"
-        fallbackRedirectUrl="/auth/complete"
+        signInUrl={returnPath ? `/sign-in?redirect_url=${encodeURIComponent(returnPath)}` : "/sign-in"}
+        forceRedirectUrl={destination}
+        fallbackRedirectUrl={destination}
       />
     </main>
   );

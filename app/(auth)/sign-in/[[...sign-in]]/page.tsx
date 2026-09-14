@@ -7,9 +7,15 @@ import { Card } from "@/components/ui/card";
 import { publicAppUrl } from "@/lib/app-urls";
 import { hasValidClerkPublishableKey } from "@/lib/clerk-config";
 
+import { claimReturnPath } from "@/lib/claim-return-path";
+
 export const dynamic = "force-dynamic";
 
-export default async function SignInPage() {
+export default async function SignInPage({ searchParams }: {
+  searchParams: Promise<{ redirect_url?: string | string[] }>;
+}) {
+  const returnPath = claimReturnPath((await searchParams).redirect_url);
+  const destination = returnPath ? publicAppUrl(returnPath) : "/auth/complete";
   if (!hasValidClerkPublishableKey()) {
     return (
       <main className="shell flex min-h-screen items-center justify-center py-10">
@@ -29,7 +35,7 @@ export default async function SignInPage() {
   const { userId } = await auth();
 
   if (userId) {
-    redirect("/auth/complete");
+    redirect(destination);
   }
 
   return (
@@ -52,9 +58,9 @@ export default async function SignInPage() {
       <SignIn
         routing="path"
         path="/sign-in"
-        signUpUrl="/sign-up"
-        forceRedirectUrl="/auth/complete"
-        fallbackRedirectUrl="/auth/complete"
+        signUpUrl={returnPath ? `/sign-up?redirect_url=${encodeURIComponent(returnPath)}` : "/sign-up"}
+        forceRedirectUrl={destination}
+        fallbackRedirectUrl={destination}
       />
     </main>
   );

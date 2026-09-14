@@ -1,3 +1,4 @@
+import { isVirtualOnly, coverageLabel } from "@/lib/virtual-care";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrganizationType, ProfileOwnershipStatus } from "@prisma/client";
@@ -315,6 +316,7 @@ function ClaimProfileCard({
     pending: { tone: "border-emerald-200 bg-emerald-50 text-emerald-800", message: "Your claim is already in review." },
     under_review: { tone: "border-accent/30 bg-accent/10", message: "A claim is already under review for this profile." },
     invalid: { tone: "border-accent/30 bg-accent/10", message: "Please complete your role, organization, and relationship to this program before submitting." },
+    organization_plan: { tone: "border-accent/30 bg-accent/10", message: "This program does not fit your organization’s delivery mode or current plan limits. Review your subscription or contact support before claiming." },
     provider_required: { tone: "border-accent/30 bg-accent/10", message: "Use an aftercare provider account to claim this profile." },
     provider_type: { tone: "border-accent/30 bg-accent/10", message: "This profile type does not match your provider account." },
     unavailable: { tone: "border-accent/30 bg-accent/10", message: "This profile has already been claimed." },
@@ -495,6 +497,7 @@ export default async function PublicProfilePage({
   const servedPopulations = populationsServed(profile.populationServedOptions, profile.populationServed);
   const admissionsPhone = profile.admissionsContactPhone?.trim() ?? "";
   const websiteHref = publicWebsiteHref(profile.websiteUrl);
+  const virtual = isVirtualOnly(profile);
   const isReferent = appUser?.role.startsWith("referent") ?? false;
   const isAftercareUser = appUser?.role.startsWith("aftercare") ?? false;
   const profileAcceptsDirectReferrals = canReceiveDirectReferrals(profile.organization, profile);
@@ -596,7 +599,7 @@ export default async function PublicProfilePage({
             </div>
             <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin size={16} />
-              {publicLocation || "Location not listed"} · Exact address is private
+              {virtual ? `Virtual Only · ${coverageLabel(profile.statesServed)}` : `${publicLocation || "Location not listed"} · Exact address is private`}
             </p>
             {servedPopulations.length ? (
               <section aria-labelledby="populations-served-heading" className="mt-4 flex flex-wrap items-center gap-2">
@@ -823,7 +826,7 @@ export default async function PublicProfilePage({
                       <ShieldCheck className="text-primary" size={16} />
                       Insurance/payment
                     </dt>
-                    <dd className="font-medium">{listOrFallback(profile.insuranceAccepted)}</dd>
+                    <dd className="font-medium">{listOrFallback(profile.insuranceAccepted)}{profile.insuranceNotes ? <p className="mt-2 text-sm text-muted-foreground">{profile.insuranceNotes}</p> : null}</dd>
                   </div>
                   <div>
                     <dt className="flex items-center gap-2 font-semibold text-foreground">
@@ -928,6 +931,7 @@ export default async function PublicProfilePage({
               </Card>
             ) : null}
 
+            {virtual ? <Card><h2 className="text-xl font-semibold">Virtual program coverage</h2><p className="mt-3">{coverageLabel(profile.statesServed)}</p><p className="mt-3 text-sm">Programming: {profile.hoursOfOperation || profile.programmingSchedule.join(", ")} · {profile.programmingTimeZone}</p></Card> : (
             <Card>
               <MapPin className="text-primary" size={22} />
               <h2 className="mt-3 text-xl font-semibold">Location area</h2>
@@ -960,6 +964,7 @@ export default async function PublicProfilePage({
                 selectedListingId={profile.id}
               />
             </Card>
+            )}
           </div>
         </section>
 

@@ -1,3 +1,4 @@
+import { isVirtualOnly } from "@/lib/virtual-care";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -125,10 +126,10 @@ function canAddAnotherProfile(planKey: string | null | undefined, currentProfile
   return limit === "unlimited" || currentProfileCount < limit;
 }
 
-function nextProfileCapacityPlan(planKey: string | null | undefined, currentProfileCount: number) {
+function nextProfileCapacityPlan(planKey: string | null | undefined, currentProfileCount: number, virtual = false) {
   const currentPlan = getBillingPlan("aftercare", planKey);
   const currentPlanIndex = billingPlans.aftercare.findIndex((plan) => plan.key === currentPlan.key);
-  const candidatePlans = billingPlans.aftercare.slice(Math.max(currentPlanIndex + 1, 0));
+  const candidatePlans = billingPlans.aftercare.slice(Math.max(currentPlanIndex + 1, 0)).filter((plan) => plan.key.startsWith("virtual_") === virtual);
 
   return candidatePlans.find((plan) => {
     const limit = currentAftercarePlan(plan.key).profiles;
@@ -547,6 +548,8 @@ export default async function AftercareDashboardPage({
       where: profileAccessWhere,
       orderBy: { updatedAt: "desc" },
       select: {
+        telehealthMode: true,
+        statesServed: true,
         id: true,
         slug: true,
         programName: true,
@@ -732,7 +735,8 @@ export default async function AftercareDashboardPage({
   ]);
 
   const planCountedProfiles = profiles.filter((profile) => profile.status === "published");
-  const aftercareBillingPlans = await getBillingPlansWithStripePrices("aftercare");
+  const virtualOrganization = profiles.some(isVirtualOnly) || Boolean(appUser.organization?.subscriptionPlan?.startsWith("virtual_"));
+  const aftercareBillingPlans = (await getBillingPlansWithStripePrices("aftercare")).filter((plan) => plan.key === "claimed_listing" || plan.key.startsWith("virtual_") === virtualOrganization);
   const selectedProfile = profiles.find((profile) => profile.id === query.profileId) ?? null;
   const scopedProfiles = selectedProfile ? [selectedProfile] : planCountedProfiles;
   const scopedLeads = selectedProfile
@@ -801,7 +805,7 @@ export default async function AftercareDashboardPage({
     : false;
   const liveBedCountLockedMessage = "upgrade plan to unlock live bed count";
   const canAddProfiles = canAddAnotherProfile(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
-  const nextProfilePlan = nextProfileCapacityPlan(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
+  const nextProfilePlan = nextProfileCapacityPlan(appUser.organization?.subscriptionPlan, planCountedProfiles.length, virtualOrganization);
   const isContinuedCareOrganization = appUser.organization?.type === "aftercare_continued_care";
   const profileNoun = isContinuedCareOrganization ? "program" : "home";
   const profileNounPlural = isContinuedCareOrganization ? "programs" : "homes";

@@ -1,3 +1,4 @@
+import { virtualStates, isVirtualOnly, coverageLabel } from "@/lib/virtual-care";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma, ProfileOwnershipStatus, ProfileType, Role, SubscriptionStatus } from "@prisma/client";
@@ -220,6 +221,8 @@ export default async function SearchPage({
   searchParams
 }: {
   searchParams: Promise<{
+    delivery?: string;
+    virtualState?: string;
     q?: string | string[];
     type?: string | string[];
     population?: string | string[];
@@ -264,6 +267,7 @@ export default async function SearchPage({
   const q = firstFromQuery(query.q)?.trim() || "";
   const rawType = firstFromQuery(query.type);
   const type = rawType === "continued_care" ? "continued_care" : "sober_living";
+  if (type !== "continued_care") { query.delivery = undefined; query.virtualState = undefined; }
   const [profileOptions, searchFilterSettings] = await Promise.all([
     getActiveProfileOptionValues(type),
     getSearchFilterSettings({ includeInactive: false, profileType: type })
@@ -394,7 +398,7 @@ export default async function SearchPage({
       verificationTier: { gt: 1 },
       ownershipStatus: ProfileOwnershipStatus.claimed,
       organization: {
-        subscriptionPlan: { in: ["verified", "network"] },
+        subscriptionPlan: { in: ["verified", "network", "virtual_basic", "virtual_growth", "virtual_network"] },
         subscriptionStatus: { in: [SubscriptionStatus.active, SubscriptionStatus.trialing] }
       }
     });
@@ -418,6 +422,8 @@ export default async function SearchPage({
     });
   }
 
+  const stateTerm = (query.virtualState || q.split(",").at(-1)?.trim() || "");
+  const matchedVirtualState = virtualStates.find((state) => state.toLowerCase() === stateTerm.toLowerCase() || stateAliases[state.toLowerCase()]?.toLowerCase() === stateTerm.toLowerCase() || stateAliases[state.toLowerCase()]?.toLowerCase() === stateTerm.split(" ").at(-1)?.toLowerCase()) || (stateTerm.toUpperCase() === "DC" ? "Washington, DC" : undefined);
   // Once a radius has a geographic center, the distance check is the location
   // filter. Keeping the text-location predicate here would exclude valid nearby
   // listings in neighboring cities before their distance can be calculated.
@@ -428,11 +434,15 @@ export default async function SearchPage({
         { publicCity: { contains: q, mode: Prisma.QueryMode.insensitive } },
         { publicState: { contains: q, mode: Prisma.QueryMode.insensitive } },
         { description: { contains: q, mode: Prisma.QueryMode.insensitive } },
-        ...locationSearchFilters(q)
+        ...locationSearchFilters(q),
+        ...(matchedVirtualState ? [{ telehealthMode: "Virtual only", statesServed: { has: matchedVirtualState } }] : [])
       ]
     });
   }
 
+  if (query.delivery === "virtual") andFilters.push({ type: ProfileType.continued_care, telehealthMode: "Virtual only" });
+  if (query.delivery === "in-person") andFilters.push({ OR: [{ telehealthMode: null }, { telehealthMode: { not: "Virtual only" } }] });
+  if (query.virtualState && (virtualStates as readonly string[]).includes(query.virtualState)) andFilters.push({ statesServed: { has: query.virtualState } });
   const where: Prisma.AftercareProfileWhereInput = {
     AND: andFilters
   };
@@ -448,6 +458,8 @@ export default async function SearchPage({
       type: true,
       verificationTier: true,
       ownershipStatus: true,
+      telehealthMode: true,
+      statesServed: true,
       publicCity: true,
       publicState: true,
       latitude: true,
@@ -498,7 +510,7 @@ export default async function SearchPage({
     prisma.aftercareProfile.findMany(profileQuery),
     radiusCenter ? Promise.resolve(null) : prisma.aftercareProfile.count({ where })
   ]);
-  const radiusMatches = radiusMiles && radiusCenter
+  const radiusMatches = radiusMiles && radiusCenter && !query.virtualState
     ? rawProfiles
         .map((profile) => {
           const point = approximatePublicPoint({
@@ -516,17 +528,19 @@ export default async function SearchPage({
             profile
           };
         })
-        .filter((item) => item.distanceMiles <= radiusMiles)
+        .filter((item) => isVirtualOnly(item.profile) ? Boolean(matchedVirtualState && item.profile.statesServed.includes(matchedVirtualState)) : item.distanceMiles <= radiusMiles)
         .sort((first, second) => first.distanceMiles - second.distanceMiles)
         .map((item) => item.profile)
     : null;
-  const totalListings = radiusMiles ? radiusMatches?.length ?? 0 : databaseTotal ?? rawProfiles.length;
-  const profiles = radiusMiles ? radiusMatches?.slice(0, resultLimit) ?? [] : rawProfiles;
+  const totalListings = radiusMatches ? radiusMatches.length : databaseTotal ?? rawProfiles.length;
+  const profiles = radiusMatches ? radiusMatches.slice(0, resultLimit) : rawProfiles.slice(0, resultLimit);
   const hasMoreListings = profiles.length < totalListings;
 
   return (
     <>
       <PublicSearchHeader
+        delivery={query.delivery}
+        virtualState={query.virtualState}
         amenities={amenities}
         amenityOptions={profileOptions.amenities}
         clearHref={`/search?type=${type}`}
@@ -555,6 +569,12 @@ export default async function SearchPage({
         verified={verified}
       />
       <main className="shell py-8">
+        {type === "continued_care" ? <form action="/search" className="mb-5 flex flex-wrap items-end gap-3">
+          {Object.entries(query).filter(([key]) => !["delivery", "virtualState", "page", "selected"].includes(key)).flatMap(([key, value]) => (Array.isArray(value) ? value : value ? [value] : []).map((item, index) => <input key={`${key}-${index}`} type="hidden" name={key} value={item} />))}
+          <label className="grid gap-1 text-sm">Delivery<select className="rounded-md border border-border p-2" name="delivery" defaultValue={query.delivery || ""}><option value="">In person or virtual</option><option value="in-person">In person</option><option value="virtual">Virtual only</option></select></label>
+          <label className="grid gap-1 text-sm">Virtual coverage<select className="rounded-md border border-border p-2" name="virtualState" defaultValue={query.virtualState || ""}><option value="">Select patient’s state</option>{virtualStates.map((state) => <option key={state}>{state}</option>)}</select></label>
+          <button className="rounded-md border border-border px-4 py-2" type="submit">Apply</button>
+        </form> : null}
         <div className="flex flex-col justify-between gap-4 border-b border-border pb-6 md:flex-row md:items-end">
           <div>
             <h1 className="mt-3 text-3xl font-semibold">Search aftercare programs</h1>
@@ -660,7 +680,7 @@ export default async function SearchPage({
 
                       <p className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin size={16} />
-                        {[profile.publicCity, profile.publicState].filter(Boolean).join(", ") || "Location not listed"}
+                        {isVirtualOnly(profile) ? `Virtual Only · ${coverageLabel(profile.statesServed)}` : [profile.publicCity, profile.publicState].filter(Boolean).join(", ") || "Location not listed"}
                       </p>
 
                       <div className="flex flex-wrap gap-2">
@@ -724,7 +744,7 @@ export default async function SearchPage({
           />
         </div>
         <ApproximateLocationMap
-          listings={profiles.map((profile) => ({
+          listings={profiles.filter((profile) => !isVirtualOnly(profile)).map((profile) => ({
             id: profile.id,
             slug: profile.slug,
             programName: profile.programName,

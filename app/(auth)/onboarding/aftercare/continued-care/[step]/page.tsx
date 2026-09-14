@@ -1,3 +1,4 @@
+import { ContinuedCareDeliveryFields } from "@/components/onboarding/continued-care-delivery-fields";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ProfileType } from "@prisma/client";
@@ -15,7 +16,6 @@ import {
   maxContinuedCareStep,
   medicationServiceOptions,
   programmingScheduleOptions,
-  telehealthModeOptions
 } from "@/lib/continued-care-onboarding";
 import { isClerkIdentityError } from "@/lib/current-user";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
@@ -174,37 +174,10 @@ export default async function ContinuedCareStepPage({
                     {requiredLabel("Program name")}
                     <input name="programName" required defaultValue={profile?.programName ?? ""} className={fieldClassName()} />
                   </label>
-                  <label className="grid gap-2 text-sm font-medium">
-                    {requiredLabel("Primary address")}
-                    <input name="streetAddress" required defaultValue={profile?.streetAddress ?? ""} className={fieldClassName()} />
-                  </label>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <label className="grid gap-2 text-sm font-medium">
-                      {requiredLabel("City")}
-                      <input name="city" required defaultValue={profile?.city ?? ""} className={fieldClassName()} />
-                    </label>
-                    <label className="grid gap-2 text-sm font-medium">
-                      {requiredLabel("State")}
-                      <input name="state" required defaultValue={profile?.state ?? ""} className={fieldClassName()} />
-                    </label>
-                    <label className="grid gap-2 text-sm font-medium">
-                      {requiredLabel("Zip")}
-                      <input name="zip" required defaultValue={profile?.zip ?? ""} className={fieldClassName()} />
-                    </label>
-                  </div>
+                  <ContinuedCareDeliveryFields initial={profile || {}} />
                   <label className="grid gap-2 text-sm font-medium">
                     Website URL
                     <input name="websiteUrl" type="url" placeholder="https://example.com" defaultValue={profile?.websiteUrl ?? ""} className={fieldClassName()} />
-                  </label>
-                  <label className="grid gap-2 text-sm font-medium">
-                    {requiredLabel("Delivery Model")}
-                    <select name="telehealthMode" required defaultValue={profile?.telehealthMode ?? "In-person only"} className={fieldClassName()}>
-                      {telehealthModeOptions.map((option) => <option key={option}>{option}</option>)}
-                    </select>
-                  </label>
-                  <label className="grid gap-2 text-sm font-medium">
-                    Additional locations
-                    <textarea name="additionalLocations" defaultValue={profile?.additionalLocations ?? ""} className={textAreaClassName()} />
                   </label>
                   <label className="grid gap-2 text-sm font-medium">
                     State license number
@@ -327,6 +300,9 @@ export default async function ContinuedCareStepPage({
                       selected={selected(profile?.insuranceAccepted)}
                     />
                   </div>
+                  <label className="grid gap-2 text-sm font-medium">Insurance notes
+                    <textarea name="insuranceNotes" maxLength={2000} placeholder="Coverage varies by state. Confirm accepted insurance during intake." defaultValue={profile?.insuranceNotes || ""} className={textAreaClassName()} />
+                  </label>
                   <div className="grid gap-2 text-sm font-medium">
                     {requiredLabel("How do you accept clients?")}
                     <p className="text-xs font-normal text-muted-foreground">Select all that apply.</p>
@@ -394,7 +370,7 @@ export default async function ContinuedCareStepPage({
                   </label>
                   <div className="grid gap-2 text-sm font-medium">
                     Photo checklist
-                    {checkboxGroup("photoReadiness", photoReadinessOptions, selected(profile?.photoReadiness))}
+                    {checkboxGroup("photoReadiness", profile?.telehealthMode === "Virtual only" ? ["Team", "Program materials", "Virtual programming"] : photoReadinessOptions, selected(profile?.photoReadiness))}
                   </div>
                   <div className="rounded-md border border-dashed border-border bg-muted/30 p-4 text-sm leading-6 text-muted-foreground">
                     You will add profile images after this form is complete, once the profile has been created.

@@ -197,7 +197,7 @@ export function canDisplayVerifiedBadge(
   }
 
   const planKey = normalizeAftercarePlanKey(organization.subscriptionPlan);
-  const hasVerifiedPlan = planKey === "verified" || planKey === "network";
+  const hasVerifiedPlan = planKey === "verified" || planKey === "network" || planKey.startsWith("virtual_");
   const hasActiveSubscription =
     organization.subscriptionStatus === SubscriptionStatus.active ||
     organization.subscriptionStatus === SubscriptionStatus.trialing;

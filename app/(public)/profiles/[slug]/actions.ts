@@ -1,5 +1,7 @@
 "use server";
 
+import { virtualOrganizationPlanError } from "@/lib/virtual-care-billing";
+
 import { redirect } from "next/navigation";
 import { OrganizationType, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
@@ -238,6 +240,8 @@ export async function createProfileClaimRequest(formData: FormData) {
       id: true,
       orgId: true,
       type: true,
+      telehealthMode: true,
+      statesServed: true,
       ownershipStatus: true
     }
   });
@@ -284,6 +288,9 @@ export async function createProfileClaimRequest(formData: FormData) {
   if (appUser.organization?.type !== requiredOrgType) {
     redirect(`/profiles/${parsed.data.slug}?claim=provider_type`);
   }
+
+  const virtualPlanError = await virtualOrganizationPlanError(appUser.orgId!, appUser.organization?.subscriptionPlan || "claimed_listing", profile);
+  if (virtualPlanError) redirect(`/profiles/${parsed.data.slug}?claim=organization_plan`);
 
   if (profile.ownershipStatus === "claimed") {
     redirect(`/profiles/${parsed.data.slug}?claim=unavailable`);

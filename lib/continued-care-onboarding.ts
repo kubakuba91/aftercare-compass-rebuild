@@ -1,3 +1,4 @@
+import { virtualStates, virtualTimeZones } from "@/lib/virtual-care";
 import { z } from "zod";
 import {
   matOptions,
@@ -48,17 +49,27 @@ const optionalUrl = z
 
 export const continuedCareStepOneSchema = z.object({
   programName: requiredText.max(160),
-  streetAddress: requiredText.max(200),
-  city: requiredText.max(120),
-  state: requiredText.max(40),
-  zip: requiredText.max(20),
+  streetAddress: z.string().trim().max(200),
+  city: z.string().trim().max(120),
+  state: z.string().trim().max(40),
+  zip: z.string().trim().max(20),
   websiteUrl: optionalUrl,
   telehealthMode: z.enum(telehealthModeOptions),
+  statesServed: z.array(z.enum(virtualStates)).default([]),
+  programmingTimeZone: z.string().default(""),
+  hoursOfOperation: z.string().trim().max(1000).default(""),
   additionalLocations: optionalText,
   stateLicenseNumber: optionalText,
   certificationsHeld: z.array(z.string()).default([]),
   accreditations: z.array(z.string()).default([]),
   clinicalFocus: z.array(z.string()).default([])
+}).superRefine((value, ctx) => {
+  if (value.telehealthMode === "Virtual only") {
+    if (!value.statesServed.length) ctx.addIssue({ code: "custom", message: "Select at least one state served.", path: ["statesServed"] });
+    if (!(virtualTimeZones as readonly string[]).includes(value.programmingTimeZone)) ctx.addIssue({ code: "custom", message: "Select a programming time zone.", path: ["programmingTimeZone"] });
+  } else if (!value.streetAddress || !value.city || !value.state || !value.zip) {
+    ctx.addIssue({ code: "custom", message: "Address, city, state, and ZIP are required for in-person programs." });
+  }
 });
 
 export const continuedCareStepTwoSchema = z.object({
@@ -79,6 +90,7 @@ export const continuedCareStepThreeSchema = z.object({
   insuranceAccepted: z.array(z.string()).default([]),
   clientAcceptanceMethods: z.array(z.string()).min(1),
   referralProcessDescription: requiredText.max(2000),
+  insuranceNotes: optionalText,
   medicalRecordsFax: optionalText
 });
 

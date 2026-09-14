@@ -2,6 +2,8 @@ import { richTextToPlainText } from "@/lib/rich-text";
 
 type AftercareReadinessProfile = {
   type: string;
+  telehealthMode?: string | null;
+  statesServed?: string[];
   programName: string | null;
   city: string | null;
   state: string | null;
@@ -28,10 +30,10 @@ export function getAftercareProfileReadiness(profile: AftercareReadinessProfile)
       message: `${isSoberLiving ? "Residence name" : "Program name"} is required.`
     },
     {
-      label: "Public city and state",
-      complete: Boolean(profile.city?.trim() && profile.state?.trim()),
+      label: profile.telehealthMode === "Virtual only" ? "States served" : "Public city and state",
+      complete: profile.telehealthMode === "Virtual only" ? Boolean(profile.statesServed?.length) : Boolean(profile.city?.trim() && profile.state?.trim()),
       required: true,
-      message: "Public city and state are required."
+      message: profile.telehealthMode === "Virtual only" ? "Select states served." : "Public city and state are required."
     },
     {
       label: "Admissions contact",

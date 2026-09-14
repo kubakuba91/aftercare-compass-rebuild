@@ -166,6 +166,16 @@ export default async function PricingPage({
           providerPlans={providerPlans}
         />
 
+        <section className="shell py-12">
+          <h2 className="text-3xl font-semibold">Virtual-only Continued Care</h2>
+          <p className="mt-3">One subscription per organization. Choose the tier that covers your combined states, program profiles, and team. A free claimed listing is also available.</p>
+          <div className="mt-6 grid gap-5 md:grid-cols-3">
+            {(["virtual_basic", "virtual_growth", "virtual_network"] as const).map((key) => {
+              const plan = aftercarePlans[key];
+              return <div className="rounded-xl border border-border p-6" key={key}><h3 className="text-xl font-semibold">{plan.label}</h3><p className="mt-3 text-2xl">${plan.monthlyPrice}/month</p><p>${plan.monthlyPrice * 10}/year — two months free</p><p className="mt-4">{key === "virtual_basic" ? "1 state" : key === "virtual_growth" ? "Multiple states, short of nationwide" : "Nationwide (50 states + DC)"}</p><p>{formatLimit(plan.profiles, "profile")} · {formatLimit(plan.managers, "manager")}</p><p className="mt-4">Direct referrals, messaging, referral tracking, analytics, 12 photos per profile, and verification eligibility after review.</p><div className="mt-4"><ButtonLink href={dashboardAppUrl("/sign-up")}>Get started</ButtonLink></div></div>;
+            })}
+          </div>
+        </section>
         <section className="shell py-16 text-center sm:py-20">
           <h2 className="text-3xl font-semibold tracking-[-0.03em] text-[#17212b] sm:text-4xl">Not sure which plan fits?</h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-muted-foreground">Tell us how your team works and we’ll help you choose the right starting point.</p>

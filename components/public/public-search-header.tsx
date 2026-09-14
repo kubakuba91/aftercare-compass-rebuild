@@ -19,6 +19,8 @@ import { cn } from "@/lib/utils";
 type PublicSearchHeaderProps = {
   isSignedIn?: boolean;
   defaultType?: string;
+  delivery?: string;
+  virtualState?: string;
   defaultLocation?: string;
   defaultAvailability?: string;
   showFilters?: boolean;
@@ -48,6 +50,8 @@ type PublicSearchHeaderProps = {
 export function PublicSearchHeader({
   isSignedIn = false,
   defaultType = "",
+  delivery = "",
+  virtualState = "",
   defaultLocation = "",
   defaultAvailability = "",
   showFilters = false,
@@ -178,6 +182,8 @@ export function PublicSearchHeader({
           />
         </Link>
         <form action="/search" className="relative grid min-w-0 flex-1 gap-2 md:grid-cols-[340px_minmax(180px,1fr)_128px_160px]">
+          {delivery ? <input type="hidden" name="delivery" value={delivery} /> : null}
+          {virtualState ? <input type="hidden" name="virtualState" value={virtualState} /> : null}
           <div className="grid h-14 gap-1.5 overflow-hidden rounded-lg border border-[#12185f] bg-[#12185f] p-2 sm:grid-cols-2">
             <label className="focus-within:ring-ring flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-4 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
               <input

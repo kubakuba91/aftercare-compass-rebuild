@@ -108,6 +108,24 @@ export const billingPlans: Record<BillingPlanAudience, BillingPlan[]> = {
       ]
     },
     {
+      key: "virtual_basic", label: "Virtual Basic", monthlyPrice: 249, audience: "aftercare",
+      monthlyEnv: "STRIPE_AFTERCARE_VIRTUAL_BASIC_MONTHLY_PRICE_ID",
+      annualEnv: "STRIPE_AFTERCARE_VIRTUAL_BASIC_ANNUAL_PRICE_ID",
+      features: ["1 state · 1 profile · 3 managers", "Direct referrals and messaging", "Referral tracking and analytics", "Verification eligibility"]
+    },
+    {
+      key: "virtual_growth", label: "Virtual Growth", monthlyPrice: 449, audience: "aftercare",
+      monthlyEnv: "STRIPE_AFTERCARE_VIRTUAL_GROWTH_MONTHLY_PRICE_ID",
+      annualEnv: "STRIPE_AFTERCARE_VIRTUAL_GROWTH_ANNUAL_PRICE_ID",
+      features: ["Multiple states (not nationwide) · 5 profiles · 10 managers", "Direct referrals and messaging", "Referral tracking and analytics", "Verification eligibility"]
+    },
+    {
+      key: "virtual_network", label: "Virtual Network", monthlyPrice: 699, audience: "aftercare",
+      monthlyEnv: "STRIPE_AFTERCARE_VIRTUAL_NETWORK_MONTHLY_PRICE_ID",
+      annualEnv: "STRIPE_AFTERCARE_VIRTUAL_NETWORK_ANNUAL_PRICE_ID",
+      features: ["Nationwide · Unlimited profiles and managers", "Direct referrals and messaging", "Referral tracking and analytics", "Verification eligibility"]
+    },
+    {
       key: "network",
       label: aftercarePlans.network.label,
       monthlyPrice: aftercarePlans.network.monthlyPrice,

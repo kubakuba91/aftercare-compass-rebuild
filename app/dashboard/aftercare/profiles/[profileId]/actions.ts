@@ -1,5 +1,8 @@
 "use server";
 
+import { virtualStates, virtualTimeZones } from "@/lib/virtual-care";
+import { virtualOrganizationPlanError } from "@/lib/virtual-care-billing";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ProfileStatus, ProfileType } from "@prisma/client";
@@ -132,10 +135,18 @@ export async function updateAftercareProfileDetails(formData: FormData) {
   const programName = String(formData.get("programName") || "").trim();
   const city = String(formData.get("city") || "").trim();
   const state = String(formData.get("state") || "").trim();
+  const virtual = profile.type === "continued_care" && formData.get("telehealthMode") === "Virtual only";
+  const statesServed = [...new Set(valuesFromForm(formData, "statesServed"))];
+  const programmingTimeZone = String(formData.get("programmingTimeZone") || "");
+  if (virtual && (!statesServed.length || statesServed.some((state) => !(virtualStates as readonly string[]).includes(state)) || !(virtualTimeZones as readonly string[]).includes(programmingTimeZone))) {
+    redirect(profileHref(profile.id, "Select valid states served and a programming time zone."));
+  }
+  const planError = await virtualOrganizationPlanError(profile.orgId, profile.organization.subscriptionPlan || "claimed_listing", { id: profile.id, type: profile.type, telehealthMode: String(formData.get("telehealthMode") || ""), statesServed });
+  if (planError) redirect(profileHref(profile.id, planError));
   const nameLabel = profile.type === ProfileType.sober_living ? "Residence name" : "Program name";
   const phoneLabel = profile.type === ProfileType.sober_living ? "intake phone" : "admissions phone";
 
-  if (!programName || !city || !state) {
+  if (!programName || (!virtual && (!city || !state))) {
     redirect(profileHref(profile.id, `${nameLabel}, city, and state are required.`));
   }
 
@@ -147,7 +158,7 @@ export async function updateAftercareProfileDetails(formData: FormData) {
     redirect(profileHref(profile.id, `Enter a valid 10-digit ${phoneLabel} number.`));
   }
 
-  const coordinates = await geocodeProfileAddress({
+  const coordinates = virtual ? null : await geocodeProfileAddress({
     idSeed: profile.id,
     streetAddress,
     city,
@@ -266,7 +277,13 @@ export async function updateAftercareProfileDetails(formData: FormData) {
           : null,
         fundingNotes: nullableText(formData.get("fundingNotes")),
         telehealthMode: nullableText(formData.get("telehealthMode")),
-        hoursOfOperation: null,
+        statesServed: virtual ? statesServed : [],
+        ...(virtual ? { latitude: null, longitude: null, publicLatitude: null, publicLongitude: null, geocodedAt: null, totalBeds: null, bedsAvailable: null } : {}),
+        programmingTimeZone: virtual ? programmingTimeZone : null,
+        insuranceNotes: nullableText(formData.get("insuranceNotes")),
+        telehealthAvailable: formData.get("telehealthMode") !== "In-person only",
+        hoursOfOperation: nullableText(formData.get("hoursOfOperation")),
+        additionalLocations: nullableText(formData.get("additionalLocations")),
         coOccurringTreatment: null
       }
     });
@@ -328,14 +345,7 @@ export async function updateAftercareProfileAvailability(formData: FormData) {
       data: {
         acceptingNewPatients: formData.get("acceptingNewPatients") === "yes",
         acceptingNewPatientsUpdatedAt: new Date(),
-        availabilityNotes: nullableText(formData.get("availabilityNotes")),
-        programTypes: [],
-        levelsOfCare: valuesFromForm(formData, "levelsOfCare"),
-        programmingSchedule: valuesFromForm(formData, "programmingSchedule"),
-        languagesServed: valuesFromForm(formData, "languagesServed"),
-        telehealthMode: nullableText(formData.get("telehealthMode")),
-        hoursOfOperation: null,
-        coOccurringTreatment: null
+        availabilityNotes: nullableText(formData.get("availabilityNotes"))
       }
     });
   }
@@ -576,6 +586,8 @@ export async function updateAftercareProfileStatus(formData: FormData) {
   ensureProfileCanBeEdited(profile);
 
   if (nextStatus === ProfileStatus.published) {
+    const planError = await virtualOrganizationPlanError(profile.orgId, profile.organization.subscriptionPlan || "claimed_listing");
+    if (planError) redirect(profileHref(profile.id, planError));
     const readiness = getAftercareProfileReadiness(profile);
 
     if (!readiness.canPublish) {

@@ -1,0 +1,31 @@
+import { strict as assert } from 'node:assert';
+import { requiredVirtualPlan, virtualStates, virtualPlanCovers, coverageLabel } from '../lib/virtual-care';
+import { continuedCareStepOneSchema } from '../lib/continued-care-onboarding';
+import { aftercarePlans } from '../lib/plans';
+assert.equal(requiredVirtualPlan(['Ohio'],1,3),'virtual_basic');
+assert.equal(requiredVirtualPlan(['Ohio','Ohio'],1,3),'virtual_basic');
+assert.equal(requiredVirtualPlan(['Ohio'],2,3),'virtual_growth');
+assert.equal(requiredVirtualPlan(['Ohio'],1,4),'virtual_growth');
+assert.equal(requiredVirtualPlan(['Ohio','Pennsylvania'],5,10),'virtual_growth');
+assert.equal(requiredVirtualPlan(virtualStates,1,1),'virtual_network');
+assert.equal(requiredVirtualPlan(['Ohio'],6,1),'virtual_network');
+assert.equal(requiredVirtualPlan(['Ohio'],1,11),'virtual_network');
+assert.equal(virtualPlanCovers('professional',['Ohio'],1,1),false);
+assert.equal(virtualPlanCovers('virtual_basic',['Ohio','Pennsylvania'],1,1),false);
+assert.equal(coverageLabel(virtualStates),'Nationwide (50 states + DC)');
+const base={programName:'Example Program',streetAddress:'',city:'',state:'',zip:'',telehealthMode:'Virtual only',statesServed:['Ohio'],programmingTimeZone:'America/New_York'};
+assert.equal(continuedCareStepOneSchema.safeParse(base).success,true);
+assert.equal(continuedCareStepOneSchema.safeParse({...base,statesServed:[]}).success,false);
+assert.equal(continuedCareStepOneSchema.safeParse({...base,statesServed:['Unknown']}).success,false);
+assert.equal(continuedCareStepOneSchema.safeParse({...base,telehealthMode:'In-person only'}).success,false);
+assert.equal(continuedCareStepOneSchema.safeParse({...base,programmingTimeZone:''}).success,false);
+assert.deepEqual((['virtual_basic','virtual_growth','virtual_network'] as const).map(k=>aftercarePlans[k].monthlyPrice),[249,449,699]);
+for (const key of ['virtual_basic', 'virtual_growth', 'virtual_network'] as const) {
+  const plan = aftercarePlans[key];
+  assert.ok(plan.messaging && plan.directReferralIntake && plan.placementTracking && plan.operationalAnalytics && plan.verificationEligible);
+}
+assert.equal(aftercarePlans.professional.monthlyPrice,149);
+assert.equal(aftercarePlans.verified.monthlyPrice,349);
+assert.equal(aftercarePlans.network.monthlyPrice,699);
+assert.equal(aftercarePlans.claimed_listing.monthlyPrice,0);
+console.log('Virtual plan, standard pricing regression, and adaptive validation checks passed.');

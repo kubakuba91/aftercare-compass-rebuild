@@ -317,6 +317,9 @@ model AftercareProfile {
   programTypes                   String[]               @default([])
   telehealthAvailable            Boolean?
   telehealthMode                 String?
+  statesServed                   String[]               @default([])
+  insuranceNotes                 String?
+  programmingTimeZone            String?
   additionalLocations            String?
   stateLicenseNumber             String?
   levelsOfCare                   String[]               @default([])

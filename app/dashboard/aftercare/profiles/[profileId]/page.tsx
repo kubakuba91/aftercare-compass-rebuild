@@ -1,3 +1,4 @@
+import { ContinuedCareDeliveryFields } from "@/components/onboarding/continued-care-delivery-fields";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BedDouble, Building2, CheckCircle2, CircleAlert, Eye, ImagePlus, Save, ShieldCheck, Star, Trash2 } from "lucide-react";
@@ -25,7 +26,6 @@ import {
   languageServedOptions,
   medicationServiceOptions,
   programmingScheduleOptions,
-  telehealthModeOptions
 } from "@/lib/continued-care-onboarding";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -316,6 +316,7 @@ export default async function AftercareProfileDetailPage({
                   Website URL
                   <input className={fieldClassName()} defaultValue={textValue(profile.websiteUrl)} name="websiteUrl" placeholder="https://example.com" type="url" />
                 </label>
+                {!isSoberLiving ? <ContinuedCareDeliveryFields initial={profile} /> : <>
                 <label className={labelClassName()}>
                   Street address
                   <input className={fieldClassName()} defaultValue={textValue(profile.streetAddress)} name="streetAddress" />
@@ -332,6 +333,7 @@ export default async function AftercareProfileDetailPage({
                   ZIP
                   <input className={fieldClassName()} defaultValue={textValue(profile.zip)} name="zip" />
                 </label>
+                </>}
                 <label className={labelClassName()}>
                   {isSoberLiving ? "Intake phone" : "Admissions phone"}
                   <input className={fieldClassName()} defaultValue={textValue(profile.admissionsContactPhone)} name="admissionsContactPhone" />
@@ -421,6 +423,7 @@ export default async function AftercareProfileDetailPage({
                     </label>
                   </div>
                   <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
+                  <label className={labelClassName()}>Insurance notes<textarea name="insuranceNotes" maxLength={2000} defaultValue={profile.insuranceNotes || ""} placeholder="Coverage varies by state. Confirm at intake." className={fieldClassName()} /></label>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className={labelClassName()}>
                       Scholarship / funding available? (scholarship, state/grant funding, MDRN)
@@ -456,15 +459,7 @@ export default async function AftercareProfileDetailPage({
                         <option value="no">No</option>
                       </select>
                     </label>
-                    <label className={labelClassName()}>
-                      Delivery Model
-                      <select className={fieldClassName()} defaultValue={textValue(profile.telehealthMode)} name="telehealthMode">
-                        <option value="">Select one</option>
-                        {telehealthModeOptions.map((option) => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    </label>
+
                   </div>
                   <CheckboxGroup label="Levels of care" name="levelsOfCare" options={mergeOptionValues(profileOptions.levelsOfCare, profile.levelsOfCare)} selected={profile.levelsOfCare} />
                   <CheckboxGroup
@@ -480,6 +475,7 @@ export default async function AftercareProfileDetailPage({
                     selected={profile.languagesServed}
                   />
                   <CheckboxGroup label="Insurance/payment accepted" name="insuranceAccepted" options={mergeOptionValues(profileOptions.insuranceAccepted, profile.insuranceAccepted)} selected={profile.insuranceAccepted} />
+                  <label className={labelClassName()}>Insurance notes<textarea name="insuranceNotes" maxLength={2000} defaultValue={profile.insuranceNotes || ""} placeholder="Coverage varies by state. Confirm at intake." className={fieldClassName()} /></label>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className={labelClassName()}>
                       Scholarship / funding available? (scholarship, state/grant funding, MDRN)

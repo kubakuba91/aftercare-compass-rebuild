@@ -1,5 +1,7 @@
 "use server";
 
+import { virtualOrganizationPlanError } from "@/lib/virtual-care-billing";
+
 import { redirect } from "next/navigation";
 import { Role } from "@prisma/client";
 import {
@@ -103,8 +105,13 @@ export async function createBillingCheckoutSession(formData: FormData) {
   }
 
   const plan = getBillingPlan(audience, planKey);
+  if (audience === "aftercare") {
+    const error = await virtualOrganizationPlanError(organization.id, plan.key);
+    if (error) redirect(billingReturnPath(audience, error));
+  }
 
   if (plan.monthlyPrice === 0) {
+    if (organization.stripeSubscriptionId) redirect(billingReturnPath(audience, "Cancel the paid subscription before switching to a free listing."));
     await prisma.organization.update({
       where: { id: organization.id },
       data: {
@@ -242,6 +249,10 @@ export async function changeBillingPlan(formData: FormData) {
   }
 
   const plan = getBillingPlan(audience, planKey);
+  if (audience === "aftercare") {
+    const error = await virtualOrganizationPlanError(organization.id, plan.key);
+    if (error) redirect(billingReturnPath(audience, error));
+  }
 
   if (plan.monthlyPrice === 0) {
     redirect(billingReturnPath(audience, "Cancel the paid plan before switching to Claimed Listing."));

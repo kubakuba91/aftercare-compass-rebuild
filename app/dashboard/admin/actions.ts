@@ -1,5 +1,7 @@
 "use server";
 
+import { virtualOrganizationPlanError } from "@/lib/virtual-care-billing";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -1395,6 +1397,8 @@ export async function reviewProfileClaimRequest(formData: FormData) {
           id: true,
           orgId: true,
           type: true,
+          telehealthMode: true,
+          statesServed: true,
           slug: true,
           programName: true,
           ownershipStatus: true,
@@ -1422,6 +1426,8 @@ export async function reviewProfileClaimRequest(formData: FormData) {
     if (!claim.claimantUser || !claim.claimantUser.orgId || claimantOrg?.type !== requiredOrgType) {
       redirect(adminClaimHref("The claimant does not have a matching aftercare organization."));
     }
+    const planError = await virtualOrganizationPlanError(claim.claimantUser.orgId, claimantOrg.subscriptionPlan || "claimed_listing", claim.profile);
+    if (planError) redirect(adminClaimHref(planError));
   }
 
   await prisma.$transaction(async (tx) => {

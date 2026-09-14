@@ -1,5 +1,7 @@
 "use server";
 
+import { virtualOrganizationPlanError } from "@/lib/virtual-care-billing";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma, ProfileStatus, ProfileType, Role } from "@prisma/client";
@@ -106,6 +108,7 @@ function onboardingSaveErrorMessage(error: unknown) {
     return "The upload service was busy for a moment. Your information is still on this page. Please try again.";
   }
 
+  if (error instanceof Error && error.message.startsWith("Virtual program:")) return error.message.slice(16).trim();
   return "Please check the highlighted fields and try again.";
 }
 
@@ -827,12 +830,15 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
     if (step === 1) {
       const parsed = continuedCareStepOneSchema.parse({
         programName: formData.get("programName"),
-        streetAddress: formData.get("streetAddress"),
-        city: formData.get("city"),
-        state: formData.get("state"),
-        zip: formData.get("zip"),
+        streetAddress: formData.get("streetAddress") || "",
+        city: formData.get("city") || "",
+        state: formData.get("state") || "",
+        zip: formData.get("zip") || "",
         websiteUrl: formData.get("websiteUrl") || undefined,
         telehealthMode: formData.get("telehealthMode"),
+        statesServed: valuesFromForm(formData, "statesServed"),
+        programmingTimeZone: formData.get("programmingTimeZone") || "",
+        hoursOfOperation: formData.get("hoursOfOperation") || "",
         additionalLocations: formData.get("additionalLocations") || undefined,
         stateLicenseNumber: formData.get("stateLicenseNumber"),
         certificationsHeld: valuesFromForm(formData, "certificationsHeld"),
@@ -905,6 +911,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
         insuranceAccepted: valuesFromForm(formData, "insuranceAccepted"),
         clientAcceptanceMethods: valuesFromForm(formData, "clientAcceptanceMethods"),
         referralProcessDescription: formData.get("referralProcessDescription"),
+        insuranceNotes: formData.get("insuranceNotes") || undefined,
         medicalRecordsFax: formData.get("medicalRecordsFax") || undefined
       });
 
@@ -961,7 +968,14 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
         photoReadiness: parsed.photoReadiness,
         videoUrls: parsed.videoUrls
       }) as Record<string, unknown>;
+      continuedCareStepOneSchema.parse({ ...finalDraft, websiteUrl: finalDraft.websiteUrl || undefined, additionalLocations: finalDraft.additionalLocations || undefined });
       const programName = String(finalDraft.programName || "Continued Care Program");
+      if (draft.user.orgId) {
+        const org = await prisma.organization.findUniqueOrThrow({ where: { id: draft.user.orgId } });
+        const error = await virtualOrganizationPlanError(org.id, org.subscriptionPlan || "claimed_listing", { type: "continued_care", telehealthMode: String(finalDraft.telehealthMode || ""), statesServed: arrayFromDraft(finalDraft.statesServed) });
+        if (error) throw new Error(`Virtual program: ${error}`);
+      }
+
       const slug = `${slugify(programName)}-${Date.now().toString(36)}`;
       const profileLimitMessage = await profileLimitMessageForExistingOrg(draft.user.orgId);
 
@@ -995,13 +1009,16 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
             programTypes: [],
             telehealthAvailable: Boolean(finalDraft.telehealthAvailable),
             telehealthMode: String(finalDraft.telehealthMode || ""),
+            statesServed: arrayFromDraft(finalDraft.statesServed),
+            programmingTimeZone: nullableText(String(finalDraft.programmingTimeZone || "")),
+            insuranceNotes: nullableText(String(finalDraft.insuranceNotes || "")),
             additionalLocations: nullableText(String(finalDraft.additionalLocations || "")),
             stateLicenseNumber: String(finalDraft.stateLicenseNumber || ""),
             certificationsHeld: arrayFromDraft(finalDraft.certificationsHeld),
             accreditations: arrayFromDraft(finalDraft.accreditations),
             clinicalFocus: arrayFromDraft(finalDraft.clinicalFocus),
             levelsOfCare: arrayFromDraft(finalDraft.levelsOfCare),
-            hoursOfOperation: null,
+            hoursOfOperation: nullableText(String(finalDraft.hoursOfOperation || "")),
             programmingSchedule: arrayFromDraft(finalDraft.programmingSchedule),
             languagesServed: arrayFromDraft(finalDraft.languagesServed),
             medicationServicesOffered: arrayFromDraft(finalDraft.medicationServicesOffered),
@@ -1032,7 +1049,7 @@ export async function saveContinuedCareOnboardingStep(step: number, formData: Fo
           select: { id: true, orgId: true, programName: true }
         });
         completedProfileId = profile.id;
-        geocodeTarget = {
+        geocodeTarget = finalDraft.telehealthMode === "Virtual only" ? null : {
           profileId: profile.id,
           streetAddress: String(finalDraft.streetAddress || ""),
           city: String(finalDraft.city || ""),

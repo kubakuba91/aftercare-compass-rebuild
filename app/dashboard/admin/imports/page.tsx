@@ -24,7 +24,7 @@ export default async function ProviderImportsPage({ searchParams }: { searchPara
   return <main className="shell py-8">
     <BackLink href="/dashboard/admin?tab=profiles">Back to Homes & Programs</BackLink>
     <div className="mt-5 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
-      <div><h1 className="text-3xl font-semibold">Provider CSV imports</h1><p className="mt-2 text-sm text-muted-foreground">Validate, preview, and import organizations with their locations.</p></div>
+      <div><h1 className="text-3xl font-semibold">Provider CSV imports</h1><p className="mt-2 text-sm text-muted-foreground">Validate, preview, and import organizations with their profiles.</p></div>
       <Link className="inline-flex min-h-10 items-center gap-2 rounded-md border border-border px-4 text-sm font-semibold" href="/dashboard/admin/imports/template"><Download size={16}/> Download template</Link>
     </div>
     {query.message ? <div className={`mt-5 rounded-md border p-3 text-sm ${query.tone === "success" ? "border-success/30 bg-success/10" : "border-danger/30 bg-danger/10"}`}>{query.message}</div> : null}
@@ -35,6 +35,8 @@ export default async function ProviderImportsPage({ searchParams }: { searchPara
         <button className="min-h-11 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground" type="submit">Validate and preview</button>
       </form>
       <p className="mt-3 text-xs text-muted-foreground">Maximum 5,000 rows or 10 MB. Separate multiple values and photo URLs with semicolons.</p>
+      <p className="mt-3 text-sm text-muted-foreground">For virtual Continued Care, set delivery_mode to Virtual only, enter states_served (PA; OH; NJ or Nationwide), and a programming_time_zone such as America/New_York. Address and capacity may be blank; capacity is ignored. Use insurance_notes for coverage that varies by state.</p>
+      <p className="mt-3 text-sm text-muted-foreground">Existing CSVs still work. Physical profiles match by organization and address; virtual profiles match by organization and program name. Keep virtual program names consistent when updating. Use separate organizations for virtual and in-person programs. New profiles are unclaimed; imports do not create or change subscriptions.</p>
     </Card>
     <section className="mt-8"><h2 className="text-xl font-semibold">Import history</h2>
       <div className="mt-4 overflow-x-auto rounded-lg border border-border"><table className="w-full min-w-[850px] text-left text-sm"><thead className="bg-muted/50"><tr><th className="p-3">Uploaded</th><th className="p-3">File</th><th className="p-3">Admin</th><th className="p-3">Status</th><th className="p-3">Rows</th><th className="p-3">Results</th></tr></thead><tbody>

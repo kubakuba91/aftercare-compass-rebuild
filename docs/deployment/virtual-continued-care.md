@@ -31,3 +31,11 @@ Do not deploy the new application against the old schema. The production Vercel 
 - `npm run build`
 
 Live database integration and real Stripe Checkout cannot be verified without usable configured credentials. Do not claim these checks passed based only on a successful compile.
+
+## Bulk imports
+
+The admin template includes physical and virtual examples. Existing CSV headers remain compatible. For virtual Continued Care, set `delivery_mode` to `Virtual only`, provide `states_served` (semicolon-separated full names or abbreviations, or `Nationwide` for 50 states + DC), and `programming_time_zone` from the onboarding time zones. `insurance_notes` is optional. Physical address fields may be blank; capacity is ignored.
+
+Virtual rows match by organization and program name, independently of address. Keep program names consistent in repeat import files; renaming a program in the CSV represents a new identity. Separate virtual and physical organizations are required. New imports remain unclaimed and do not create subscriptions or change billing. Review coverage in the import preview before committing.
+
+Checks: `node --import tsx tests/provider-csv-import.test.ts`. The checks use database stubs; a real admin upload/commit remains part of deployment verification after applying the virtual schema migration.

@@ -9,6 +9,7 @@ import { normalizePhoneForStorage } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { slugify } from "@/lib/slug";
+import { isVirtualOnly, virtualStates, virtualTimeZones } from "@/lib/virtual-care";
 
 export const providerCsvHeaders = [
   "org_id",
@@ -28,20 +29,14 @@ export const providerCsvHeaders = [
   "contact_name",
   "contact_email",
   "photos_url",
-  "description"
+  "description",
+  "delivery_mode",
+  "states_served",
+  "programming_time_zone",
+  "insurance_notes"
 ] as const;
 
-const requiredHeaders = providerCsvHeaders.filter((header) => ![
-  "org_id",
-  "website",
-  "hours",
-  "capacity/bed_count",
-  "licensure_id",
-  "contact_name",
-  "contact_email",
-  "photos_url",
-  "description"
-].includes(header));
+const requiredHeaders = ["organization_name", "program_name", "phone", "level_of_care", "insurance_accepted"];
 
 type CsvRecord = Record<string, string>;
 
@@ -66,6 +61,11 @@ export type NormalizedProviderImportRow = {
   photoUrls: string[];
   description: string | null;
   importMatchKey: string;
+  // Optional to retain compatibility with previously validated import batches.
+  telehealthMode?: "In-person only" | "Virtual only";
+  statesServed?: string[];
+  programmingTimeZone?: string | null;
+  insuranceNotes?: string | null;
 };
 
 type PreviewRow = {
@@ -89,6 +89,12 @@ function keyPart(value: string) {
 export function providerImportMatchKey(organizationName: string, address: string) {
   return `${keyPart(organizationName)}|${keyPart(address)}`;
 }
+
+export function virtualProviderImportMatchKey(organizationName: string, programName: string) {
+  return `virtual|${keyPart(organizationName)}|${keyPart(programName)}`;
+}
+
+const stateAbbreviations = "AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY DC".split(" ");
 
 function splitList(value: string) {
   return value.split(/[;|]/).map(clean).filter(Boolean);
@@ -153,7 +159,7 @@ function parseCsv(text: string) {
   return rows.filter((values) => values.some((value) => clean(value)));
 }
 
-function csvRecords(text: string) {
+export function csvRecords(text: string) {
   const parsed = parseCsv(text.replace(/^\uFEFF/, ""));
   if (parsed.length < 2) throw new Error("The CSV must include a header and at least one data row.");
 
@@ -175,8 +181,27 @@ function csvRecords(text: string) {
   });
 }
 
-function normalizeRow(record: CsvRecord) {
+export function normalizeRow(record: CsvRecord) {
   const errors: string[] = [];
+  const mode = clean(record.delivery_mode).toLowerCase();
+  const virtual = mode === "virtual only";
+  if (mode && !["virtual only", "in-person only"].includes(mode)) errors.push("delivery_mode must be In-person only or Virtual only.");
+  const profileType = inferProfileType(record.level_of_care || "");
+  if (virtual && profileType !== ProfileType.continued_care) errors.push("Virtual only is available only for Continued Care programs.");
+  const statesServed: string[] = [];
+  for (const value of splitList(record.states_served || "")) {
+    if (["nationwide", "select all"].includes(value.toLowerCase())) {
+      statesServed.push(...virtualStates);
+      continue;
+    }
+    const state = virtualStates.find((item, index) => item.toLowerCase() === value.toLowerCase() || stateAbbreviations[index] === value.toUpperCase());
+    if (state) statesServed.push(state);
+    else errors.push(`Unknown states_served value: ${value}. Use state names, abbreviations, or Nationwide.`);
+  }
+  const programmingTimeZone = clean(record.programming_time_zone);
+  if (virtual && !statesServed.length) errors.push("states_served is required for Virtual only programs.");
+  if (virtual && !virtualTimeZones.some((zone) => zone === programmingTimeZone)) errors.push("programming_time_zone must be a supported US IANA time zone, such as America/New_York.");
+  if (!virtual && (statesServed.length || programmingTimeZone)) errors.push("states_served and programming_time_zone require delivery_mode Virtual only.");
   const requiredValues: Array<[string, string]> = [
     ["organization_name", record.organization_name],
     ["program_name", record.program_name],
@@ -189,6 +214,7 @@ function normalizeRow(record: CsvRecord) {
     ["insurance_accepted", record.insurance_accepted]
   ];
   for (const [field, value] of requiredValues) {
+    if (virtual && ["address", "city", "state", "zip"].includes(field)) continue;
     if (!clean(value)) errors.push(`${field} is required.`);
   }
 
@@ -202,7 +228,8 @@ function normalizeRow(record: CsvRecord) {
     ["phone", record.phone, 40],
     ["level_of_care", record.level_of_care, 1000],
     ["insurance_accepted", record.insurance_accepted, 1000],
-    ["description", record.description, 10000]
+    ["description", record.description, 10000],
+    ["insurance_notes", record.insurance_notes, 2000]
   ];
   for (const [field, value, limit] of lengthLimits) {
     if (clean(value).length > limit) errors.push(`${field} must be ${limit} characters or fewer.`);
@@ -221,7 +248,7 @@ function normalizeRow(record: CsvRecord) {
   const photoUrls = splitList(record.photos_url || "");
   if (photoUrls.some((url) => !isUrl(url))) errors.push("photos_url must contain http(s) URLs separated by semicolons.");
 
-  const bedValue = clean(record["capacity/bed_count"]);
+  const bedValue = virtual ? "" : clean(record["capacity/bed_count"]);
   const bedCount = bedValue ? Number(bedValue) : null;
   if (bedValue && (!Number.isInteger(bedCount) || Number(bedCount) < 0)) {
     errors.push("capacity/bed_count must be a non-negative whole number.");
@@ -243,7 +270,7 @@ function normalizeRow(record: CsvRecord) {
     state,
     zip: clean(record.zip),
     phone: phone || "",
-    profileType: inferProfileType(record.level_of_care || ""),
+    profileType,
     levelOfCare,
     insuranceAccepted,
     website: clean(record.website) || null,
@@ -254,7 +281,11 @@ function normalizeRow(record: CsvRecord) {
     contactEmail: clean(record.contact_email).toLowerCase() || null,
     photoUrls,
     description: sanitizeRichText(record.description) || null,
-    importMatchKey: providerImportMatchKey(organizationName, address)
+    importMatchKey: virtual ? virtualProviderImportMatchKey(organizationName, clean(record.program_name)) : providerImportMatchKey(organizationName, address),
+    telehealthMode: mode ? virtual ? "Virtual only" : "In-person only" : undefined,
+    statesServed: virtual ? [...new Set(statesServed)] : undefined,
+    programmingTimeZone: virtual ? programmingTimeZone : undefined,
+    insuranceNotes: "insurance_notes" in record ? clean(record.insurance_notes) || null : undefined
   };
 
   return { normalized, errors };
@@ -273,7 +304,7 @@ export async function validateProviderCsv(text: string): Promise<PreviewRow[]> {
   const [organizations, profiles] = await Promise.all([
     prisma.organization.findMany({ select: { id: true, name: true, type: true } }),
     prisma.aftercareProfile.findMany({
-      select: { id: true, orgId: true, streetAddress: true, importMatchKey: true, organization: { select: { name: true } } }
+      select: { id: true, orgId: true, streetAddress: true, programName: true, type: true, telehealthMode: true, importMatchKey: true, organization: { select: { name: true } } }
     })
   ]);
   const organizationsById = new Map(organizations.map((org) => [org.id, org]));
@@ -285,7 +316,7 @@ export async function validateProviderCsv(text: string): Promise<PreviewRow[]> {
 
   const profilesByKey = new Map<string, typeof profiles>();
   for (const profile of profiles) {
-    const key = profile.importMatchKey || providerImportMatchKey(profile.organization.name, profile.streetAddress || "");
+    const key = isVirtualOnly(profile) ? (profile.importMatchKey?.startsWith("virtual|") ? profile.importMatchKey : virtualProviderImportMatchKey(profile.organization.name, profile.programName)) : profile.importMatchKey || providerImportMatchKey(profile.organization.name, profile.streetAddress || "");
     profilesByKey.set(key, [...(profilesByKey.get(key) || []), profile]);
   }
 
@@ -311,15 +342,19 @@ export async function validateProviderCsv(text: string): Promise<PreviewRow[]> {
       errors.push("level_of_care conflicts with the existing organization type.");
     }
 
-    const profileMatches = profilesByKey.get(normalized.importMatchKey) || [];
-    if (profileMatches.length > 1) errors.push("organization_name + address matches multiple existing locations.");
+    const profileMatches = (profilesByKey.get(normalized.importMatchKey) || []).filter((profile) => !organizationId || profile.orgId === organizationId);
+    if (profileMatches.length > 1) errors.push("Import identity matches multiple existing profiles; resolve the duplicates before importing.");
     else if (profileMatches.length === 1) {
       profileId = profileMatches[0].id;
       organizationId = profileMatches[0].orgId;
     }
 
-    if (seenKeys.has(normalized.importMatchKey)) errors.push("Duplicate organization_name + address in this CSV.");
-    seenKeys.add(normalized.importMatchKey);
+    const seenKey = `${organizationId || keyPart(normalized.organizationName)}|${normalized.importMatchKey}`;
+    if (seenKeys.has(seenKey)) errors.push("Duplicate profile in this CSV (organization + address, or organization + virtual program name).");
+    seenKeys.add(seenKey);
+    if (organizationId && profiles.some((profile) => profile.orgId === organizationId && isVirtualOnly(profile) !== (normalized.telehealthMode === "Virtual only"))) {
+      errors.push("In-person and virtual-only programs must use separate organizations for now.");
+    }
 
     return {
       rowNumber,
@@ -332,19 +367,19 @@ export async function validateProviderCsv(text: string): Promise<PreviewRow[]> {
     };
   });
 
-  const typesByOrganization = new Map<string, Set<ProfileType>>();
+  const typesByOrganization = new Map<string, Set<string>>();
   for (const row of rows) {
     const normalized = normalizeRow(row.rawData).normalized;
-    const key = normalized.orgId || keyPart(normalized.organizationName);
-    const types = typesByOrganization.get(key) || new Set<ProfileType>();
-    types.add(normalized.profileType);
+    const key = row.organizationId || normalized.orgId || keyPart(normalized.organizationName);
+    const types = typesByOrganization.get(key) || new Set<string>();
+    types.add(`${normalized.profileType}|${normalized.telehealthMode === "Virtual only" ? "virtual" : "physical"}`);
     typesByOrganization.set(key, types);
   }
   for (const row of rows) {
     const normalized = normalizeRow(row.rawData).normalized;
-    const key = normalized.orgId || keyPart(normalized.organizationName);
+    const key = row.organizationId || normalized.orgId || keyPart(normalized.organizationName);
     if ((typesByOrganization.get(key)?.size || 0) > 1) {
-      row.errorReasons.push("One organization cannot mix sober-living and continued-care rows in the current account model.");
+      row.errorReasons.push("One organization cannot mix sober-living, in-person Continued Care, and virtual-only Continued Care rows for now.");
       row.normalizedData = null;
       row.previewAction = "reject";
     }
@@ -390,23 +425,38 @@ export async function commitProviderImportRow(input: {
       });
     }
 
+    const virtual = input.normalized.telehealthMode === "Virtual only";
+    const existingProfiles = await tx.aftercareProfile.findMany({
+      where: { orgId: organization.id }, select: { id: true, type: true, telehealthMode: true }
+    });
+    if (organization.type !== orgTypeForProfile(input.normalized.profileType) || existingProfiles.some((profile) => isVirtualOnly(profile) !== virtual)) {
+      throw new Error("Organization type or delivery mode changed since preview. Upload and validate the CSV again.");
+    }
+    if (input.profileId && !existingProfiles.some((profile) => profile.id === input.profileId)) {
+      throw new Error("The matched profile changed organizations since preview. Upload and validate again.");
+    }
     const profileData = {
       orgId: organization.id,
       programName: input.normalized.programName,
       type: input.normalized.profileType,
       importMatchKey: input.normalized.importMatchKey,
-      streetAddress: input.normalized.address,
-      city: input.normalized.city,
-      state: input.normalized.state,
-      zip: input.normalized.zip,
-      publicCity: input.normalized.city,
-      publicState: input.normalized.state,
+      telehealthMode: input.normalized.telehealthMode,
+      statesServed: input.normalized.statesServed,
+      programmingTimeZone: input.normalized.programmingTimeZone,
+      insuranceNotes: input.normalized.insuranceNotes,
+      ...(virtual ? { latitude: null, longitude: null, publicLatitude: null, publicLongitude: null, geocodedAt: null, bedsAvailable: null } : {}),
+      streetAddress: virtual ? null : input.normalized.address,
+      city: virtual ? "" : input.normalized.city,
+      state: virtual ? "" : input.normalized.state,
+      zip: virtual ? "" : input.normalized.zip,
+      publicCity: virtual ? "" : input.normalized.city,
+      publicState: virtual ? "" : input.normalized.state,
       admissionsContactPhone: input.normalized.phone,
       admissionsContactEmail: input.normalized.contactEmail,
       intakeContactName: input.normalized.contactName,
       websiteUrl: input.normalized.website,
       hoursOfOperation: input.normalized.hours,
-      totalBeds: input.normalized.bedCount,
+      totalBeds: virtual ? null : input.normalized.bedCount,
       stateLicenseNumber: input.normalized.licensureId,
       levelsOfCare: input.normalized.profileType === ProfileType.continued_care ? input.normalized.levelOfCare : [],
       recoveryResidenceLevel: input.normalized.profileType === ProfileType.sober_living ? input.normalized.levelOfCare.join(", ") : null,
@@ -455,7 +505,7 @@ export async function commitProviderImportRow(input: {
         previewAction: input.profileId ? "updated" : "created",
         organizationId: organization.id,
         profileId: profile.id,
-        resultMessage: input.profileId ? "Existing location updated." : "New location created."
+        resultMessage: input.profileId ? "Existing profile updated." : "New profile created."
       }
     });
     return profile;
@@ -510,5 +560,15 @@ export function providerTemplateCsv() {
     "https://example.org/photo.jpg",
     "Structured recovery housing with peer support."
   ];
-  return `${providerCsvHeaders.map(quoteCsv).join(",")}\r\n${example.map(quoteCsv).join(",")}\r\n`;
+  const virtualExample: CsvRecord = {
+    organization_name: "Example Virtual Care", program_name: "Example Virtual IOP",
+    phone: "(610) 555-0101", level_of_care: "IOP", insurance_accepted: "Private Pay; Aetna",
+    website: "https://example.org", hours: "Mon-Thu 6pm-9pm", contact_name: "Jordan Lee",
+    contact_email: "intake@example.org", description: "Virtual intensive outpatient care.",
+    delivery_mode: "Virtual only", states_served: "PA; OH; NJ", programming_time_zone: "America/New_York",
+    insurance_notes: "Coverage varies by state; confirm at intake."
+  };
+  const physicalExample = [...example, "", "", "", ""];
+  return [providerCsvHeaders, physicalExample, providerCsvHeaders.map((header) => virtualExample[header] || "")]
+    .map((row) => row.map(quoteCsv).join(",")).join("\r\n") + "\r\n";
 }

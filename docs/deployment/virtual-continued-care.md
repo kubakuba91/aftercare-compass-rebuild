@@ -42,7 +42,7 @@ Checks: `node --import tsx tests/provider-csv-import.test.ts`. The checks use da
 
 ## Verified live Stripe catalog — September 14, 2026
 
-Account: `acct_1RuaDcPpikT7Npkh` (Aftercare Compass). Created in the signed-in Stripe dashboard; all six prices verified on their product pages. Existing subscriptions were not changed. These IDs still need to be added to production environment configuration before release.
+Account: `acct_1RuaDcPpikT7Npkh` (Aftercare Compass). Created in the signed-in Stripe dashboard; all six prices verified on their product pages. Existing subscriptions were not changed. All six IDs were added and verified as Production-only Config environment variables on Vercel project aftercare-compass-production on September 14, 2026. They take effect on the next deployment; no redeployment was triggered during configuration.
 
 | Product | Product ID | Monthly | Annual |
 | --- | --- | --- | --- |
@@ -60,3 +60,9 @@ STRIPE_AFTERCARE_VIRTUAL_NETWORK_ANNUAL_PRICE_ID=price_1UFgluPpikT7NpkhxkQ0GIA4
 ```
 
 Annual lookup keys are `aftercare_virtual_basic_annual`, `aftercare_virtual_growth_annual`, and `aftercare_virtual_network_annual`. Monthly prices were created with their products and have no lookup keys. The app uses the explicit price IDs above.
+
+## Production migration verification — September 14, 2026
+
+Applied the exact virtual migration SQL in the linked Supabase project's SQL editor (`pjkpziaotuzrjdzkrwua`) within a transaction with a five-second lock timeout. Recorded the successful migration in `_prisma_migrations` using checksum `87d38ee167c5c6819ba4dc29730960eea62a9efa8f246c6610e3644da1b5be58`. Follow-up SQL confirmed three new columns and one successful migration record.
+
+One existing published virtual listing, Ophelia (`ophelia`), needs provider-confirmed states served and programming time zone. These were not inferred from its old PA address. The older search/SMS tables already exist despite incomplete older Prisma migration history; do not blindly replay older migrations.

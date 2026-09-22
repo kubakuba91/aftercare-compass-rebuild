@@ -40,6 +40,7 @@ import {
   inviteReferentManagers,
   bookPhoneScreeningSlot,
   removePendingReferentInvite,
+  resendReferentInvite,
   removeReferentManager,
   updateReferentDisplayName,
   updateReferentSmsConsent
@@ -777,12 +778,18 @@ export default async function ReferentDashboardPage({
                 </div>
                 <Badge tone="warning">Pending invite</Badge>
                 {canManageTeam ? (
+                  <div className="flex flex-wrap gap-2">
+                  {hasReferentAccess(organization) ? <form action={resendReferentInvite}>
+                    <input name="email" type="hidden" value={email} />
+                    <button className="focus-ring min-h-9 rounded-md border border-border px-3 text-sm font-semibold">Resend</button>
+                  </form> : null}
                   <form action={removePendingReferentInvite}>
                     <input name="email" type="hidden" value={email} />
                     <button className="focus-ring min-h-9 rounded-md border border-border px-3 text-sm font-semibold">
                       Remove
                     </button>
                   </form>
+                  </div>
                 ) : null}
               </div>
             ))}

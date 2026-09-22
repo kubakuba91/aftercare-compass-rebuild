@@ -1,5 +1,6 @@
 "use server";
 
+import { deliverInvitations } from "@/lib/invite-delivery";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ReferralStatus, Role } from "@prisma/client";
@@ -426,4 +427,25 @@ export async function updateReferentSmsConsent(formData: FormData) {
 
   revalidatePath("/dashboard/referent");
   redirect("/dashboard/referent?tab=account&accountMessage=Text notifications disabled.");
+}
+
+export async function resendReferentInvite(formData: FormData) {
+  const appUser = await getProtectedAppUser("/dashboard/referent");
+  if (appUser.role !== Role.referent_admin || !appUser.orgId || !appUser.organization) {
+    redirect(teamHref("Only referent admins can resend invitations."));
+  }
+  if (!canSubmitReferrals(appUser.organization)) redirect(teamHref("Start a trial or subscribe before sending invitations."));
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const details = await prisma.referentOrganization.findUnique({
+    where: { orgId: appUser.orgId }, select: { invitedTeamEmails: true }
+  });
+  if (!details?.invitedTeamEmails.some(pending => pending.toLowerCase() === email)) {
+    redirect(teamHref("That invitation is no longer pending."));
+  }
+  const organizationName = appUser.organization.name;
+  const invitedByName = [appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email;
+  const delivery = await deliverInvitations([email], recipient => sendOrganizationInviteEmail({
+    email: recipient, organizationName, invitedByName, role: Role.referent_manager
+  }));
+  redirect(teamHref(delivery.sent ? "Invitation email resent." : "The invitation is still saved, but the email could not be sent. Please try again later."));
 }

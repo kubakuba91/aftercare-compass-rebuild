@@ -1,5 +1,7 @@
 "use server";
 
+import { sendOrganizationInviteEmail } from "@/lib/email-notifications";
+import { deliverInvitations } from "@/lib/invite-delivery";
 import { getCurrentAppUser } from "@/lib/current-user";
 import { createBillingCheckoutSession } from "@/app/dashboard/billing/actions";
 import { getReferentTeamLimit, isWithinPlanLimit } from "@/lib/feature-gates";
@@ -52,6 +54,7 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
 
   const existingUser = await getCurrentAppUser();
   if (existingUser?.orgId) redirect("/dashboard");
+  let invitations: { emails: string[]; organizationName: string; invitedByName: string } | null = null;
   let checkout: FormData | null = null;
   let destination = "/onboarding/referent/1";
 
@@ -217,6 +220,11 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
         });
       });
 
+      invitations = {
+        emails: teamEmails,
+        organizationName: String(finalDraft.organization),
+        invitedByName: [draft.user.firstName, draft.user.lastName].filter(Boolean).join(" ") || draft.user.email
+      };
       destination = "/dashboard/referent";
       if (!isTrial) {
         checkout = new FormData();
@@ -230,6 +238,17 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
     destination = stepRedirect(step, "Please check the highlighted fields and try again.");
   }
 
+  if (invitations?.emails.length) {
+    const { organizationName, invitedByName } = invitations;
+    const delivery = await deliverInvitations(invitations.emails, email => sendOrganizationInviteEmail({
+      email, organizationName, invitedByName, role: Role.referent_manager
+    }));
+    const message = delivery.notSent
+      ? `Your account is ready. ${delivery.sent} invitation emails sent; ${delivery.notSent} could not be sent. Use Resend for pending invitations below.`
+      : `${delivery.sent} invitation email${delivery.sent === 1 ? "" : "s"} sent.`;
+    destination = `/dashboard/referent?tab=managers&teamMessage=${encodeURIComponent(message)}`;
+    if (delivery.notSent) console.warn("Onboarding invitation delivery incomplete", { sent: delivery.sent, notSent: delivery.notSent });
+  }
   if (checkout) return createBillingCheckoutSession(checkout);
   redirect(destination);
 }

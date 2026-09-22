@@ -343,7 +343,7 @@ export default async function ReferentStepPage({
                     />
                   </label>
                   <div className="ac-panel-card p-4 text-sm text-muted-foreground">
-                    You can skip this for now. Team invitations will be sent once the invite email workflow is enabled.
+                    Optional—you can invite your team now or add members later from your dashboard.
                   </div>
                 </>
               ) : null}

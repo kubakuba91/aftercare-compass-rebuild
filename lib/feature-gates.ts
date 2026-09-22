@@ -1,3 +1,4 @@
+import { hasReferentAccess } from "@/lib/referent-trial";
 import {
   OrganizationType,
   ProfileOwnershipStatus,
@@ -13,6 +14,7 @@ type OrganizationGateContext = {
   type?: OrganizationType | null;
   subscriptionPlan?: string | null;
   subscriptionStatus?: SubscriptionStatus | null;
+  referentTrialEndsAt?: Date | null;
 };
 
 type ProfileGateContext = {
@@ -82,7 +84,7 @@ export function canSubmitReferrals(organization: OrganizationGateContext | null 
   }
 
   return getReferentPlan(organization.subscriptionPlan).submitReferrals &&
-    isSubscriptionUsable(organization.subscriptionStatus);
+    hasReferentAccess(organization);
 }
 
 export function canReceiveDirectReferrals(
@@ -227,7 +229,7 @@ export function canUseInAppMessaging(organization: OrganizationGateContext | nul
 
   if (organization.type === OrganizationType.referent) {
     return getReferentPlan(organization.subscriptionPlan).messaging &&
-      isSubscriptionUsable(organization.subscriptionStatus);
+      hasReferentAccess(organization);
   }
 
   return getAftercarePlan(organization.subscriptionPlan).messaging &&

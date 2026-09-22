@@ -77,7 +77,7 @@ export async function ensureOnboardingUser(preferredAccountType?: AccountType) {
   if (existingUser) {
     return prisma.user.update({
       where: { id: existingUser.id },
-      data: preferredAccountType ? { ...data, role } : data
+      data: preferredAccountType && !existingUser.orgId ? { ...data, role } : data
     });
   }
 

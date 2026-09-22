@@ -130,6 +130,9 @@ export default async function ReferentStepPage({
   const action = saveReferentOnboardingStep.bind(null, currentStep);
   const referentBillingPlans = currentStep === 3 ? await getBillingPlansWithStripePrices("referent") : [];
   const selected = (values?: string[] | null) => values ?? [];
+  if (draft.user.orgId) redirect("/dashboard");
+  if (currentStep === 4 && !["trial", "starter", "professional"].includes(referentDetails?.enrollmentChoice)) redirect("/onboarding/referent/3");
+
   const invitedTeamEmails = Array.isArray(referentDetails?.invitedTeamEmails)
     ? referentDetails.invitedTeamEmails.map(String)
     : [];
@@ -267,11 +270,17 @@ export default async function ReferentStepPage({
 
               {currentStep === 3 ? (
                 <>
-                  <div className="text-sm font-medium">Plan preference</div>
+                  <div className="text-sm font-medium">Choose how to start</div>
                   <div className="ac-panel-card p-4 text-sm text-muted-foreground">
-                    Billing is skipped during alpha onboarding. Choose a preference now, or continue with the default Professional plan.
+                    Choose a free trial or subscribe now. Paid plans require secure payment through Stripe before access is activated.
                   </div>
                   <div className="grid gap-3">
+                    <label className="ac-panel-card grid gap-2 p-4">
+                      <span className="flex items-start gap-3">
+                        <input type="radio" name="enrollmentChoice" value="trial" required defaultChecked={referentDetails?.enrollmentChoice === "trial"} />
+                        <span><span className="block font-semibold">Start a 30-day free trial</span><span className="mt-1 block text-sm text-muted-foreground">Professional features · No credit card required · No automatic charge. Subscribe to continue paid features after 30 days.</span></span>
+                      </span>
+                    </label>
                     {referentPlanOptions.map((planKey) => {
                       const plan = referentPlans[planKey];
                       const price = referentBillingPlans.find((billingPlan) => billingPlan.key === planKey)?.priceLabels.monthly ?? "Custom";
@@ -280,7 +289,7 @@ export default async function ReferentStepPage({
                         return (
                           <div key={planKey} className="ac-panel-card grid gap-3 p-4">
                             <div>
-                              <span className="block font-semibold">{plan.label}</span>
+                              <span className="block font-semibold">Subscribe now: {plan.label}</span>
                               <span className="mt-1 block text-sm text-muted-foreground">
                                 Unlimited team members · Messaging included · Custom support
                               </span>
@@ -297,14 +306,15 @@ export default async function ReferentStepPage({
                           <span className="flex items-start gap-3">
                             <input
                               type="radio"
-                              name="selectedPlan"
+                              name="enrollmentChoice"
+                              required
                               value={planKey}
-                              defaultChecked={(referentDetails?.selectedPlan === "enterprise" ? "professional" : referentDetails?.selectedPlan ?? "professional") === planKey}
+                              defaultChecked={referentDetails?.enrollmentChoice === planKey}
                             />
                             <span>
-                              <span className="block font-semibold">{plan.label}</span>
+                              <span className="block font-semibold">Subscribe now: {plan.label}</span>
                               <span className="mt-1 block text-sm text-muted-foreground">
-                                {price} · {plan.teamMembers} team members · {plan.messaging ? "Messaging included" : "Messaging not included"}
+                                {price} monthly / {referentBillingPlans.find((billingPlan) => billingPlan.key === planKey)?.priceLabels.annual} annually · {plan.teamMembers} team members · {plan.messaging ? "Messaging included" : "Messaging not included"}
                               </span>
                             </span>
                           </span>
@@ -313,7 +323,7 @@ export default async function ReferentStepPage({
                     })}
                   </div>
                   <label className="grid gap-2 text-sm font-medium">
-                    Preferred billing cycle
+                    Billing cycle for paid signup (does not apply to the free trial)
                     <select name="billingCycle" defaultValue={referentDetails?.billingCycle ?? "monthly"} className={fieldClassName()}>
                       {billingCycleOptions.map((option) => <option key={option} value={option}>{option === "annual" ? "Annual" : "Monthly"}</option>)}
                     </select>
@@ -350,7 +360,7 @@ export default async function ReferentStepPage({
                     </BackLink>
                   )}
                   <button className="focus-ring min-h-11 flex-1 rounded-md bg-[#121b57] px-4 text-sm font-semibold text-white">
-                    {currentStep === maxReferentStep ? "Finish" : "Next"}
+                    {currentStep === maxReferentStep ? (referentDetails?.enrollmentChoice === "trial" ? "Start 30-day free trial" : "Continue to secure payment") : "Next"}
                   </button>
                 </div>
               </div>

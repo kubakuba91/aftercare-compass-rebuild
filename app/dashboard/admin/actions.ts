@@ -1,5 +1,6 @@
 "use server";
 
+import { trialEndFrom } from "@/lib/referent-trial";
 import { adminDeliveryData } from "@/lib/admin-delivery";
 
 import { virtualOrganizationPlanError } from "@/lib/virtual-care-billing";
@@ -1764,4 +1765,32 @@ export async function updateProfileOptionLabel(formData: FormData) {
   revalidatePath("/onboarding/aftercare/sober-living/1");
   revalidatePath("/onboarding/aftercare/continued-care/1");
   redirect(adminDataSettingsHref(`${existingOption.label} was renamed to ${option.label}.`, category));
+}
+
+export async function extendReferentTrial(formData: FormData) {
+  const actor = await getProtectedAppUser("/dashboard/admin");
+  if (actor.role !== Role.system_admin) redirect("/dashboard");
+  const orgId = String(formData.get("orgId") || "");
+  const days = Number(formData.get("days"));
+  const reason = String(formData.get("reason") || "").trim();
+  let message = "Choose 1–90 days and enter a reason (up to 500 characters).";
+  if (Number.isInteger(days) && days >= 1 && days <= 90 && reason.length > 0 && reason.length <= 500) {
+    const org = await prisma.organization.findUnique({ where: { id: orgId } });
+    if (org?.type === "referent" && org.subscriptionStatus === "trialing" && !org.stripeSubscriptionId && org.referentTrialStartedAt && org.referentTrialEndsAt) {
+      const previousEndsAt = org.referentTrialEndsAt;
+      const newEndsAt = trialEndFrom(new Date(Math.max(Date.now(), previousEndsAt.getTime())), days);
+      const changed = await prisma.$transaction(async tx => {
+        const result = await tx.organization.updateMany({
+          where: { id: orgId, subscriptionStatus: "trialing", stripeSubscriptionId: null, referentTrialEndsAt: previousEndsAt },
+          data: { referentTrialEndsAt: newEndsAt }
+        });
+        if (result.count) await tx.referentTrialExtension.create({ data: { orgId, actorUserId: actor.id, previousEndsAt, newEndsAt, reason } });
+        return result.count;
+      });
+      message = changed ? `Trial extended to ${newEndsAt.toLocaleDateString("en-US", { timeZone: "UTC" })}.` : "Subscription changed. Refresh and try again.";
+      revalidatePath("/dashboard/referent");
+      revalidatePath("/dashboard/admin");
+    } else message = "Only an existing no-card referent trial can be extended here.";
+  }
+  redirect(`/dashboard/admin?tab=organizations&reviewMessage=${encodeURIComponent(message)}`);
 }

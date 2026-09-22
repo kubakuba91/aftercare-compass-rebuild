@@ -1,3 +1,4 @@
+import { canStartReferentTrial, hasReferentAccess, trialDaysRemaining } from "@/lib/referent-trial";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -34,7 +35,7 @@ import { getProtectedAppUser } from "@/lib/protected-routing";
 import { prisma } from "@/lib/prisma";
 import { maxReferentStep } from "@/lib/referent-onboarding";
 import { cn } from "@/lib/utils";
-import { cancelBillingSubscription, changeBillingPlan, createBillingPortalSession } from "../billing/actions";
+import { startReferentTrial, createBillingCheckoutSession, cancelBillingSubscription, changeBillingPlan, createBillingPortalSession } from "../billing/actions";
 import {
   inviteReferentManagers,
   bookPhoneScreeningSlot,
@@ -262,6 +263,8 @@ export default async function ReferentDashboardPage({
         subscriptionStatus: true,
         subscriptionBillingCycle: true,
         subscriptionRenewsAt: true,
+        referentTrialStartedAt: true,
+        referentTrialEndsAt: true,
         stripeCustomerId: true,
         stripeSubscriptionId: true,
         users: {
@@ -285,7 +288,7 @@ export default async function ReferentDashboardPage({
   const pendingInviteEmails = referentDetails.invitedTeamEmails.map((email) => email.toLowerCase());
   const teamLimit = planTeamLimit(organization?.subscriptionPlan);
   const teamUsage = activeTeamMembers.length + pendingInviteEmails.length;
-  const canInviteMore = teamLimit === "unlimited" || teamUsage < teamLimit;
+  const canInviteMore = hasReferentAccess(organization) && (teamLimit === "unlimited" || teamUsage < teamLimit);
   const canManageTeam = appUser.role === Role.referent_admin;
   const referentBillingPlan = getBillingPlan("referent", organization?.subscriptionPlan);
   const referentBillingPlans = await getBillingPlansWithStripePrices("referent");
@@ -295,8 +298,26 @@ export default async function ReferentDashboardPage({
       ? organization?.subscriptionStatus === "trialing" ? "Trialing" : "Contact sales for pricing"
       : referentBillingPlans.find((plan) => plan.key === referentBillingPlan.key)?.priceLabels[referentBillingCycle] ?? "Not configured";
 
+  const localTrial = organization?.subscriptionStatus === "trialing" && !organization?.stripeSubscriptionId;
+  const daysRemaining = organization?.referentTrialEndsAt ? trialDaysRemaining(organization.referentTrialEndsAt) : 0;
+  const subscriptionLabel = localTrial ? (daysRemaining ? `Trial · ${daysRemaining} days left` : "Trial expired") : formatBillingStatus(organization?.subscriptionStatus);
   return (
     <main className="shell py-8">
+      {localTrial || !hasReferentAccess(organization) ? (
+        <div className="ac-panel-card mb-6 grid gap-3 p-4" role="status">
+          <p className="font-semibold">{localTrial ? (daysRemaining ? `Professional trial: ${daysRemaining} days remaining` : "Your free trial has ended") : "Complete your subscription"}</p>
+          <p className="text-sm">{localTrial && daysRemaining ? `Trial ends ${formatBillingDate(organization?.referentTrialEndsAt)}. No automatic charge. Subscribe to keep paid features.` : "Your setup and existing data are saved. You can keep browsing programs; subscribe to use paid features."}</p>
+          {canManageTeam ? <div className="flex flex-wrap gap-3">
+            {organization?.subscriptionStatus === "incomplete" && !organization.stripeSubscriptionId ? <form action={createBillingCheckoutSession}>
+              <input type="hidden" name="plan" value={organization.subscriptionPlan ?? "professional"} />
+              <input type="hidden" name="billingCycle" value={referentBillingCycle} />
+              <input type="hidden" name="returnTo" value="/dashboard/referent?tab=subscription" />
+              <button className="focus-ring ac-button ac-button--primary">Finish payment</button>
+            </form> : <Link className="focus-ring ac-button ac-button--primary" href="/dashboard/referent?tab=subscription&billingView=plans">Choose a paid plan</Link>}
+            {organization && canStartReferentTrial(organization) ? <form action={startReferentTrial}><button className="focus-ring ac-button ac-button--secondary">Start 30-day free trial — no card required</button></form> : null}
+          </div> : <p className="text-sm">Contact your organization administrator to manage billing.</p>}
+        </div>
+      ) : null}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="flex items-start gap-4">
           <Link className="focus-ring inline-flex shrink-0 items-center rounded-md" href="/" aria-label="Aftercare Compass home">
@@ -403,7 +424,7 @@ export default async function ReferentDashboardPage({
                   </thead>
                   <tbody>
                     {referentBillingPlans.map((plan) => {
-                      const isCurrentPlan = referentBillingPlan.key === plan.key;
+                      const isCurrentPlan = organization?.subscriptionStatus === "active" && referentBillingPlan.key === plan.key;
 
                       return (
                         <tr key={plan.key} className="border-b border-border last:border-b-0">
@@ -445,7 +466,7 @@ export default async function ReferentDashboardPage({
                                   <option value="annual">Annual</option>
                                 </select>
                                 <button className="focus-ring ac-button ac-button--primary min-h-10">
-                                  {isCurrentPlan ? "Update" : "Choose"}
+                                  {organization?.stripeSubscriptionId ? (isCurrentPlan ? "Update" : "Choose") : "Subscribe now"}
                                 </button>
                               </form>
                             )}
@@ -465,11 +486,11 @@ export default async function ReferentDashboardPage({
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Current plan</p>
                     <h3 className="mt-1 text-2xl font-semibold">{referentBillingPlan.label}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {referentCurrentPriceLabel}
+                      {localTrial ? "Free trial · No automatic charge" : referentCurrentPriceLabel}
                     </p>
                   </div>
                   <Badge tone={organization?.subscriptionStatus === "active" ? "success" : "warning"}>
-                    {formatBillingStatus(organization?.subscriptionStatus)}
+                    {subscriptionLabel}
                   </Badge>
                 </div>
                 <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2">
@@ -489,7 +510,7 @@ export default async function ReferentDashboardPage({
                   </div>
                   <div className="ac-stat-card p-4">
                     <dt className="text-muted-foreground">Renews / ends</dt>
-                    <dd className="mt-1 font-semibold">{formatBillingDate(organization?.subscriptionRenewsAt)}</dd>
+                    <dd className="mt-1 font-semibold">{formatBillingDate(localTrial ? organization?.referentTrialEndsAt : organization?.subscriptionRenewsAt)}</dd>
                   </div>
                 </dl>
                 <div className="mt-5 flex flex-wrap gap-2">

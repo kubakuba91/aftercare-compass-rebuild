@@ -1,11 +1,15 @@
 "use server";
 
+import { getCurrentAppUser } from "@/lib/current-user";
+import { createBillingCheckoutSession } from "@/app/dashboard/billing/actions";
+import { getReferentTeamLimit, isWithinPlanLimit } from "@/lib/feature-gates";
 import { redirect } from "next/navigation";
-import { OrganizationType, Prisma, Role, SubscriptionStatus } from "@prisma/client";
+import { OrganizationType, Prisma, Role } from "@prisma/client";
 import { hasDatabaseConfig } from "@/lib/database-status";
 import { getOrCreateOnboardingDraft } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import {
+  referentEnrollmentData,
   emailsFromText,
   maxReferentStep,
   nullableText,
@@ -46,6 +50,9 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
     redirect("/setup?missing=database");
   }
 
+  const existingUser = await getCurrentAppUser();
+  if (existingUser?.orgId) redirect("/dashboard");
+  let checkout: FormData | null = null;
   let destination = "/onboarding/referent/1";
 
   try {
@@ -112,7 +119,7 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
 
     if (step === 3) {
       const parsed = referentStepThreeSchema.parse({
-        selectedPlan: formData.get("selectedPlan") || "professional",
+        enrollmentChoice: formData.get("enrollmentChoice"),
         billingCycle: formData.get("billingCycle") || "monthly"
       });
 
@@ -134,7 +141,14 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
         invitedTeamEmails: emailsFromText(String(formData.get("invitedTeamEmails") || ""))
       });
       const finalDraft = mergeDraft(currentDraft, parsed) as Record<string, unknown>;
-      const selectedPlan = String(finalDraft.selectedPlan || "professional");
+      const enrollment = referentStepThreeSchema.parse(finalDraft);
+      const isTrial = enrollment.enrollmentChoice === "trial";
+      const selectedPlan = isTrial ? "professional" : enrollment.enrollmentChoice;
+      referentStepOneSchema.parse(Object.fromEntries(Object.entries(finalDraft).map(([key, value]) => [key, value === null ? undefined : value])));
+      referentStepTwoSchema.parse(finalDraft);
+      const teamEmails = [...new Set(parsed.invitedTeamEmails.map(email => email.toLowerCase()))].filter(email => email !== draft.user.email.toLowerCase());
+      if (!isWithinPlanLimit(getReferentTeamLimit(selectedPlan), 1, teamEmails.length)) throw new Error("Too many team members for this plan");
+      const startedAt = new Date();
 
       await prisma.$transaction(async (tx) => {
         const organization = await tx.organization.create({
@@ -144,19 +158,19 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
             phone: String(finalDraft.phone || ""),
             email: draft.user.email,
             website: nullableText(String(finalDraft.website || "")),
-            subscriptionPlan: selectedPlan,
-            subscriptionBillingCycle: String(finalDraft.billingCycle || "monthly"),
-            subscriptionStatus: SubscriptionStatus.trialing
+            ...referentEnrollmentData(enrollment, startedAt)
           }
         });
 
-        await tx.user.update({
-          where: { id: draft.userId },
+        const assigned = await tx.user.updateMany({
+          where: { id: draft.userId, orgId: null },
           data: {
             role: Role.referent_admin,
             orgId: organization.id
           }
         });
+
+        if (assigned.count !== 1) throw new Error("Organization already created");
 
         await tx.referentOrganization.create({
           data: {
@@ -176,7 +190,7 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
             levelsOfCare: [],
             currentPlacementMethods: arrayFromDraft(finalDraft.currentPlacementMethods),
             avgMonthlyReferrals: String(finalDraft.avgMonthlyReferrals || ""),
-            invitedTeamEmails: parsed.invitedTeamEmails,
+            invitedTeamEmails: teamEmails,
             onboardingStep: maxReferentStep,
             onboardingCompletedAt: new Date()
           }
@@ -204,11 +218,18 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
       });
 
       destination = "/dashboard/referent";
+      if (!isTrial) {
+        checkout = new FormData();
+        checkout.set("plan", selectedPlan);
+        checkout.set("billingCycle", enrollment.billingCycle);
+        checkout.set("returnTo", "/dashboard/referent?tab=subscription");
+      }
     }
   } catch (error) {
     console.error("Referent onboarding step save failed", error);
     destination = stepRedirect(step, "Please check the highlighted fields and try again.");
   }
 
+  if (checkout) return createBillingCheckoutSession(checkout);
   redirect(destination);
 }

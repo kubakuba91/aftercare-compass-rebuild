@@ -1,9 +1,10 @@
+import { trialEndFrom } from "@/lib/referent-trial";
 import { z } from "zod";
 
 export const referentSteps = [
   { number: 1, slug: "organization", label: "Organization", title: "Tell us about your organization" },
   { number: 2, slug: "referral-context", label: "Referral Context", title: "Set up your referral context" },
-  { number: 3, slug: "plan", label: "Plan Preference", title: "Choose your starting plan" },
+  { number: 3, slug: "plan", label: "Plan or Trial", title: "Choose your starting plan" },
   { number: 4, slug: "team", label: "Team", title: "Invite your team" }
 ] as const;
 
@@ -196,10 +197,22 @@ export const referentStepTwoSchema = z.object({
 });
 
 export const referentStepThreeSchema = z.object({
-  selectedPlan: z.enum(referentPlanOptions),
+  enrollmentChoice: z.enum(["trial", "starter", "professional"]),
   billingCycle: z.enum(billingCycleOptions).default("monthly")
 });
 
 export const referentStepFourSchema = z.object({
   invitedTeamEmails: z.array(z.string().trim().email()).default([])
 });
+
+export function referentEnrollmentData(input: unknown, now = new Date()) {
+  const enrollment = referentStepThreeSchema.parse(input);
+  const isTrial = enrollment.enrollmentChoice === "trial";
+  return {
+    subscriptionPlan: isTrial ? "professional" : enrollment.enrollmentChoice,
+    subscriptionBillingCycle: isTrial ? null : enrollment.billingCycle,
+    subscriptionStatus: isTrial ? "trialing" as const : "incomplete" as const,
+    referentTrialStartedAt: isTrial ? now : null,
+    referentTrialEndsAt: isTrial ? trialEndFrom(now) : null
+  };
+}

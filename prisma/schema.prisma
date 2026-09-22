@@ -217,6 +217,8 @@ model Organization {
   stripeCustomerId         String?
   stripeSubscriptionId     String?
   subscriptionRenewsAt     DateTime?
+  referentTrialStartedAt   DateTime?
+  referentTrialEndsAt      DateTime?
   createdAt                DateTime            @default(now())
   updatedAt                DateTime            @updatedAt
 
@@ -814,4 +816,15 @@ model Notification {
 
   @@index([userId, readAt])
   @@index([createdAt])
+}
+
+model ReferentTrialExtension {
+  id String @id @default(cuid())
+  orgId String
+  actorUserId String
+  previousEndsAt DateTime
+  newEndsAt DateTime
+  reason String
+  createdAt DateTime @default(now())
+  @@index([orgId, createdAt])
 }

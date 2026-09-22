@@ -87,6 +87,8 @@ export async function inviteReferentManagers(formData: FormData) {
     redirect(teamHref("Only referent admins can invite managers.", true));
   }
 
+  if (!canSubmitReferrals(appUser.organization)) redirect(teamHref("Start a trial or subscribe before inviting managers.", true));
+
   const parsedEmails = emailListSchema.safeParse(emailsFromText(String(formData.get("emails") || "")));
 
   if (!parsedEmails.success) {

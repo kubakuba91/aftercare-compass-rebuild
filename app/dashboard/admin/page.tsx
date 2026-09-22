@@ -32,7 +32,7 @@ import { formatDate, formatValue as formatDisplayValue } from "@/lib/format-util
 import { getProfileOptionGroups, profileOptionCategories, profileOptionCategoryKeys } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { getSearchFilterSettings, searchFilterDefinitions } from "@/lib/search-filter-settings";
-import { addProfileOption, moveSearchFilterSetting, reviewOnboardingSubmission, reviewProfileClaimRequest, sendAdminBedAvailabilityTextCheck, sendProfileClaimOutreach, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus, updateProfileOptionVisibility, updateSearchFilterSetting } from "./actions";
+import { extendReferentTrial, addProfileOption, moveSearchFilterSetting, reviewOnboardingSubmission, reviewProfileClaimRequest, sendAdminBedAvailabilityTextCheck, sendProfileClaimOutreach, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus, updateProfileOptionVisibility, updateSearchFilterSetting } from "./actions";
 import { DataSettingsCategoryTabs } from "./data-settings-category-tabs";
 
 export const dynamic = "force-dynamic";
@@ -403,6 +403,9 @@ export default async function AdminDashboardPage({
         phone: true,
         subscriptionPlan: true,
         subscriptionStatus: true,
+        stripeSubscriptionId: true,
+        referentTrialStartedAt: true,
+        referentTrialEndsAt: true,
         createdAt: true,
         _count: {
           select: {
@@ -897,9 +900,19 @@ export default async function AdminDashboardPage({
                             <Badge>{formatValue(organization.subscriptionPlan)}</Badge>
                           ) : null}
                           <Badge tone={statusTone(organization.subscriptionStatus || "draft")}>
-                            {formatValue(organization.subscriptionStatus || "Not set")}
+                            {organization.subscriptionStatus === "trialing" && organization.referentTrialEndsAt && organization.referentTrialEndsAt <= new Date() ? "Trial expired" : formatValue(organization.subscriptionStatus || "Not set")}
                           </Badge>
                         </div>
+                        {organization.type === "referent" && organization.subscriptionStatus === "trialing" && !organization.stripeSubscriptionId && organization.referentTrialStartedAt && organization.referentTrialEndsAt ? (
+                          <details className="mt-2 text-sm"><summary className="cursor-pointer">Trial ends {formatDate(organization.referentTrialEndsAt)} · Extend</summary>
+                            <form action={extendReferentTrial} className="mt-3 grid gap-2">
+                              <input type="hidden" name="orgId" value={organization.id} />
+                              <label>Additional days<input className="block rounded border p-2" type="number" name="days" min="1" max="90" defaultValue="30" required /></label>
+                              <label>Reason<input className="block rounded border p-2" name="reason" maxLength={500} required /></label>
+                              <button className="focus-ring ac-button ac-button--secondary">Extend trial</button>
+                            </form>
+                          </details>
+                        ) : null}
                       </td>
                       <td className="py-4 pr-4 text-muted-foreground">{formatDate(organization.createdAt)}</td>
                     </tr>

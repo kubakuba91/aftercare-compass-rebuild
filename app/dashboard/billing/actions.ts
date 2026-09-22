@@ -1,5 +1,6 @@
 "use server";
 
+import { canStartReferentTrial, trialEndFrom } from "@/lib/referent-trial";
 import { virtualOrganizationPlanError } from "@/lib/virtual-care-billing";
 
 import { redirect } from "next/navigation";
@@ -135,6 +136,7 @@ export async function createBillingCheckoutSession(formData: FormData) {
     );
   }
 
+  if (organization.stripeSubscriptionId) redirect(billingReturnPath(audience, "Manage your existing subscription to change plans."));
   const stripe = getStripe();
   let checkoutUrl: string | null = null;
 
@@ -148,7 +150,7 @@ export async function createBillingCheckoutSession(formData: FormData) {
           organizationId: organization.id,
           organizationType: organization.type
         }
-      });
+      }, { idempotencyKey: `customer:${organization.id}` });
 
       await prisma.organization.update({
         where: { id: organization.id },
@@ -178,11 +180,20 @@ export async function createBillingCheckoutSession(formData: FormData) {
       customerId = await createCustomer();
     }
 
-    const successUrl = dashboardAppUrl(billingReturnPath(audience, "Subscription updated."));
-    const cancelUrl = dashboardAppUrl(billingReturnPath(audience, "Checkout cancelled."));
+    // Reuse an open checkout after a back/refresh, instead of creating another subscription checkout.
+    const openSessions = await stripe.checkout.sessions.list({ customer: customerId, status: "open", limit: 100 });
+    const matchingSession = openSessions.data.find(session => session.mode === "subscription" && session.metadata?.organizationId === organization.id && session.metadata?.plan === plan.key && session.metadata?.billingCycle === cycle);
+    for (const session of openSessions.data) {
+      if (session.mode === "subscription" && session.metadata?.organizationId === organization.id && session.id !== matchingSession?.id) {
+        await stripe.checkout.sessions.expire(session.id);
+      }
+    }
+    const successUrl = dashboardAppUrl(billingReturnPath(audience, "Payment submitted. Access activates once payment is confirmed."));
+    const cancelUrl = dashboardAppUrl(billingReturnPath(audience, "Payment was not completed. Your setup is saved. Finish payment or start your free trial if eligible."));
 
-    const session = await stripe.checkout.sessions.create({
+    const session = matchingSession ?? await stripe.checkout.sessions.create({
       mode: "subscription",
+      payment_method_collection: "always",
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: successUrl,
@@ -270,6 +281,7 @@ export async function changeBillingPlan(formData: FormData) {
   }
 
   const stripe = getStripe();
+  let confirmedStatus = organization.subscriptionStatus;
 
   try {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -279,7 +291,7 @@ export async function changeBillingPlan(formData: FormData) {
       redirect(billingReturnPath(audience, "Stripe subscription item could not be found."));
     }
 
-    await stripe.subscriptions.update(subscription.id, {
+    const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
       cancel_at_period_end: false,
       items: [{ id: subscriptionItemId, price: priceId }],
       metadata: {
@@ -292,6 +304,7 @@ export async function changeBillingPlan(formData: FormData) {
       proration_behavior: "create_prorations"
     }
     );
+    confirmedStatus = subscriptionStatusFromStripe(updatedSubscription.status);
   } catch (error) {
     if (isStripeMissingResourceError(error)) {
       await prisma.organization.update({
@@ -323,7 +336,7 @@ export async function changeBillingPlan(formData: FormData) {
     data: {
       subscriptionPlan: plan.key,
       subscriptionBillingCycle: cycle,
-      subscriptionStatus: "active"
+      subscriptionStatus: confirmedStatus
     }
   });
 
@@ -376,4 +389,17 @@ export async function cancelBillingSubscription(formData: FormData) {
   });
 
   redirect(billingReturnPath(audience, "Plan cancellation scheduled."));
+}
+
+export async function startReferentTrial() {
+  const { organization, audience } = await getBillingContext("/dashboard/referent?tab=subscription");
+  if (audience !== "referent" || !canStartReferentTrial(organization)) {
+    redirect(billingReturnPath(audience, "This organization is not eligible for another free trial."));
+  }
+  const now = new Date();
+  const result = await prisma.organization.updateMany({
+    where: { id: organization.id, type: "referent", subscriptionStatus: "incomplete", stripeSubscriptionId: null, referentTrialStartedAt: null },
+    data: { subscriptionPlan: "professional", subscriptionStatus: "trialing", referentTrialStartedAt: now, referentTrialEndsAt: trialEndFrom(now) }
+  });
+  redirect(billingReturnPath(audience, result.count ? "Your 30-day Professional trial has started. No automatic charge." : "Trial could not be started. Refresh to see your current subscription."));
 }

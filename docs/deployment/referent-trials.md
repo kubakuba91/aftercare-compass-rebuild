@@ -18,3 +18,13 @@ The organization can start one self-service trial. Atomic updates prevent restar
 ## Validation
 
 Local lifecycle assertions cover explicit enrollment, no access before payment, exact trial expiry, no repeat trial, paid access after trial expiry, and unchanged aftercare eligibility. Existing virtual-care, import, and admin-delivery regression suites are also run. Full authenticated browser checkout and production migration are separate release checks.
+
+## Production release — September 22, 2026
+
+- Application commit: c8e50a6 (pushed to main and codex/virtual-continued-care).
+- Supabase project pjkpziaotuzrjdzkrwua: migration applied transactionally with Prisma history checksum 3bd2205e4e326087b74724b1f1cfaf475c77878946a9ac8cf69e5b27e4eca96e.
+- Verified two new organization columns, one completed migration record, audit table with RLS enabled, and five migrated trials ending 2026-10-22 14:28:17.774 UTC.
+- Vercel deployment dpl_Ei2zdFQnfnBRFi8JGcmfanpjMq85 built successfully and promoted to the production domains.
+- Deployment URL: https://aftercare-compass-production-g0ot5n95s-kuba-6863s-projects.vercel.app
+- Staged pricing and live search/profile pages returned HTTP 200. Live referent dashboard correctly redirected the signed-out browser to sign-in.
+- Full authenticated trial onboarding/payment checkout remains unverified in the browser; no live charge or test organization was created.

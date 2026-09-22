@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+import { auth } from "@clerk/nextjs/server";
+import { DismissibleSubscriptionNotice } from "@/components/dashboard/dismissible-subscription-notice";
 import { canStartReferentTrial, hasReferentAccess, trialDaysRemaining } from "@/lib/referent-trial";
 import Link from "next/link";
 import Image from "next/image";
@@ -299,13 +302,15 @@ export default async function ReferentDashboardPage({
       ? organization?.subscriptionStatus === "trialing" ? "Trialing" : "Contact sales for pricing"
       : referentBillingPlans.find((plan) => plan.key === referentBillingPlan.key)?.priceLabels[referentBillingCycle] ?? "Not configured";
 
+  const { sessionId } = await auth();
+  const noticeSessionKey = sessionId ? createHash("sha256").update(`${appUser.id}:${sessionId}`).digest("hex") : null;
   const localTrial = organization?.subscriptionStatus === "trialing" && !organization?.stripeSubscriptionId;
   const daysRemaining = organization?.referentTrialEndsAt ? trialDaysRemaining(organization.referentTrialEndsAt) : 0;
   const subscriptionLabel = localTrial ? (daysRemaining ? `Trial · ${daysRemaining} days left` : "Trial expired") : formatBillingStatus(organization?.subscriptionStatus);
   return (
     <main className="shell py-8">
       {localTrial || !hasReferentAccess(organization) ? (
-        <div className="ac-panel-card mb-6 grid gap-3 p-4" role="status">
+        <DismissibleSubscriptionNotice sessionKey={noticeSessionKey}>
           <p className="font-semibold">{localTrial ? (daysRemaining ? `Professional trial: ${daysRemaining} days remaining` : "Your free trial has ended") : "Complete your subscription"}</p>
           <p className="text-sm">{localTrial && daysRemaining ? `Trial ends ${formatBillingDate(organization?.referentTrialEndsAt)}. No automatic charge. Subscribe to keep paid features.` : "Your setup and existing data are saved. You can keep browsing programs; subscribe to use paid features."}</p>
           {canManageTeam ? <div className="flex flex-wrap gap-3">
@@ -317,7 +322,7 @@ export default async function ReferentDashboardPage({
             </form> : <Link className="focus-ring ac-button ac-button--primary" href="/dashboard/referent?tab=subscription&billingView=plans">Choose a paid plan</Link>}
             {organization && canStartReferentTrial(organization) ? <form action={startReferentTrial}><button className="focus-ring ac-button ac-button--secondary">Start 30-day free trial — no card required</button></form> : null}
           </div> : <p className="text-sm">Contact your organization administrator to manage billing.</p>}
-        </div>
+        </DismissibleSubscriptionNotice>
       ) : null}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="flex items-start gap-4">

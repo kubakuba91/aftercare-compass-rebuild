@@ -1,5 +1,6 @@
 "use server";
 
+import { assertInvitationAvailable, InvitationConflict, lockInvitations } from "@/lib/organization-invitations";
 import { sendOrganizationInviteEmail } from "@/lib/email-notifications";
 import { deliverInvitations } from "@/lib/invite-delivery";
 import { getCurrentAppUser } from "@/lib/current-user";
@@ -154,6 +155,8 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
       const startedAt = new Date();
 
       await prisma.$transaction(async (tx) => {
+        await lockInvitations(tx);
+        await assertInvitationAvailable(tx, [...teamEmails, draft.user.email], null);
         const organization = await tx.organization.create({
           data: {
             type: OrganizationType.referent,
@@ -235,7 +238,7 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
     }
   } catch (error) {
     console.error("Referent onboarding step save failed", error);
-    destination = stepRedirect(step, "Please check the highlighted fields and try again.");
+    destination = stepRedirect(step, error instanceof InvitationConflict ? error.message : "Please check the highlighted fields and try again.");
   }
 
   if (invitations?.emails.length) {

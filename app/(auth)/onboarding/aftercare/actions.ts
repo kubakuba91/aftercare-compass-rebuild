@@ -1,5 +1,7 @@
 "use server";
 
+import { assertInvitationAvailable, InvitationConflict, lockInvitations } from "@/lib/organization-invitations";
+
 import { virtualOrganizationPlanError } from "@/lib/virtual-care-billing";
 
 import { revalidatePath } from "next/cache";
@@ -152,6 +154,8 @@ async function getOrCreateAftercareOrganization(tx: Prisma.TransactionClient, dr
     return draft.user.orgId;
   }
 
+  await lockInvitations(tx);
+  await assertInvitationAvailable(tx, [draft.user.email], null);
   const organization = await tx.organization.create({
     data: {
       type: data.accountType === "continued_care" ? "aftercare_continued_care" : "aftercare_sober_living",
@@ -162,14 +166,15 @@ async function getOrCreateAftercareOrganization(tx: Prisma.TransactionClient, dr
     select: { id: true }
   });
 
-  await tx.user.update({
-    where: { id: draft.userId },
+  const assigned = await tx.user.updateMany({
+    where: { id: draft.userId, orgId: null },
     data: {
       role: "aftercare_admin",
       orgId: organization.id
     }
   });
 
+  if (!assigned.count) throw new InvitationConflict("Your organization changed. Refresh and try again.");
   return organization.id;
 }
 
@@ -361,6 +366,8 @@ export async function createAftercareProfileDraft(formData: FormData) {
 
   try {
     await prisma.$transaction(async (tx) => {
+      await lockInvitations(tx);
+      await assertInvitationAvailable(tx, [draft.user.email], null);
       const organization = await tx.organization.create({
         data: {
           type: accountType === "continued_care" ? "aftercare_continued_care" : "aftercare_sober_living",
@@ -370,14 +377,15 @@ export async function createAftercareProfileDraft(formData: FormData) {
         }
       });
 
-      await tx.user.update({
-        where: { id: draft.userId },
+      const assigned = await tx.user.updateMany({
+        where: { id: draft.userId, orgId: null },
         data: {
           role: "aftercare_admin",
           orgId: organization.id
         }
       });
 
+      if (!assigned.count) throw new InvitationConflict("Your organization changed. Refresh and try again.");
       const profile = await tx.aftercareProfile.create({
         data: {
           orgId: organization.id,

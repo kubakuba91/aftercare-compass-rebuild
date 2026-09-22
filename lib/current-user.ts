@@ -1,5 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { OrganizationType, Role } from "@prisma/client";
+import { redirect } from "next/navigation";
+import { InvitationConflict, lockInvitations, normalizeInviteEmail, pendingReferentInvitations, uniqueInvitedOrganization } from "@/lib/organization-invitations";
+import { Role } from "@prisma/client";
 import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
 import { prisma } from "@/lib/prisma";
 
@@ -33,7 +35,7 @@ export async function getRequiredClerkIdentity() {
 
   return {
     clerkUserId: clerkUser.id,
-    email,
+    email: normalizeInviteEmail(email),
     firstName: clerkUser.firstName,
     lastName: clerkUser.lastName,
     emailVerified: clerkUser.emailAddresses.some(
@@ -76,128 +78,63 @@ export async function getCurrentAppUser() {
   }
 
   const identity = await getRequiredClerkIdentity();
-  const invitedReferentOrg = await prisma.referentOrganization.findFirst({
-    where: {
-      invitedTeamEmails: { has: identity.email.toLowerCase() },
-      onboardingCompletedAt: { not: null }
-    },
-    select: {
-      orgId: true,
-      invitedTeamEmails: true
-    }
-  });
-
-  const organizationInvite = await prisma.organizationInvite.findFirst({
-    where: {
-      email: identity.email.toLowerCase(),
-      status: "pending"
-    },
-    orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      orgId: true,
-      role: true,
-      aftercareManagerScope: true,
-      aftercareProfileAssignments: {
-        select: { profileId: true }
-      },
-      organization: {
-        select: { type: true }
+  if (!identity.emailVerified) return appUser;
+  try {
+    return await prisma.$transaction(async tx => {
+      await lockInvitations(tx);
+      const matches = await tx.user.findMany({
+        where: { OR: [{ clerkUserId }, { email: { equals: identity.email, mode: "insensitive" } }] },
+        include: { organization: true }
+      });
+      // Never rebind an email to a different authenticated identity.
+      if (matches.length > 1 || matches.some(user => user.clerkUserId !== clerkUserId)) throw new InvitationConflict();
+      const existing = matches[0];
+      if (existing?.orgId) return existing;
+      const referentInvites = await pendingReferentInvitations(tx, [identity.email]);
+      const organizationInvites = await tx.organizationInvite.findMany({
+        where: { email: { equals: identity.email, mode: "insensitive" }, status: "pending" },
+        include: { aftercareProfileAssignments: true }, orderBy: { createdAt: "asc" }
+      });
+      const orgId = uniqueInvitedOrganization([...referentInvites, ...organizationInvites]);
+      if (!orgId) return existing ?? null;
+      const invite = organizationInvites[0];
+      const role = invite?.role ?? Role.referent_manager;
+      const data = {
+        email: identity.email, firstName: identity.firstName, lastName: identity.lastName,
+        orgId, role, emailVerified: true, emailVerifiedAt: new Date(),
+        ...(role === Role.aftercare_manager && invite ? { aftercareManagerScope: invite.aftercareManagerScope } : {})
+      };
+      let user;
+      if (existing) {
+        const updated = await tx.user.updateMany({ where: { id: existing.id, orgId: null }, data });
+        user = await tx.user.findUniqueOrThrow({ where: { id: existing.id }, include: { organization: true } });
+        if (!updated.count) return user;
+      } else {
+        user = await tx.user.create({ data: { ...data, clerkUserId }, include: { organization: true } });
       }
-    }
-  });
-
-  if (!invitedReferentOrg && !organizationInvite) {
-    return appUser;
-  }
-
-  const invitedOrgId = organizationInvite?.orgId ?? invitedReferentOrg?.orgId;
-
-  if (!invitedOrgId) {
-    return appUser;
-  }
-
-  const invitedRole =
-    organizationInvite?.role ??
-    (invitedReferentOrg || organizationInvite?.organization.type === OrganizationType.referent
-      ? Role.referent_manager
-      : Role.aftercare_manager);
-  const aftercareManagerScope = organizationInvite?.aftercareManagerScope;
-
-  const user = appUser
-    ? await prisma.user.update({
-        where: { id: appUser.id },
-        data: {
-          clerkUserId: identity.clerkUserId,
-          email: identity.email,
-          firstName: identity.firstName,
-          lastName: identity.lastName,
-          role: invitedRole,
-          orgId: invitedOrgId,
-          ...(invitedRole === Role.aftercare_manager && aftercareManagerScope
-            ? { aftercareManagerScope }
-            : {}),
-          emailVerified: identity.emailVerified,
-          emailVerifiedAt: identity.emailVerified ? new Date() : null
-        },
-        include: { organization: true }
-      })
-    : await prisma.user.create({
-        data: {
-          clerkUserId: identity.clerkUserId,
-          email: identity.email,
-          firstName: identity.firstName,
-          lastName: identity.lastName,
-          role: invitedRole,
-          orgId: invitedOrgId,
-          ...(invitedRole === Role.aftercare_manager && aftercareManagerScope
-            ? { aftercareManagerScope }
-            : {}),
-          emailVerified: identity.emailVerified,
-          emailVerifiedAt: identity.emailVerified ? new Date() : null
-        },
-        include: { organization: true }
-      });
-
-  if (organizationInvite) {
-    await prisma.$transaction(async (tx) => {
-      await tx.organizationInvite.update({
-        where: { id: organizationInvite.id },
-        data: {
-          status: "accepted",
-          acceptedByUserId: user.id,
-          acceptedAt: new Date()
-        }
-      });
-
-      if (
-        invitedRole === Role.aftercare_manager &&
-        organizationInvite.aftercareManagerScope === "assigned_profiles" &&
-        organizationInvite.aftercareProfileAssignments.length
-      ) {
-        await tx.aftercareProfileManagerAssignment.createMany({
-          data: organizationInvite.aftercareProfileAssignments.map((assignment) => ({
-            userId: user.id,
-            profileId: assignment.profileId
-          })),
-          skipDuplicates: true
+      if (invite) {
+        await tx.organizationInvite.updateMany({
+          where: { id: invite.id, status: "pending", orgId },
+          data: { status: "accepted", acceptedByUserId: user.id, acceptedAt: new Date() }
         });
+        if (role === Role.aftercare_manager && invite.aftercareManagerScope === "assigned_profiles") {
+          await tx.aftercareProfileManagerAssignment.createMany({
+            data: invite.aftercareProfileAssignments.map(assignment => ({ userId: user.id, profileId: assignment.profileId })), skipDuplicates: true
+          });
+        }
       }
-    });
-  }
-
-  if (invitedReferentOrg) {
-    await prisma.referentOrganization.update({
-      where: { orgId: invitedReferentOrg.orgId },
-      data: {
-        invitedTeamEmails: invitedReferentOrg.invitedTeamEmails.filter(
-          (email) => email.toLowerCase() !== identity.email.toLowerCase()
-        )
+      if (referentInvites.length) {
+        const details = await tx.referentOrganization.findUniqueOrThrow({ where: { orgId } });
+        await tx.referentOrganization.update({ where: { orgId }, data: {
+          invitedTeamEmails: details.invitedTeamEmails.filter(email => normalizeInviteEmail(email) !== identity.email)
+        } });
       }
+      return user;
     });
+  } catch (error) {
+    if (error instanceof InvitationConflict) redirect("/onboarding/invitation-conflict");
+    throw error;
   }
-
-  return user;
 }
 
 export async function requireCurrentAppUser() {

@@ -1,5 +1,7 @@
 "use server";
 
+import { saveTeamInvitations, InvitationConflict, assertInvitationAvailable, lockInvitations } from "@/lib/organization-invitations";
+
 import { deliverInvitations } from "@/lib/invite-delivery";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -125,7 +127,7 @@ export async function inviteReferentManagers(formData: FormData) {
   const teamLimit = getReferentTeamLimit(organization.subscriptionPlan);
   const existingOrgEmails = new Set(organization.users.map((user) => user.email.toLowerCase()));
   const pendingEmailSet = new Set(pendingEmails);
-  const newEmails = parsedEmails.data.filter(
+  let newEmails = parsedEmails.data.filter(
     (email) => !existingOrgEmails.has(email) && !pendingEmailSet.has(email)
   );
   const alreadyActiveEmails = parsedEmails.data.filter((email) => existingOrgEmails.has(email));
@@ -143,39 +145,14 @@ export async function inviteReferentManagers(formData: FormData) {
     redirect(teamHref(`Your current plan allows ${teamLimit} team members.`, true));
   }
 
-  const existingUsers = await prisma.user.findMany({
-    where: { email: { in: newEmails } },
-    select: { id: true, email: true, orgId: true }
-  });
-
-  const externalUser = existingUsers.find((user) => user.orgId && user.orgId !== appUser.orgId);
-
-  if (externalUser) {
-    redirect(teamHref(`${externalUser.email} already belongs to another organization.`, true));
-  }
-
-  const attachableUsers = existingUsers.filter((user) => !user.orgId);
-  const attachedEmails = new Set(attachableUsers.map((user) => user.email.toLowerCase()));
-  const inviteEmails = newEmails.filter((email) => !attachedEmails.has(email));
-
-  if (attachableUsers.length) {
-    await prisma.user.updateMany({
-      where: { id: { in: attachableUsers.map((user) => user.id) } },
-      data: {
-        orgId: appUser.orgId,
-        role: Role.referent_manager,
-        isActive: true
-      }
+  try {
+    newEmails = await saveTeamInvitations({
+      orgId: appUser.orgId, emails: newEmails, actorId: appUser.id,
+      role: Role.referent_manager
     });
-  }
-
-  if (inviteEmails.length) {
-    await prisma.referentOrganization.update({
-      where: { orgId: appUser.orgId },
-      data: {
-        invitedTeamEmails: [...pendingEmails, ...inviteEmails]
-      }
-    });
+  } catch (error) {
+    if (error instanceof InvitationConflict) redirect(teamHref(error.message, true));
+    throw error;
   }
 
   const inviterName = [appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email;
@@ -187,7 +164,7 @@ export async function inviteReferentManagers(formData: FormData) {
   })));
 
   revalidatePath("/dashboard/referent");
-  redirect(teamHref(inviteDeliveryMessage(newEmails.length, emailResults, attachableUsers.length), emailResults.some((result) => result.status !== "sent")));
+  redirect(teamHref(inviteDeliveryMessage(newEmails.length, emailResults), emailResults.some((result) => result.status !== "sent")));
 }
 
 export async function removePendingReferentInvite(formData: FormData) {
@@ -441,6 +418,15 @@ export async function resendReferentInvite(formData: FormData) {
   });
   if (!details?.invitedTeamEmails.some(pending => pending.toLowerCase() === email)) {
     redirect(teamHref("That invitation is no longer pending."));
+  }
+  try {
+    await prisma.$transaction(async tx => {
+      await lockInvitations(tx);
+      await assertInvitationAvailable(tx, [email], appUser.orgId);
+    });
+  } catch (error) {
+    if (error instanceof InvitationConflict) redirect(teamHref(error.message));
+    throw error;
   }
   const organizationName = appUser.organization.name;
   const invitedByName = [appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email;

@@ -1,5 +1,7 @@
+import { InvitationConflict, lockInvitations } from "@/lib/organization-invitations";
 import { OrganizationType } from "@prisma/client";
 import {
+  getCurrentAppUser,
   defaultRoleForAccountType,
   getClerkSessionUserId,
   getRequiredClerkIdentity
@@ -57,36 +59,31 @@ export async function ensureOnboardingUser(preferredAccountType?: AccountType) {
     throw new Error("Authentication required");
   }
 
+  const signedInUser = await getCurrentAppUser();
+  if (signedInUser?.orgId) return signedInUser;
   const identity = await getRequiredClerkIdentity();
   const role = defaultRoleForAccountType(preferredAccountType ?? "referent");
-  const existingUser = await prisma.user.findFirst({
-    where: {
-      OR: [{ email: identity.email }, { clerkUserId: identity.clerkUserId }]
+  return prisma.$transaction(async tx => {
+    await lockInvitations(tx);
+    const matches = await tx.user.findMany({ where: {
+      OR: [{ email: { equals: identity.email, mode: "insensitive" } }, { clerkUserId: identity.clerkUserId }]
+    } });
+    if (matches.length > 1 || matches.some(user => user.clerkUserId !== identity.clerkUserId)) {
+      throw new InvitationConflict("This email is already associated with an account. Contact support to resolve access.");
     }
-  });
-
-  const data = {
-    clerkUserId: identity.clerkUserId,
-    email: identity.email,
-    firstName: identity.firstName,
-    lastName: identity.lastName,
-    emailVerified: identity.emailVerified,
-    emailVerifiedAt: identity.emailVerified ? new Date() : null
-  };
-
-  if (existingUser) {
-    return prisma.user.update({
+    const existingUser = matches[0];
+    const data = {
+      clerkUserId: identity.clerkUserId, email: identity.email,
+      firstName: identity.firstName, lastName: identity.lastName,
+      emailVerified: identity.emailVerified, emailVerifiedAt: identity.emailVerified ? new Date() : null
+    };
+    if (existingUser) return tx.user.update({
       where: { id: existingUser.id },
       data: preferredAccountType && !existingUser.orgId ? { ...data, role } : data
     });
-  }
-
-  return prisma.user.create({
-    data: {
-      ...data,
-      role
-    }
+    return tx.user.create({ data: { ...data, role } });
   });
+
 }
 
 export async function getOrCreateOnboardingDraft(accountType?: AccountType, resetActiveStep = true) {

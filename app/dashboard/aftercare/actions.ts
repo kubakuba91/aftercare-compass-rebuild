@@ -1,5 +1,7 @@
 "use server";
 
+import { saveTeamInvitations, InvitationConflict } from "@/lib/organization-invitations";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AftercareManagerScope, ProfileStatus, ProfileType, ReferralStatus, Role } from "@prisma/client";
@@ -390,7 +392,7 @@ export async function inviteAftercareManagers(formData: FormData) {
   const existingOrgEmails = new Set(organization.users.map((user) => user.email.toLowerCase()));
   const alreadyActiveEmails = parsedEmails.data.filter((email) => existingOrgEmails.has(email));
   const alreadyPendingEmails = parsedEmails.data.filter((email) => pendingInviteEmails.has(email));
-  const newEmails = parsedEmails.data.filter(
+  let newEmails = parsedEmails.data.filter(
     (email) => !existingOrgEmails.has(email) && !pendingInviteEmails.has(email)
   );
 
@@ -407,67 +409,14 @@ export async function inviteAftercareManagers(formData: FormData) {
     redirect(managersHref(`Your current plan allows ${managerLimit} managers.`, true));
   }
 
-  const existingUsers = await prisma.user.findMany({
-    where: { email: { in: newEmails } },
-    select: {
-      id: true,
-      email: true,
-      orgId: true
-    }
-  });
-  const externalUser = existingUsers.find((user) => user.orgId && user.orgId !== appUser.orgId);
-
-  if (externalUser) {
-    redirect(managersHref(`${externalUser.email} already belongs to another organization.`, true));
-  }
-
-  const unattachedUsers = existingUsers.filter((user) => !user.orgId);
-  await Promise.all(
-    unattachedUsers.map((user) =>
-      prisma.user.update({
-        where: { id: user.id },
-        data: {
-          orgId: appUser.orgId,
-          role: Role.aftercare_manager,
-          aftercareManagerScope: managerAssignment.scope,
-          isActive: true
-        }
-      })
-    )
-  );
-
-  if (unattachedUsers.length && managerAssignment.profileIds.length) {
-    await prisma.aftercareProfileManagerAssignment.createMany({
-      data: unattachedUsers.flatMap((user) =>
-        managerAssignment.profileIds.map((profileId) => ({
-          userId: user.id,
-          profileId
-        }))
-      ),
-      skipDuplicates: true
+  try {
+    newEmails = await saveTeamInvitations({
+      orgId: appUser.orgId, emails: newEmails, actorId: appUser.id,
+      role: Role.aftercare_manager, scope: managerAssignment.scope, profileIds: managerAssignment.profileIds
     });
-  }
-
-  const attachedEmails = new Set(unattachedUsers.map((user) => user.email.toLowerCase()));
-  const inviteEmails = newEmails.filter((email) => !attachedEmails.has(email));
-
-  if (inviteEmails.length) {
-    await Promise.all(
-      inviteEmails.map((email) =>
-        prisma.organizationInvite.create({
-          data: {
-            orgId: appUser.orgId,
-            email,
-            role: Role.aftercare_manager,
-            invitedByUserId: appUser.id,
-            aftercareManagerScope: managerAssignment.scope,
-            aftercareProfileAssignments: {
-              create: managerAssignment.profileIds.map((profileId) => ({ profileId }))
-            }
-          }
-        })
-      )
-    );
+  } catch (error) {
+    if (error instanceof InvitationConflict) redirect(managersHref(error.message, true));
+    throw error;
   }
 
   const inviterName = [appUser.firstName, appUser.lastName].filter(Boolean).join(" ") || appUser.email;

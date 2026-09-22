@@ -1,3 +1,4 @@
+import { ReferentTeamInvites } from "@/components/onboarding/referent-team-invites";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
@@ -331,22 +332,7 @@ export default async function ReferentStepPage({
                 </>
               ) : null}
 
-              {currentStep === 4 ? (
-                <>
-                  <label className="grid gap-2 text-sm font-medium">
-                    Team emails
-                    <textarea
-                      name="invitedTeamEmails"
-                      placeholder="one@email.com&#10;two@email.com"
-                      defaultValue={invitedTeamEmails.join("\n")}
-                      className="min-h-36 rounded-md border border-border bg-white p-3 text-sm"
-                    />
-                  </label>
-                  <div className="ac-panel-card p-4 text-sm text-muted-foreground">
-                    Optional—you can invite your team now or add members later from your dashboard.
-                  </div>
-                </>
-              ) : null}
+              {currentStep === 4 ? <ReferentTeamInvites initialEmails={invitedTeamEmails} /> : null}
 
               <div className="fixed inset-x-0 bottom-0 border-t border-border bg-white p-4 lg:left-[320px]">
                 <div className="mx-auto flex max-w-3xl gap-3">

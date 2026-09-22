@@ -142,7 +142,7 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
 
     if (step === 4) {
       const parsed = referentStepFourSchema.parse({
-        invitedTeamEmails: emailsFromText(String(formData.get("invitedTeamEmails") || ""))
+        invitedTeamEmails: emailsFromText(formData.get("skipTeamInvites") ? "" : String(formData.get("invitedTeamEmails") || ""))
       });
       const finalDraft = mergeDraft(currentDraft, parsed) as Record<string, unknown>;
       const enrollment = referentStepThreeSchema.parse(finalDraft);
@@ -254,4 +254,30 @@ export async function saveReferentOnboardingStep(step: number, formData: FormDat
   }
   if (checkout) return createBillingCheckoutSession(checkout);
   redirect(destination);
+}
+
+export async function validateReferentTeamInvitations(raw: string): Promise<{ emails: string[]; error?: never } | { error: string; emails?: never }> {
+  const user = await getCurrentAppUser();
+  if (!user || user.orgId || !user.emailVerified) return { error: "Please sign in with a verified email and resume onboarding." };
+  if (typeof raw !== "string" || raw.length > 10000) return { error: "Please enter fewer email addresses." };
+  const candidates = emailsFromText(raw);
+  const parsed = referentStepFourSchema.safeParse({ invitedTeamEmails: candidates });
+  if (!parsed.success) return { error: "Enter a valid email address for each person, separated by commas or new lines." };
+  const emails = [...new Set(parsed.data.invitedTeamEmails.map(email => email.toLowerCase()))].filter(email => email !== user.email.toLowerCase());
+  try {
+    return await prisma.$transaction(async tx => {
+      await lockInvitations(tx);
+      const draft = await tx.onboardingDraft.findUnique({ where: { userId: user.id } });
+      const details = mergeDraft(draft?.referentDraft, {});
+      const enrollment = referentStepThreeSchema.safeParse(details);
+      if (!draft || draft.completedAt || !enrollment.success) return { error: "Choose your plan before adding invitations." };
+      const plan = enrollment.data.enrollmentChoice === "trial" ? "professional" : enrollment.data.enrollmentChoice;
+      if (!isWithinPlanLimit(getReferentTeamLimit(plan), 1, emails.length)) return { error: "Your selected plan does not have enough team seats for these invitations." };
+      await assertInvitationAvailable(tx, emails, null);
+      await tx.onboardingDraft.update({ where: { id: draft.id }, data: { referentDraft: jsonDraft(mergeDraft(details, { invitedTeamEmails: emails })) } });
+      return { emails };
+    });
+  } catch (error) {
+    return { error: error instanceof InvitationConflict ? error.message : "We could not check these invitations. Please try again." };
+  }
 }

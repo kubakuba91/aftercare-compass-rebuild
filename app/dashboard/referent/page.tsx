@@ -352,7 +352,6 @@ export default async function ReferentDashboardPage({
             <Search size={16} />
             Search programs
           </Link>
-          <SignOutButton />
         </div>
       </div>
 

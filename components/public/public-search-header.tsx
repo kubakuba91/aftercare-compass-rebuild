@@ -1,3 +1,4 @@
+import { SearchTypeSelector } from "./search-type-selector";
 import Link from "next/link";
 import Image from "next/image";
 import { SearchFilterPanel } from "./search-filter-panel";
@@ -189,28 +190,7 @@ export function PublicSearchHeader({
         <form action="/search" className="relative grid min-w-0 flex-1 gap-2 md:grid-cols-[340px_minmax(180px,1fr)_128px_160px]">
           {(!showFilters || !isContinuedCare) && delivery ? <input type="hidden" name="delivery" value={delivery} /> : null}
           {(!showFilters || !isContinuedCare) && virtualState ? <input type="hidden" name="virtualState" value={virtualState} /> : null}
-          <div className="grid h-14 gap-1.5 overflow-hidden rounded-lg border border-[#12185f] bg-[#12185f] p-2 sm:grid-cols-2">
-            <label className="focus-within:ring-ring flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-4 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
-              <input
-                className="sr-only"
-                defaultChecked={defaultType === "sober_living" || !defaultType}
-                name="type"
-                type="radio"
-                value="sober_living"
-              />
-              Sober Living
-            </label>
-            <label className="focus-within:ring-ring flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-4 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
-              <input
-                className="sr-only"
-                defaultChecked={defaultType === "continued_care"}
-                name="type"
-                type="radio"
-                value="continued_care"
-              />
-              Continued Care
-            </label>
-          </div>
+          <SearchTypeSelector defaultType={defaultType} showFilters={showFilters} />
           <label className="focus-within:ring-ring flex h-14 min-w-0 items-center gap-2 rounded-lg border border-border bg-white px-4 shadow-sm focus-within:ring-2">
             <span className="sr-only">Search by city, state, or program name</span>
             <Search aria-hidden="true" className="shrink-0 text-muted-foreground" size={18} />

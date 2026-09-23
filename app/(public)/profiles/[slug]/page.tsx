@@ -164,7 +164,7 @@ function ContactForm({
           <span>Message <span className="text-muted-foreground">(required)</span></span>
           <textarea className="min-h-28 rounded-md border border-border p-3" name="message" required />
         </label>
-        <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+        <button className="focus-ring ac-button ac-button--primary">
           Send contact request
         </button>
       </form>
@@ -282,7 +282,7 @@ function PlaceClientForm({
           Reason for referral
           <textarea className="min-h-28 rounded-md border border-border p-3" name="reasonForReferral" required />
         </label>
-        <button className="focus-ring min-h-10 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
+        <button className="focus-ring ac-button ac-button--primary">
           Send referral
         </button>
       </form>

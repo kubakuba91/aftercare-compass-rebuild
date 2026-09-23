@@ -346,7 +346,7 @@ export default async function ReferentDashboardPage({
         </div>
         <div className="flex flex-wrap gap-3">
           <Link
-            className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+            className="focus-ring ac-button ac-button--primary"
             href="/search"
           >
             <Search size={16} />

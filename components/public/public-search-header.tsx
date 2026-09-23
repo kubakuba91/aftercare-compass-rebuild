@@ -1,5 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
+import { SearchFilterPanel } from "./search-filter-panel";
+import { virtualStates } from "@/lib/virtual-care";
 import { Search, SlidersHorizontal, UserCircle } from "lucide-react";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import {
@@ -91,6 +93,8 @@ export function PublicSearchHeader({
     isContinuedCare ? levelsOfCare.length : 0,
     isContinuedCare ? clinicalFocus.length : 0,
     isContinuedCare ? insurance.length : 0,
+    isContinuedCare && delivery ? 1 : 0,
+    isContinuedCare && virtualState ? 1 : 0,
     verified ? 1 : 0
   ].reduce((sum, value) => sum + (typeof value === "number" ? value : 0), 0);
 
@@ -183,8 +187,8 @@ export function PublicSearchHeader({
           />
         </Link>
         <form action="/search" className="relative grid min-w-0 flex-1 gap-2 md:grid-cols-[340px_minmax(180px,1fr)_128px_160px]">
-          {delivery ? <input type="hidden" name="delivery" value={delivery} /> : null}
-          {virtualState ? <input type="hidden" name="virtualState" value={virtualState} /> : null}
+          {(!showFilters || !isContinuedCare) && delivery ? <input type="hidden" name="delivery" value={delivery} /> : null}
+          {(!showFilters || !isContinuedCare) && virtualState ? <input type="hidden" name="virtualState" value={virtualState} /> : null}
           <div className="grid h-14 gap-1.5 overflow-hidden rounded-lg border border-[#12185f] bg-[#12185f] p-2 sm:grid-cols-2">
             <label className="focus-within:ring-ring flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-4 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
               <input
@@ -255,10 +259,22 @@ export function PublicSearchHeader({
             </>
           ) : null}
           {showFilters ? (
-            <div className="absolute left-0 top-[calc(100%+0.75rem)] z-50 grid w-full min-w-0 gap-4 rounded-lg border border-border bg-white p-5 shadow-lg md:left-auto md:right-[168px] md:w-[min(100vw-2rem,420px)]">
-              <h2 className="text-lg font-semibold">
-                {isContinuedCare ? "Continued Care Filters" : "Sober Living Filters"}
-              </h2>
+            <SearchFilterPanel title={isContinuedCare ? "Continued Care Filters" : "Sober Living Filters"} clearHref={clearHref}>
+              {isContinuedCare ? <>
+                <label className="grid gap-2 text-sm font-medium">Delivery
+                  <select name="delivery" defaultValue={delivery}>
+                    <option value="">In person or virtual</option>
+                    <option value="in-person">In person</option>
+                    <option value="virtual">Virtual only</option>
+                  </select>
+                </label>
+                <label className="grid gap-2 text-sm font-medium">Virtual coverage
+                  <select name="virtualState" defaultValue={virtualState}>
+                    <option value="">Select patient’s state</option>
+                    {virtualStates.map((state) => <option key={state} value={state}>{state}</option>)}
+                  </select>
+                </label>
+              </> : null}
               {searchFilterSettings.map(renderCoreFilter)}
               <label className="grid gap-2 text-sm font-medium">
                 Specialty Populations Served
@@ -313,13 +329,7 @@ export function PublicSearchHeader({
                 />
                 {isContinuedCare ? "Accepting new patients" : "Available now"}
               </label>
-              <Link
-                className="focus-ring inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold text-muted-foreground"
-                href={clearHref}
-              >
-                Clear All
-              </Link>
-            </div>
+            </SearchFilterPanel>
           ) : null}
         </form>
         <Link

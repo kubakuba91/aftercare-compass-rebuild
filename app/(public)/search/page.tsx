@@ -573,12 +573,6 @@ export default async function SearchPage({
         verified={verified}
       />
       <main className="shell py-8">
-        {type === "continued_care" ? <form action="/search" className="mb-5 flex flex-wrap items-end gap-3">
-          {Object.entries(query).filter(([key]) => !["delivery", "virtualState", "page", "selected"].includes(key)).flatMap(([key, value]) => (Array.isArray(value) ? value : value ? [value] : []).map((item, index) => <input key={`${key}-${index}`} type="hidden" name={key} value={item} />))}
-          <label className="grid gap-1 text-sm">Delivery<select className="rounded-md border border-border p-2" name="delivery" defaultValue={query.delivery || ""}><option value="">In person or virtual</option><option value="in-person">In person</option><option value="virtual">Virtual only</option></select></label>
-          <label className="grid gap-1 text-sm">Virtual coverage<select className="rounded-md border border-border p-2" name="virtualState" defaultValue={query.virtualState || ""}><option value="">Select patient’s state</option>{virtualStates.map((state) => <option key={state}>{state}</option>)}</select></label>
-          <button className="rounded-md border border-border px-4 py-2" type="submit">Apply</button>
-        </form> : null}
         <div className="flex flex-col justify-between gap-4 border-b border-border pb-6 md:flex-row md:items-end">
           <div>
             <h1 className="mt-3 text-3xl font-semibold">Search aftercare programs</h1>

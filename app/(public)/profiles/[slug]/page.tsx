@@ -114,11 +114,17 @@ function publicWebsiteHref(value: string | null) {
 function ContactForm({
   profile,
   leadStatus,
-  notice
+  notice,
+  userName = "",
+  userEmail = "",
+  userPhone = ""
 }: {
   profile: { id: string; slug: string };
   leadStatus?: string;
   notice?: string;
+  userName?: string;
+  userEmail?: string;
+  userPhone?: string;
 }) {
   return (
     <Card className="h-fit scroll-mt-24" id="contact">
@@ -150,15 +156,15 @@ function ContactForm({
         <input aria-hidden="true" autoComplete="off" className="hidden" name="companyWebsite" tabIndex={-1} />
         <label className="grid gap-2 text-sm font-medium">
           <span>Name <span className="text-muted-foreground">(required)</span></span>
-          <input className="min-h-10 rounded-md border border-border px-3" name="name" required />
+          <input autoComplete="name" className="min-h-10 rounded-md border border-border px-3" defaultValue={userName} name="name" required />
         </label>
         <label className="grid gap-2 text-sm font-medium">
           <span>Email <span className="text-muted-foreground">(required)</span></span>
-          <input className="min-h-10 rounded-md border border-border px-3" name="email" required type="email" />
+          <input autoComplete="email" className="min-h-10 rounded-md border border-border px-3" defaultValue={userEmail} name="email" required type="email" />
         </label>
         <label className="grid gap-2 text-sm font-medium">
           <span>Phone <span className="text-muted-foreground">(optional)</span></span>
-          <input className="min-h-10 rounded-md border border-border px-3" name="phone" />
+          <input autoComplete="tel" className="min-h-10 rounded-md border border-border px-3" defaultValue={userPhone} name="phone" type="tel" />
         </label>
         <label className="grid gap-2 text-sm font-medium">
           <span>Message <span className="text-muted-foreground">(required)</span></span>
@@ -981,6 +987,9 @@ export default async function PublicProfilePage({
         ) : isReferent ? (
           <ContactForm
             leadStatus={query.lead}
+            userName={userName}
+            userEmail={appUser?.email || ""}
+            userPhone={appUser?.phone?.trim() || appUser?.organization?.phone?.trim() || ""}
             notice={
               profileAcceptsDirectReferrals
                 ? "Your current plan can use contact requests. Direct referral tools unlock when referral access is enabled."

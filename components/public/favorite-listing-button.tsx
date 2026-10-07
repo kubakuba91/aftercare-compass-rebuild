@@ -34,7 +34,7 @@ export function FavoriteListingButton({
         aria-pressed={isFavorited}
         className={cn(
           "focus-ring flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-white disabled:cursor-not-allowed disabled:opacity-60",
-          isFavorited ? "text-primary" : null
+          isFavorited ? "text-red-600" : null
         )}
         disabled={isPending}
         onClick={() => {

@@ -603,7 +603,7 @@ export default async function SearchPage({
                   ...profile.populationServedOptions,
                   ...profile.specialtyPopulations,
                   ...profile.matAccepted,
-                  ...profile.insuranceAccepted,
+                  ...(profile.type === ProfileType.sober_living ? [] : profile.insuranceAccepted),
                   ...profile.certificationsHeld,
                   ...(profile.type === ProfileType.sober_living ? [] : profile.accreditations),
                   ...(profile.type === ProfileType.sober_living ? profile.recoverySupportServices : profile.clinicalFocus)

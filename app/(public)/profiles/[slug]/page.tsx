@@ -819,15 +819,17 @@ export default async function PublicProfilePage({
               </Card>
 
               <Card>
-                <h2 className="font-semibold">Payment and clinical fit</h2>
+                <h2 className="font-semibold">{isSoberLiving ? "Recovery support and fit" : "Payment and clinical fit"}</h2>
                 <dl className="mt-4 grid gap-3 text-sm">
-                  <div>
-                    <dt className="flex items-center gap-2 font-semibold text-foreground">
-                      <ShieldCheck className="text-primary" size={16} />
-                      Insurance/payment
-                    </dt>
-                    <dd className="font-medium">{listOrFallback(profile.insuranceAccepted)}{profile.insuranceNotes ? <p className="mt-2 text-sm text-muted-foreground">{profile.insuranceNotes}</p> : null}</dd>
-                  </div>
+                  {!isSoberLiving ? (
+                    <div>
+                      <dt className="flex items-center gap-2 font-semibold text-foreground">
+                        <ShieldCheck className="text-primary" size={16} />
+                        Insurance/payment
+                      </dt>
+                      <dd className="font-medium">{listOrFallback(profile.insuranceAccepted)}{profile.insuranceNotes ? <p className="mt-2 text-sm text-muted-foreground">{profile.insuranceNotes}</p> : null}</dd>
+                    </div>
+                  ) : null}
                   <div>
                     <dt className="flex items-center gap-2 font-semibold text-foreground">
                       <PillBottle className="text-primary" size={16} />

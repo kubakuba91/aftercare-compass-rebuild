@@ -38,6 +38,7 @@ export async function POST(request: Request) {
       where: { clerkUserId: userId },
       select: {
         id: true,
+        isActive: true,
         orgId: true,
         organization: {
           select: {
@@ -66,6 +67,10 @@ export async function POST(request: Request) {
       }
     })
   ]);
+
+  if (referentUser && !referentUser.isActive) {
+    return NextResponse.json({ error: "This account is inactive." }, { status: 403 });
+  }
 
   if (!referentUser?.orgId) {
     return NextResponse.json({ error: "Referent organization not found" }, { status: 403 });

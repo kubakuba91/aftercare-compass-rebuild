@@ -1,0 +1,26 @@
+import { strict as assert } from "node:assert";
+import { Role, OrganizationType } from "@prisma/client";
+import { adminUserDetailsSchema, editableUserRoles, newUserCutoff, userAccessChangeError, userDirectoryWhere } from "../lib/admin-users";
+
+const now = new Date("2026-10-07T12:00:00Z");
+assert.equal(newUserCutoff(now).toISOString(), "2026-09-30T12:00:00.000Z");
+const where = userDirectoryWhere({ q: " Amy Sechrist ", status: "inactive", role: "referent_manager", joined: "new" }, now);
+assert.equal(where.isActive, false);
+assert.equal(where.role, "referent_manager");
+assert.deepEqual(where.createdAt, { gte: newUserCutoff(now) });
+assert.equal(Array.isArray(where.AND) && where.AND.length, 2);
+assert.equal(userDirectoryWhere({ role: "invalid", status: "invalid" }).role, undefined);
+assert.deepEqual(editableUserRoles(Role.referent_manager, OrganizationType.referent), [Role.referent_admin, Role.referent_manager]);
+assert.ok(!editableUserRoles(Role.aftercare_manager, OrganizationType.aftercare_sober_living).includes(Role.system_admin));
+assert.deepEqual(editableUserRoles(Role.referent_manager, null), [Role.referent_manager]);
+const base = { actorId: "admin", targetId: "user", role: Role.referent_admin, isActive: true, nextRole: Role.referent_admin, nextActive: true, orgId: "org", otherActiveAdmins: 0 };
+assert.equal(userAccessChangeError(base), null);
+assert.match(userAccessChangeError({ ...base, nextActive: false })!, /last active administrator/);
+assert.match(userAccessChangeError({ ...base, nextRole: Role.referent_manager })!, /last active administrator/);
+assert.equal(userAccessChangeError({ ...base, nextActive: false, otherActiveAdmins: 1 }), null);
+assert.match(userAccessChangeError({ ...base, actorId: "user", nextActive: false })!, /own account/);
+assert.match(userAccessChangeError({ ...base, role: Role.system_admin, nextRole: Role.system_admin, nextActive: false })!, /System administrator/);
+assert.equal(userAccessChangeError({ ...base, isActive: false, nextActive: true }), null);
+assert.ok(!adminUserDetailsSchema.safeParse({ firstName: "Amy", lastName: "Smith", phone: "invalid", role: "referent_manager" }).success);
+assert.ok(adminUserDetailsSchema.safeParse({ firstName: " Amy ", lastName: "Smith", phone: "(212) 555-0100", role: "referent_manager" }).success);
+console.log("Admin user search, validation, role boundaries, and account-access protections passed.");

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
+import { UsersPanel } from "./users-panel";
+import { Users } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Building2, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, FileCheck2, FileUp, Flag, Handshake, Home, Inbox, ListChecks, PlusCircle, Search } from "lucide-react";
 import {
@@ -40,6 +42,7 @@ export const dynamic = "force-dynamic";
 const adminTabs = [
   { key: "overview", label: "Overview", icon: ClipboardCheck },
   { key: "organizations", label: "Organizations", icon: Building2 },
+  { key: "users", label: "Users", icon: Users },
   { key: "profiles", label: "Homes & Programs", icon: Home },
   { key: "requests", label: "Referrals & Leads", icon: Inbox },
   { key: "claims", label: "Claims", icon: Handshake },
@@ -224,6 +227,11 @@ export default async function AdminDashboardPage({
     profileDirection?: string | string[];
     profilePage?: string | string[];
     profilePageSize?: string | string[];
+    userSearch?: string | string[];
+    userRole?: string | string[];
+    userStatus?: string | string[];
+    userJoined?: string | string[];
+    userPage?: string | string[];
   }>;
 }) {
   const [query, appUser] = await Promise.all([
@@ -733,6 +741,8 @@ export default async function AdminDashboardPage({
           );
         })}
       </nav>
+
+      {activeTab === "users" ? <UsersPanel query={query} /> : null}
 
       {activeTab === "overview" ? (
         <div className="mt-6 grid gap-6">

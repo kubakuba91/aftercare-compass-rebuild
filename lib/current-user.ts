@@ -4,6 +4,13 @@ import { InvitationConflict, lockInvitations, normalizeInviteEmail, pendingRefer
 import { Role } from "@prisma/client";
 import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
 import { prisma } from "@/lib/prisma";
+import { hasValidDatabaseUrl } from "@/lib/database-status";
+
+async function requireActiveAccount(clerkUserId: string) {
+  if (!hasValidDatabaseUrl()) return;
+  const account = await prisma.user.findUnique({ where: { clerkUserId }, select: { isActive: true } });
+  if (account && !account.isActive) redirect("/account-disabled");
+}
 
 export async function getClerkSessionUserId() {
   if (!hasValidClerkRuntimeConfig()) {
@@ -11,6 +18,7 @@ export async function getClerkSessionUserId() {
   }
 
   const { userId } = await auth();
+  if (userId) await requireActiveAccount(userId);
   return userId;
 }
 
@@ -24,6 +32,8 @@ export async function getRequiredClerkIdentity() {
   if (!clerkUser) {
     throw new Error("Authentication required");
   }
+
+  await requireActiveAccount(clerkUser.id);
 
   const email = clerkUser.emailAddresses.find(
     (emailAddress) => emailAddress.id === clerkUser.primaryEmailAddressId

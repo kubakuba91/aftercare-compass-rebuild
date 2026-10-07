@@ -7,6 +7,8 @@ import { ApproximateLocationMap } from "@/components/public/approximate-location
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
 import { LoadMoreListings } from "@/components/public/load-more-listings";
+import { SearchSortDropdown } from "@/components/public/search-sort-dropdown";
+import { normalizeSearchSort, searchSortOrder } from "@/lib/search-sort";
 import { ProfileOwnershipBadge } from "@/components/public/profile-ownership-badge";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
@@ -241,6 +243,7 @@ export default async function SearchPage({
     filters?: string | string[];
     selected?: string | string[];
     page?: string | string[];
+    sort?: string | string[];
   }>;
 }) {
   const [query, session] = await Promise.all([
@@ -323,6 +326,8 @@ export default async function SearchPage({
   const page = requestedPage && requestedPage > 0 ? Math.floor(requestedPage) : 1;
   const resultLimit = page * SEARCH_PAGE_SIZE;
   const radiusCenter = radiusMiles ? searchCenterFromQuery(q) ?? await geocodeSearchQuery(q) : null;
+  const canSortByDistance = Boolean(radiusMiles && radiusCenter && !query.virtualState);
+  const sort = normalizeSearchSort(firstFromQuery(query.sort), canSortByDistance);
 
   function selectedListingHref(profileId: string) {
     const params = new URLSearchParams();
@@ -453,7 +458,7 @@ export default async function SearchPage({
 
   const profileQuery = {
     where,
-    orderBy: [{ verificationTier: "desc" }, { updatedAt: "desc" }, { id: "asc" }],
+    orderBy: searchSortOrder(sort),
     ...(radiusCenter ? {} : { take: resultLimit }),
     select: {
       id: true,
@@ -533,7 +538,7 @@ export default async function SearchPage({
           };
         })
         .filter((item) => isVirtualOnly(item.profile) ? Boolean(matchedVirtualState && item.profile.statesServed.includes(matchedVirtualState)) : item.distanceMiles <= radiusMiles)
-        .sort((first, second) => first.distanceMiles - second.distanceMiles)
+        .sort((first, second) => sort === "distance" ? first.distanceMiles - second.distanceMiles : 0)
         .map((item) => item.profile)
     : null;
   const totalListings = radiusMatches ? radiusMatches.length : databaseTotal ?? rawProfiles.length;
@@ -543,6 +548,7 @@ export default async function SearchPage({
   return (
     <>
       <PublicSearchHeader
+        sort={sort}
         delivery={query.delivery}
         virtualState={query.virtualState}
         amenities={amenities}
@@ -592,8 +598,9 @@ export default async function SearchPage({
               </p>
             </Card>
           ) : null}
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-semibold">{totalListings} listings</p>
+            <SearchSortDropdown value={sort} canSortByDistance={canSortByDistance} />
           </div>
           {profiles.length ? (
             profiles.map((profile, index) => {

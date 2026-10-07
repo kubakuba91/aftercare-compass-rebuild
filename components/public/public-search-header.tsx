@@ -20,6 +20,7 @@ import { dashboardAppUrl } from "@/lib/app-urls";
 import { cn } from "@/lib/utils";
 
 type PublicSearchHeaderProps = {
+  sort?: string;
   isSignedIn?: boolean;
   defaultType?: string;
   delivery?: string;
@@ -51,6 +52,7 @@ type PublicSearchHeaderProps = {
 };
 
 export function PublicSearchHeader({
+  sort,
   isSignedIn = false,
   defaultType = "",
   delivery = "",
@@ -188,6 +190,7 @@ export function PublicSearchHeader({
           />
         </Link>
         <form action="/search" className="relative grid min-w-0 flex-1 gap-2 md:grid-cols-[340px_minmax(180px,1fr)_128px_160px]">
+          {sort && sort !== "updated" ? <input type="hidden" name="sort" value={sort} /> : null}
           {(!showFilters || !isContinuedCare) && delivery ? <input type="hidden" name="delivery" value={delivery} /> : null}
           {(!showFilters || !isContinuedCare) && virtualState ? <input type="hidden" name="virtualState" value={virtualState} /> : null}
           <SearchTypeSelector defaultType={defaultType} showFilters={showFilters} />

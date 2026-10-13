@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 const originalLoad = Module._load;
-let organization, actor, writes, audits, raced;
+let organization, actor, writes, audits, raced, emails;
 const prisma = { $transaction: async fn => fn({
   organization: { updateMany: async ({ where, data }) => {
     writes++;
@@ -21,6 +21,7 @@ const prisma = { $transaction: async fn => fn({
   adminAuditLog: { create: async ({ data }) => audits.push(data) }
 }) };
 Module._load = function(request, parent, isMain) {
+  if (request === '@/lib/trial-start-email') return { sendTrialStartedEmail: async (id, end) => { assert.equal(id, 'own-org'); assert.equal(+end, +organization.trialEndsAt); assert.equal(audits.length, 1); emails++; return 'Trial confirmation email sent.'; } };
   if (request === '@/lib/protected-routing') return { getProtectedAppUser: async () => actor };
   if (request === '@/lib/prisma') return { prisma };
   if (request === 'next/navigation') return { redirect: url => { throw Object.assign(new Error('redirect'), { url }); } };
@@ -31,7 +32,7 @@ const { startSoberLivingTrial } = require('../app/dashboard/billing/actions.ts')
 function reset() {
   organization = { id: 'own-org', type: 'aftercare_sober_living', subscriptionPlan: null, subscriptionStatus: null };
   actor = { id: 'admin', orgId: 'own-org', organization, role: 'aftercare_admin' };
-  writes = 0; audits = []; raced = false;
+  writes = 0; audits = []; raced = false; emails = 0;
 }
 async function start() {
   try { await startSoberLivingTrial(); assert.fail('Expected redirect'); }
@@ -45,11 +46,11 @@ async function start() {
   assert.equal(organization.trialEndsAt - organization.trialStartedAt, 30 * 86_400_000);
   assert.equal(audits.length, 1); assert.equal(audits[0].actorUserId, 'admin');
   assert.equal(audits[0].entityId, 'own-org');
-  await start(); assert.equal(writes, 1); // Repeat submission cannot restart trial.
+  await start(); assert.equal(writes, 1); assert.equal(emails, 1); // Repeat submission cannot restart trial or resend.
   reset(); actor.role = 'aftercare_manager'; await start(); assert.equal(writes, 0);
   reset(); organization.type = 'referent'; await start(); assert.equal(writes, 0);
   reset(); organization.stripeSubscriptionId = 'paid'; await start(); assert.equal(writes, 0);
   reset(); raced = true; const result = await start(); assert.equal(audits.length, 0);
-  assert.match(result.searchParams.get('billingMessage'), /subscription changed/);
+  assert.match(result.searchParams.get('billingMessage'), /subscription changed/); assert.equal(emails, 0);
   console.log('Trial start authorization, organization scope, one-time grant, audit and concurrent-update handling passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => { Module._load = originalLoad; });

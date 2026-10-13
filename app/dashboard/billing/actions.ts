@@ -1,4 +1,5 @@
 "use server";
+import { sendTrialStartedEmail } from "@/lib/trial-start-email";
 
 import { canStartReferentTrial, trialEndFrom } from "@/lib/referent-trial";
 import { canStartSoberLivingTrial, soberLivingTrialStartWhere, SOBER_LIVING_TRIAL_PLAN, SOBER_LIVING_TRIAL_DAYS } from "@/lib/sober-living-trial";
@@ -431,7 +432,8 @@ export async function startSoberLivingTrial() {
     } });
     return updated;
   });
+  const emailMessage = result.count ? await sendTrialStartedEmail(organization.id, trialEndFrom(now, SOBER_LIVING_TRIAL_DAYS)) : "";
   redirect(billingReturnPath(audience, result.count
-    ? "Your 30-day Aftercare Basic trial has started. No card required and no automatic charge."
+    ? `Your 30-day Aftercare Basic trial has started. No card required and no automatic charge. ${emailMessage}`
     : "Your subscription changed. Refresh to see your current plan."));
 }

@@ -1,4 +1,5 @@
 "use server";
+import { sendTrialStartedEmail } from "@/lib/trial-start-email";
 
 import { trialEndFrom } from "@/lib/referent-trial";
 import { canStartSoberLivingTrial, soberLivingTrialStartWhere, SOBER_LIVING_TRIAL_DAYS, SOBER_LIVING_TRIAL_PLAN } from "@/lib/sober-living-trial";
@@ -1803,8 +1804,9 @@ export async function startAdminSoberLivingTrial(formData: FormData) {
   });
   revalidatePath("/dashboard/admin");
   revalidatePath("/dashboard/aftercare");
+  const emailMessage = changed ? await sendTrialStartedEmail(orgId, endsAt) : "";
   const message = changed
-    ? `${organization.name}'s 30-day Aftercare Basic trial has started. No automatic charge.`
+    ? `${organization.name}'s 30-day Aftercare Basic trial has started. No automatic charge. ${emailMessage}`
     : "Subscription changed. Refresh to see the current trial or plan.";
   redirect(`/dashboard/admin?tab=organizations&reviewMessage=${encodeURIComponent(message)}`);
 }

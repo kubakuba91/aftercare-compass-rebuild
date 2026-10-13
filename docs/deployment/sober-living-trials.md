@@ -14,6 +14,8 @@ A paid subscription with active status takes precedence over old trial dates. St
 
 ## Data compatibility
 
+New sober-living trial grants (admin or self-service) send a transactional confirmation through the existing email provider after the grant commits. Recipients are active aftercare admins, with the organization email as fallback. The message includes Basic, the exact end date in Eastern time, a subscription dashboard link, and no-automatic-charge/free-fallback terms. Duplicate or rejected grants do not send. Delivery failures preserve the trial and display a warning; there is no automatic retry or retroactive email to existing trials.
+
 Prisma exposes generic `trialStartedAt`, `trialEndsAt`, and `TrialExtension` names mapped to the existing `referentTrialStartedAt`, `referentTrialEndsAt`, and `ReferentTrialExtension` database objects. The old index name is retained explicitly. Prisma schema comparison reports an empty migration: no DDL or backfill is required. Existing referent trials remain unchanged. Regenerate Prisma Client as part of the build.
 
 ## Verification

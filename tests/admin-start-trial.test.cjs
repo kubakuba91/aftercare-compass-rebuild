@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 const originalLoad = Module._load;
-let actor, org, audits, writes, raced, failAudit, reads;
+let actor, org, audits, writes, raced, failAudit, reads, emails;
 const prisma = {
   organization: { findUnique: async ({ where }) => { reads++; assert.equal(where.id, 'selected-org'); return org; } },
   $transaction: async fn => {
@@ -29,6 +29,7 @@ const prisma = {
   }
 };
 Module._load = function(request, parent, isMain) {
+  if (request === '@/lib/trial-start-email') return { sendTrialStartedEmail: async (id, end) => { assert.equal(id, 'selected-org'); assert.equal(end, org.trialEndsAt); assert.equal(audits.length, 1); emails++; return 'Trial confirmation email sent.'; } };
   if (request === '@/lib/protected-routing') return { getProtectedAppUser: async () => actor };
   if (request === '@/lib/prisma') return { prisma };
   if (request === 'next/navigation') return { redirect: url => { throw Object.assign(new Error('redirect'), { url }); } };
@@ -39,7 +40,7 @@ const { startAdminSoberLivingTrial } = require('../app/dashboard/admin/actions.t
 function reset() {
   actor = { id: 'system-admin', role: 'system_admin', orgId: 'other-org' };
   org = { id: 'selected-org', name: "Danny's House", type: 'aftercare_sober_living', subscriptionPlan: null, subscriptionStatus: null, stripeSubscriptionId: null, trialStartedAt: null, trialEndsAt: null };
-  audits = []; writes = 0; reads = 0; raced = false; failAudit = false;
+  audits = []; writes = 0; reads = 0; raced = false; failAudit = false; emails = 0;
 }
 async function start(id = 'selected-org') {
   const form = new FormData(); form.set('orgId', id);
@@ -56,7 +57,7 @@ async function start(id = 'selected-org') {
   assert.equal(org.subscriptionBillingCycle, null);
   assert.equal(audits[0].actorUserId, 'system-admin'); assert.equal(audits[0].entityId, 'selected-org');
   assert.equal(audits[0].action, 'sober_living_trial_started'); assert.equal(audits[0].metadata.source, 'admin');
-  await start(); assert.equal(writes, 1); assert.equal(audits.length, 1);
+  await start(); assert.equal(writes, 1); assert.equal(audits.length, 1); assert.equal(emails, 1);
   reset(); actor.role = 'aftercare_admin'; assert.equal(await start(), '/dashboard'); assert.equal(reads, 0);
   for (const change of [
     { type: 'referent' }, { type: 'aftercare_continued_care' },
@@ -65,7 +66,7 @@ async function start(id = 'selected-org') {
   ]) { reset(); Object.assign(org, change); await start(); assert.equal(writes, 0); }
   reset(); org = null; await start(); assert.equal(writes, 0);
   reset(); await start(''); await start('a'.repeat(129)); assert.equal(reads, 0);
-  reset(); raced = true; assert.match(await start(), /Subscription changed/); assert.equal(audits.length, 0);
-  reset(); failAudit = true; await assert.rejects(start(), /audit failed/); assert.equal(org.trialStartedAt, null);
+  reset(); raced = true; assert.match(await start(), /Subscription changed/); assert.equal(audits.length, 0); assert.equal(emails, 0);
+  reset(); failAudit = true; await assert.rejects(start(), /audit failed/); assert.equal(org.trialStartedAt, null); assert.equal(emails, 0);
   console.log('Admin trial authorization, eligibility, organization scope, fixed terms, duplicate/race protection and transactional audit checks passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => { Module._load = originalLoad; });

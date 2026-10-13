@@ -202,7 +202,7 @@ export default async function AftercareProfileDetailPage({
       certifications: { select: { id: true, status: true } },
       organization: {
         select: {
-          subscriptionPlan: true
+          type: true, subscriptionStatus: true, trialEndsAt: true, subscriptionPlan: true
         }
       },
       continuedCareAssociations: {
@@ -232,7 +232,7 @@ export default async function AftercareProfileDetailPage({
   const isSoberLiving = profile.type === "sober_living";
   const readiness = getAftercareProfileReadiness(profile);
   const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
-  const photoLimit = getAftercarePhotoLimit(profile.organization.subscriptionPlan);
+  const photoLimit = getAftercarePhotoLimit(profile.organization);
   const photoLimitCopy =
     photoLimit === "unlimited"
       ? "Upload unlimited profile images on your current plan. The cover image appears on search cards and at the top of the public profile."

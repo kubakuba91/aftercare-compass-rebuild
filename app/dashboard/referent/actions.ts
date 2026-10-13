@@ -102,7 +102,7 @@ export async function inviteReferentManagers(formData: FormData) {
     where: { id: appUser.orgId },
     select: {
       name: true,
-      subscriptionPlan: true,
+      type: true, subscriptionStatus: true, trialEndsAt: true, subscriptionPlan: true,
       users: {
         select: {
           id: true,
@@ -299,7 +299,7 @@ export async function bookPhoneScreeningSlot(formData: FormData) {
           organization: {
             select: {
               type: true,
-              subscriptionPlan: true,
+              trialEndsAt: true, subscriptionPlan: true,
               subscriptionStatus: true
             }
           }

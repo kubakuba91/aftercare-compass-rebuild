@@ -1,3 +1,5 @@
+import { canStartSoberLivingTrial, effectiveAftercarePlanKey, isSoberLivingTrial, soberLivingTrialExpired } from "@/lib/sober-living-trial";
+import { trialDaysRemaining } from "@/lib/referent-trial";
 import { isVirtualOnly } from "@/lib/virtual-care";
 import Link from "next/link";
 import Image from "next/image";
@@ -70,7 +72,7 @@ import {
   updateReferralStatus,
   updateUserDisplayName
 } from "./actions";
-import { cancelBillingSubscription, changeBillingPlan, createBillingPortalSession } from "../billing/actions";
+import { startSoberLivingTrial, cancelBillingSubscription, changeBillingPlan, createBillingPortalSession } from "../billing/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -527,6 +529,11 @@ export default async function AftercareDashboardPage({
   }>;
 }) {
   const appUser = await getAftercareDashboardUser();
+  const effectivePlanKey = effectiveAftercarePlanKey(appUser.organization);
+  const trialEligible = canStartSoberLivingTrial(appUser.organization) && appUser.role === "aftercare_admin";
+  const localTrial = isSoberLivingTrial(appUser.organization);
+  const trialExpired = soberLivingTrialExpired(appUser.organization);
+  const trialRemaining = appUser.organization?.trialEndsAt ? trialDaysRemaining(appUser.organization.trialEndsAt) : 0;
   await redirectIncompleteAftercareOnboarding({
     orgId: appUser.orgId,
     userId: appUser.id
@@ -735,7 +742,7 @@ export default async function AftercareDashboardPage({
   ]);
 
   const planCountedProfiles = profiles.filter((profile) => profile.status === "published");
-  const virtualOrganization = profiles.some(isVirtualOnly) || Boolean(appUser.organization?.subscriptionPlan?.startsWith("virtual_"));
+  const virtualOrganization = profiles.some(isVirtualOnly) || Boolean(effectivePlanKey?.startsWith("virtual_"));
   const aftercareBillingPlans = (await getBillingPlansWithStripePrices("aftercare")).filter((plan) => plan.key === "claimed_listing" || plan.key.startsWith("virtual_") === virtualOrganization);
   const selectedProfile = profiles.find((profile) => profile.id === query.profileId) ?? null;
   const scopedProfiles = selectedProfile ? [selectedProfile] : planCountedProfiles;
@@ -793,7 +800,7 @@ export default async function AftercareDashboardPage({
 
     return manager.aftercareProfileAssignments.some((assignment) => assignment.profile.id === selectedProfile.id);
   });
-  const aftercareManagerLimit = currentAftercarePlan(appUser.organization?.subscriptionPlan).managers;
+  const aftercareManagerLimit = currentAftercarePlan(effectivePlanKey).managers;
   const aftercareManagerUsage = managers.filter((manager) => manager.isActive).length + pendingManagerInvites.length;
   const canInviteMoreManagers = aftercareManagerLimit === "unlimited" || aftercareManagerUsage < aftercareManagerLimit;
   const allowPlacementTracking = canUsePlacementTracking(appUser.organization);
@@ -804,8 +811,8 @@ export default async function AftercareDashboardPage({
     ? canReceiveDirectReferrals(appUser.organization, selectedProfile)
     : false;
   const liveBedCountLockedMessage = "upgrade plan to unlock live bed count";
-  const canAddProfiles = canAddAnotherProfile(appUser.organization?.subscriptionPlan, planCountedProfiles.length);
-  const nextProfilePlan = nextProfileCapacityPlan(appUser.organization?.subscriptionPlan, planCountedProfiles.length, virtualOrganization);
+  const canAddProfiles = canAddAnotherProfile(effectivePlanKey, planCountedProfiles.length);
+  const nextProfilePlan = nextProfileCapacityPlan(effectivePlanKey, planCountedProfiles.length, virtualOrganization);
   const isContinuedCareOrganization = appUser.organization?.type === "aftercare_continued_care";
   const profileNoun = isContinuedCareOrganization ? "program" : "home";
   const profileNounPlural = isContinuedCareOrganization ? "programs" : "homes";
@@ -813,13 +820,23 @@ export default async function AftercareDashboardPage({
   const managerAssignmentProfileOptions = profiles
     .map((profile) => ({ id: profile.id, programName: profile.programName }))
     .sort((a, b) => a.programName.localeCompare(b.programName));
-  const aftercareBillingPlan = getBillingPlan("aftercare", appUser.organization?.subscriptionPlan);
+  const aftercareBillingPlan = getBillingPlan("aftercare", effectivePlanKey);
   const aftercareBillingCycle = appUser.organization?.subscriptionBillingCycle === "annual" ? "annual" : "monthly";
   const aftercareCurrentPriceLabel =
     aftercareBillingPlans.find((plan) => plan.key === aftercareBillingPlan.key)?.priceLabels[aftercareBillingCycle] ?? "Custom";
 
   return (
     <main className="shell py-8">
+      {trialEligible || localTrial ? (
+        <Card className="mb-6">
+          <h2 className="text-lg font-semibold">{localTrial ? trialExpired ? "Your Aftercare Basic trial has ended" : `${trialRemaining} days left in your Aftercare Basic trial` : "Try Aftercare Basic free for 30 days"}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{localTrial ? trialExpired
+            ? "Your free listing and saved records remain available. Paid features are locked until you subscribe. Existing photos and team accounts are retained; free-plan limits apply to new additions."
+            : `Trial ends ${formatBillingDate(appUser.organization?.trialEndsAt)}. No automatic charge. Subscribe to keep paid features.`
+            : "One home, three managers, direct referrals, live availability, analytics, and up to 12 photos. No card required. At expiration you return to the free listing without losing saved records."}</p>
+          <Link className="focus-ring mt-3 inline-block font-semibold text-primary underline" href="/dashboard/aftercare?tab=subscription">{trialEligible ? "Choose your trial" : "View subscription"}</Link>
+        </Card>
+      ) : null}
       {selectedReferral ? (
         <div className="ac-modal-overlay px-4 py-6">
           <div className="ac-modal max-w-3xl p-6 md:p-7">
@@ -1514,7 +1531,7 @@ export default async function AftercareDashboardPage({
                       <p className="font-semibold">You are at your current {profileNoun} limit.</p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         {planCountedProfiles.length} of{" "}
-                        {formatPlanLimit(currentAftercarePlan(appUser.organization?.subscriptionPlan).profiles)}{" "}
+                        {formatPlanLimit(currentAftercarePlan(effectivePlanKey).profiles)}{" "}
                         published {profileNounPlural} used.
                         {nextProfilePlan
                           ? ` Upgrade to ${nextProfilePlan.label} to add another.`
@@ -1817,6 +1834,14 @@ export default async function AftercareDashboardPage({
                 {billingMessage ? <Badge tone="success">{billingMessage}</Badge> : null}
               </div>
 
+              {trialEligible ? (
+                <form action={startSoberLivingTrial} className="mt-5 rounded-xl border border-border p-5">
+                  <h3 className="font-semibold">Aftercare Basic · 30-day free trial</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">The trial starts when you select it. No card required or automatic billing. After 30 days, keep your free listing or choose a paid plan.</p>
+                  <button className="focus-ring ac-button ac-button--primary mt-4">Start free Aftercare Basic trial</button>
+                </form>
+              ) : null}
+
               {isPlanSelectionOpen ? (
                 <div className="mt-5">
                   <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
@@ -1901,24 +1926,24 @@ export default async function AftercareDashboardPage({
                         {aftercareBillingPlan.label}
                       </h3>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {aftercareCurrentPriceLabel}
+                        {localTrial && !trialExpired ? "$0 during your trial · no automatic charge" : aftercareCurrentPriceLabel}
                       </p>
                     </div>
                     <Badge tone={appUser.organization?.subscriptionStatus === "active" ? "success" : "warning"}>
-                      {formatBillingStatus(appUser.organization?.subscriptionStatus)}
+                      {trialExpired ? "Trial expired · Free listing" : formatBillingStatus(appUser.organization?.subscriptionStatus)}
                     </Badge>
                   </div>
                   <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2">
                     <div className="ac-stat-card p-4">
                       <dt className="text-muted-foreground">Homes/programs used</dt>
                       <dd className="mt-1 text-xl font-semibold">
-                        {planCountedProfiles.length} / {formatPlanLimit(currentAftercarePlan(appUser.organization?.subscriptionPlan).profiles)}
+                        {planCountedProfiles.length} / {formatPlanLimit(currentAftercarePlan(effectivePlanKey).profiles)}
                       </dd>
                     </div>
                     <div className="ac-stat-card p-4">
                       <dt className="text-muted-foreground">Manager seats used</dt>
                       <dd className="mt-1 text-xl font-semibold">
-                        {managers.filter((manager) => manager.isActive).length} / {formatPlanLimit(currentAftercarePlan(appUser.organization?.subscriptionPlan).managers)}
+                        {managers.filter((manager) => manager.isActive).length} / {formatPlanLimit(currentAftercarePlan(effectivePlanKey).managers)}
                       </dd>
                     </div>
                     <div className="ac-stat-card p-4">
@@ -1927,7 +1952,7 @@ export default async function AftercareDashboardPage({
                     </div>
                     <div className="ac-stat-card p-4">
                       <dt className="text-muted-foreground">Renews / ends</dt>
-                      <dd className="mt-1 font-semibold">{formatBillingDate(appUser.organization?.subscriptionRenewsAt)}</dd>
+                      <dd className="mt-1 font-semibold">{formatBillingDate(localTrial ? appUser.organization?.trialEndsAt : appUser.organization?.subscriptionRenewsAt)}</dd>
                     </div>
                   </dl>
                   <div className="mt-5 flex flex-wrap gap-2">

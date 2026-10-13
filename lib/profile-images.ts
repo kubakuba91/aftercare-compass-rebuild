@@ -141,7 +141,7 @@ export async function uploadProfileImagesForProfile(profile: ProfileImageUploadT
       id: true,
       organization: {
         select: {
-          subscriptionPlan: true
+          type: true, subscriptionStatus: true, trialEndsAt: true, subscriptionPlan: true
         }
       },
       _count: {
@@ -157,7 +157,7 @@ export async function uploadProfileImagesForProfile(profile: ProfileImageUploadT
   }
 
   const currentImageCount = profileRecord._count.images;
-  const photoLimit = getAftercarePhotoLimit(profileRecord.organization.subscriptionPlan);
+  const photoLimit = getAftercarePhotoLimit(profileRecord.organization);
 
   if (!isWithinPlanLimit(photoLimit, currentImageCount, files.length)) {
     throw new Error(

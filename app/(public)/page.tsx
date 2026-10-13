@@ -47,7 +47,7 @@ export default async function HomePage() {
       ownershipStatus: true,
       organization: {
         select: {
-          subscriptionPlan: true,
+          trialEndsAt: true, subscriptionPlan: true,
           subscriptionStatus: true,
           type: true
         }

@@ -32,7 +32,7 @@ async function getOwnedProfile(profileId: string) {
       organization: {
         select: {
           type: true,
-          subscriptionPlan: true,
+          trialEndsAt: true, subscriptionPlan: true,
           subscriptionStatus: true
         }
       }
@@ -594,7 +594,7 @@ export async function updateAftercareProfileStatus(formData: FormData) {
       redirect(profileHref(profile.id, readiness.blockers[0] || "Profile is not ready to publish."));
     }
 
-    const profileLimit = getAftercareProfileLimit(profile.organization.subscriptionPlan);
+    const profileLimit = getAftercareProfileLimit(profile.organization);
     const planCountedProfileCount = await prisma.aftercareProfile.count({
       where: {
         orgId: profile.orgId,

@@ -1,3 +1,4 @@
+import { effectiveAftercarePlanKey, soberLivingTrialExpired } from "@/lib/sober-living-trial";
 import { hasReferentAccess } from "@/lib/referent-trial";
 import {
   OrganizationType,
@@ -10,11 +11,11 @@ export type PlanLimit = number | "unlimited";
 export type AftercarePlanKey = keyof typeof aftercarePlans;
 export type ReferentPlanKey = keyof typeof referentPlans;
 
-type OrganizationGateContext = {
+export type OrganizationGateContext = {
   type?: OrganizationType | null;
   subscriptionPlan?: string | null;
   subscriptionStatus?: SubscriptionStatus | null;
-  referentTrialEndsAt?: Date | null;
+  trialEndsAt?: Date | null;
 };
 
 type ProfileGateContext = {
@@ -50,23 +51,24 @@ export function isSubscriptionUsable(status: SubscriptionStatus | null | undefin
   return status === SubscriptionStatus.active || status === SubscriptionStatus.trialing;
 }
 
-export function getAftercarePlan(planKey: string | null | undefined) {
-  return aftercarePlans[normalizeAftercarePlanKey(planKey)];
+export function getAftercarePlan(planKey: string | OrganizationGateContext | null | undefined) {
+  const key = typeof planKey === "object" && planKey ? effectiveAftercarePlanKey(planKey) : planKey;
+  return aftercarePlans[normalizeAftercarePlanKey(key)];
 }
 
 export function getReferentPlan(planKey: string | null | undefined) {
   return referentPlans[normalizeReferentPlanKey(planKey)];
 }
 
-export function getAftercareManagerLimit(planKey: string | null | undefined): PlanLimit {
+export function getAftercareManagerLimit(planKey: string | OrganizationGateContext | null | undefined): PlanLimit {
   return getAftercarePlan(planKey).managers;
 }
 
-export function getAftercareProfileLimit(planKey: string | null | undefined): PlanLimit {
+export function getAftercareProfileLimit(planKey: string | OrganizationGateContext | null | undefined): PlanLimit {
   return getAftercarePlan(planKey).profiles;
 }
 
-export function getAftercarePhotoLimit(planKey: string | null | undefined): PlanLimit {
+export function getAftercarePhotoLimit(planKey: string | OrganizationGateContext | null | undefined): PlanLimit {
   return getAftercarePlan(planKey).photoGalleryLimit;
 }
 
@@ -105,7 +107,7 @@ export function canReceiveDirectReferrals(
     return false;
   }
 
-  const plan = getAftercarePlan(organization.subscriptionPlan);
+  const plan = getAftercarePlan(organization);
 
   return plan.directReferralIntake && isSubscriptionUsable(organization.subscriptionStatus);
 }
@@ -128,7 +130,7 @@ export function canManageAftercareProfile(
     return false;
   }
 
-  return isSubscriptionUsable(organization.subscriptionStatus);
+  return soberLivingTrialExpired(organization) || isSubscriptionUsable(organization.subscriptionStatus);
 }
 
 export function canUseLiveAvailability(
@@ -143,7 +145,7 @@ export function canUseLiveAvailability(
     return false;
   }
 
-  const plan = getAftercarePlan(organization.subscriptionPlan);
+  const plan = getAftercarePlan(organization);
 
   return plan.liveAvailability && isSubscriptionUsable(organization.subscriptionStatus);
 }
@@ -159,7 +161,7 @@ export function canUseOperationalAnalytics(organization: OrganizationGateContext
     return false;
   }
 
-  return getAftercarePlan(organization.subscriptionPlan).operationalAnalytics &&
+  return getAftercarePlan(organization).operationalAnalytics &&
     isSubscriptionUsable(organization.subscriptionStatus);
 }
 
@@ -171,7 +173,7 @@ export function canRequestVerification(
     return false;
   }
 
-  return getAftercarePlan(organization.subscriptionPlan).verificationEligible &&
+  return getAftercarePlan(organization).verificationEligible &&
     isSubscriptionUsable(organization.subscriptionStatus);
 }
 
@@ -198,7 +200,7 @@ export function canDisplayVerifiedBadge(
     return false;
   }
 
-  const planKey = normalizeAftercarePlanKey(organization.subscriptionPlan);
+  const planKey = normalizeAftercarePlanKey(effectiveAftercarePlanKey(organization));
   const hasVerifiedPlan = planKey === "verified" || planKey === "network" || planKey.startsWith("virtual_");
   const hasActiveSubscription =
     organization.subscriptionStatus === SubscriptionStatus.active ||
@@ -218,7 +220,7 @@ export function canUsePlacementTracking(organization: OrganizationGateContext | 
     return false;
   }
 
-  return getAftercarePlan(organization.subscriptionPlan).placementTracking &&
+  return getAftercarePlan(organization).placementTracking &&
     isSubscriptionUsable(organization.subscriptionStatus);
 }
 
@@ -232,7 +234,7 @@ export function canUseInAppMessaging(organization: OrganizationGateContext | nul
       hasReferentAccess(organization);
   }
 
-  return getAftercarePlan(organization.subscriptionPlan).messaging &&
+  return getAftercarePlan(organization).messaging &&
     isSubscriptionUsable(organization.subscriptionStatus);
 }
 

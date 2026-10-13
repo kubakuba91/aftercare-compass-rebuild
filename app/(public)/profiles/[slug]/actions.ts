@@ -48,7 +48,7 @@ export async function createPublicProfileLead(formData: FormData) {
       organization: {
         select: {
           type: true,
-          subscriptionPlan: true,
+          trialEndsAt: true, subscriptionPlan: true,
           subscriptionStatus: true
         }
       }
@@ -124,7 +124,7 @@ export async function createProfileReferral(formData: FormData) {
       organization: {
         select: {
           type: true,
-          subscriptionPlan: true,
+          trialEndsAt: true, subscriptionPlan: true,
           subscriptionStatus: true
         }
       }

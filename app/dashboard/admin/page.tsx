@@ -1,3 +1,4 @@
+import { getAftercarePlan } from "@/lib/feature-gates";
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
@@ -38,7 +39,7 @@ import { formatDate, formatValue as formatDisplayValue } from "@/lib/format-util
 import { getProfileOptionGroups, profileOptionCategories, profileOptionCategoryKeys } from "@/lib/profile-options";
 import { prisma } from "@/lib/prisma";
 import { getSearchFilterSettings, searchFilterDefinitions } from "@/lib/search-filter-settings";
-import { extendReferentTrial, addProfileOption, moveSearchFilterSetting, reviewOnboardingSubmission, reviewProfileClaimRequest, sendAdminBedAvailabilityTextCheck, sendProfileClaimOutreach, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus, updateProfileOptionVisibility, updateSearchFilterSetting } from "./actions";
+import { extendOrganizationTrial, addProfileOption, moveSearchFilterSetting, reviewOnboardingSubmission, reviewProfileClaimRequest, sendAdminBedAvailabilityTextCheck, sendProfileClaimOutreach, updateAdminProfileStatus, updateProfileOptionLabel, updateProfileOptionStatus, updateProfileOptionVisibility, updateSearchFilterSetting } from "./actions";
 import { DataSettingsCategoryTabs } from "./data-settings-category-tabs";
 
 export const dynamic = "force-dynamic";
@@ -418,8 +419,8 @@ export default async function AdminDashboardPage({
         subscriptionPlan: true,
         subscriptionStatus: true,
         stripeSubscriptionId: true,
-        referentTrialStartedAt: true,
-        referentTrialEndsAt: true,
+        trialStartedAt: true,
+        trialEndsAt: true,
         createdAt: true,
         _count: {
           select: {
@@ -919,15 +920,15 @@ export default async function AdminDashboardPage({
                       <td className="py-4 pr-4">
                         <div className="flex flex-wrap gap-2">
                           {organization.subscriptionPlan ? (
-                            <Badge>{formatValue(organization.subscriptionPlan)}</Badge>
+                            <Badge>{organization.type === "referent" ? formatValue(organization.subscriptionPlan) : getAftercarePlan(organization).label}</Badge>
                           ) : null}
                           <Badge tone={statusTone(organization.subscriptionStatus || "draft")}>
-                            {organization.subscriptionStatus === "trialing" && organization.referentTrialEndsAt && organization.referentTrialEndsAt <= new Date() ? "Trial expired" : formatValue(organization.subscriptionStatus || "Not set")}
+                            {organization.subscriptionStatus === "trialing" && organization.trialEndsAt && organization.trialEndsAt <= new Date() ? "Trial expired" : formatValue(organization.subscriptionStatus || "Not set")}
                           </Badge>
                         </div>
-                        {organization.type === "referent" && organization.subscriptionStatus === "trialing" && !organization.stripeSubscriptionId && organization.referentTrialStartedAt && organization.referentTrialEndsAt ? (
-                          <details className="mt-2 text-sm"><summary className="cursor-pointer">Trial ends {formatDate(organization.referentTrialEndsAt)} · Extend</summary>
-                            <form action={extendReferentTrial} className="mt-3 grid gap-2">
+                        {["referent", "aftercare_sober_living"].includes(organization.type) && organization.subscriptionStatus === "trialing" && !organization.stripeSubscriptionId && organization.trialStartedAt && organization.trialEndsAt ? (
+                          <details className="mt-2 text-sm"><summary className="cursor-pointer">Trial {formatDate(organization.trialStartedAt)} – {formatDate(organization.trialEndsAt)} · Extend</summary>
+                            <form action={extendOrganizationTrial} className="mt-3 grid gap-2">
                               <input type="hidden" name="orgId" value={organization.id} />
                               <label>Additional days<input className="block rounded border p-2" type="number" name="days" min="1" max="90" defaultValue="30" required /></label>
                               <label>Reason<input className="block rounded border p-2" name="reason" maxLength={500} required /></label>

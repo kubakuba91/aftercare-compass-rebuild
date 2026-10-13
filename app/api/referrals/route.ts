@@ -44,7 +44,7 @@ export async function POST(request: Request) {
           select: {
             type: true,
             subscriptionPlan: true,
-            referentTrialEndsAt: true,
+            trialEndsAt: true,
             subscriptionStatus: true
           }
         }
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
           select: {
             type: true,
             subscriptionPlan: true,
-            referentTrialEndsAt: true,
+            trialEndsAt: true,
             subscriptionStatus: true
           }
         }

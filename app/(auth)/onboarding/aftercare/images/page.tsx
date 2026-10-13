@@ -27,7 +27,7 @@ export default async function AftercareOnboardingImagesPage({
     },
     include: {
       organization: {
-        select: { subscriptionPlan: true }
+        select: { type: true, subscriptionStatus: true, trialEndsAt: true, subscriptionPlan: true }
       },
       _count: {
         select: { images: true }
@@ -42,7 +42,7 @@ export default async function AftercareOnboardingImagesPage({
     redirect("/dashboard/aftercare");
   }
 
-  const photoLimit = getAftercarePhotoLimit(profile.organization.subscriptionPlan);
+  const photoLimit = getAftercarePhotoLimit(profile.organization);
 
   return (
     <main className="min-h-screen bg-surface-secondary px-4 py-10">

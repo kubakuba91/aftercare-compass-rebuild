@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { editableUserRoles, newUserCutoff, userRoleLabels } from "@/lib/admin-users";
 import { formatDate, formatValue } from "@/lib/format-utils";
 import { updateAdminUser } from "../actions";
+import { formatLastLogin, getUserLastLogins } from "@/lib/user-last-login";
 
 export const dynamic = "force-dynamic";
 const inputClass = "min-h-11 w-full rounded-xl border border-border bg-white px-3 text-sm";
@@ -26,7 +27,10 @@ export default async function AdminUserPage({ params, searchParams }: { params: 
     _count: { select: { referrals: true, sentMessages: true, favorites: true } }
   } });
   if (!user) notFound();
-  const activity = await prisma.adminAuditLog.findMany({ where: { entityType: "user", entityId: user.id }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 20, include: { actorUser: { select: { firstName: true, lastName: true, email: true } } } });
+  const [lastLogins, activity] = await Promise.all([
+    getUserLastLogins([user.clerkUserId]),
+    prisma.adminAuditLog.findMany({ where: { entityType: "user", entityId: user.id }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 20, include: { actorUser: { select: { firstName: true, lastName: true, email: true } } } })
+  ]);
   const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
   const roles = editableUserRoles(user.role, user.organization?.type);
   const org = user.organization;
@@ -55,7 +59,7 @@ export default async function AdminUserPage({ params, searchParams }: { params: 
         <Card><h2 className="text-xl font-semibold">Admin activity</h2><p className="mt-1 text-sm text-muted-foreground">The latest 20 management changes to this account.</p>{activity.length ? <ul className="mt-4 divide-y divide-border">{activity.map((entry) => <li className="py-3" key={entry.id}><p className="text-sm font-semibold">{activityLabels[entry.action] || formatValue(entry.action, { titleCase: true })}</p><p className="mt-1 text-xs text-muted-foreground">{entry.actorUser ? [entry.actorUser.firstName, entry.actorUser.lastName].filter(Boolean).join(" ") || entry.actorUser.email : "Former administrator"} · {formatDate(entry.createdAt, { options: { dateStyle: "medium", timeStyle: "short" } })}</p></li>)}</ul> : <p className="mt-4 text-sm text-muted-foreground">No admin changes recorded yet.</p>}</Card>
       </div>
       <aside className="grid content-start gap-5">
-        <Card><h2 className="text-xl font-semibold">Account overview</h2><dl className="mt-4 grid gap-4 text-sm">{[["Joined", formatDate(user.createdAt)], ["Last account update", formatDate(user.updatedAt)], ["Role", userRoleLabels[user.role]], ["Email verification", user.emailVerified ? "Verified" : "Unverified"], ["SMS consent", user.smsOptIn ? "Opted in" : "Not opted in"], ["Onboarding", user.onboardingDraft ? user.onboardingDraft.completedAt ? "Completed" : `In progress · Step ${user.onboardingDraft.activeStep}` : "No onboarding record"], ["Referrals sent", String(user._count.referrals)], ["Messages sent", String(user._count.sentMessages)], ["Saved programs", String(user._count.favorites)], ["User ID", user.id], ["Authentication ID", user.clerkUserId]].map(([label, value]) => <div key={label}><dt className="text-muted-foreground">{label}</dt><dd className="mt-1 break-all font-medium">{value}</dd></div>)}</dl></Card>
+        <Card><h2 className="text-xl font-semibold">Account overview</h2><dl className="mt-4 grid gap-4 text-sm">{[["Joined", formatDate(user.createdAt)], ["Last login", formatLastLogin(lastLogins.get(user.clerkUserId))], ["Last account update", formatDate(user.updatedAt)], ["Role", userRoleLabels[user.role]], ["Email verification", user.emailVerified ? "Verified" : "Unverified"], ["SMS consent", user.smsOptIn ? "Opted in" : "Not opted in"], ["Onboarding", user.onboardingDraft ? user.onboardingDraft.completedAt ? "Completed" : `In progress · Step ${user.onboardingDraft.activeStep}` : "No onboarding record"], ["Referrals sent", String(user._count.referrals)], ["Messages sent", String(user._count.sentMessages)], ["Saved programs", String(user._count.favorites)], ["User ID", user.id], ["Authentication ID", user.clerkUserId]].map(([label, value]) => <div key={label}><dt className="text-muted-foreground">{label}</dt><dd className="mt-1 break-all font-medium">{value}</dd></div>)}</dl></Card>
         <Card><h2 className="flex items-center gap-2 text-xl font-semibold"><ShieldCheck size={20} /> Account access</h2><p className="mt-3 text-sm leading-6 text-muted-foreground">Deactivation blocks signed-in app access and preserves the account’s history and organization membership.</p>
           {actor.id === user.id || user.role === Role.system_admin ? <p className="mt-4 text-sm font-medium">{actor.id === user.id ? "You cannot deactivate your own account." : "System administrator access is protected."}</p> : <form action={updateAdminUser} className="mt-4">{versionInputs}<input type="hidden" name="intent" value="access" /><input type="hidden" name="isActive" value={String(!user.isActive)} /><ConfirmSubmitButton className="focus-ring ac-button ac-button--secondary" message={`${user.isActive ? "Deactivate" : "Reactivate"} ${name}? ${user.isActive ? "Their signed-in app access will be blocked." : "Their existing role and organization access will be restored."}`}>{user.isActive ? "Deactivate user" : "Reactivate user"}</ConfirmSubmitButton></form>}
         </Card>

@@ -1,7 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Suspense } from "react";
+import { BarChart3 } from "lucide-react";
+import { AnalyticsPanel } from "./analytics-panel";
 import { UsersPanel } from "./users-panel";
 import { Users } from "lucide-react";
+import { analyticsRange } from "@/lib/analytics-report";
 import { redirect } from "next/navigation";
 import { Building2, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, FileCheck2, FileUp, Flag, Handshake, Home, Inbox, ListChecks, PlusCircle, Search } from "lucide-react";
 import {
@@ -47,7 +51,8 @@ const adminTabs = [
   { key: "requests", label: "Referrals & Leads", icon: Inbox },
   { key: "claims", label: "Claims", icon: Handshake },
   { key: "verification", label: "Verification", icon: FileCheck2 },
-  { key: "data-settings", label: "Data Settings", icon: ListChecks }
+  { key: "data-settings", label: "Data Settings", icon: ListChecks },
+  { key: "analytics", label: "Analytics", icon: BarChart3 }
 ] as const;
 
 type AdminTab = (typeof adminTabs)[number]["key"];
@@ -218,6 +223,7 @@ export default async function AdminDashboardPage({
 }: {
   searchParams: Promise<{
     tab?: string | string[];
+    days?: string | string[];
     dataCategory?: string | string[];
     reviewMessage?: string | string[];
     organizationSearch?: string | string[];
@@ -743,6 +749,12 @@ export default async function AdminDashboardPage({
       </nav>
 
       {activeTab === "users" ? <UsersPanel query={query} /> : null}
+
+      {activeTab === "analytics" ? (
+        <Suspense key={analyticsRange(query.days)} fallback={<p className="mt-6 text-sm text-muted-foreground" role="status">Loading analytics reports…</p>}>
+          <AnalyticsPanel days={analyticsRange(query.days)} />
+        </Suspense>
+      ) : null}
 
       {activeTab === "overview" ? (
         <div className="mt-6 grid gap-6">

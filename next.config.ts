@@ -5,6 +5,7 @@ const supabaseHostname = process.env.NEXT_PUBLIC_SUPABASE_URL
   : undefined;
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["@google-analytics/data"],
   experimental: {
     serverActions: {
       bodySizeLimit: "15mb"

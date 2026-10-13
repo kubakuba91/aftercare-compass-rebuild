@@ -437,7 +437,7 @@ export default async function PublicProfilePage({
       organization: {
         select: {
           type: true,
-          subscriptionPlan: true,
+          trialEndsAt: true, subscriptionPlan: true,
           subscriptionStatus: true
         }
       },
@@ -461,7 +461,7 @@ export default async function PublicProfilePage({
               organization: {
                 select: {
                   type: true,
-                  subscriptionPlan: true,
+                  trialEndsAt: true, subscriptionPlan: true,
                   subscriptionStatus: true
                 }
               },

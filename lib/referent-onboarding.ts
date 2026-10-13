@@ -212,7 +212,7 @@ export function referentEnrollmentData(input: unknown, now = new Date()) {
     subscriptionPlan: isTrial ? "professional" : enrollment.enrollmentChoice,
     subscriptionBillingCycle: isTrial ? null : enrollment.billingCycle,
     subscriptionStatus: isTrial ? "trialing" as const : "incomplete" as const,
-    referentTrialStartedAt: isTrial ? now : null,
-    referentTrialEndsAt: isTrial ? trialEndFrom(now) : null
+    trialStartedAt: isTrial ? now : null,
+    trialEndsAt: isTrial ? trialEndFrom(now) : null
   };
 }

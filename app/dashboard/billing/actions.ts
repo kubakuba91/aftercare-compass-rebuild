@@ -1,6 +1,7 @@
 "use server";
 
 import { canStartReferentTrial, trialEndFrom } from "@/lib/referent-trial";
+import { canStartSoberLivingTrial, soberLivingTrialStartWhere, SOBER_LIVING_TRIAL_PLAN, SOBER_LIVING_TRIAL_DAYS } from "@/lib/sober-living-trial";
 import { virtualOrganizationPlanError } from "@/lib/virtual-care-billing";
 
 import { redirect } from "next/navigation";
@@ -398,8 +399,39 @@ export async function startReferentTrial() {
   }
   const now = new Date();
   const result = await prisma.organization.updateMany({
-    where: { id: organization.id, type: "referent", subscriptionStatus: "incomplete", stripeSubscriptionId: null, referentTrialStartedAt: null },
-    data: { subscriptionPlan: "professional", subscriptionStatus: "trialing", referentTrialStartedAt: now, referentTrialEndsAt: trialEndFrom(now) }
+    where: { id: organization.id, type: "referent", subscriptionStatus: "incomplete", stripeSubscriptionId: null, trialStartedAt: null },
+    data: { subscriptionPlan: "professional", subscriptionStatus: "trialing", trialStartedAt: now, trialEndsAt: trialEndFrom(now) }
   });
   redirect(billingReturnPath(audience, result.count ? "Your 30-day Professional trial has started. No automatic charge." : "Trial could not be started. Refresh to see your current subscription."));
+}
+
+export async function startSoberLivingTrial() {
+  const { appUser, organization, audience } = await getBillingContext("/dashboard/aftercare?tab=subscription");
+  if (!canStartSoberLivingTrial(organization)) {
+    redirect(billingReturnPath(audience, "This organization is not eligible for another free trial."));
+  }
+  const now = new Date();
+  const result = await prisma.$transaction(async tx => {
+    const updated = await tx.organization.updateMany({
+      where: soberLivingTrialStartWhere(organization.id),
+      data: {
+        subscriptionPlan: SOBER_LIVING_TRIAL_PLAN,
+        subscriptionStatus: "trialing",
+        subscriptionBillingCycle: null,
+        trialStartedAt: now,
+        trialEndsAt: trialEndFrom(now, SOBER_LIVING_TRIAL_DAYS)
+      }
+    });
+    if (updated.count) await tx.adminAuditLog.create({ data: {
+      actorUserId: appUser.id,
+      action: "sober_living_trial_started",
+      entityType: "organization",
+      entityId: organization.id,
+      metadata: { plan: SOBER_LIVING_TRIAL_PLAN, startedAt: now.toISOString(), endsAt: trialEndFrom(now, SOBER_LIVING_TRIAL_DAYS).toISOString() }
+    } });
+    return updated;
+  });
+  redirect(billingReturnPath(audience, result.count
+    ? "Your 30-day Aftercare Basic trial has started. No card required and no automatic charge."
+    : "Your subscription changed. Refresh to see your current plan."));
 }

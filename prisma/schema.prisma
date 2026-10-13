@@ -217,8 +217,8 @@ model Organization {
   stripeCustomerId         String?
   stripeSubscriptionId     String?
   subscriptionRenewsAt     DateTime?
-  referentTrialStartedAt   DateTime?
-  referentTrialEndsAt      DateTime?
+  trialStartedAt          DateTime? @map("referentTrialStartedAt")
+  trialEndsAt             DateTime? @map("referentTrialEndsAt")
   createdAt                DateTime            @default(now())
   updatedAt                DateTime            @updatedAt
 
@@ -818,7 +818,7 @@ model Notification {
   @@index([createdAt])
 }
 
-model ReferentTrialExtension {
+model TrialExtension {
   id String @id @default(cuid())
   orgId String
   actorUserId String
@@ -826,5 +826,6 @@ model ReferentTrialExtension {
   newEndsAt DateTime
   reason String
   createdAt DateTime @default(now())
-  @@index([orgId, createdAt])
+  @@index([orgId, createdAt], map: "ReferentTrialExtension_orgId_createdAt_idx")
+  @@map("ReferentTrialExtension")
 }

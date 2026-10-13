@@ -344,7 +344,7 @@ export async function inviteAftercareManagers(formData: FormData) {
     where: { id: appUser.orgId },
     select: {
       name: true,
-      subscriptionPlan: true,
+      type: true, trialEndsAt: true, subscriptionPlan: true,
       subscriptionStatus: true,
       users: {
         select: {
@@ -370,7 +370,7 @@ export async function inviteAftercareManagers(formData: FormData) {
     redirect(managersHref("Aftercare organization not found.", true));
   }
 
-  const managerLimit = getAftercareManagerLimit(organization.subscriptionPlan);
+  const managerLimit = getAftercareManagerLimit(organization);
   const organizationProfileIds = new Set(organization.profiles.map((profile) => profile.id));
 
   if (
@@ -717,7 +717,7 @@ export async function addPhoneScreeningWindow(formData: FormData) {
       organization: {
         select: {
           type: true,
-          subscriptionPlan: true,
+          trialEndsAt: true, subscriptionPlan: true,
           subscriptionStatus: true
         }
       },

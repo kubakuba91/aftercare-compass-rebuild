@@ -168,7 +168,7 @@ export default async function AdminEditProfilePage({
     include: {
       organization: {
         select: {
-          subscriptionPlan: true
+          type: true, subscriptionStatus: true, trialEndsAt: true, subscriptionPlan: true
         }
       },
       images: {
@@ -215,7 +215,7 @@ export default async function AdminEditProfilePage({
 
   const profileOptions = await getActiveProfileOptionValues(profile.type);
 
-  const photoLimit = getAftercarePhotoLimit(profile.organization.subscriptionPlan);
+  const photoLimit = getAftercarePhotoLimit(profile.organization);
 
   return (
     <main className="shell py-8">

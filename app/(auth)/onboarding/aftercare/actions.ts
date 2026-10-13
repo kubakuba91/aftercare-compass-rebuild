@@ -122,7 +122,7 @@ async function profileLimitMessageForExistingOrg(orgId: string | null) {
   const organization = await prisma.organization.findUnique({
     where: { id: orgId },
     select: {
-      subscriptionPlan: true
+      type: true, subscriptionStatus: true, trialEndsAt: true, subscriptionPlan: true
     }
   });
 
@@ -130,7 +130,7 @@ async function profileLimitMessageForExistingOrg(orgId: string | null) {
     return null;
   }
 
-  const limit = getAftercareProfileLimit(organization.subscriptionPlan);
+  const limit = getAftercareProfileLimit(organization);
   const planCountedProfileCount = await prisma.aftercareProfile.count({
     where: {
       orgId,

@@ -188,7 +188,7 @@ export default async function ReferentDashboardPage({
             organization: {
               select: {
                 type: true,
-                subscriptionPlan: true,
+                trialEndsAt: true, subscriptionPlan: true,
                 subscriptionStatus: true
               }
             },
@@ -243,7 +243,7 @@ export default async function ReferentDashboardPage({
             organization: {
               select: {
                 type: true,
-                subscriptionPlan: true,
+                trialEndsAt: true, subscriptionPlan: true,
                 subscriptionStatus: true
               }
             }
@@ -263,12 +263,12 @@ export default async function ReferentDashboardPage({
       where: { id: appUser.orgId },
       select: {
         name: true,
-        subscriptionPlan: true,
+        type: true, subscriptionPlan: true,
         subscriptionStatus: true,
         subscriptionBillingCycle: true,
         subscriptionRenewsAt: true,
-        referentTrialStartedAt: true,
-        referentTrialEndsAt: true,
+        trialStartedAt: true,
+        trialEndsAt: true,
         stripeCustomerId: true,
         stripeSubscriptionId: true,
         users: {
@@ -305,14 +305,14 @@ export default async function ReferentDashboardPage({
   const { sessionId } = await auth();
   const noticeSessionKey = sessionId ? createHash("sha256").update(`${appUser.id}:${sessionId}`).digest("hex") : null;
   const localTrial = organization?.subscriptionStatus === "trialing" && !organization?.stripeSubscriptionId;
-  const daysRemaining = organization?.referentTrialEndsAt ? trialDaysRemaining(organization.referentTrialEndsAt) : 0;
+  const daysRemaining = organization?.trialEndsAt ? trialDaysRemaining(organization.trialEndsAt) : 0;
   const subscriptionLabel = localTrial ? (daysRemaining ? `Trial · ${daysRemaining} days left` : "Trial expired") : formatBillingStatus(organization?.subscriptionStatus);
   return (
     <main className="shell py-8">
       {localTrial || !hasReferentAccess(organization) ? (
         <DismissibleSubscriptionNotice sessionKey={noticeSessionKey}>
           <p className="font-semibold">{localTrial ? (daysRemaining ? `Professional trial: ${daysRemaining} days remaining` : "Your free trial has ended") : "Complete your subscription"}</p>
-          <p className="text-sm">{localTrial && daysRemaining ? `Trial ends ${formatBillingDate(organization?.referentTrialEndsAt)}. No automatic charge. Subscribe to keep paid features.` : "Your setup and existing data are saved. You can keep browsing programs; subscribe to use paid features."}</p>
+          <p className="text-sm">{localTrial && daysRemaining ? `Trial ends ${formatBillingDate(organization?.trialEndsAt)}. No automatic charge. Subscribe to keep paid features.` : "Your setup and existing data are saved. You can keep browsing programs; subscribe to use paid features."}</p>
           {canManageTeam ? <div className="flex flex-wrap gap-3">
             {organization?.subscriptionStatus === "incomplete" && !organization.stripeSubscriptionId ? <form action={createBillingCheckoutSession}>
               <input type="hidden" name="plan" value={organization.subscriptionPlan ?? "professional"} />
@@ -515,7 +515,7 @@ export default async function ReferentDashboardPage({
                   </div>
                   <div className="ac-stat-card p-4">
                     <dt className="text-muted-foreground">Renews / ends</dt>
-                    <dd className="mt-1 font-semibold">{formatBillingDate(localTrial ? organization?.referentTrialEndsAt : organization?.subscriptionRenewsAt)}</dd>
+                    <dd className="mt-1 font-semibold">{formatBillingDate(localTrial ? organization?.trialEndsAt : organization?.subscriptionRenewsAt)}</dd>
                   </div>
                 </dl>
                 <div className="mt-5 flex flex-wrap gap-2">

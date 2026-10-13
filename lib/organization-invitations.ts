@@ -47,7 +47,7 @@ export async function saveTeamInvitations(input: {
     const pending = [...(org.referentDetails?.invitedTeamEmails ?? []), ...org.invites.map(invite => invite.email)];
     const taken = new Set([...org.users.map(user => user.email), ...pending].map(normalizeInviteEmail));
     const emails = [...new Set(input.emails.map(normalizeInviteEmail))].filter(email => !taken.has(email));
-    const limit = input.role === Role.referent_manager ? getReferentTeamLimit(org.subscriptionPlan) : getAftercareManagerLimit(org.subscriptionPlan);
+    const limit = input.role === Role.referent_manager ? getReferentTeamLimit(org.subscriptionPlan) : getAftercareManagerLimit(org);
     if (!isWithinPlanLimit(limit, org.users.filter(user => user.isActive).length + new Set(pending.map(normalizeInviteEmail)).size, emails.length)) throw new InvitationConflict("Your current plan does not have enough manager seats.");
     if (input.role === Role.referent_manager) {
       await tx.referentOrganization.update({ where: { orgId: input.orgId }, data: { invitedTeamEmails: [...(org.referentDetails?.invitedTeamEmails ?? []), ...emails] } });

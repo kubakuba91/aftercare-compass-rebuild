@@ -497,7 +497,7 @@ export default async function SearchPage({
       organization: {
         select: {
           type: true,
-          subscriptionPlan: true,
+          trialEndsAt: true, subscriptionPlan: true,
           subscriptionStatus: true
         }
       },

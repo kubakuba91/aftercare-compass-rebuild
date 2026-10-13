@@ -920,25 +920,30 @@ export default async function AdminDashboardPage({
                       <td className="py-4 pr-4">{organization._count.profiles}</td>
                       <td className="py-4 pr-4">{requestCount}</td>
                       <td className="py-4 pr-4">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {organization.subscriptionPlan ? (
                             <Badge>{organization.type === "referent" ? formatValue(organization.subscriptionPlan) : getAftercarePlan(organization).label}</Badge>
                           ) : null}
                           <Badge tone={statusTone(organization.subscriptionStatus || "draft")}>
                             {organization.subscriptionStatus === "trialing" && organization.trialEndsAt && organization.trialEndsAt <= new Date() ? "Trial expired" : formatValue(organization.subscriptionStatus || "Not set")}
                           </Badge>
+                          {canStartSoberLivingTrial(organization) ? (
+                            <form action={startAdminSoberLivingTrial}>
+                              <input type="hidden" name="orgId" value={organization.id} />
+                              <ConfirmSubmitButton
+                                className="focus-ring inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-muted"
+                                message={`Start a 30-day Aftercare Basic trial for ${organization.name}? It starts now, requires no card, and will not charge automatically.`}
+                              >
+                                Start trial
+                              </ConfirmSubmitButton>
+                            </form>
+                          ) : null}
                         </div>
                         {canStartSoberLivingTrial(organization) ? (
-                          <form action={startAdminSoberLivingTrial} className="mt-2">
-                            <input type="hidden" name="orgId" value={organization.id} />
-                            <ConfirmSubmitButton
-                              className="focus-ring ac-button ac-button--secondary"
-                              message={`Start a 30-day Aftercare Basic trial for ${organization.name}? It starts now, requires no card, and will not charge automatically.`}
-                            >
-                              Start trial
-                            </ConfirmSubmitButton>
-                            <p className="mt-1 text-xs text-muted-foreground">30 days · Aftercare Basic · No card required</p>
-                          </form>
+                          <p className="mt-1.5 max-w-[15rem] whitespace-normal text-xs leading-5 text-muted-foreground">
+                            <span className="block">Aftercare Basic · 30 days</span>
+                            <span className="block">No card required</span>
+                          </p>
                         ) : null}
                         {["referent", "aftercare_sober_living"].includes(organization.type) && organization.subscriptionStatus === "trialing" && !organization.stripeSubscriptionId && organization.trialStartedAt && organization.trialEndsAt ? (
                           <details className="mt-2 text-sm"><summary className="cursor-pointer">Trial {formatDate(organization.trialStartedAt)} – {formatDate(organization.trialEndsAt)} · Extend</summary>

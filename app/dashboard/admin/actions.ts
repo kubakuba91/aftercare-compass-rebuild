@@ -1,6 +1,7 @@
 "use server";
 
 import { trialEndFrom } from "@/lib/referent-trial";
+import { canStartSoberLivingTrial, soberLivingTrialStartWhere, SOBER_LIVING_TRIAL_DAYS, SOBER_LIVING_TRIAL_PLAN } from "@/lib/sober-living-trial";
 import { adminDeliveryData } from "@/lib/admin-delivery";
 
 import { virtualOrganizationPlanError } from "@/lib/virtual-care-billing";
@@ -1765,6 +1766,47 @@ export async function updateProfileOptionLabel(formData: FormData) {
   revalidatePath("/onboarding/aftercare/sober-living/1");
   revalidatePath("/onboarding/aftercare/continued-care/1");
   redirect(adminDataSettingsHref(`${existingOption.label} was renamed to ${option.label}.`, category));
+}
+
+export async function startAdminSoberLivingTrial(formData: FormData) {
+  const actor = await getProtectedAppUser("/dashboard/admin");
+  if (actor.role !== Role.system_admin) redirect("/dashboard");
+  const orgId = String(formData.get("orgId") || "").trim();
+  if (!orgId || orgId.length > 128) {
+    redirect("/dashboard/admin?tab=organizations&reviewMessage=Choose+a+valid+organization.");
+  }
+  const organization = await prisma.organization.findUnique({ where: { id: orgId } });
+  if (!organization || !canStartSoberLivingTrial(organization)) {
+    redirect("/dashboard/admin?tab=organizations&reviewMessage=This+organization+is+not+eligible+for+a+new+trial.");
+  }
+  const startedAt = new Date();
+  const endsAt = trialEndFrom(startedAt, SOBER_LIVING_TRIAL_DAYS);
+  const changed = await prisma.$transaction(async tx => {
+    const result = await tx.organization.updateMany({
+      where: soberLivingTrialStartWhere(orgId),
+      data: {
+        subscriptionPlan: SOBER_LIVING_TRIAL_PLAN,
+        subscriptionStatus: "trialing",
+        subscriptionBillingCycle: null,
+        trialStartedAt: startedAt,
+        trialEndsAt: endsAt
+      }
+    });
+    if (result.count) await tx.adminAuditLog.create({ data: {
+      actorUserId: actor.id,
+      action: "sober_living_trial_started",
+      entityType: "organization",
+      entityId: orgId,
+      metadata: { source: "admin", plan: SOBER_LIVING_TRIAL_PLAN, startedAt: startedAt.toISOString(), endsAt: endsAt.toISOString() }
+    } });
+    return result.count;
+  });
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/dashboard/aftercare");
+  const message = changed
+    ? `${organization.name}'s 30-day Aftercare Basic trial has started. No automatic charge.`
+    : "Subscription changed. Refresh to see the current trial or plan.";
+  redirect(`/dashboard/admin?tab=organizations&reviewMessage=${encodeURIComponent(message)}`);
 }
 
 export async function extendOrganizationTrial(formData: FormData) {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { SiteFooter } from "@/components/site-footer";
 import { dashboardAppUrl } from "@/lib/app-urls";
 import { hasValidClerkPublishableKey } from "@/lib/clerk-config";
@@ -39,6 +40,7 @@ export default function RootLayout({
         </div>
         <SiteFooter />
       </body>
+      <GoogleAnalytics gaId="G-1P0VZM0HZZ" />
     </html>
   );
 

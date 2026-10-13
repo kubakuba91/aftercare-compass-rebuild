@@ -16,9 +16,11 @@
   },
   "dependencies": {
     "@clerk/nextjs": "latest",
+    "@google-analytics/data": "^7.2.1",
     "@heroui/react": "^3.0.4",
     "@heroui/styles": "^3.0.4",
     "@hookform/resolvers": "latest",
+    "@next/third-parties": "^15.5.15",
     "@prisma/client": "6",
     "@supabase/supabase-js": "latest",
     "class-variance-authority": "latest",

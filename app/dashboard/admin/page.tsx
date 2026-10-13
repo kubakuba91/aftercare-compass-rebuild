@@ -1,4 +1,6 @@
 import { getAftercarePlan } from "@/lib/feature-gates";
+import { canStartSoberLivingTrial } from "@/lib/sober-living-trial";
+import { startAdminSoberLivingTrial } from "./actions";
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
@@ -926,6 +928,18 @@ export default async function AdminDashboardPage({
                             {organization.subscriptionStatus === "trialing" && organization.trialEndsAt && organization.trialEndsAt <= new Date() ? "Trial expired" : formatValue(organization.subscriptionStatus || "Not set")}
                           </Badge>
                         </div>
+                        {canStartSoberLivingTrial(organization) ? (
+                          <form action={startAdminSoberLivingTrial} className="mt-2">
+                            <input type="hidden" name="orgId" value={organization.id} />
+                            <ConfirmSubmitButton
+                              className="focus-ring ac-button ac-button--secondary"
+                              message={`Start a 30-day Aftercare Basic trial for ${organization.name}? It starts now, requires no card, and will not charge automatically.`}
+                            >
+                              Start trial
+                            </ConfirmSubmitButton>
+                            <p className="mt-1 text-xs text-muted-foreground">30 days · Aftercare Basic · No card required</p>
+                          </form>
+                        ) : null}
                         {["referent", "aftercare_sober_living"].includes(organization.type) && organization.subscriptionStatus === "trialing" && !organization.stripeSubscriptionId && organization.trialStartedAt && organization.trialEndsAt ? (
                           <details className="mt-2 text-sm"><summary className="cursor-pointer">Trial {formatDate(organization.trialStartedAt)} – {formatDate(organization.trialEndsAt)} · Extend</summary>
                             <form action={extendOrganizationTrial} className="mt-3 grid gap-2">

@@ -2,7 +2,7 @@ import { isVirtualOnly, coverageLabel } from "@/lib/virtual-care";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrganizationType, ProfileOwnershipStatus } from "@prisma/client";
-import { BadgeCheck, CheckCircle2, Globe2, HandHeart, Mail, MapPin, Phone, PillBottle, Send, ShieldCheck, Users, Video } from "lucide-react";
+import { CheckCircle2, Globe2, HandHeart, Mail, MapPin, Phone, Send, ShieldCheck, Users, Video } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
 import { profilePlaceholderAlt, profilePlaceholderImage } from "@/lib/public-profile-placeholder";
@@ -16,6 +16,7 @@ import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { ProfileDetailSections } from "@/components/public/profile-detail-sections";
 import { getClerkSessionUserId, getCurrentAppUser, getRequiredClerkIdentity } from "@/lib/current-user";
 import { canDisplayVerifiedBadge, canReceiveDirectReferrals, canSubmitReferrals, canUseLiveAvailability } from "@/lib/feature-gates";
 import { formatPhoneForDisplay, normalizePhoneNumber } from "@/lib/phone";
@@ -26,10 +27,6 @@ import { richTextHtml } from "@/lib/rich-text";
 import { createProfileClaimRequest, createProfileReferral, createPublicProfileLead } from "./actions";
 
 export const dynamic = "force-dynamic";
-
-function listOrFallback(values: string[], fallback = "Not listed") {
-  return values.length ? values.join(", ") : fallback;
-}
 
 function populationsServed(values: string[], legacyValue: string | null) {
   if (values.length) {
@@ -768,149 +765,14 @@ export default async function PublicProfilePage({
               </Card>
             ) : null}
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card>
-                <h2 className="font-semibold">Services and amenities</h2>
-                <dl className="mt-4 grid gap-3 text-sm">
-                  <div>
-                    <dt className="flex items-center gap-2 font-semibold text-foreground">
-                      <Users className="text-primary" size={16} />
-                      Specialty populations
-                    </dt>
-                    <dd className="font-medium">{listOrFallback(profile.specialtyPopulations)}</dd>
-                  </div>
-                  <div>
-                    <dt className="flex items-center gap-2 font-semibold text-foreground">
-                      <HandHeart className="text-primary" size={16} />
-                      Support services
-                    </dt>
-                    <dd className="font-medium">{listOrFallback(profile.supportServices)}</dd>
-                  </div>
-                  {isSoberLiving ? (
-                    <div>
-                      <dt className="flex items-center gap-2 font-semibold text-foreground">
-                        <CheckCircle2 className="text-primary" size={16} />
-                        Amenities
-                      </dt>
-                      <dd className="font-medium">{listOrFallback(profile.amenities)}</dd>
-                    </div>
-                  ) : (
-                    <div>
-                      <dt className="flex items-center gap-2 font-semibold text-foreground">
-                        <CheckCircle2 className="text-primary" size={16} />
-                        Programming schedule
-                      </dt>
-                      <dd className="font-medium">{listOrFallback(profile.programmingSchedule)}</dd>
-                    </div>
-                  )}
-                  {!isSoberLiving ? (
-                    <div>
-                      <dt className="flex items-center gap-2 font-semibold text-foreground">
-                        <HandHeart className="text-primary" size={16} />
-                        How clients are accepted
-                      </dt>
-                      <dd className="font-medium">{listOrFallback(profile.clientAcceptanceMethods)}</dd>
-                    </div>
-                  ) : null}
-                  {!isSoberLiving ? (
-                    <div>
-                      <dt className="flex items-center gap-2 font-semibold text-foreground">
-                        <Users className="text-primary" size={16} />
-                        Languages served
-                      </dt>
-                      <dd className="font-medium">{listOrFallback(profile.languagesServed)}</dd>
-                    </div>
-                  ) : null}
-                </dl>
-              </Card>
+            <ProfileDetailSections profile={profile} />
 
+            {richTextHtml(profile.description) ? (
               <Card>
-                <h2 className="font-semibold">{isSoberLiving ? "Recovery support and fit" : "Payment and clinical fit"}</h2>
-                <dl className="mt-4 grid gap-3 text-sm">
-                  {!isSoberLiving ? (
-                    <div>
-                      <dt className="flex items-center gap-2 font-semibold text-foreground">
-                        <ShieldCheck className="text-primary" size={16} />
-                        Insurance/payment
-                      </dt>
-                      <dd className="font-medium">{listOrFallback(profile.insuranceAccepted)}{profile.insuranceNotes ? <p className="mt-2 text-sm text-muted-foreground">{profile.insuranceNotes}</p> : null}</dd>
-                    </div>
-                  ) : null}
-                  <div>
-                    <dt className="flex items-center gap-2 font-semibold text-foreground">
-                      <PillBottle className="text-primary" size={16} />
-                      {isSoberLiving ? "MAT accepted" : "Medication services"}
-                    </dt>
-                    <dd className="font-medium">
-                      {isSoberLiving ? listOrFallback(profile.matAccepted) : listOrFallback(profile.medicationServicesOffered)}
-                    </dd>
-                  </div>
-                  {!isSoberLiving && profile.medicationServicesOffered.includes("MAT / Addiction medication management") ? (
-                    <div>
-                      <dt className="flex items-center gap-2 font-semibold text-foreground">
-                        <PillBottle className="text-primary" size={16} />
-                        MAT medications offered
-                      </dt>
-                      <dd className="font-medium">{listOrFallback(profile.matAccepted)}</dd>
-                    </div>
-                  ) : null}
-                  {isSoberLiving ? (
-                    <div>
-                      <dt className="flex items-center gap-2 font-semibold text-foreground">
-                        <BadgeCheck className="text-primary" size={16} />
-                        Recovery Residence Level (NARR)
-                      </dt>
-                      <dd className="font-medium">{profile.recoveryResidenceLevel || "Not listed"}</dd>
-                    </div>
-                  ) : null}
-                  {isSoberLiving ? (
-                    <div>
-                      <dt className="flex items-center gap-2 font-semibold text-foreground">
-                        <CheckCircle2 className="text-primary" size={16} />
-                        Intake turnaround
-                      </dt>
-                      <dd className="font-medium">{profile.intakeTurnaroundTime || "Not listed"}</dd>
-                    </div>
-                  ) : null}
-                  <div>
-                    <dt className="flex items-center gap-2 font-semibold text-foreground">
-                      <BadgeCheck className="text-primary" size={16} />
-                      Certifications
-                    </dt>
-                    <dd className="font-medium">{listOrFallback(profile.certificationsHeld)}</dd>
-                  </div>
-                  {!isSoberLiving ? (
-                    <div>
-                      <dt className="flex items-center gap-2 font-semibold text-foreground">
-                        <BadgeCheck className="text-primary" size={16} />
-                        Accreditations
-                      </dt>
-                      <dd className="font-medium">{listOrFallback(profile.accreditations)}</dd>
-                    </div>
-                  ) : null}
-                  <div>
-                    <dt className="flex items-center gap-2 font-semibold text-foreground">
-                      <PillBottle className="text-primary" size={16} />
-                      {isSoberLiving ? "Recovery Support Services" : "Clinical focus"}
-                    </dt>
-                    <dd className="font-medium">
-                      {isSoberLiving ? listOrFallback(profile.recoverySupportServices) : listOrFallback(profile.clinicalFocus)}
-                    </dd>
-                  </div>
-                </dl>
-              </Card>
-            </div>
-
-            <Card>
-              <h2 className="text-xl font-semibold">About</h2>
-              {profile.description ? (
+                <h2 className="text-xl font-semibold">About</h2>
                 <ExpandableRichText html={richTextHtml(profile.description)} />
-              ) : (
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  No description has been added yet.
-                </p>
-              )}
-            </Card>
+              </Card>
+            ) : null}
 
             {isSoberLiving && profile.houseRulesText ? (
               <Card>

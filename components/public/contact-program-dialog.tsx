@@ -67,7 +67,7 @@ export function ContactProgramDialog({ profile, contact }: {
   }
 
   return <>
-    <button ref={trigger} type="button" aria-haspopup="dialog" className="search-result-contact focus-ring" onClick={() => { setHasOpened(true); setOpen(true); }}>
+    <button ref={trigger} type="button" aria-haspopup="dialog" className="ac-contact-button focus-ring" onClick={() => { setHasOpened(true); setOpen(true); }}>
       <Mail aria-hidden="true" size={16} />Contact this program
     </button>
     <dialog ref={dialog} aria-labelledby={titleId} aria-describedby={descriptionId} onCancel={event => { event.preventDefault(); setOpen(false); }} className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-2xl border border-border bg-white p-0 text-foreground shadow-xl backdrop:bg-primary/40">

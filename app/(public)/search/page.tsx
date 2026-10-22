@@ -6,7 +6,7 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma, ProfileOwnershipStatus, ProfileType, Role, SubscriptionStatus } from "@prisma/client";
 import { normalizePhoneNumber } from "@/lib/phone";
-import { MapPin, Phone, House, CreditCard, Pill, Wifi, Zap, Armchair, Bus, WashingMachine, BedDouble, Check } from "lucide-react";
+import { MapPin, Phone, House, CreditCard, Pill, Wifi, Zap, Armchair, Bus, WashingMachine, BedDouble, Check, CircleCheck } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
@@ -15,6 +15,7 @@ import { SearchSortDropdown } from "@/components/public/search-sort-dropdown";
 import { normalizeSearchSort, searchSortOrder } from "@/lib/search-sort";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
+import { Badge } from "@/components/ui/badge";
 import { Tag } from "@/components/ui/tag";
 import { Card } from "@/components/ui/card";
 import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
@@ -606,7 +607,7 @@ export default async function SearchPage({
                         <div className="search-result-title-row">
                         <Link className="search-result-title focus-ring" href={`/profiles/${profile.slug}`}><h2>{profile.programName}</h2></Link>
                         {showVerifiedBadge ? <TrustBadge compact isVerified verificationTier={profile.verificationTier} /> : null}
-                        {availabilityLabel !== "Call for availability" ? <span className="search-result-availability">{availabilityLabel}</span> : null}
+                        {availabilityLabel !== "Call for availability" ? <Badge tone="availability"><CircleCheck aria-hidden="true" size={14} />{availabilityLabel}</Badge> : null}
                         </div>
                       {locationLabel ? <p className="search-result-location">
                         <MapPin aria-hidden="true" size={15} />{locationLabel}

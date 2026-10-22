@@ -1,12 +1,13 @@
 import { cn } from "@/lib/utils";
 
-type BadgeTone = "neutral" | "verified" | "warning" | "success";
+type BadgeTone = "neutral" | "verified" | "warning" | "success" | "availability";
 
 const tones: Record<BadgeTone, string> = {
   neutral: "ac-chip--neutral",
   verified: "ac-chip--verified",
   warning: "ac-chip--warning",
-  success: "ac-chip--success"
+  success: "ac-chip--success",
+  availability: "ac-chip--availability"
 };
 
 const lowerCaseWords = new Set(["a", "an", "and", "as", "at", "by", "for", "in", "of", "on", "or", "the", "to", "vs", "with"]);

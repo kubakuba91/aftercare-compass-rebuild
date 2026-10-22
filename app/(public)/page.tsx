@@ -111,8 +111,7 @@ export default async function HomePage() {
                 <span className="block">Change the outcome.</span>
               </h1>
               <p className="mt-4 max-w-4xl text-lg leading-8 text-white">
-                Finding the right next step for your client shouldn&apos;t take the whole day. Aftercare Compass connects your
-                team with real-time availability across every level of aftercare — for the next chapter in their journey.
+                Find real-time availability across every level of aftercare, in minutes, not hours.
               </p>
 
               <HeroSearchForm />

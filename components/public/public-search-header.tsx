@@ -202,7 +202,7 @@ export function PublicSearchHeader({
             <span className="sr-only">Search by city, state, or program name</span>
             <Search aria-hidden="true" className="shrink-0 text-muted-foreground" size={18} />
             <input
-              className="!min-h-0 min-w-0 flex-1 appearance-none !border-0 !bg-transparent !p-0 text-sm font-medium !shadow-none outline-none placeholder:text-muted-foreground focus:!border-0 focus:!shadow-none focus:ring-0"
+              className="!min-h-0 min-w-0 flex-1 appearance-none !border-0 !bg-transparent !p-0 text-base xl:text-sm font-medium !shadow-none outline-none placeholder:text-muted-foreground focus:!border-0 focus:!shadow-none focus:ring-0"
               defaultValue={defaultLocation}
               name="q"
               placeholder="City, state, or name"

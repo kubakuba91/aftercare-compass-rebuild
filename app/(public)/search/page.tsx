@@ -1,3 +1,4 @@
+import { ContactProgramDialog } from "@/components/public/contact-program-dialog";
 import { removeSearchFilterHref } from "@/lib/search-filter-chips";
 import { parseSearchLocation, searchLocationWhere, removeSearchStateHref } from "@/lib/search-location";
 import { virtualStates, isVirtualOnly, coverageLabel, virtualSearchSelection } from "@/lib/virtual-care";
@@ -136,6 +137,7 @@ export default async function SearchPage({
         select: {
           id: true,
           orgId: true,
+          firstName: true, lastName: true, email: true, phone: true,
           role: true,
           favorites: {
             select: { profileId: true }
@@ -621,9 +623,12 @@ export default async function SearchPage({
                     <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-3">
                       <div className="grid gap-2">
                         {!phone || availabilityLabel !== "Call for availability" ? <p className="text-xs font-medium text-muted-foreground">{availabilityLabel}</p> : null}
+                        <div className="flex flex-wrap gap-2">
                         {phone ? <a className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90" href={`tel:${phone}`} aria-label={`Call ${profile.programName} for availability`}>
                           <Phone aria-hidden="true" size={16} />Call for availability
                         </a> : null}
+                        <ContactProgramDialog profile={{ id: profile.id, slug: profile.slug, name: profile.programName }} contact={appUser ? { name: [appUser.firstName, appUser.lastName].filter(Boolean).join(" "), email: appUser.email, phone: appUser.phone || "" } : undefined} />
+                        </div>
                       </div>
                       <FavoriteListingButton large canFavorite={canFavorite} initialFavorited={favoriteProfileIds.has(profile.id)} isSignedIn={isSignedIn} profileId={profile.id} programName={profile.programName} />
                     </div>

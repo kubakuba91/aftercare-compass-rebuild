@@ -1,20 +1,19 @@
+import { removeSearchFilterHref } from "@/lib/search-filter-chips";
 import { parseSearchLocation, searchLocationWhere, removeSearchStateHref } from "@/lib/search-location";
 import { virtualStates, isVirtualOnly, coverageLabel, virtualSearchSelection } from "@/lib/virtual-care";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma, ProfileOwnershipStatus, ProfileType, Role, SubscriptionStatus } from "@prisma/client";
 import { normalizePhoneNumber } from "@/lib/phone";
-import { MapPin, Phone } from "lucide-react";
+import { MapPin, Phone, House, CreditCard, Pill } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
 import { LoadMoreListings } from "@/components/public/load-more-listings";
 import { SearchSortDropdown } from "@/components/public/search-sort-dropdown";
 import { normalizeSearchSort, searchSortOrder } from "@/lib/search-sort";
-import { ProfileOwnershipBadge } from "@/components/public/profile-ownership-badge";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
 import { canDisplayVerifiedBadge, canUseLiveAvailability } from "@/lib/feature-gates";
@@ -315,6 +314,23 @@ export default async function SearchPage({
 
   const matchedVirtualState = parseSearchLocation(query.virtualState || q)?.state.coverage;
   const appliedLocation = !radiusCenter && !query.virtualState ? searchLocation : null;
+  const filterChips: Array<{ label: string; href: string }> = [];
+  const addChip = (key: string, label: string, value?: string) => filterChips.push({ label, href: removeSearchFilterHref(query, key, value) });
+  if (appliedLocation) filterChips.push({ label: `State: ${appliedLocation.state.name}`, href: removeSearchStateHref(query, appliedLocation) });
+  else if (q && !query.virtualState) addChip("q", `Search: ${q}`);
+  for (const [key, label, values] of [
+    ["population", "Population", population], ["specialty", "Specialty", specialty],
+    ["duration", "Duration", durations], ["amenity", "Amenity", amenities],
+    ["mat", "MAT", mat], ["levelOfCare", "Level of care", levelsOfCare],
+    ["clinicalFocus", "Clinical focus", clinicalFocus], ["insurance", "Insurance", insurance]
+  ] as const) for (const value of values) addChip(key, `${label}: ${value}`, value);
+  if (minPrice !== undefined) addChip("minPrice", `Min: $${minPrice}/week`);
+  if (maxPrice !== undefined) addChip("maxPrice", `Max: $${maxPrice}/week`);
+  if (radiusMiles) addChip("radius", `Within ${radiusMiles} mi`);
+  if (verified) addChip("verified", "Verified only");
+  if (availability) addChip("availability", "Available now");
+  if (query.delivery) addChip("delivery", query.delivery === "virtual" ? "Virtual only" : "In person");
+  if (query.virtualState) addChip("virtualState", `Serves: ${query.virtualState}`);
   // Once a radius has a geographic center, the distance check is the location
   // filter. Keeping the text-location predicate here would exclude valid nearby
   // listings in neighboring cities before their distance can be calculated.
@@ -367,6 +383,7 @@ export default async function SearchPage({
       pricePerWeek: true,
       moveInCost: true,
       levelsOfCare: true,
+      recoveryResidenceLevel: true,
       amenities: true,
       certificationsHeld: true,
       accreditations: true,
@@ -461,12 +478,23 @@ export default async function SearchPage({
         verified={verified}
       />
       <main className="shell py-8">
-        <div className="flex flex-col justify-between gap-4 border-b border-border pb-6 md:flex-row md:items-end">
-          <div>
-            <h1 className="mt-3 text-3xl font-semibold">Search aftercare programs</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Find sober living homes and continued care programs.
-            </p>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-border pb-4">
+          <h1 className="text-lg font-semibold leading-snug text-primary">
+            {totalListings.toLocaleString("en-US")} {type === "sober_living" ? (totalListings === 1 ? "home" : "homes") : (totalListings === 1 ? "program" : "programs")}
+            {query.virtualState ? ` serving ${query.virtualState}` : radiusCenter ? ` near ${q}` : appliedLocation ? ` in ${appliedLocation.city ? `${appliedLocation.city}, ` : ""}${appliedLocation.state.name}` : " in your search"}
+          </h1>
+          <div className="min-w-0 flex-1 basis-64">
+          {filterChips.length ? (
+            <nav aria-label="Active search filters" className="flex flex-wrap items-center gap-2">
+              {filterChips.map(chip => <Link key={chip.label} className="focus-ring inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-sm hover:bg-muted" href={chip.href} aria-label={`Remove filter: ${chip.label}`}>
+                {chip.label}<span aria-hidden="true" className="shrink-0">×</span>
+              </Link>)}
+              <Link className="focus-ring rounded px-2 py-1 text-sm font-medium text-primary underline" href={`/search?type=${type}`}>Clear all</Link>
+            </nav>
+          ) : null}
+          </div>
+          <div className="ml-auto shrink-0">
+            <SearchSortDropdown value={sort} canSortByDistance={canSortByDistance} />
           </div>
         </div>
 
@@ -480,31 +508,17 @@ export default async function SearchPage({
               </p>
             </Card>
           ) : null}
-          {appliedLocation ? (
-            <Link
-              className="focus-ring inline-flex w-fit items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-sm"
-              href={removeSearchStateHref(query, appliedLocation)}
-              aria-label={`Remove state filter: ${appliedLocation.state.name}`}
-            >
-              State: {appliedLocation.state.name} <span aria-hidden="true">×</span>
-            </Link>
-          ) : null}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm font-semibold">{totalListings} listings</p>
-            <SearchSortDropdown value={sort} canSortByDistance={canSortByDistance} />
-          </div>
           {profiles.length ? (
             profiles.map((profile, index) => {
               const offerings = compactItems(
                 [
                   ...profile.populationServedOptions,
                   ...profile.specialtyPopulations,
-                  ...profile.matAccepted,
                   ...profile.certificationsHeld,
                   ...(profile.type === ProfileType.sober_living ? [] : profile.accreditations),
                   ...(profile.type === ProfileType.sober_living ? profile.recoverySupportServices : profile.clinicalFocus)
                 ],
-                4
+                3
               );
               const amenitySummary = compactItems(
                 [
@@ -514,8 +528,14 @@ export default async function SearchPage({
                 ],
                 3
               );
-              const careSummary = compactItems(profile.levelsOfCare, 3);
-              const insuranceSummary = compactItems(profile.type === ProfileType.continued_care ? profile.insuranceAccepted : [], 3);
+              const careSummary = compactItems(profile.type === ProfileType.sober_living ? [profile.recoveryResidenceLevel || ""] : profile.levelsOfCare, 2);
+              const insuranceSummary = compactItems(profile.insuranceAccepted, 2);
+              const matSummary = compactItems(profile.matAccepted, 2);
+              const primaryTags = [
+                { label: profile.type === ProfileType.sober_living ? "Residence level" : "Level of care", summary: careSummary, Icon: House },
+                { label: "Payment", summary: insuranceSummary, Icon: CreditCard },
+                { label: "MAT", summary: matSummary, Icon: Pill }
+              ].filter(tag => tag.summary.visible.length);
               const phone = normalizePhoneNumber(profile.admissionsContactPhone || "");
               const description = richTextToPlainText(profile.description);
               const locationLabel = isVirtualOnly(profile) ? `Virtual Only · ${coverageLabel(profile.statesServed)}` : [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
@@ -532,10 +552,7 @@ export default async function SearchPage({
               const showVerifiedBadge = canDisplayVerifiedBadge(profile.organization, profile);
               const showLiveAvailability =
                 profile.type !== ProfileType.sober_living || canUseLiveAvailability(profile.organization, profile);
-              const profileIsAvailable =
-                profile.type === ProfileType.sober_living
-                  ? showLiveAvailability && Boolean(profile.bedsAvailable)
-                  : Boolean(profile.acceptingNewPatients);
+              const availabilityLabel = availabilityText(profile, showLiveAvailability);
 
               return (
                 <div key={profile.id} className="scroll-mt-24" id={`listing-${profile.id}`}>
@@ -545,17 +562,9 @@ export default async function SearchPage({
                     selectedListingId === profile.id ? "ring-2 ring-primary ring-offset-2" : null
                   )}
                 >
-                  <div className="absolute right-4 top-4 z-10">
-                    <FavoriteListingButton
-                      canFavorite={canFavorite}
-                      initialFavorited={favoriteProfileIds.has(profile.id)}
-                      isSignedIn={isSignedIn}
-                      profileId={profile.id}
-                      programName={profile.programName}
-                    />
-                  </div>
-                  <Link className="focus-ring grid gap-0 md:grid-cols-[190px_1fr]" href={`/profiles/${profile.slug}`}>
-                    <div className="relative min-h-40 bg-muted md:min-h-0">
+                  <div className="grid md:grid-cols-[190px_minmax(0,1fr)]">
+                  <Link className="focus-ring relative block min-h-48 bg-muted md:h-full" href={`/profiles/${profile.slug}`} aria-label={`Open ${profile.programName}`}>
+                    <div className="absolute inset-0">
                       {profile.images[0] ? (
                         <AdaptiveProfileImage
                           alt={profile.images[0].altText || profile.programName}
@@ -577,79 +586,49 @@ export default async function SearchPage({
                       </div>
                     </div>
 
-                    <div className="grid gap-3 p-4">
-                      <div className="flex flex-wrap items-start gap-2 pr-12 md:flex-nowrap md:items-center">
-                        <h2 className="min-w-0 flex-1 text-lg font-semibold leading-tight">{profile.programName}</h2>
-                        <TrustBadge isVerified={showVerifiedBadge} verificationTier={profile.verificationTier} />
-                        <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
-                        <Badge tone={profileIsAvailable ? "success" : "warning"}>
-                          {availabilityText(profile, showLiveAvailability)}
-                        </Badge>
-                      </div>
-
-                      {locationLabel ? (
-                        <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin aria-hidden="true" size={16} />
-                          {locationLabel}
-                          {distance !== null && Number.isFinite(distance) ? <span>· Approx. {distance.toFixed(1)} mi from search location</span> : null}
-                        </p>
-                      ) : null}
-
-                      {careSummary.visible.length || insuranceSummary.visible.length ? (
-                        <div className="grid gap-1 text-sm">
-                          {careSummary.visible.length ? <p><span className="font-semibold">Level of care:</span> {careSummary.visible.join(" · ")}{careSummary.hiddenCount ? ` · +${careSummary.hiddenCount} more` : ""}</p> : null}
-                          {insuranceSummary.visible.length ? <p><span className="font-semibold">Insurance/payment:</span> {insuranceSummary.visible.join(" · ")}{insuranceSummary.hiddenCount ? ` · +${insuranceSummary.hiddenCount} more` : ""}</p> : null}
-                        </div>
-                      ) : null}
-
-                      {offerings.visible.length ? (
-                        <div className="flex flex-wrap gap-2">
-                          {offerings.visible.map((item) => (
-                            <Badge key={item}>{item}</Badge>
-                          ))}
-                          {offerings.hiddenCount ? <Badge>+{offerings.hiddenCount} more</Badge> : null}
-                        </div>
-                      ) : null}
-
-                      {description ? <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">{description}</p> : null}
-
-                      {amenitySummary.visible.length || price || moveInCost ? (
-                        <div className="flex flex-col justify-between gap-3 border-t border-border pt-3 md:flex-row md:items-end">
-                          <div>
-                            {amenitySummary.visible.length ? (
-                              <div className="flex flex-wrap gap-2">
-                                {amenitySummary.visible.map((item) => (
-                                  <span key={item} className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                    <span className="size-1.5 rounded-full border border-muted-foreground" />
-                                    {item}
-                                  </span>
-                                ))}
-                                {amenitySummary.hiddenCount ? (
-                                  <span className="text-xs text-muted-foreground">+{amenitySummary.hiddenCount} more</span>
-                                ) : null}
-                            </div>
-                          ) : null}
-                        </div>
-
-                        <div className="grid shrink-0 gap-2 md:justify-items-end">
-                          {price ? <p className="text-base font-semibold">{price}</p> : null}
-                          {moveInCost ? (
-                            <span className="inline-flex min-h-7 items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-800">
-                              {moveInCost}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                      ) : null}
-                    </div>
                   </Link>
-                  {phone ? (
-                    <div className="flex justify-end border-t border-border px-4 py-3">
-                      <a className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-lg border border-border px-4 text-sm font-semibold hover:bg-muted" href={`tel:${phone}`} aria-label={`Call ${profile.programName}`}>
-                        <Phone aria-hidden="true" size={16} /> Call
-                      </a>
+                  <div className="flex min-w-0 flex-col gap-3 p-4 sm:p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                        <Link className="focus-ring text-lg font-semibold leading-tight text-primary hover:underline" href={`/profiles/${profile.slug}`}><h2>{profile.programName}</h2></Link>
+                        {showVerifiedBadge ? <TrustBadge compact isVerified verificationTier={profile.verificationTier} /> : null}
+                      </div>
+                      {price || moveInCost ? <div className="shrink-0 text-right">
+                        {price ? <p className="text-lg font-bold text-primary">{price}</p> : null}
+                        {moveInCost ? <p className="mt-1 text-xs text-muted-foreground">{moveInCost}</p> : null}
+                      </div> : null}
                     </div>
-                  ) : null}
+                    <Link className="focus-ring grid gap-3 rounded-md" href={`/profiles/${profile.slug}`} aria-label={`Read details for ${profile.programName}`}>
+                      {locationLabel ? <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                        <MapPin aria-hidden="true" size={15} />{locationLabel}
+                        {distance !== null && Number.isFinite(distance) ? <span aria-label={`Approximately ${distance.toFixed(1)} miles from search location`}>· ~{distance.toFixed(1)} mi from search location</span> : null}
+                      </p> : null}
+                      {primaryTags.length ? <div className="flex flex-wrap gap-2">
+                        {primaryTags.map(({ label, summary, Icon }) => <span key={label} className="inline-flex max-w-full items-start gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold leading-5 text-primary">
+                          <Icon aria-hidden="true" className="mt-0.5 shrink-0" size={14} />
+                          <span>{label}: {summary.visible.join(" · ")}{summary.hiddenCount ? ` · +${summary.hiddenCount} more` : ""}</span>
+                        </span>)}
+                      </div> : null}
+                      {offerings.visible.length ? <div className="flex flex-wrap gap-1.5">
+                        {offerings.visible.map(item => <span key={item} className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">{item}</span>)}
+                        {offerings.hiddenCount ? <span className="px-1 py-0.5 text-xs font-medium text-primary">+{offerings.hiddenCount} more</span> : null}
+                      </div> : null}
+                      {description ? <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">{description}</p> : null}
+                      {amenitySummary.visible.length ? <p className="text-xs leading-5 text-muted-foreground">
+                        {amenitySummary.visible.join(" · ")}{amenitySummary.hiddenCount ? ` · +${amenitySummary.hiddenCount} more` : ""}
+                      </p> : null}
+                    </Link>
+                    <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-3">
+                      <div className="grid gap-2">
+                        {!phone || availabilityLabel !== "Call for availability" ? <p className="text-xs font-medium text-muted-foreground">{availabilityLabel}</p> : null}
+                        {phone ? <a className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90" href={`tel:${phone}`} aria-label={`Call ${profile.programName} for availability`}>
+                          <Phone aria-hidden="true" size={16} />Call for availability
+                        </a> : null}
+                      </div>
+                      <FavoriteListingButton large canFavorite={canFavorite} initialFavorited={favoriteProfileIds.has(profile.id)} isSignedIn={isSignedIn} profileId={profile.id} programName={profile.programName} />
+                    </div>
+                  </div>
+                  </div>
                 </Card>
                 </div>
               );

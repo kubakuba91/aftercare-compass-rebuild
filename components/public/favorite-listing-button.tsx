@@ -11,13 +11,15 @@ export function FavoriteListingButton({
   initialFavorited = false,
   isSignedIn,
   profileId,
-  programName
+  programName,
+  large = false
 }: {
   canFavorite?: boolean;
   initialFavorited?: boolean;
   isSignedIn: boolean;
   profileId: string;
   programName: string;
+  large?: boolean;
 }) {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
@@ -33,7 +35,8 @@ export function FavoriteListingButton({
         aria-label={isFavorited ? `Remove ${programName} from favorites` : `Save ${programName}`}
         aria-pressed={isFavorited}
         className={cn(
-          "focus-ring flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-white disabled:cursor-not-allowed disabled:opacity-60",
+          "focus-ring flex shrink-0 items-center justify-center rounded-lg border border-border bg-white disabled:cursor-not-allowed disabled:opacity-60",
+          large ? "size-11" : "size-9",
           isFavorited ? "text-red-600" : null
         )}
         disabled={isPending}
@@ -62,7 +65,7 @@ export function FavoriteListingButton({
     <>
       <button
         aria-label={`Save ${programName}`}
-        className="focus-ring flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-white"
+        className={cn("focus-ring flex shrink-0 items-center justify-center rounded-lg border border-border bg-white", large ? "size-11" : "size-9")}
         onClick={() => setShowPrompt(true)}
         type="button"
       >

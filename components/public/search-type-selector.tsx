@@ -20,8 +20,9 @@ export function SearchTypeSelector({ defaultType, showFilters }: { defaultType: 
   }
 
   return (
-          <div className="col-span-2 xl:col-span-1 grid min-h-11 xl:min-h-14 grid-cols-2 gap-1 rounded-lg border border-primary bg-primary p-1 xl:p-2">
-            <label className="focus-within:ring-ring flex min-h-9 xl:min-h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-2 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
+          <fieldset className="ac-search-segments">
+            <legend className="sr-only">Program type</legend>
+            <label className="ac-search-segment">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "sober_living" || !defaultType}
@@ -32,7 +33,7 @@ export function SearchTypeSelector({ defaultType, showFilters }: { defaultType: 
               />
               Sober Living
             </label>
-            <label className="focus-within:ring-ring flex min-h-9 xl:min-h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-2 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
+            <label className="ac-search-segment">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "continued_care"}
@@ -43,6 +44,6 @@ export function SearchTypeSelector({ defaultType, showFilters }: { defaultType: 
               />
               Continued Care
             </label>
-          </div>
+          </fieldset>
   );
 }

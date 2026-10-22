@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { SearchFilterPanel } from "./search-filter-panel";
 import { virtualStates } from "@/lib/virtual-care";
-import { Search, SlidersHorizontal, UserCircle } from "lucide-react";
+import { MapPin, SlidersHorizontal, UserCircle } from "lucide-react";
 import { MultiSelectDropdown } from "@/components/onboarding/multi-select-dropdown";
 import {
   averageLengthOptions,
@@ -180,7 +180,7 @@ export function PublicSearchHeader({
 
   return (
     <header className="relative z-30 border-b border-border bg-white">
-      <div className="shell relative flex flex-col gap-2 py-3 xl:flex-row xl:items-start">
+      <div className="shell relative flex flex-col gap-2 py-3 xl:flex-row xl:items-center">
         <div className="flex items-center justify-between xl:block">
         <Link className="focus-ring inline-flex shrink-0 items-center rounded-md" href="/" aria-label="Aftercare Compass home">
           <Image
@@ -193,14 +193,14 @@ export function PublicSearchHeader({
         </Link>
         <MobileNavigation isSignedIn={isSignedIn} className="xl:hidden" />
         </div>
-        <form action="/search" className="ac-search-form relative grid min-w-0 flex-1 grid-cols-2 gap-2 xl:grid-cols-[300px_minmax(180px,1fr)_108px_120px]">
+        <form action="/search" className="ac-search-bar">
           {sort && sort !== "updated" ? <input type="hidden" name="sort" value={sort} /> : null}
           {(!showFilters || !isContinuedCare) && delivery ? <input type="hidden" name="delivery" value={delivery} /> : null}
           {(!showFilters || !isContinuedCare) && virtualState ? <input type="hidden" name="virtualState" value={virtualState} /> : null}
           <SearchTypeSelector defaultType={defaultType} showFilters={showFilters} />
-          <label className="focus-within:ring-ring col-span-2 flex h-11 xl:h-14 xl:col-span-1 min-w-0 items-center gap-2 rounded-lg border border-border bg-white px-4 shadow-sm focus-within:ring-2">
+          <label className="ac-search-bar-field">
             <span className="sr-only">Search by city, state, or program name</span>
-            <Search aria-hidden="true" className="shrink-0 text-muted-foreground" size={18} />
+            <MapPin aria-hidden="true" className="shrink-0 text-muted-foreground" size={18} />
             <input
               className="!min-h-0 min-w-0 flex-1 appearance-none !border-0 !bg-transparent !p-0 text-base xl:text-sm font-medium !shadow-none outline-none placeholder:text-muted-foreground focus:!border-0 focus:!shadow-none focus:ring-0"
               defaultValue={defaultLocation}
@@ -212,7 +212,7 @@ export function PublicSearchHeader({
             Search
           </button>
           <button
-            className="focus-ring flex h-11 xl:h-14 items-center justify-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold"
+            className="focus-ring ac-search-bar-filters"
             name="filters"
             type="submit"
             value={showFilters ? "0" : "1"}
@@ -225,7 +225,7 @@ export function PublicSearchHeader({
               </span>
             ) : null}
           </button>
-          <button className="focus-ring h-11 xl:h-14 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#0d1249]" type="submit">
+          <button className="focus-ring ac-button ac-button--primary ac-search-bar-submit" type="submit">
             Search
           </button>
           {!showFilters ? (

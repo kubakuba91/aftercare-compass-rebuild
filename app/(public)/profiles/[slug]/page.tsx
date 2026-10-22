@@ -533,7 +533,8 @@ export default async function PublicProfilePage({
           </BackLink>
         </div>
 
-      <div className="grid gap-6">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="min-w-0">
           <Card className="ac-profile-hero">
             <div className="ac-profile-intro">
             <div>
@@ -603,9 +604,7 @@ export default async function PublicProfilePage({
             </div>
           </Card>
 
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <section>
-          <div className="grid gap-4">
+          <div className="mt-5 grid gap-4">
             <ProfileDetailSections profile={profile} />
             {!isSoberLiving ? (
               <Card>
@@ -772,7 +771,6 @@ export default async function PublicProfilePage({
         ) : (
           <ContactForm leadStatus={query.lead} profile={profile} />
         )}
-        </div>
       </div>
       </main>
     </>

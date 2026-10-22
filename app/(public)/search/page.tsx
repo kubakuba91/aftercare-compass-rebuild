@@ -15,6 +15,7 @@ import { SearchSortDropdown } from "@/components/public/search-sort-dropdown";
 import { normalizeSearchSort, searchSortOrder } from "@/lib/search-sort";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
+import { Tag } from "@/components/ui/tag";
 import { Card } from "@/components/ui/card";
 import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
 import { canDisplayVerifiedBadge, canUseLiveAvailability } from "@/lib/feature-gates";
@@ -606,15 +607,15 @@ export default async function SearchPage({
                         {distance !== null && Number.isFinite(distance) ? <span aria-label={`Approximately ${distance.toFixed(1)} miles from search location`}>· ~{distance.toFixed(1)} mi from search location</span> : null}
                       </p> : null}
                       {primaryTags.length ? <div className="flex flex-wrap gap-2">
-                        {primaryTags.map(({ label, summary, Icon }) => <span key={label} className="search-result-primary-tag">
+                        {primaryTags.map(({ label, summary, Icon }) => <Tag key={label}>
                           <Icon aria-hidden="true" className="mt-0.5 shrink-0" size={14} />
                           <span title={`${label}: ${summary.visible.join(" · ")}${summary.hiddenCount ? ` · +${summary.hiddenCount} more (see profile)` : ""}`}>
                             {label === "MAT" ? "MAT accepted" : summary.visible.map(value => label === "Residence level" ? value.replace(/^(Level [IVX]+).*$/, "$1 Recovery Residence") : value).join(" · ")}{label !== "MAT" && summary.hiddenCount ? ` +${summary.hiddenCount}` : ""}
                           </span>
-                        </span>)}
+                        </Tag>)}
                       </div> : null}
                       {offerings.visible.length ? <div className="flex flex-wrap gap-1.5">
-                        {offerings.visible.map(item => <span key={item} className="search-result-secondary-tag">{item}</span>)}
+                        {offerings.visible.map(item => <Tag key={item} variant="outline">{item}</Tag>)}
                         {offerings.hiddenCount ? <span className="px-1 py-0.5 text-xs font-medium text-primary">+{offerings.hiddenCount} more</span> : null}
                       </div> : null}
                       {description ? <p className="search-result-description">{description}</p> : null}

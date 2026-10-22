@@ -577,7 +577,7 @@ export default async function SearchPage({
                   )}
                 >
                   <div className="search-result-layout">
-                  <Link className="search-result-photo focus-ring" href={`/profiles/${profile.slug}`} aria-label={`Open ${profile.programName}`}>
+                  <div className="search-result-photo">
                     <div className="absolute inset-0">
                       {profile.images[0] ? (
                         <AdaptiveProfileImage
@@ -600,12 +600,12 @@ export default async function SearchPage({
                       </div>
                     </div>
 
-                  </Link>
+                  </div>
                   <div className="search-result-body">
                     <div className="search-result-heading">
                       <div className="search-result-heading-main">
                         <div className="search-result-title-row">
-                        <Link className="search-result-title focus-ring" href={`/profiles/${profile.slug}`}><h2>{profile.programName}</h2></Link>
+                        <Link className="search-result-title" href={`/profiles/${profile.slug}`}><h2>{profile.programName}</h2></Link>
                         {showVerifiedBadge ? <TrustBadge compact isVerified verificationTier={profile.verificationTier} /> : null}
                         {availabilityLabel !== "Call for availability" ? <Badge tone="availability"><CircleCheck aria-hidden="true" size={14} />{availabilityLabel}</Badge> : null}
                         </div>
@@ -619,7 +619,7 @@ export default async function SearchPage({
                         {moveInCost ? <p className="search-result-fee">{moveInCost}</p> : null}
                       </div> : null}
                     </div>
-                    <Link className="search-result-details focus-ring" href={`/profiles/${profile.slug}`} aria-label={`Read details for ${profile.programName}`}>
+                    <div className="search-result-details">
                       {primaryTags.length ? <div className="flex flex-wrap gap-2">
                         {primaryTags.map(({ label, summary, Icon }) => <Tag key={label}>
                           <Icon aria-hidden="true" className="mt-0.5 shrink-0" size={14} />
@@ -639,7 +639,7 @@ export default async function SearchPage({
                           return <Tag key={item} variant="tertiary"><Icon aria-hidden="true" size={15} />{item}</Tag>;
                         })}{amenitySummary.hiddenCount ? <Tag variant="tertiary">+{amenitySummary.hiddenCount} more</Tag> : null}
                       </p> : null}
-                    </Link>
+                    </div>
                     <div className="search-result-footer">
                       <div className="grid gap-2">
                         <div className="flex flex-wrap gap-2">

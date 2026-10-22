@@ -20,7 +20,7 @@ import { Card } from "@/components/ui/card";
 import { ProfileDetailSections } from "@/components/public/profile-detail-sections";
 import { getClerkSessionUserId, getCurrentAppUser, getRequiredClerkIdentity } from "@/lib/current-user";
 import { canDisplayVerifiedBadge, canReceiveDirectReferrals, canSubmitReferrals, canUseLiveAvailability } from "@/lib/feature-gates";
-import { normalizePhoneNumber } from "@/lib/phone";
+import { formatPhoneForDisplay, normalizePhoneNumber } from "@/lib/phone";
 import { findClaimOutreachByToken } from "@/lib/profile-claim-outreach";
 import { dashboardAppUrl } from "@/lib/app-urls";
 import { prisma } from "@/lib/prisma";
@@ -536,6 +536,8 @@ export default async function PublicProfilePage({
 
       <div className="grid gap-6">
           <Card className="ac-profile-hero">
+            <div className="ac-profile-intro">
+            <div>
             <div className="ac-profile-heading">
               <div className="ac-profile-title-group">
                 <h1 className="ac-page-heading">{profile.programName}</h1>
@@ -543,7 +545,7 @@ export default async function PublicProfilePage({
                 <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
                 {availabilityLabel !== "Call for availability" ? <Badge tone="availability"><CheckCircle2 aria-hidden="true" size={14} />{availabilityLabel}</Badge> : null}
               </div>
-              <FavoriteListingButton large canFavorite={isReferent} initialFavorited={Boolean(favorite)} isSignedIn={Boolean(appUser)} profileId={profile.id} programName={profile.programName} />
+
             </div>
             <div className="ac-profile-location">
               <span><MapPin aria-hidden="true" size={17} />{virtual ? `Virtual Only · ${coverageLabel(profile.statesServed)}` : `${publicLocation || "Location not listed"} · Exact address is private`}</span>
@@ -560,15 +562,27 @@ export default async function PublicProfilePage({
                   {Array.from(new Set([...servedPopulations, ...profile.specialtyPopulations])).map(value => <Tag key={value} variant="secondary">{value}</Tag>)}
                 </div>
               </div>
+
+            </div>
+            </div>
+            <div className="ac-profile-header-aside">
               {priceLabel || moveInCostLabel ? <div className="ac-profile-pricing">
                 {priceLabel ? <p className="ac-profile-price">{priceLabel.replace("/week", "")}<span>/week</span></p> : null}
                 {profile.roomTypes.length ? <p>{profile.roomTypes.join(" · ")}</p> : null}
                 {moveInCostLabel ? <p className="ac-profile-move-in"><strong>Move-in costs:</strong> {moveInCostLabel}</p> : null}
               </div> : null}
+              <FavoriteListingButton large canFavorite={isReferent} initialFavorited={Boolean(favorite)} isSignedIn={Boolean(appUser)} profileId={profile.id} programName={profile.programName} />
             </div>
+            </div>
+            {admissionsPhone ? <div className="ac-contact-panel">
+              <div className="ac-contact-panel-copy">
+                <span className="ac-icon-tile"><Phone aria-hidden="true" size={22} /></span>
+                <div><p className="ac-contact-panel-title">Call for availability</p><p className="ac-summary-notes">Speak with admissions or learn more on their website.</p></div>
+              </div>
+              <a className="ac-phone-button focus-ring" href={telHref(admissionsPhone)}>{formatPhoneForDisplay(admissionsPhone)}</a>
+            </div> : null}
             <ProfileGallery profile={profile} preview={canPreviewDraft} />
             <div className="ac-action-row ac-profile-actions">
-              {admissionsPhone ? <a className="ac-button ac-button--primary focus-ring" href={telHref(admissionsPhone)}><Phone aria-hidden="true" size={20} />Call for availability</a> : null}
               <ContactProgramDialog profile={{id: profile.id, slug: profile.slug, name: profile.programName}} contact={appUser ? {name: userName, email: appUser.email, phone: appUser.phone || ""} : undefined} />
             </div>
             <div className="ac-profile-claim">

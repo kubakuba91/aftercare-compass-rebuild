@@ -74,7 +74,7 @@ export function ContactProgramDialog({ profile, contact }: {
       {hasOpened ? <>
         <div className="relative border-b border-border bg-primary/5 px-6 py-5">
           <p className="text-xs font-bold uppercase tracking-wider text-primary">Aftercare Compass</p>
-          <h2 id={titleId} className="mt-2 pr-8 text-xl font-semibold text-primary">Contact this program</h2>
+          <h2 id={titleId} className="mt-2 pr-8 text-xl font-semibold text-heading">Contact this program</h2>
           <p id={descriptionId} className="mt-1 text-sm text-muted-foreground">Send a contact request to {profile.name}.</p>
           <button type="button" aria-label="Close contact form" className="focus-ring absolute right-3 top-3 flex size-11 items-center justify-center rounded-full hover:bg-primary/10" onClick={() => setOpen(false)}><X aria-hidden="true" size={20} /></button>
         </div>

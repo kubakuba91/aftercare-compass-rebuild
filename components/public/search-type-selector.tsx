@@ -20,8 +20,8 @@ export function SearchTypeSelector({ defaultType, showFilters }: { defaultType: 
   }
 
   return (
-          <div className="grid h-14 gap-1.5 overflow-hidden rounded-lg border border-[#12185f] bg-[#12185f] p-2 sm:grid-cols-2">
-            <label className="focus-within:ring-ring flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-4 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
+          <div className="col-span-2 xl:col-span-1 grid min-h-11 xl:min-h-14 grid-cols-2 gap-1 rounded-lg border border-primary bg-primary p-1 xl:p-2">
+            <label className="focus-within:ring-ring flex min-h-9 xl:min-h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-2 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "sober_living" || !defaultType}
@@ -32,7 +32,7 @@ export function SearchTypeSelector({ defaultType, showFilters }: { defaultType: 
               />
               Sober Living
             </label>
-            <label className="focus-within:ring-ring flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-4 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
+            <label className="focus-within:ring-ring flex min-h-9 xl:min-h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-2 text-center text-sm font-semibold text-white transition-colors has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2">
               <input
                 className="sr-only"
                 defaultChecked={defaultType === "continued_care"}

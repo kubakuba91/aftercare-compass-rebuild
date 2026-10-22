@@ -6,7 +6,7 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma, ProfileOwnershipStatus, ProfileType, Role, SubscriptionStatus } from "@prisma/client";
 import { normalizePhoneNumber } from "@/lib/phone";
-import { MapPin, Phone, House, CreditCard, Pill } from "lucide-react";
+import { MapPin, Phone, House, CreditCard, Pill, Wifi, Zap, Armchair, Bus, WashingMachine, BedDouble, Check } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
@@ -48,6 +48,16 @@ function availabilityText(profile: {
   }
 
   return profile.acceptingNewPatients ? "Accepting patients" : "Call for availability";
+}
+
+function amenityIcon(label: string) {
+  if (/wi-?fi|internet/i.test(label)) return Wifi;
+  if (/utilities/i.test(label)) return Zap;
+  if (/furnish/i.test(label)) return Armchair;
+  if (/transport/i.test(label)) return Bus;
+  if (/laundry|washer/i.test(label)) return WashingMachine;
+  if (/room|bed/i.test(label)) return BedDouble;
+  return Check;
 }
 
 function compactItems(values: Array<string | null | undefined>, limit: number) {
@@ -574,13 +584,13 @@ export default async function SearchPage({
                           focalX={profile.images[0].focalX}
                           focalY={profile.images[0].focalY}
                           mode={profile.images[0].presentationMode}
-                          sizes="190px"
+                          sizes="(max-width: 540px) 100vw, (max-width: 1023px) 25vw, 240px"
                           src={profile.images[0].url}
                         />
                       ) : (
                         <AdaptiveProfileImage
                           alt={profilePlaceholderAlt(profile.type)}
-                          sizes="190px"
+                          sizes="(max-width: 540px) 100vw, (max-width: 1023px) 25vw, 240px"
                           src={profilePlaceholderImage(profile.type)}
                         />
                       )}
@@ -592,9 +602,16 @@ export default async function SearchPage({
                   </Link>
                   <div className="search-result-body">
                     <div className="search-result-heading">
-                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                      <div className="search-result-heading-main">
+                        <div className="search-result-title-row">
                         <Link className="search-result-title focus-ring" href={`/profiles/${profile.slug}`}><h2>{profile.programName}</h2></Link>
                         {showVerifiedBadge ? <TrustBadge compact isVerified verificationTier={profile.verificationTier} /> : null}
+                        {availabilityLabel !== "Call for availability" ? <span className="search-result-availability">{availabilityLabel}</span> : null}
+                        </div>
+                      {locationLabel ? <p className="search-result-location">
+                        <MapPin aria-hidden="true" size={15} />{locationLabel}
+                        {distance !== null && Number.isFinite(distance) ? <span aria-label={`Approximately ${distance.toFixed(1)} miles from search location`}>· ~{distance.toFixed(1)} mi from search location</span> : null}
+                      </p> : null}
                       </div>
                       {price || moveInCost ? <div className="search-result-price">
                         {price ? <p className="search-result-price-main">{price.replace("/week", "")}<small>/week</small></p> : null}
@@ -602,10 +619,6 @@ export default async function SearchPage({
                       </div> : null}
                     </div>
                     <Link className="search-result-details focus-ring" href={`/profiles/${profile.slug}`} aria-label={`Read details for ${profile.programName}`}>
-                      {locationLabel ? <p className="search-result-location">
-                        <MapPin aria-hidden="true" size={15} />{locationLabel}
-                        {distance !== null && Number.isFinite(distance) ? <span aria-label={`Approximately ${distance.toFixed(1)} miles from search location`}>· ~{distance.toFixed(1)} mi from search location</span> : null}
-                      </p> : null}
                       {primaryTags.length ? <div className="flex flex-wrap gap-2">
                         {primaryTags.map(({ label, summary, Icon }) => <Tag key={label}>
                           <Icon aria-hidden="true" className="mt-0.5 shrink-0" size={14} />
@@ -620,12 +633,14 @@ export default async function SearchPage({
                       </div> : null}
                       {description ? <p className="search-result-description">{description}</p> : null}
                       {amenitySummary.visible.length ? <p className="search-result-amenities">
-                        {amenitySummary.visible.map(item => <Tag key={item} variant="tertiary">{item}</Tag>)}{amenitySummary.hiddenCount ? <Tag variant="tertiary">+{amenitySummary.hiddenCount} more</Tag> : null}
+                        {amenitySummary.visible.map(item => {
+                          const Icon = amenityIcon(item);
+                          return <Tag key={item} variant="tertiary"><Icon aria-hidden="true" size={15} />{item}</Tag>;
+                        })}{amenitySummary.hiddenCount ? <Tag variant="tertiary">+{amenitySummary.hiddenCount} more</Tag> : null}
                       </p> : null}
                     </Link>
                     <div className="search-result-footer">
                       <div className="grid gap-2">
-                        {!phone || availabilityLabel !== "Call for availability" ? <p className="text-xs font-medium text-muted-foreground">{availabilityLabel}</p> : null}
                         <div className="flex flex-wrap gap-2">
                         {phone ? <a className="search-result-call focus-ring" href={`tel:${phone}`} aria-label={`Call ${profile.programName} for availability`}>
                           <Phone aria-hidden="true" size={16} />Call for availability

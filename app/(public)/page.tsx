@@ -111,7 +111,7 @@ export default async function HomePage() {
                 <span className="block">Change the outcome.</span>
               </h1>
               <p className="mt-4 max-w-4xl text-lg leading-8 text-white">
-                Find real-time availability across every level of aftercare, in minutes, not hours.
+                Find real-time availability for sober living and continued care programs.
               </p>
 
               <HeroSearchForm />

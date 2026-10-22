@@ -2,13 +2,15 @@
 
 import { useCallback, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { BadgeCheck } from "lucide-react";
 
 type TrustBadgeProps = {
   verificationTier?: number | null;
   isVerified?: boolean;
+  compact?: boolean;
 };
 
-export function TrustBadge({ verificationTier = 1, isVerified: verifiedOverride }: TrustBadgeProps) {
+export function TrustBadge({ verificationTier = 1, isVerified: verifiedOverride, compact = false }: TrustBadgeProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ left: 16, top: 16 });
@@ -58,7 +60,7 @@ export function TrustBadge({ verificationTier = 1, isVerified: verifiedOverride 
         ref={buttonRef}
         type="button"
       >
-        <Badge tone={isVerified ? "verified" : "neutral"}>{label}</Badge>
+        {compact ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary"><BadgeCheck aria-hidden="true" size={15} />{label}</span> : <Badge tone={isVerified ? "verified" : "neutral"}>{label}</Badge>}
       </button>
       {isVisible ? (
         <span

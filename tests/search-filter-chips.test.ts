@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import { removeSearchFilterHref } from "../lib/search-filter-chips";
+const query = { q: "PA", type: "continued_care", mat: ["Methadone", "Naltrexone"], insurance: "Medicaid", page: "4", selected: "old", sort: "name-asc" };
+const params = new URL(removeSearchFilterHref(query, "mat", "Methadone"), "https://example.com").searchParams;
+assert.deepEqual(params.getAll("mat"), ["Naltrexone"]);
+for (const key of ["q", "type", "insurance", "sort"] as const) assert.equal(params.get(key), query[key]);
+assert.ok(!params.has("page")); assert.ok(!params.has("selected"));
+const virtual = { delivery: "virtual", virtualState: "Pennsylvania", type: "continued_care" };
+const noDelivery = new URL(removeSearchFilterHref(virtual, "delivery"), "https://example.com").searchParams;
+assert.ok(!noDelivery.has("delivery")); assert.ok(!noDelivery.has("virtualState"));
+const noState = new URL(removeSearchFilterHref(virtual, "virtualState"), "https://example.com").searchParams;
+assert.equal(noState.get("delivery"), "virtual"); assert.ok(!noState.has("virtualState"));
+console.log("Filter chips preserve other selections, remove one multi-select value, reset pagination and clear dependent virtual coverage.");

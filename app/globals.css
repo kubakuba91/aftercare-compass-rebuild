@@ -741,7 +741,6 @@ input[type="checkbox"] {
 .ac-gallery-image:first-child { grid-row: 1 / -1; }
 .ac-gallery--multiple:has(.ac-gallery-image:nth-child(2):last-of-type) .ac-gallery-image:nth-child(2) { grid-row: 1 / -1; }
 .ac-gallery .ac-gallery-all { position: absolute; right: 16px; bottom: 16px; z-index: 1; background: var(--surface); }
-.ac-profile-page { max-width: 1200px; }
 .ac-profile-page h2 { color: var(--heading); }
 .ac-profile-hero.ac-card { padding: 28px; }
 .ac-profile-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }

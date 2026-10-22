@@ -560,12 +560,12 @@ export default async function SearchPage({
                 <div key={profile.id} className="scroll-mt-24" id={`listing-${profile.id}`}>
                 <Card
                   className={cn(
-                    "relative overflow-hidden p-0 transition-shadow",
+                    "search-result-card relative overflow-hidden p-0 transition-shadow",
                     selectedListingId === profile.id ? "ring-2 ring-primary ring-offset-2" : null
                   )}
                 >
-                  <div className="grid md:grid-cols-[190px_minmax(0,1fr)]">
-                  <Link className="focus-ring relative block min-h-48 bg-muted md:h-full" href={`/profiles/${profile.slug}`} aria-label={`Open ${profile.programName}`}>
+                  <div className="search-result-layout">
+                  <Link className="search-result-photo focus-ring" href={`/profiles/${profile.slug}`} aria-label={`Open ${profile.programName}`}>
                     <div className="absolute inset-0">
                       {profile.images[0] ? (
                         <AdaptiveProfileImage
@@ -589,42 +589,44 @@ export default async function SearchPage({
                     </div>
 
                   </Link>
-                  <div className="flex min-w-0 flex-col gap-3 p-4 sm:p-5">
-                    <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+                  <div className="search-result-body">
+                    <div className="search-result-heading">
                       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                        <Link className="focus-ring text-lg font-semibold leading-tight text-primary hover:underline" href={`/profiles/${profile.slug}`}><h2>{profile.programName}</h2></Link>
+                        <Link className="search-result-title focus-ring" href={`/profiles/${profile.slug}`}><h2>{profile.programName}</h2></Link>
                         {showVerifiedBadge ? <TrustBadge compact isVerified verificationTier={profile.verificationTier} /> : null}
                       </div>
-                      {price || moveInCost ? <div className="shrink-0 text-right">
-                        {price ? <p className="text-lg font-bold text-primary">{price}</p> : null}
-                        {moveInCost ? <p className="mt-1 text-xs text-muted-foreground">{moveInCost}</p> : null}
+                      {price || moveInCost ? <div className="search-result-price">
+                        {price ? <p className="search-result-price-main">{price.replace("/week", "")}<small>/week</small></p> : null}
+                        {moveInCost ? <p className="search-result-fee">{moveInCost}</p> : null}
                       </div> : null}
                     </div>
-                    <Link className="focus-ring grid gap-3 rounded-md" href={`/profiles/${profile.slug}`} aria-label={`Read details for ${profile.programName}`}>
-                      {locationLabel ? <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                    <Link className="search-result-details focus-ring" href={`/profiles/${profile.slug}`} aria-label={`Read details for ${profile.programName}`}>
+                      {locationLabel ? <p className="search-result-location">
                         <MapPin aria-hidden="true" size={15} />{locationLabel}
                         {distance !== null && Number.isFinite(distance) ? <span aria-label={`Approximately ${distance.toFixed(1)} miles from search location`}>· ~{distance.toFixed(1)} mi from search location</span> : null}
                       </p> : null}
                       {primaryTags.length ? <div className="flex flex-wrap gap-2">
-                        {primaryTags.map(({ label, summary, Icon }) => <span key={label} className="inline-flex max-w-full items-start gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold leading-5 text-primary">
+                        {primaryTags.map(({ label, summary, Icon }) => <span key={label} className="search-result-primary-tag">
                           <Icon aria-hidden="true" className="mt-0.5 shrink-0" size={14} />
-                          <span>{label}: {summary.visible.join(" · ")}{summary.hiddenCount ? ` · +${summary.hiddenCount} more` : ""}</span>
+                          <span title={`${label}: ${summary.visible.join(" · ")}${summary.hiddenCount ? ` · +${summary.hiddenCount} more (see profile)` : ""}`}>
+                            {label === "MAT" ? "MAT accepted" : summary.visible.map(value => label === "Residence level" ? value.replace(/^(Level [IVX]+).*$/, "$1 Recovery Residence") : value).join(" · ")}{label !== "MAT" && summary.hiddenCount ? ` +${summary.hiddenCount}` : ""}
+                          </span>
                         </span>)}
                       </div> : null}
                       {offerings.visible.length ? <div className="flex flex-wrap gap-1.5">
-                        {offerings.visible.map(item => <span key={item} className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">{item}</span>)}
+                        {offerings.visible.map(item => <span key={item} className="search-result-secondary-tag">{item}</span>)}
                         {offerings.hiddenCount ? <span className="px-1 py-0.5 text-xs font-medium text-primary">+{offerings.hiddenCount} more</span> : null}
                       </div> : null}
-                      {description ? <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">{description}</p> : null}
-                      {amenitySummary.visible.length ? <p className="text-xs leading-5 text-muted-foreground">
+                      {description ? <p className="search-result-description">{description}</p> : null}
+                      {amenitySummary.visible.length ? <p className="search-result-amenities">
                         {amenitySummary.visible.join(" · ")}{amenitySummary.hiddenCount ? ` · +${amenitySummary.hiddenCount} more` : ""}
                       </p> : null}
                     </Link>
-                    <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-3">
+                    <div className="search-result-footer">
                       <div className="grid gap-2">
                         {!phone || availabilityLabel !== "Call for availability" ? <p className="text-xs font-medium text-muted-foreground">{availabilityLabel}</p> : null}
                         <div className="flex flex-wrap gap-2">
-                        {phone ? <a className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90" href={`tel:${phone}`} aria-label={`Call ${profile.programName} for availability`}>
+                        {phone ? <a className="search-result-call focus-ring" href={`tel:${phone}`} aria-label={`Call ${profile.programName} for availability`}>
                           <Phone aria-hidden="true" size={16} />Call for availability
                         </a> : null}
                         <ContactProgramDialog profile={{ id: profile.id, slug: profile.slug, name: profile.programName }} contact={appUser ? { name: [appUser.firstName, appUser.lastName].filter(Boolean).join(" "), email: appUser.email, phone: appUser.phone || "" } : undefined} />

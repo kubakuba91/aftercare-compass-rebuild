@@ -615,12 +615,12 @@ export default async function SearchPage({
                         </Tag>)}
                       </div> : null}
                       {offerings.visible.length ? <div className="flex flex-wrap gap-1.5">
-                        {offerings.visible.map(item => <Tag key={item} variant="outline">{item}</Tag>)}
+                        {offerings.visible.map(item => <Tag key={item} variant="secondary">{item}</Tag>)}
                         {offerings.hiddenCount ? <span className="px-1 py-0.5 text-xs font-medium text-primary">+{offerings.hiddenCount} more</span> : null}
                       </div> : null}
                       {description ? <p className="search-result-description">{description}</p> : null}
                       {amenitySummary.visible.length ? <p className="search-result-amenities">
-                        {amenitySummary.visible.join(" · ")}{amenitySummary.hiddenCount ? ` · +${amenitySummary.hiddenCount} more` : ""}
+                        {amenitySummary.visible.map(item => <Tag key={item} variant="tertiary">{item}</Tag>)}{amenitySummary.hiddenCount ? <Tag variant="tertiary">+{amenitySummary.hiddenCount} more</Tag> : null}
                       </p> : null}
                     </Link>
                     <div className="search-result-footer">

@@ -1,8 +1,10 @@
+import { parseSearchLocation, searchLocationWhere, removeSearchStateHref } from "@/lib/search-location";
 import { virtualStates, isVirtualOnly, coverageLabel, virtualSearchSelection } from "@/lib/virtual-care";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma, ProfileOwnershipStatus, ProfileType, Role, SubscriptionStatus } from "@prisma/client";
-import { MapPin } from "lucide-react";
+import { normalizePhoneNumber } from "@/lib/phone";
+import { MapPin, Phone } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
@@ -31,58 +33,7 @@ export const dynamic = "force-dynamic";
 
 const SEARCH_PAGE_SIZE = 50;
 
-const stateAliases: Record<string, string> = {
-  alabama: "AL",
-  alaska: "AK",
-  arizona: "AZ",
-  arkansas: "AR",
-  california: "CA",
-  colorado: "CO",
-  connecticut: "CT",
-  delaware: "DE",
-  florida: "FL",
-  georgia: "GA",
-  hawaii: "HI",
-  idaho: "ID",
-  illinois: "IL",
-  indiana: "IN",
-  iowa: "IA",
-  kansas: "KS",
-  kentucky: "KY",
-  louisiana: "LA",
-  maine: "ME",
-  maryland: "MD",
-  massachusetts: "MA",
-  michigan: "MI",
-  minnesota: "MN",
-  mississippi: "MS",
-  missouri: "MO",
-  montana: "MT",
-  nebraska: "NE",
-  nevada: "NV",
-  "new hampshire": "NH",
-  "new jersey": "NJ",
-  "new mexico": "NM",
-  "new york": "NY",
-  "north carolina": "NC",
-  "north dakota": "ND",
-  ohio: "OH",
-  oklahoma: "OK",
-  oregon: "OR",
-  pennsylvania: "PA",
-  "rhode island": "RI",
-  "south carolina": "SC",
-  "south dakota": "SD",
-  tennessee: "TN",
-  texas: "TX",
-  utah: "UT",
-  vermont: "VT",
-  virginia: "VA",
-  washington: "WA",
-  "west virginia": "WV",
-  wisconsin: "WI",
-  wyoming: "WY"
-};
+
 
 function availabilityText(profile: {
   type: string;
@@ -107,8 +58,8 @@ function compactItems(values: Array<string | null | undefined>, limit: number) {
 }
 
 function formatPricePerWeek(value: number | null) {
-  if (!value) {
-    return "Price not listed";
+  if (value === null) {
+    return null;
   }
 
   return `$${value}/week`;
@@ -147,76 +98,6 @@ function numberFromQuery(value: string | string[] | undefined) {
 
   const parsed = Number(raw);
   return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function stateSearchTerms(rawState: string) {
-  const cleaned = rawState.trim();
-
-  if (!cleaned) {
-    return [];
-  }
-
-  const alias = stateAliases[cleaned.toLowerCase()];
-  const terms = new Set([cleaned, cleaned.toUpperCase()]);
-
-  if (alias) {
-    terms.add(alias);
-  }
-
-  return Array.from(terms);
-}
-
-function locationSearchFilters(q: string): Prisma.AftercareProfileWhereInput[] {
-  const normalized = q.replace(/\s+/g, " ").trim();
-
-  if (!normalized) {
-    return [];
-  }
-
-  const commaParts = normalized.split(",").map((part) => part.trim()).filter(Boolean);
-
-  if (commaParts.length >= 2) {
-    const city = commaParts[0];
-    const stateTerms = stateSearchTerms(commaParts.slice(1).join(" "));
-
-    if (city && stateTerms.length) {
-      return [
-        {
-          AND: [
-            { publicCity: { contains: city, mode: Prisma.QueryMode.insensitive } },
-            {
-              OR: stateTerms.map((state) => ({
-                publicState: { contains: state, mode: Prisma.QueryMode.insensitive }
-              }))
-            }
-          ]
-        }
-      ];
-    }
-  }
-
-  const spaceParts = normalized.split(" ");
-  const possibleState = spaceParts.at(-1) || "";
-
-  if (/^[a-z]{2}$/i.test(possibleState) && spaceParts.length > 1) {
-    const city = spaceParts.slice(0, -1).join(" ");
-    const stateTerms = stateSearchTerms(possibleState);
-
-    return [
-      {
-        AND: [
-          { publicCity: { contains: city, mode: Prisma.QueryMode.insensitive } },
-          {
-            OR: stateTerms.map((state) => ({
-              publicState: { contains: state, mode: Prisma.QueryMode.insensitive }
-            }))
-          }
-        ]
-      }
-    ];
-  }
-
-  return [];
 }
 
 export default async function SearchPage({
@@ -268,6 +149,7 @@ export default async function SearchPage({
     appUser?.role === Role.referent_admin || appUser?.role === Role.referent_manager;
   const favoriteProfileIds = new Set(appUser?.favorites.map((favorite) => favorite.profileId) ?? []);
   const q = firstFromQuery(query.q)?.trim() || "";
+  const searchLocation = parseSearchLocation(q);
   const rawType = firstFromQuery(query.type);
   const type = rawType === "continued_care" ? "continued_care" : "sober_living";
   if (type !== "continued_care") { query.delivery = undefined; query.virtualState = undefined; }
@@ -294,7 +176,7 @@ export default async function SearchPage({
   query.virtualState = selection.virtualState;
   const virtualSearch = selection.virtualSearch;
   const requestedRadiusMiles = numberFromQuery(query.radius);
-  const radiusMiles = !virtualSearch && searchFilterByKey.has("distance") && requestedRadiusMiles !== undefined && requestedRadiusMiles > 0
+  const radiusMiles = !(searchLocation && !searchLocation.city) && !virtualSearch && searchFilterByKey.has("distance") && requestedRadiusMiles !== undefined && requestedRadiusMiles > 0
     ? requestedRadiusMiles
     : undefined;
   const durationOptions = type === "continued_care" ? continuedCareDurationOptions : averageLengthOptions;
@@ -431,19 +313,18 @@ export default async function SearchPage({
     });
   }
 
-  const stateTerm = (query.virtualState || q.split(",").at(-1)?.trim() || "");
-  const matchedVirtualState = virtualStates.find((state) => state.toLowerCase() === stateTerm.toLowerCase() || stateAliases[state.toLowerCase()]?.toLowerCase() === stateTerm.toLowerCase() || stateAliases[state.toLowerCase()]?.toLowerCase() === stateTerm.split(" ").at(-1)?.toLowerCase()) || (stateTerm.toUpperCase() === "DC" ? "Washington, DC" : undefined);
+  const matchedVirtualState = parseSearchLocation(query.virtualState || q)?.state.coverage;
+  const appliedLocation = !radiusCenter && !query.virtualState ? searchLocation : null;
   // Once a radius has a geographic center, the distance check is the location
   // filter. Keeping the text-location predicate here would exclude valid nearby
   // listings in neighboring cities before their distance can be calculated.
   if (q && !radiusCenter && !query.virtualState) {
-    andFilters.push({
+    andFilters.push(appliedLocation ? searchLocationWhere(appliedLocation) : {
       OR: [
         { programName: { contains: q, mode: Prisma.QueryMode.insensitive } },
         { publicCity: { contains: q, mode: Prisma.QueryMode.insensitive } },
         { publicState: { contains: q, mode: Prisma.QueryMode.insensitive } },
         { description: { contains: q, mode: Prisma.QueryMode.insensitive } },
-        ...locationSearchFilters(q),
         ...(matchedVirtualState ? [{ telehealthMode: "Virtual only", statesServed: { has: matchedVirtualState } }] : [])
       ]
     });
@@ -476,6 +357,7 @@ export default async function SearchPage({
       publicLatitude: true,
       publicLongitude: true,
       description: true,
+      admissionsContactPhone: true,
       totalBeds: true,
       bedsAvailable: true,
       acceptingNewPatients: true,
@@ -598,6 +480,15 @@ export default async function SearchPage({
               </p>
             </Card>
           ) : null}
+          {appliedLocation ? (
+            <Link
+              className="focus-ring inline-flex w-fit items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-sm"
+              href={removeSearchStateHref(query, appliedLocation)}
+              aria-label={`Remove state filter: ${appliedLocation.state.name}`}
+            >
+              State: {appliedLocation.state.name} <span aria-hidden="true">×</span>
+            </Link>
+          ) : null}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-semibold">{totalListings} listings</p>
             <SearchSortDropdown value={sort} canSortByDistance={canSortByDistance} />
@@ -606,11 +497,9 @@ export default async function SearchPage({
             profiles.map((profile, index) => {
               const offerings = compactItems(
                 [
-                  ...profile.levelsOfCare,
                   ...profile.populationServedOptions,
                   ...profile.specialtyPopulations,
                   ...profile.matAccepted,
-                  ...(profile.type === ProfileType.sober_living ? [] : profile.insuranceAccepted),
                   ...profile.certificationsHeld,
                   ...(profile.type === ProfileType.sober_living ? [] : profile.accreditations),
                   ...(profile.type === ProfileType.sober_living ? profile.recoverySupportServices : profile.clinicalFocus)
@@ -625,6 +514,21 @@ export default async function SearchPage({
                 ],
                 3
               );
+              const careSummary = compactItems(profile.levelsOfCare, 3);
+              const insuranceSummary = compactItems(profile.type === ProfileType.continued_care ? profile.insuranceAccepted : [], 3);
+              const phone = normalizePhoneNumber(profile.admissionsContactPhone || "");
+              const description = richTextToPlainText(profile.description);
+              const locationLabel = isVirtualOnly(profile) ? `Virtual Only · ${coverageLabel(profile.statesServed)}` : [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
+              const point = radiusCenter && !isVirtualOnly(profile) ? approximatePublicPoint({
+                id: profile.id, publicCity: profile.publicCity, publicState: profile.publicState,
+                latitude: profile.latitude ? Number(profile.latitude) : null,
+                longitude: profile.longitude ? Number(profile.longitude) : null,
+                publicLatitude: profile.publicLatitude ? Number(profile.publicLatitude) : null,
+                publicLongitude: profile.publicLongitude ? Number(profile.publicLongitude) : null
+              }) : null;
+              const distance = radiusCenter && point ? milesBetween(radiusCenter, point) : null;
+              const price = formatPricePerWeek(profile.pricePerWeek);
+              const moveInCost = formatMoveInCost(profile.moveInCost);
               const showVerifiedBadge = canDisplayVerifiedBadge(profile.organization, profile);
               const showLiveAvailability =
                 profile.type !== ProfileType.sober_living || canUseLiveAvailability(profile.organization, profile);
@@ -683,52 +587,69 @@ export default async function SearchPage({
                         </Badge>
                       </div>
 
-                      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin size={16} />
-                        {isVirtualOnly(profile) ? `Virtual Only · ${coverageLabel(profile.statesServed)}` : [profile.publicCity, profile.publicState].filter(Boolean).join(", ") || "Location not listed"}
-                      </p>
+                      {locationLabel ? (
+                        <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin aria-hidden="true" size={16} />
+                          {locationLabel}
+                          {distance !== null && Number.isFinite(distance) ? <span>· Approx. {distance.toFixed(1)} mi from search location</span> : null}
+                        </p>
+                      ) : null}
 
-                      <div className="flex flex-wrap gap-2">
-                        {offerings.visible.map((item) => (
-                          <Badge key={item}>{item}</Badge>
-                        ))}
-                        {offerings.hiddenCount ? <Badge>+{offerings.hiddenCount} more</Badge> : null}
-                      </div>
+                      {careSummary.visible.length || insuranceSummary.visible.length ? (
+                        <div className="grid gap-1 text-sm">
+                          {careSummary.visible.length ? <p><span className="font-semibold">Level of care:</span> {careSummary.visible.join(" · ")}{careSummary.hiddenCount ? ` · +${careSummary.hiddenCount} more` : ""}</p> : null}
+                          {insuranceSummary.visible.length ? <p><span className="font-semibold">Insurance/payment:</span> {insuranceSummary.visible.join(" · ")}{insuranceSummary.hiddenCount ? ` · +${insuranceSummary.hiddenCount} more` : ""}</p> : null}
+                        </div>
+                      ) : null}
 
-                      <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
-                        {richTextToPlainText(profile.description) || "No description added yet."}
-                      </p>
+                      {offerings.visible.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {offerings.visible.map((item) => (
+                            <Badge key={item}>{item}</Badge>
+                          ))}
+                          {offerings.hiddenCount ? <Badge>+{offerings.hiddenCount} more</Badge> : null}
+                        </div>
+                      ) : null}
 
-                      <div className="flex flex-col justify-between gap-3 border-t border-border pt-3 md:flex-row md:items-end">
-                        <div>
-                          {amenitySummary.visible.length ? (
-                            <div className="flex flex-wrap gap-2">
-                              {amenitySummary.visible.map((item) => (
-                                <span key={item} className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                  <span className="size-1.5 rounded-full border border-muted-foreground" />
-                                  {item}
-                                </span>
-                              ))}
-                              {amenitySummary.hiddenCount ? (
-                                <span className="text-xs text-muted-foreground">+{amenitySummary.hiddenCount} more</span>
-                              ) : null}
+                      {description ? <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">{description}</p> : null}
+
+                      {amenitySummary.visible.length || price || moveInCost ? (
+                        <div className="flex flex-col justify-between gap-3 border-t border-border pt-3 md:flex-row md:items-end">
+                          <div>
+                            {amenitySummary.visible.length ? (
+                              <div className="flex flex-wrap gap-2">
+                                {amenitySummary.visible.map((item) => (
+                                  <span key={item} className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                    <span className="size-1.5 rounded-full border border-muted-foreground" />
+                                    {item}
+                                  </span>
+                                ))}
+                                {amenitySummary.hiddenCount ? (
+                                  <span className="text-xs text-muted-foreground">+{amenitySummary.hiddenCount} more</span>
+                                ) : null}
                             </div>
-                          ) : (
-                            <p className="mt-2 text-xs text-muted-foreground">Amenities not listed</p>
-                          )}
+                          ) : null}
                         </div>
 
                         <div className="grid shrink-0 gap-2 md:justify-items-end">
-                          <p className="text-base font-semibold">{formatPricePerWeek(profile.pricePerWeek)}</p>
-                          {formatMoveInCost(profile.moveInCost) ? (
+                          {price ? <p className="text-base font-semibold">{price}</p> : null}
+                          {moveInCost ? (
                             <span className="inline-flex min-h-7 items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-800">
-                              {formatMoveInCost(profile.moveInCost)}
+                              {moveInCost}
                             </span>
                           ) : null}
                         </div>
                       </div>
+                      ) : null}
                     </div>
                   </Link>
+                  {phone ? (
+                    <div className="flex justify-end border-t border-border px-4 py-3">
+                      <a className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-lg border border-border px-4 text-sm font-semibold hover:bg-muted" href={`tel:${phone}`} aria-label={`Call ${profile.programName}`}>
+                        <Phone aria-hidden="true" size={16} /> Call
+                      </a>
+                    </div>
+                  ) : null}
                 </Card>
                 </div>
               );

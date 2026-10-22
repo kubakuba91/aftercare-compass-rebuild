@@ -2,10 +2,11 @@ import { isVirtualOnly, coverageLabel } from "@/lib/virtual-care";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrganizationType, ProfileOwnershipStatus } from "@prisma/client";
-import { CheckCircle2, Globe2, HandHeart, Mail, MapPin, Phone, Send, ShieldCheck, Users, Video } from "lucide-react";
+import { CheckCircle2, HandHeart, Mail, MapPin, Phone, Send, ShieldCheck, Video, House, CreditCard, Pill, ExternalLink } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
-import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
-import { profilePlaceholderAlt, profilePlaceholderImage } from "@/lib/public-profile-placeholder";
+import { ProfileGallery } from "@/components/public/profile-gallery";
+import { ContactProgramDialog } from "@/components/public/contact-program-dialog";
+import { Tag } from "@/components/ui/tag";
 import { BackLink } from "@/components/public/back-link";
 import { ExpandableRichText } from "@/components/public/expandable-rich-text";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
@@ -19,7 +20,7 @@ import { Card } from "@/components/ui/card";
 import { ProfileDetailSections } from "@/components/public/profile-detail-sections";
 import { getClerkSessionUserId, getCurrentAppUser, getRequiredClerkIdentity } from "@/lib/current-user";
 import { canDisplayVerifiedBadge, canReceiveDirectReferrals, canSubmitReferrals, canUseLiveAvailability } from "@/lib/feature-gates";
-import { formatPhoneForDisplay, normalizePhoneNumber } from "@/lib/phone";
+import { normalizePhoneNumber } from "@/lib/phone";
 import { findClaimOutreachByToken } from "@/lib/profile-claim-outreach";
 import { dashboardAppUrl } from "@/lib/app-urls";
 import { prisma } from "@/lib/prisma";
@@ -72,18 +73,6 @@ function formatPricePerWeek(value: number | null) {
   }
 
   return `$${value}/week`;
-}
-
-function formatMoveInCost(value: string | null) {
-  const text = value?.trim();
-
-  if (!text) {
-    return null;
-  }
-
-  const amount = text.match(/\d[\d,]*/)?.[0];
-
-  return amount ? `$${amount} Move-in fee` : `${text} Move-in fee`;
 }
 
 function telHref(value: string) {
@@ -496,7 +485,7 @@ export default async function PublicProfilePage({
   const availabilityLabel = availabilityText(profile, profileShowsLiveAvailability);
   const publicLocation = [profile.publicCity, profile.publicState].filter(Boolean).join(", ");
   const priceLabel = formatPricePerWeek(profile.pricePerWeek);
-  const moveInCostLabel = formatMoveInCost(profile.moveInCost);
+  const moveInCostLabel = profile.moveInCost?.trim() || null;
   const servedPopulations = populationsServed(profile.populationServedOptions, profile.populationServed);
   const admissionsPhone = profile.admissionsContactPhone?.trim() ?? "";
   const websiteHref = publicWebsiteHref(profile.websiteUrl);
@@ -538,33 +527,52 @@ export default async function PublicProfilePage({
         }
         isSignedIn={Boolean(appUser)}
       />
-      <main className="shell py-8">
+      <main className="shell ac-profile-page py-8">
         <div className="mb-5">
           <BackLink href="/search">
             Back to search
           </BackLink>
         </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-6">
         <section>
-          <div className="rounded-lg border border-border bg-white p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-3xl font-semibold">{profile.programName}</h1>
-                <div className="flex flex-wrap gap-2">
-                  <TrustBadge isVerified={profileShowsVerifiedBadge} verificationTier={profile.verificationTier} />
-                  <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
-                  {availabilityLabel !== "Call for availability" ? (
-                    <Badge tone="success">{availabilityLabel}</Badge>
-                  ) : null}
+          <Card className="ac-profile-hero">
+            <div className="ac-profile-heading">
+              <div className="ac-profile-title-group">
+                <h1 className="ac-page-heading">{profile.programName}</h1>
+                <TrustBadge compact={profileShowsVerifiedBadge} isVerified={profileShowsVerifiedBadge} verificationTier={profile.verificationTier} />
+                <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
+                {availabilityLabel !== "Call for availability" ? <Badge tone="availability"><CheckCircle2 aria-hidden="true" size={14} />{availabilityLabel}</Badge> : null}
+              </div>
+              <FavoriteListingButton large canFavorite={isReferent} initialFavorited={Boolean(favorite)} isSignedIn={Boolean(appUser)} profileId={profile.id} programName={profile.programName} />
+            </div>
+            <div className="ac-profile-location">
+              <span><MapPin aria-hidden="true" size={17} />{virtual ? `Virtual Only · ${coverageLabel(profile.statesServed)}` : `${publicLocation || "Location not listed"} · Exact address is private`}</span>
+              {websiteHref ? <a className="ac-inline-link" href={websiteHref} rel="noopener noreferrer" target="_blank">Visit website<ExternalLink aria-hidden="true" size={15} /></a> : null}
+            </div>
+            <div className="ac-profile-overview">
+              <div className="ac-profile-tags">
+                <div className="ac-tag-row">
+                  {(isSoberLiving ? (profile.recoveryResidenceLevel ? [profile.recoveryResidenceLevel] : []) : profile.levelsOfCare).map(value => <Tag key={value}><House aria-hidden="true" size={15} />{value}</Tag>)}
+                  {profile.insuranceAccepted.map(value => <Tag key={value}><CreditCard aria-hidden="true" size={15} />{value}</Tag>)}
+                  {profile.matAccepted.length && (isSoberLiving || profile.medicationServicesOffered.includes("MAT / Addiction medication management")) ? <Tag><Pill aria-hidden="true" size={15} />MAT accepted</Tag> : null}
                 </div>
-                <FavoriteListingButton
-                  canFavorite={isReferent}
-                  initialFavorited={Boolean(favorite)}
-                  isSignedIn={Boolean(appUser)}
-                  profileId={profile.id}
-                  programName={profile.programName}
-                />
+                <div className="ac-tag-row">
+                  {Array.from(new Set([...servedPopulations, ...profile.specialtyPopulations])).map(value => <Tag key={value} variant="secondary">{value}</Tag>)}
+                </div>
+              </div>
+              {priceLabel || moveInCostLabel ? <div className="ac-profile-pricing">
+                {priceLabel ? <p className="ac-profile-price">{priceLabel.replace("/week", "")}<span>/week</span></p> : null}
+                {profile.roomTypes.length ? <p>{profile.roomTypes.join(" · ")}</p> : null}
+                {moveInCostLabel ? <p className="ac-profile-move-in"><strong>Move-in costs:</strong> {moveInCostLabel}</p> : null}
+              </div> : null}
+            </div>
+            <ProfileGallery profile={profile} preview={canPreviewDraft} />
+            <div className="ac-action-row ac-profile-actions">
+              {admissionsPhone ? <a className="ac-button ac-button--primary focus-ring" href={telHref(admissionsPhone)}><Phone aria-hidden="true" size={20} />Call for availability</a> : null}
+              <ContactProgramDialog profile={{id: profile.id, slug: profile.slug, name: profile.programName}} contact={appUser ? {name: userName, email: appUser.email, phone: appUser.phone || ""} : undefined} />
+            </div>
+            <div className="ac-profile-claim">
                 {profile.ownershipStatus !== ProfileOwnershipStatus.claimed || query.claim === "unavailable" ? (
                   <ClaimProfileDialog
                     label={profile.ownershipStatus === ProfileOwnershipStatus.claim_pending ? "Under Review" : "Claim this profile"}
@@ -583,129 +591,11 @@ export default async function PublicProfilePage({
                     />
                   </ClaimProfileDialog>
                 ) : null}
-              </div>
-              {priceLabel || moveInCostLabel ? (
-                <div className="shrink-0 text-right">
-                  {priceLabel ? (
-                    <>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Price</p>
-                      <p className="text-lg font-semibold">{priceLabel}</p>
-                    </>
-                  ) : null}
-                  {moveInCostLabel ? (
-                    <span className="mt-2 inline-flex min-h-8 items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-800">
-                      {moveInCostLabel}
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
             </div>
-            <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin size={16} />
-              {virtual ? `Virtual Only · ${coverageLabel(profile.statesServed)}` : `${publicLocation || "Location not listed"} · Exact address is private`}
-            </p>
-            {servedPopulations.length ? (
-              <section aria-labelledby="populations-served-heading" className="mt-4 flex flex-wrap items-center gap-2">
-                <h2 className="mr-1 flex items-center gap-2 text-sm font-semibold" id="populations-served-heading">
-                  <Users aria-hidden="true" className="text-primary" size={17} />
-                  Populations served
-                </h2>
-                {servedPopulations.map((population) => (
-                  <Badge key={population}>{population}</Badge>
-                ))}
-              </section>
-            ) : null}
-            {admissionsPhone || websiteHref ? (
-              <div className="mt-5 flex flex-col gap-4 rounded-[1.5rem] border border-border bg-surface p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-foreground">
-                    {admissionsPhone ? <Phone aria-hidden="true" size={20} /> : <Globe2 aria-hidden="true" size={20} />}
-                  </span>
-                  <div>
-                    <p className="font-semibold">{admissionsPhone ? "Call for availability" : "Visit program website"}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {admissionsPhone
-                        ? "Speak with admissions or learn more on their website."
-                        : "Learn more directly from this program."}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  {admissionsPhone ? (
-                    <a
-                      className="focus-ring inline-flex min-h-11 items-center justify-center rounded-full bg-default px-5 text-sm font-semibold text-default-foreground transition hover:bg-surface-tertiary"
-                      href={telHref(admissionsPhone)}
-                    >
-                      {formatPhoneForDisplay(admissionsPhone)}
-                    </a>
-                  ) : null}
-                  {websiteHref ? (
-                    <a
-                      className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-surface px-5 text-sm font-semibold text-foreground transition hover:bg-surface-secondary"
-                      href={websiteHref}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                    >
-                      <Globe2 aria-hidden="true" size={17} />
-                      Visit website
-                    </a>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-            {profile.images.length ? (
-              <div className="mt-6 grid gap-3 md:grid-cols-[1.35fr_1fr]">
-                <div className="relative min-h-[28rem] overflow-hidden rounded-[1.25rem] border border-border bg-muted">
-                  <AdaptiveProfileImage
-                    alt={profile.images[0]?.altText || profile.programName}
-                    focalX={profile.images[0].focalX}
-                    focalY={profile.images[0].focalY}
-                    mode={profile.images[0].presentationMode}
-                    priority
-                    sizes="(min-width: 1024px) 680px, 100vw"
-                    src={profile.images[0].url}
-                  />
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
-                  {profile.images.slice(1, 3).map((image, index) => {
-                    const showAllPhotosLink = profile.images.length > 3 && index === 1;
-
-                    return (
-                    <div key={image.id} className="relative min-h-40 overflow-hidden rounded-[1.25rem] border border-border bg-muted">
-                      <AdaptiveProfileImage
-                        alt={image.altText || profile.programName}
-                        focalX={image.focalX}
-                        focalY={image.focalY}
-                        mode={image.presentationMode}
-                        sizes="(min-width: 1024px) 280px, 50vw"
-                        src={image.url}
-                      />
-                      {showAllPhotosLink ? (
-                        <Link
-                          className="focus-ring absolute bottom-4 right-4 inline-flex min-h-11 items-center justify-center rounded-full bg-surface px-4 text-sm font-semibold text-foreground shadow-lg transition hover:bg-surface-secondary"
-                          href={`/profiles/${profile.slug}/photos${canPreviewDraft ? "?preview=1" : ""}`}
-                        >
-                          View all photos
-                        </Link>
-                      ) : null}
-                    </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="relative mt-6 min-h-[28rem] overflow-hidden rounded-[1.25rem] border border-border bg-muted">
-                <AdaptiveProfileImage
-                  alt={profilePlaceholderAlt(profile.type)}
-                  priority
-                  sizes="(min-width: 1024px) 960px, 100vw"
-                  src={profilePlaceholderImage(profile.type)}
-                />
-              </div>
-            )}
-          </div>
+          </Card>
 
           <div className="mt-5 grid gap-4">
+            <ProfileDetailSections profile={profile} />
             {!isSoberLiving ? (
               <Card>
                 <CheckCircle2 className="text-primary" size={22} />
@@ -764,8 +654,6 @@ export default async function PublicProfilePage({
                 </div>
               </Card>
             ) : null}
-
-            <ProfileDetailSections profile={profile} />
 
             {richTextHtml(profile.description) ? (
               <Card>
@@ -870,9 +758,9 @@ export default async function PublicProfilePage({
               Go to dashboard
             </Link>
           </Card>
-        ) : (
+        ) : query.lead ? (
           <ContactForm leadStatus={query.lead} profile={profile} />
-        )}
+        ) : null}
       </div>
       </main>
     </>

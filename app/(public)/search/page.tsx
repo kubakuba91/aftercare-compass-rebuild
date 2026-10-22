@@ -493,7 +493,7 @@ export default async function SearchPage({
       />
       <main className="shell py-8">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-border pb-4">
-          <h1 className="text-lg font-semibold leading-snug text-primary">
+          <h1 className="text-lg font-semibold leading-snug text-heading">
             {totalListings.toLocaleString("en-US")} {type === "sober_living" ? (totalListings === 1 ? "home" : "homes") : (totalListings === 1 ? "program" : "programs")}
             {query.virtualState ? ` serving ${query.virtualState}` : radiusCenter ? ` near ${q}` : appliedLocation ? ` in ${appliedLocation.city ? `${appliedLocation.city}, ` : ""}${appliedLocation.state.name}` : " in your search"}
           </h1>

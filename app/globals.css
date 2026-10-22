@@ -3,6 +3,7 @@
 /* Bridge the app's semantic utilities to the HeroUI theme. CSS variables
    alone do not register Tailwind v4 color utilities. */
 @theme inline {
+  --color-heading: var(--heading);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-muted-foreground: var(--muted-foreground);
@@ -19,6 +20,7 @@
 .default,
 [data-theme="light"],
 [data-theme="default"] {
+  --heading: #171717;
   --accent: #10195e;
   --accent-foreground: oklch(99.11% 0 0);
   --background: oklch(97.02% 0.0015 253.83);
@@ -683,7 +685,7 @@ input[type="checkbox"] {
 .search-result-photo { position: relative; display: block; min-height: 0; background: var(--muted); }
 .search-result-body { display: flex; flex-direction: column; min-width: 0; padding: 20px 22px; gap: 12px; }
 .search-result-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.search-result-title, .search-result-title h2 { color: var(--primary); font-size: 20px; font-weight: 700; line-height: 1.3; margin: 0; }
+.search-result-title, .search-result-title h2 { color: var(--heading); font-size: 20px; font-weight: 700; line-height: 1.3; margin: 0; }
 .search-result-heading-main { min-width: 0; flex: 1; }
 .search-result-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 5px; }
 .search-result-title:hover { text-decoration: underline; }

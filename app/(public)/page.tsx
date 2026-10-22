@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { ProfileType } from "@prisma/client";
-import { Search } from "lucide-react";
+import { HeroSearchForm } from "@/components/public/hero-search-form";
 import Image from "next/image";
 import { MarketingHeader } from "@/components/marketing-header";
 import { TrendingHomes } from "@/components/public/trending-homes";
@@ -97,13 +97,13 @@ export default async function HomePage() {
             <Image
               alt=""
               aria-hidden="true"
-              className="object-cover"
+              className="object-cover object-[65%_center]"
               fill
               priority
-              src="/images/hero-bg-opt.jpg"
+              src="/images/aftercare-community-hero.webp"
               sizes="100vw"
             />
-            <div className="absolute inset-0 bg-black/35" aria-hidden="true" />
+            <div className="ac-hero-overlay absolute inset-0" aria-hidden="true" />
 
             <div className="relative max-w-5xl px-6 py-14 md:px-20 md:py-16">
               <h1 className="text-4xl font-semibold leading-tight tracking-normal text-white md:text-6xl">
@@ -111,47 +111,10 @@ export default async function HomePage() {
                 <span className="block">Change the outcome.</span>
               </h1>
               <p className="mt-4 max-w-4xl text-lg leading-8 text-white">
-                Finding the right next step for your client shouldn&apos;t take the whole day. Aftercare Compass connects your
-                team with real-time availability across every level of aftercare — for the next chapter in their journey.
+                Find real-time availability across every level of aftercare, in minutes, not hours.
               </p>
 
-              <form action="/search" className="mt-6 grid max-w-4xl gap-3">
-                <div className="grid w-fit overflow-hidden rounded-md border border-[#12185f] bg-[#12185f] p-1 shadow-sm sm:grid-cols-2">
-                  <label className="focus-within:ring-ring flex min-h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded px-5 text-sm font-semibold text-white transition has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2 md:px-7">
-                    <input
-                      className="sr-only"
-                      type="radio"
-                      name="type"
-                      value="sober_living"
-                      defaultChecked
-                    />
-                    Sober Living
-                  </label>
-                  <label className="focus-within:ring-ring flex min-h-12 cursor-pointer items-center justify-center whitespace-nowrap rounded px-5 text-sm font-semibold text-white transition has-[:checked]:bg-white has-[:checked]:text-[#17212b] has-[:focus-visible]:ring-2 md:px-7">
-                    <input className="sr-only" type="radio" name="type" value="continued_care" />
-                    Continued Care
-                  </label>
-                </div>
-
-                <div className="focus-within:ring-ring flex min-h-16 w-full max-w-[520px] items-center gap-3 rounded-2xl border border-border bg-white py-2 pl-5 pr-2 shadow-sm focus-within:ring-2">
-                  <label className="sr-only" htmlFor="homepage-search">
-                    Search by city, state, or program name
-                  </label>
-                  <input
-                    id="homepage-search"
-                    name="q"
-                    className="!min-h-0 min-w-0 flex-1 appearance-none !border-0 !bg-transparent !p-0 text-base font-medium !shadow-none outline-none placeholder:text-muted-foreground focus:!border-0 focus:!shadow-none focus:ring-0"
-                    placeholder="City, state, or program name"
-                  />
-                  <button
-                    aria-label="Search"
-                    className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full text-primary hover:bg-muted"
-                    type="submit"
-                  >
-                    <Search aria-hidden="true" size={28} />
-                  </button>
-                </div>
-              </form>
+              <HeroSearchForm />
             </div>
           </div>
         </div>

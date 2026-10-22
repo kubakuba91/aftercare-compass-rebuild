@@ -5,7 +5,6 @@ import { OrganizationType, ProfileOwnershipStatus } from "@prisma/client";
 import { CheckCircle2, HandHeart, Mail, MapPin, Phone, Send, ShieldCheck, Video, House, CreditCard, Pill, ExternalLink } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { ProfileGallery } from "@/components/public/profile-gallery";
-import { ContactProgramDialog } from "@/components/public/contact-program-dialog";
 import { Tag } from "@/components/ui/tag";
 import { BackLink } from "@/components/public/back-link";
 import { ExpandableRichText } from "@/components/public/expandable-rich-text";
@@ -582,9 +581,6 @@ export default async function PublicProfilePage({
               <a className="ac-phone-button focus-ring" href={telHref(admissionsPhone)}>{formatPhoneForDisplay(admissionsPhone)}</a>
             </div> : null}
             <ProfileGallery profile={profile} preview={canPreviewDraft} />
-            <div className="ac-action-row ac-profile-actions">
-              <ContactProgramDialog profile={{id: profile.id, slug: profile.slug, name: profile.programName}} contact={appUser ? {name: userName, email: appUser.email, phone: appUser.phone || ""} : undefined} />
-            </div>
             <div className="ac-profile-claim">
                 {profile.ownershipStatus !== ProfileOwnershipStatus.claimed || query.claim === "unavailable" ? (
                   <ClaimProfileDialog

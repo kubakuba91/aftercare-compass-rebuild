@@ -780,3 +780,25 @@ input[type="checkbox"] {
   .ac-profile-header-aside { justify-content: space-between; }
   .ac-contact-panel { align-items: stretch; flex-direction: column; gap: 12px; }
 }
+
+/* Shared tab-style search controls, with native radio keyboard behavior. */
+.ac-search-tabs { display: flex; gap: 4px; min-width: 0; margin: 0; padding: 0 10px; border: 0; border-bottom: 1px solid var(--separator); }
+.ac-search-tab { display: flex; align-items: center; justify-content: center; min-height: 52px; padding: 12px 22px; border-bottom: 3px solid transparent; color: var(--muted-foreground); font-size: 14px; font-weight: 650; cursor: pointer; }
+.ac-search-tab:has(:checked) { border-bottom-color: var(--primary); color: var(--heading); }
+.ac-search-tab:has(:focus-visible) { outline: 2px solid var(--focus); outline-offset: -5px; }
+.ac-hero-overlay { background: linear-gradient(90deg, rgb(10 24 48 / 94%) 0%, rgb(10 24 48 / 82%) 48%, rgb(10 24 48 / 32%) 100%); }
+.ac-hero-search { max-width: 750px; margin-top: 28px; overflow: hidden; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); color: var(--foreground); box-shadow: var(--control-shadow-strong); }
+.ac-hero-search-row { display: flex; align-items: center; gap: 12px; padding: 16px; }
+.ac-hero-search-field { display: flex; flex: 1; min-width: 0; align-items: center; gap: 12px; padding: 8px; border-radius: 8px; color: var(--muted-foreground); }
+.ac-hero-search-field svg { flex-shrink: 0; }
+.ac-hero-search-field:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ac-hero-search-field input { width: 100%; min-width: 0; min-height: 32px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--foreground); font-size: 16px; box-shadow: none; outline: none; }
+.ac-hero-search-field input:focus { border: 0; box-shadow: none; outline: none; }
+.ac-hero-search-row .ac-button { flex-shrink: 0; min-width: 112px; }
+@media (max-width: 540px) {
+  .ac-search-tabs { gap: 0; padding: 0 6px; }
+  .ac-search-tab { flex: 1; padding: 12px 8px; font-size: 13px; }
+  .ac-hero-search-row { flex-wrap: wrap; gap: 10px; padding: 12px; }
+  .ac-hero-search-field { flex-basis: 100%; padding: 4px; }
+  .ac-hero-search-row .ac-button { width: 100%; }
+}

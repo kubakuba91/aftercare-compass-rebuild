@@ -2,7 +2,7 @@ import { isVirtualOnly, coverageLabel } from "@/lib/virtual-care";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrganizationType, ProfileOwnershipStatus } from "@prisma/client";
-import { CheckCircle2, HandHeart, Mail, MapPin, Phone, Send, ShieldCheck, Video, House, CreditCard, Pill, ExternalLink, Globe2 } from "lucide-react";
+import { CheckCircle2, HandHeart, Mail, MapPin, Phone, Send, ShieldCheck, Video, House, CreditCard, Pill, ExternalLink } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { ProfileGallery } from "@/components/public/profile-gallery";
 import { Tag } from "@/components/ui/tag";
@@ -574,15 +574,12 @@ export default async function PublicProfilePage({
               <FavoriteListingButton large canFavorite={isReferent} initialFavorited={Boolean(favorite)} isSignedIn={Boolean(appUser)} profileId={profile.id} programName={profile.programName} />
             </div>
             </div>
-            {admissionsPhone || websiteHref ? <div className="ac-contact-panel">
+            {admissionsPhone ? <div className="ac-contact-panel">
               <div className="ac-contact-panel-copy">
-                <span className="ac-icon-tile">{admissionsPhone ? <Phone aria-hidden="true" size={22} /> : <Globe2 aria-hidden="true" size={22} />}</span>
-                <div><p className="ac-contact-panel-title">{admissionsPhone ? "Call for availability" : "Visit program website"}</p><p className="ac-summary-notes">{admissionsPhone ? "Speak with admissions or learn more on their website." : "Learn more directly from this program."}</p></div>
+                <span className="ac-icon-tile"><Phone aria-hidden="true" size={22} /></span>
+                <div><p className="ac-contact-panel-title">Call for availability</p><p className="ac-summary-notes">Speak with admissions or learn more on their website.</p></div>
               </div>
-              <div className="ac-action-row">
-                {admissionsPhone ? <a className="ac-phone-button focus-ring" href={telHref(admissionsPhone)}>{formatPhoneForDisplay(admissionsPhone)}</a> : null}
-                {websiteHref ? <a className="ac-phone-button focus-ring gap-2" href={websiteHref} target="_blank" rel="noopener noreferrer"><Globe2 aria-hidden="true" size={16} />Visit website</a> : null}
-              </div>
+              <a className="ac-phone-button focus-ring" href={telHref(admissionsPhone)}>{formatPhoneForDisplay(admissionsPhone)}</a>
             </div> : null}
             <ProfileGallery profile={profile} preview={canPreviewDraft} />
             <div className="ac-profile-claim">

@@ -2,12 +2,13 @@
 
 import { useRef } from "react";
 import Link from "next/link";
-import { BedDouble, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
 import { Badge } from "@/components/ui/badge";
 
 export type TrendingHome = {
   id: string;
+  programType: "sober_living" | "continued_care";
   slug: string;
   programName: string;
   location: string;
@@ -16,13 +17,16 @@ export type TrendingHome = {
   photoFocalX: number;
   photoFocalY: number;
   photoPresentationMode: string;
-  priceLabel: string;
+  priceAmount: string | null;
+  tags: string[];
   availabilityLabel: string;
   isAvailable: boolean;
-  recoveryResidenceLevel: string | null;
 };
 
-export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
+export function TrendingHomes({ homes, location }: { homes: TrendingHome[]; location: string | null }) {
+  const label = "programs";
+  const params = new URLSearchParams();
+  if (location) params.set("q", location);
   const listRef = useRef<HTMLDivElement>(null);
 
   function scroll(direction: -1 | 1) {
@@ -48,16 +52,16 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
         <div className="flex items-end justify-between gap-5">
           <div>
             <h2 id="trending-homes-heading" className="text-2xl font-semibold md:text-3xl">
-              Trending sober living homes in Lancaster, PA
+              Popular {label}{location ? ` near ${location}` : ""}
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground md:text-base">
-              Explore popular local homes and see current listing details.
+              Explore popular {label} and see current listing details.
             </p>
           </div>
 
           <div className="hidden shrink-0 gap-2 sm:flex">
             <button
-              aria-label="Show previous homes"
+              aria-label="Show previous programs"
               className="focus-ring inline-flex size-11 items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm hover:bg-muted"
               onClick={() => scroll(-1)}
               type="button"
@@ -65,7 +69,7 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
               <ChevronLeft aria-hidden="true" size={22} />
             </button>
             <button
-              aria-label="Show more homes"
+              aria-label="Show more programs"
               className="focus-ring inline-flex size-11 items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm hover:bg-muted"
               onClick={() => scroll(1)}
               type="button"
@@ -77,23 +81,23 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
 
         <div
           ref={listRef}
-          className="mt-6 flex w-full snap-x snap-mandatory gap-5 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="mt-6 flex w-full snap-x snap-mandatory gap-6 overflow-x-auto pb-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {homes.map((home) => (
             <Link
               key={home.id}
-              className="focus-ring group w-full shrink-0 snap-start overflow-hidden rounded-xl border border-border bg-white shadow-sm transition-shadow hover:shadow-lg sm:w-[340px]"
+              className="focus-ring group w-full shrink-0 snap-start overflow-hidden rounded-[24px] border border-slate-100 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition-shadow hover:shadow-lg sm:w-[360px] lg:w-[calc((100%-48px)/3)]"
               href={`/profiles/${home.slug}`}
             >
-              <article>
-                <div className="relative aspect-[16/10] overflow-hidden bg-muted">
+              <article className="flex h-full flex-col">
+                <div className="relative aspect-[1.88/1] overflow-hidden bg-muted">
                   {home.photoUrl ? (
                     <AdaptiveProfileImage
                       alt={home.photoAlt}
                       focalX={home.photoFocalX}
                       focalY={home.photoFocalY}
                       mode={home.photoPresentationMode}
-                      sizes="(max-width: 640px) calc(100vw - 32px), 340px"
+                      sizes="(max-width: 640px) calc(100vw - 32px), (max-width: 1024px) 360px, 33vw"
                       src={home.photoUrl}
                     />
                   ) : (
@@ -103,16 +107,23 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
                     />
                   )}
                   <Badge
-                    className="absolute left-3 top-3 border-white/70 bg-white/95 shadow-sm"
+                    className={`absolute left-4 top-4 !rounded-full !px-3 !py-1.5 shadow-sm ${home.isAvailable ? "!border-emerald-200 !bg-emerald-50 !text-emerald-800" : "!border-amber-100 !bg-amber-50 !text-amber-800"}`}
                     tone={home.isAvailable ? "success" : "neutral"}
                   >
+                    {home.isAvailable ? <span aria-hidden="true" className="mr-2 inline-block size-2 rounded-full bg-emerald-400 ring-4 ring-emerald-100" /> : null}
                     {home.availabilityLabel}
                   </Badge>
                 </div>
 
-                <div className="grid gap-3 p-5">
+                <div className="flex flex-1 flex-col gap-4 p-5 lg:p-6">
                   <div>
-                    <h3 className="line-clamp-2 text-lg font-semibold leading-snug group-hover:text-primary">
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                    <Badge className="!rounded-full !border-slate-200 !bg-slate-100 !text-slate-700" tone="neutral">
+                      {home.programType === "sober_living" ? "Sober Living" : "Continued Care"}
+                    </Badge>
+                    {home.tags.map((tag) => <Badge key={tag} className="!rounded-full !border-slate-200 !bg-slate-100 !text-slate-700" tone="neutral">{tag}</Badge>)}
+                    </div>
+                    <h3 className="line-clamp-2 text-xl font-semibold leading-snug group-hover:text-primary">
                       {home.programName}
                     </h3>
                     <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
@@ -121,14 +132,11 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
                     </p>
                   </div>
 
-                  <div className="flex min-h-6 items-center justify-between gap-3 border-t border-border pt-3">
-                    <p className="font-semibold">{home.priceLabel}</p>
-                    {home.recoveryResidenceLevel ? (
-                      <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                        <BedDouble aria-hidden="true" size={15} />
-                        {home.recoveryResidenceLevel}
-                      </span>
-                    ) : null}
+                  <div className="mt-auto flex min-h-12 items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                    <p>
+                      {home.priceAmount ? <><span className="text-2xl font-bold tracking-tight">{home.priceAmount}</span><span className="text-sm text-muted-foreground">/week</span></> : <span className="text-sm font-semibold">Contact for pricing</span>}
+                    </p>
+                    <span className="shrink-0 text-sm font-semibold text-primary">View <span aria-hidden="true">→</span></span>
                   </div>
                 </div>
               </article>
@@ -136,12 +144,15 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
           ))}
         </div>
 
-        <Link
-          className="focus-ring mx-auto mt-2 flex min-h-11 w-fit items-center justify-center rounded-md border border-border bg-white px-5 text-sm font-semibold shadow-sm hover:bg-muted"
-          href="/search?type=sober_living&q=Lancaster%2C+PA"
-        >
-          View all Lancaster homes
-        </Link>
+        <div className="mt-2 flex flex-wrap justify-center gap-3">
+          {(["sober_living", "continued_care"] as const).map((type) => {
+            const searchParams = new URLSearchParams(params);
+            searchParams.set("type", type);
+            return <Link key={type} className="focus-ring inline-flex min-h-11 items-center justify-center rounded-full border border-border bg-white px-5 text-sm font-semibold shadow-sm hover:bg-muted" href={`/search?${searchParams.toString()}`}>
+              View all {type === "sober_living" ? "sober living homes" : "continued care programs"}
+            </Link>;
+          })}
+        </div>
       </div>
     </section>
   );

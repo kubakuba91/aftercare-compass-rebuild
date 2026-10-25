@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { ProfileType } from "@prisma/client";
+import { headers } from "next/headers";
 import { HeroSearchForm } from "@/components/public/hero-search-form";
 import Image from "next/image";
 import { MarketingHeader } from "@/components/marketing-header";
@@ -21,71 +21,107 @@ export default async function HomePage() {
     await redirectToDashboardDestination();
   }
 
-  const trendingProfiles = hasDatabaseConfig() ? await prisma.aftercareProfile.findMany({
-    where: {
-      publicCity: { equals: "Lancaster", mode: "insensitive" },
-      publicState: { equals: "PA", mode: "insensitive" },
-      status: "published",
-      type: ProfileType.sober_living
-    },
-    orderBy: [
-      { favorites: { _count: "desc" } },
-      { verificationTier: "desc" },
-      { updatedAt: "desc" }
-    ],
-    take: 8,
-    select: {
-      id: true,
-      slug: true,
-      programName: true,
-      type: true,
-      publicCity: true,
-      publicState: true,
-      bedsAvailable: true,
-      pricePerWeek: true,
-      recoveryResidenceLevel: true,
-      ownershipStatus: true,
-      organization: {
-        select: {
-          trialEndsAt: true, subscriptionPlan: true,
-          subscriptionStatus: true,
-          type: true
-        }
+  const requestHeaders = await headers();
+  function decodedHeader(name: string) {
+    const value = requestHeaders.get(name);
+    if (!value) return null;
+    try { return decodeURIComponent(value).trim().slice(0, 100) || null; }
+    catch { return null; }
+  }
+  const city = decodedHeader("x-vercel-ip-city");
+  const state = decodedHeader("x-vercel-ip-country-region");
+  const country = decodedHeader("x-vercel-ip-country");
+  // Listings use US state codes; avoid matching a same-named city abroad.
+  const detectedLocation = country === "US" && city && state ? { city, state } : null;
+
+  async function popularProfiles(local: boolean) {
+    return hasDatabaseConfig() ? prisma.aftercareProfile.findMany({
+      where: {
+        ...(local && detectedLocation ? {
+          publicCity: { equals: detectedLocation.city, mode: "insensitive" as const },
+          publicState: { equals: detectedLocation.state, mode: "insensitive" as const }
+        } : {}),
+        status: "published"
       },
-      images: {
-        orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
-        take: 1,
-        select: {
-          altText: true,
-          focalX: true,
-          focalY: true,
-          presentationMode: true,
-          url: true
+      orderBy: [
+        { favorites: { _count: "desc" } },
+        { verificationTier: "desc" },
+        { updatedAt: "desc" }
+      ],
+      take: 8,
+      select: {
+        id: true,
+        slug: true,
+        programName: true,
+        type: true,
+        publicCity: true,
+        publicState: true,
+        bedsAvailable: true,
+        acceptingNewPatients: true,
+        insuranceAccepted: true,
+        matAccepted: true,
+        matServicesOffered: true,
+        pricePerWeek: true,
+        recoveryResidenceLevel: true,
+        ownershipStatus: true,
+        organization: {
+          select: {
+            trialEndsAt: true, subscriptionPlan: true,
+            subscriptionStatus: true,
+            type: true
+          }
+        },
+        images: {
+          orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
+          take: 1,
+          select: {
+            altText: true,
+            focalX: true,
+            focalY: true,
+            presentationMode: true,
+            url: true
+          }
         }
       }
-    }
-  }) : [];
+    }) : [];
+  }
 
-  const trendingHomes = trendingProfiles.map((profile) => {
-    const showLiveAvailability = canUseLiveAvailability(profile.organization, profile);
-    const isAvailable = showLiveAvailability && Boolean(profile.bedsAvailable && profile.bedsAvailable > 0);
+  async function popularGroup() {
+    const localProfiles = detectedLocation ? await popularProfiles(true) : [];
+    const profiles = localProfiles.length ? localProfiles : await popularProfiles(false);
+    const location = localProfiles.length && detectedLocation
+      ? `${detectedLocation.city}, ${detectedLocation.state}` : null;
+    const homes = profiles.map((profile) => {
+      const showLiveAvailability = canUseLiveAvailability(profile.organization, profile);
+      const isAvailable = showLiveAvailability && (profile.type === "continued_care"
+        ? profile.acceptingNewPatients === true : Boolean(profile.bedsAvailable && profile.bedsAvailable > 0));
 
-    return {
-      id: profile.id,
-      slug: profile.slug,
-      programName: profile.programName,
-      location: [profile.publicCity, profile.publicState].filter(Boolean).join(", "),
-      photoUrl: profile.images[0]?.url ?? profilePlaceholderImage(profile.type),
-      photoAlt: profile.images[0]?.altText || (profile.images[0] ? profile.programName : profilePlaceholderAlt(profile.type)),
-      photoFocalX: profile.images[0]?.focalX ?? 50,
-      photoFocalY: profile.images[0]?.focalY ?? 50,
-      photoPresentationMode: profile.images[0]?.presentationMode ?? "photo",
-      priceLabel: profile.pricePerWeek ? `$${profile.pricePerWeek.toLocaleString()}/week` : "Contact for pricing",
-      availabilityLabel: isAvailable ? `${profile.bedsAvailable} bed${profile.bedsAvailable === 1 ? "" : "s"} available` : "Call for availability",
-      isAvailable,
-      recoveryResidenceLevel: profile.recoveryResidenceLevel
-    };
-  });
+      return {
+        id: profile.id,
+        programType: profile.type,
+        slug: profile.slug,
+        programName: profile.programName,
+        location: [profile.publicCity, profile.publicState].filter(Boolean).join(", "),
+        photoUrl: profile.images[0]?.url ?? profilePlaceholderImage(profile.type),
+        photoAlt: profile.images[0]?.altText || (profile.images[0] ? profile.programName : profilePlaceholderAlt(profile.type)),
+        photoFocalX: profile.images[0]?.focalX ?? 50,
+        photoFocalY: profile.images[0]?.focalY ?? 50,
+        photoPresentationMode: profile.images[0]?.presentationMode ?? "photo",
+        priceAmount: profile.pricePerWeek ? `$${profile.pricePerWeek.toLocaleString()}` : null,
+        tags: [
+          profile.recoveryResidenceLevel,
+          ...profile.insuranceAccepted.slice(0, 1),
+          ...(profile.matAccepted.length || profile.matServicesOffered ? ["MAT accepted"] : [])
+        ].filter((tag): tag is string => Boolean(tag)),
+        availabilityLabel: isAvailable
+          ? profile.type === "continued_care" ? "Accepting patients" : `${profile.bedsAvailable} bed${profile.bedsAvailable === 1 ? "" : "s"} open`
+          : "Call for availability",
+        isAvailable
+      };
+    });
+    return { homes, location };
+  }
+  const popularPrograms = await popularGroup();
 
   return (
     <>
@@ -120,7 +156,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <TrendingHomes homes={trendingHomes} />
+      <TrendingHomes homes={popularPrograms.homes} location={popularPrograms.location} />
 
       <section className="shell grid gap-4 py-10 md:grid-cols-3">
         <Card className="grid gap-4">

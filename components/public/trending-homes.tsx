@@ -2,8 +2,9 @@
 
 import { useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Phone } from "lucide-react";
 import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
+import { ContactProgramDialog } from "@/components/public/contact-program-dialog";
 import { Badge } from "@/components/ui/badge";
 
 export type TrendingHome = {
@@ -11,6 +12,7 @@ export type TrendingHome = {
   programType: "sober_living" | "continued_care";
   slug: string;
   programName: string;
+  phone: string;
   location: string;
   photoUrl: string | null;
   photoAlt: string;
@@ -23,10 +25,8 @@ export type TrendingHome = {
   isAvailable: boolean;
 };
 
-export function TrendingHomes({ homes, location }: { homes: TrendingHome[]; location: string | null }) {
+export function TrendingHomes({ homes, location, preview = false }: { homes: TrendingHome[]; location: string | null; preview?: boolean }) {
   const label = "programs";
-  const params = new URLSearchParams();
-  if (location) params.set("q", location);
   const listRef = useRef<HTMLDivElement>(null);
 
   function scroll(direction: -1 | 1) {
@@ -49,6 +49,7 @@ export function TrendingHomes({ homes, location }: { homes: TrendingHome[]; loca
   return (
     <section aria-labelledby="trending-homes-heading" className="w-full border-b border-border bg-white">
       <div className="shell w-full py-10 md:py-12">
+        {preview ? <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Local preview · Sample listings. Calls, profile links, and message sending are disabled.</p> : null}
         <div className="flex items-end justify-between gap-5">
           <div>
             <h2 id="trending-homes-heading" className="text-2xl font-semibold md:text-3xl">
@@ -81,16 +82,15 @@ export function TrendingHomes({ homes, location }: { homes: TrendingHome[]; loca
 
         <div
           ref={listRef}
-          className="mt-6 flex w-full snap-x snap-mandatory gap-6 overflow-x-auto pb-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="mt-6 flex w-full items-stretch snap-x snap-mandatory gap-6 overflow-x-auto pb-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {homes.map((home) => (
-            <Link
+            <div
               key={home.id}
-              className="focus-ring group w-full shrink-0 snap-start overflow-hidden rounded-[24px] border border-slate-100 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition-shadow hover:shadow-lg sm:w-[360px] lg:w-[calc((100%-48px)/3)]"
-              href={`/profiles/${home.slug}`}
+              className="group flex w-full shrink-0 snap-start overflow-hidden rounded-[24px] border border-slate-100 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition-shadow hover:shadow-lg sm:w-[360px] lg:w-[calc((100%-48px)/3)]"
             >
-              <article className="flex h-full flex-col">
-                <div className="relative aspect-[1.88/1] overflow-hidden bg-muted">
+              <article className="flex w-full flex-col">
+                <Link href={preview ? "#" : `/profiles/${home.slug}`} aria-disabled={preview || undefined} onClick={preview ? (event) => event.preventDefault() : undefined} aria-label={`View ${home.programName}`} className="focus-ring relative block aspect-[1.88/1] shrink-0 overflow-hidden bg-muted">
                   {home.photoUrl ? (
                     <AdaptiveProfileImage
                       alt={home.photoAlt}
@@ -113,18 +113,18 @@ export function TrendingHomes({ homes, location }: { homes: TrendingHome[]; loca
                     {home.isAvailable ? <span aria-hidden="true" className="mr-2 inline-block size-2 rounded-full bg-emerald-400 ring-4 ring-emerald-100" /> : null}
                     {home.availabilityLabel}
                   </Badge>
-                </div>
+                </Link>
 
-                <div className="flex flex-1 flex-col gap-4 p-5 lg:p-6">
+                <div className="flex flex-1 flex-col gap-3 p-4">
                   <div>
-                    <div className="mb-3 flex flex-wrap gap-1.5">
+                    <div className="mb-2 flex flex-wrap gap-1.5">
                     <Badge className="!rounded-full !border-slate-200 !bg-slate-100 !text-slate-700" tone="neutral">
                       {home.programType === "sober_living" ? "Sober Living" : "Continued Care"}
                     </Badge>
                     {home.tags.map((tag) => <Badge key={tag} className="!rounded-full !border-slate-200 !bg-slate-100 !text-slate-700" tone="neutral">{tag}</Badge>)}
                     </div>
                     <h3 className="line-clamp-2 text-xl font-semibold leading-snug group-hover:text-primary">
-                      {home.programName}
+                      <Link className="focus-ring" href={preview ? "#" : `/profiles/${home.slug}`} aria-disabled={preview || undefined} onClick={preview ? (event) => event.preventDefault() : undefined}>{home.programName}</Link>
                     </h3>
                     <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin aria-hidden="true" className="shrink-0" size={16} />
@@ -132,26 +132,32 @@ export function TrendingHomes({ homes, location }: { homes: TrendingHome[]; loca
                     </p>
                   </div>
 
-                  <div className="mt-auto flex min-h-12 items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                  <div className="mt-auto flex min-h-11 items-center justify-between gap-3 border-t border-slate-100 pt-3">
                     <p>
                       {home.priceAmount ? <><span className="text-2xl font-bold tracking-tight">{home.priceAmount}</span><span className="text-sm text-muted-foreground">/week</span></> : <span className="text-sm font-semibold">Contact for pricing</span>}
                     </p>
-                    <span className="shrink-0 text-sm font-semibold text-primary">View <span aria-hidden="true">→</span></span>
+                    <Link href={preview ? "#" : `/profiles/${home.slug}`} aria-disabled={preview || undefined} onClick={preview ? (event) => event.preventDefault() : undefined} className="focus-ring shrink-0 text-sm font-semibold text-primary">View <span aria-hidden="true">→</span><span className="sr-only"> {home.programName}</span></Link>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ContactProgramDialog
+                      profile={{ id: home.id, slug: home.slug, name: home.programName }}
+                      preview={preview}
+                      triggerLabel="Contact"
+                      className="flex-1"
+                    />
+                    {preview ? <button type="button" disabled aria-label={`Call ${home.programName} (preview only)`} title="Calls disabled in local preview" className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-white"><Phone aria-hidden="true" size={18} /></button> : home.phone ? <a
+                      href={`tel:${home.phone}`}
+                      aria-label={`Call ${home.programName}`}
+                      title={`Call ${home.programName}`}
+                      className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/90"
+                    >
+                      <Phone aria-hidden="true" size={18} />
+                    </a> : null}
                   </div>
                 </div>
               </article>
-            </Link>
+            </div>
           ))}
-        </div>
-
-        <div className="mt-2 flex flex-wrap justify-center gap-3">
-          {(["sober_living", "continued_care"] as const).map((type) => {
-            const searchParams = new URLSearchParams(params);
-            searchParams.set("type", type);
-            return <Link key={type} className="focus-ring inline-flex min-h-11 items-center justify-center rounded-full border border-border bg-white px-5 text-sm font-semibold shadow-sm hover:bg-muted" href={`/search?${searchParams.toString()}`}>
-              View all {type === "sober_living" ? "sober living homes" : "continued care programs"}
-            </Link>;
-          })}
         </div>
       </div>
     </section>

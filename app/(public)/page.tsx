@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
+import { normalizePhoneNumber } from "@/lib/phone";
 import { HeroSearchForm } from "@/components/public/hero-search-form";
 import Image from "next/image";
 import { MarketingHeader } from "@/components/marketing-header";
@@ -53,6 +54,7 @@ export default async function HomePage() {
         id: true,
         slug: true,
         programName: true,
+        admissionsContactPhone: true,
         type: true,
         publicCity: true,
         publicState: true,
@@ -101,6 +103,7 @@ export default async function HomePage() {
         programType: profile.type,
         slug: profile.slug,
         programName: profile.programName,
+        phone: normalizePhoneNumber(profile.admissionsContactPhone || ""),
         location: [profile.publicCity, profile.publicState].filter(Boolean).join(", "),
         photoUrl: profile.images[0]?.url ?? profilePlaceholderImage(profile.type),
         photoAlt: profile.images[0]?.altText || (profile.images[0] ? profile.programName : profilePlaceholderAlt(profile.type)),
@@ -121,7 +124,10 @@ export default async function HomePage() {
     });
     return { homes, location };
   }
-  const popularPrograms = await popularGroup();
+  const isLocalPreview = process.env.NODE_ENV === "development" && !hasDatabaseConfig();
+  const popularPrograms = isLocalPreview
+    ? { homes: (await import("@/lib/popular-program-preview")).popularProgramPreview, location: null }
+    : await popularGroup();
 
   return (
     <>
@@ -156,7 +162,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <TrendingHomes homes={popularPrograms.homes} location={popularPrograms.location} />
+      <TrendingHomes homes={popularPrograms.homes} location={popularPrograms.location} preview={isLocalPreview} />
 
       <section className="shell grid gap-4 py-10 md:grid-cols-3">
         <Card className="grid gap-4">

@@ -3,9 +3,12 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { CheckCircle2, Mail, X } from "lucide-react";
 
-export function ContactProgramDialog({ profile, contact }: {
+export function ContactProgramDialog({ profile, contact, triggerLabel = "Contact this program", className = "", preview = false }: {
   profile: { id: string; slug: string; name: string };
   contact?: { name: string; email: string; phone: string };
+  preview?: boolean;
+  triggerLabel?: string;
+  className?: string;
 }) {
   const titleId = useId();
   const descriptionId = useId();
@@ -35,7 +38,7 @@ export function ContactProgramDialog({ profile, contact }: {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (sending.current || sent) return;
+    if (preview || sending.current || sent) return;
     const data = new FormData(event.currentTarget);
     sending.current = true;
     setPending(true);
@@ -67,15 +70,15 @@ export function ContactProgramDialog({ profile, contact }: {
   }
 
   return <>
-    <button ref={trigger} type="button" aria-haspopup="dialog" className="ac-contact-button focus-ring" onClick={() => { setHasOpened(true); setOpen(true); }}>
-      <Mail aria-hidden="true" size={16} />Contact this program
+    <button ref={trigger} type="button" aria-haspopup="dialog" className={`ac-contact-button focus-ring ${className}`} onClick={() => { setHasOpened(true); setOpen(true); }}>
+      <Mail aria-hidden="true" size={16} />{triggerLabel}
     </button>
     <dialog ref={dialog} aria-labelledby={titleId} aria-describedby={descriptionId} onCancel={event => { event.preventDefault(); setOpen(false); }} className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-2xl border border-border bg-white p-0 text-foreground shadow-xl backdrop:bg-primary/40">
       {hasOpened ? <>
         <div className="relative border-b border-border bg-primary/5 px-6 py-5">
           <p className="text-xs font-bold uppercase tracking-wider text-primary">Aftercare Compass</p>
           <h2 id={titleId} className="mt-2 pr-8 text-xl font-semibold text-heading">Contact this program</h2>
-          <p id={descriptionId} className="mt-1 text-sm text-muted-foreground">Send a contact request to {profile.name}.</p>
+          <p id={descriptionId} className="mt-1 text-sm text-muted-foreground">{preview ? "Local preview only. No message will be sent." : `Send a contact request to ${profile.name}.`}</p>
           <button type="button" aria-label="Close contact form" className="focus-ring absolute right-3 top-3 flex size-11 items-center justify-center rounded-full hover:bg-primary/10" onClick={() => setOpen(false)}><X aria-hidden="true" size={20} /></button>
         </div>
         {sent ? <div className="grid gap-4 p-6" role="status">
@@ -90,7 +93,7 @@ export function ContactProgramDialog({ profile, contact }: {
           <label className="grid gap-1.5 text-sm font-medium">Phone (optional)<input name="phone" type="tel" autoComplete="tel" maxLength={40} defaultValue={contact?.phone} className="focus-ring min-h-11 rounded-lg border border-border px-3" /></label>
           <label className="grid gap-1.5 text-sm font-medium">Message (required)<textarea name="message" required maxLength={2000} rows={4} className="focus-ring rounded-lg border border-border p-3" /></label>
           {error ? <p role="alert" className="text-sm font-medium text-red-700">{error}</p> : null}
-          <button disabled={pending} type="submit" className="focus-ring ac-button ac-button--primary disabled:opacity-60">{pending ? "Sending…" : "Send contact request"}</button>
+          <button disabled={pending || preview} type="submit" className="focus-ring ac-button ac-button--primary disabled:opacity-60">{pending ? "Sending…" : "Send contact request"}</button>
         </form>}
       </> : null}
     </dialog>

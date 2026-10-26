@@ -38,7 +38,7 @@ export function ClaimProfileDialog({ children, label, showTrigger }: {
     url.searchParams.delete("claimToken");
     if (url.hash === "#claim") url.hash = "";
     window.history.replaceState(null, "", url);
-    trigger.current?.focus();
+    (trigger.current ?? document.querySelector<HTMLButtonElement>("[data-profile-claim-trigger]"))?.focus();
   }
 
   return (

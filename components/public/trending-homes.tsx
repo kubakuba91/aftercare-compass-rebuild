@@ -123,21 +123,21 @@ export function TrendingHomes({ homes, location, preview = false }: { homes: Tre
                     </Badge>
                     {home.tags.map((tag) => <Badge key={tag} className="!rounded-full !border-slate-200 !bg-slate-100 !text-slate-700" tone="neutral">{tag}</Badge>)}
                     </div>
-                    <h3 className="line-clamp-2 text-xl font-semibold leading-snug text-heading">
+                    <div className="flex items-start justify-between gap-3">
+                    <h3 className="min-w-0 flex-1 line-clamp-2 text-xl font-semibold leading-snug text-heading">
                       <Link className="focus-ring !text-heading hover:underline" href={preview ? "#" : `/profiles/${home.slug}`} aria-disabled={preview || undefined} onClick={preview ? (event) => event.preventDefault() : undefined}>{home.programName}</Link>
                     </h3>
+                      {home.priceAmount ? <p className="max-w-[42%] shrink-0 text-right leading-snug">
+                        <span className="whitespace-nowrap text-xl font-bold tracking-tight">{home.priceAmount}</span><span className="text-sm text-muted-foreground">/week</span>
+                      </p> : null}
+                    </div>
                     <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin aria-hidden="true" className="shrink-0" size={16} />
                       {home.location}
                     </p>
                   </div>
 
-                  <div className="mt-auto flex min-h-11 items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                    <p>
-                      {home.priceAmount ? <><span className="text-2xl font-bold tracking-tight">{home.priceAmount}</span><span className="text-sm text-muted-foreground">/week</span></> : <span className="text-sm font-semibold">Contact for pricing</span>}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
+                  <div className="mt-auto flex items-center gap-2 border-t border-slate-100 pt-3">
                     <ContactProgramDialog
                       profile={{ id: home.id, slug: home.slug, name: home.programName }}
                       preview={preview}

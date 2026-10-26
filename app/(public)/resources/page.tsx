@@ -3,7 +3,15 @@ import Image from "next/image";
 import { ExternalLink, Play } from "lucide-react";
 import { MarketingHeader } from "@/components/marketing-header";
 import { ButtonLink } from "@/components/ui/button-link";
-import { resourcesPlaylistUrl, resourceVideos, youtubeWatchUrl } from "@/lib/resource-videos";
+import { FeaturedVideo } from "@/components/resources/featured-video";
+import { TrackedLink } from "@/components/resources/tracked-link";
+import { publicAppUrl } from "@/lib/app-urls";
+import {
+  resourcesPlaylistUrl,
+  resourceVideos,
+  youtubeThumbnailUrl,
+  youtubeWatchUrl
+} from "@/lib/resource-videos";
 
 export const metadata: Metadata = {
   title: "Resources | Aftercare Compass",
@@ -30,7 +38,8 @@ export default function ResourcesPage() {
                 Short videos that explain recovery houses in plain words: what they are, where they came from, and how
                 people find the right one after treatment.
               </p>
-              <div className="mt-8">
+              <div className="mt-8 flex flex-wrap gap-3">
+                <ButtonLink href={publicAppUrl("/search")}>Find a recovery house</ButtonLink>
                 <ButtonLink href={resourcesPlaylistUrl} variant="secondary">
                   Watch the full playlist on YouTube
                 </ButtonLink>
@@ -38,16 +47,7 @@ export default function ResourcesPage() {
             </div>
 
             <figure>
-              <div className="relative aspect-video overflow-hidden rounded-[1.5rem] border border-[#cddcf4] bg-[#10195e] shadow-[0_24px_70px_rgba(23,33,43,0.18)]">
-                <iframe
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  className="absolute inset-0 h-full w-full"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  src={`https://www.youtube-nocookie.com/embed/${featured.id}`}
-                  title={featured.title}
-                />
-              </div>
+              <FeaturedVideo video={featured} />
               <figcaption className="mt-3 text-center text-sm text-muted-foreground">{featured.title}</figcaption>
             </figure>
           </div>
@@ -59,10 +59,13 @@ export default function ResourcesPage() {
           <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {rest.map((video) => (
               <li key={video.id}>
-                <a
+                <TrackedLink
+                  aria-label={`${video.title} (opens YouTube in a new tab)`}
                   className="focus-ring group block h-full overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:shadow-lg"
                   href={youtubeWatchUrl(video.id)}
                   rel="noopener noreferrer"
+                  eventName="resource_card_click"
+                  eventParams={{ video_id: video.id, video_title: video.title }}
                   target="_blank"
                 >
                   <div className="relative aspect-video bg-[#10195e]">
@@ -70,8 +73,9 @@ export default function ResourcesPage() {
                       alt=""
                       className="object-cover"
                       fill
+                      loading="lazy"
                       sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                      src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
+                      src={youtubeThumbnailUrl(video.id)}
                       unoptimized
                     />
                     <div className="absolute inset-0 grid place-items-center bg-black/10 transition group-hover:bg-black/25">
@@ -87,7 +91,7 @@ export default function ResourcesPage() {
                     </h3>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">{video.summary}</p>
                   </div>
-                </a>
+                </TrackedLink>
               </li>
             ))}
           </ul>

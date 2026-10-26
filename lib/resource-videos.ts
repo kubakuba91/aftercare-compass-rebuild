@@ -49,3 +49,12 @@ export const resourceVideos: ResourceVideo[] = [
 export function youtubeWatchUrl(id: string) {
   return `https://www.youtube.com/watch?v=${id}&list=${resourcesPlaylistId}`;
 }
+
+export function youtubeThumbnailUrl(id: string) {
+  return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+}
+
+// Click-to-play embed: autoplay after user activation, captions forced on.
+export function youtubeEmbedUrl(id: string) {
+  return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&cc_load_policy=1&cc_lang_pref=en&rel=0&modestbranding=1`;
+}

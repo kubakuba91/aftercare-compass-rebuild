@@ -123,8 +123,8 @@ export function TrendingHomes({ homes, location, preview = false }: { homes: Tre
                     </Badge>
                     {home.tags.map((tag) => <Badge key={tag} className="!rounded-full !border-slate-200 !bg-slate-100 !text-slate-700" tone="neutral">{tag}</Badge>)}
                     </div>
-                    <h3 className="line-clamp-2 text-xl font-semibold leading-snug group-hover:text-primary">
-                      <Link className="focus-ring" href={preview ? "#" : `/profiles/${home.slug}`} aria-disabled={preview || undefined} onClick={preview ? (event) => event.preventDefault() : undefined}>{home.programName}</Link>
+                    <h3 className="line-clamp-2 text-xl font-semibold leading-snug text-heading">
+                      <Link className="focus-ring !text-heading hover:underline" href={preview ? "#" : `/profiles/${home.slug}`} aria-disabled={preview || undefined} onClick={preview ? (event) => event.preventDefault() : undefined}>{home.programName}</Link>
                     </h3>
                     <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin aria-hidden="true" className="shrink-0" size={16} />
@@ -136,23 +136,23 @@ export function TrendingHomes({ homes, location, preview = false }: { homes: Tre
                     <p>
                       {home.priceAmount ? <><span className="text-2xl font-bold tracking-tight">{home.priceAmount}</span><span className="text-sm text-muted-foreground">/week</span></> : <span className="text-sm font-semibold">Contact for pricing</span>}
                     </p>
-                    <Link href={preview ? "#" : `/profiles/${home.slug}`} aria-disabled={preview || undefined} onClick={preview ? (event) => event.preventDefault() : undefined} className="focus-ring shrink-0 text-sm font-semibold text-primary">View <span aria-hidden="true">→</span><span className="sr-only"> {home.programName}</span></Link>
                   </div>
                   <div className="flex items-center gap-2">
                     <ContactProgramDialog
                       profile={{ id: home.id, slug: home.slug, name: home.programName }}
                       preview={preview}
                       triggerLabel="Contact"
-                      className="flex-1"
+                      className="!rounded-[var(--control-radius)] !px-4 !py-0"
                     />
-                    {preview ? <button type="button" disabled aria-label={`Call ${home.programName} (preview only)`} title="Calls disabled in local preview" className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-white"><Phone aria-hidden="true" size={18} /></button> : home.phone ? <a
+                    {preview ? <button type="button" disabled aria-label={`Call ${home.programName} (preview only)`} title="Calls disabled in local preview" className="inline-flex size-11 shrink-0 items-center justify-center !rounded-[var(--control-radius)] bg-primary text-white"><Phone aria-hidden="true" size={18} /></button> : home.phone ? <a
                       href={`tel:${home.phone}`}
                       aria-label={`Call ${home.programName}`}
                       title={`Call ${home.programName}`}
-                      className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/90"
+                      className="focus-ring inline-flex size-11 shrink-0 items-center justify-center !rounded-[var(--control-radius)] bg-primary text-white hover:bg-primary/90"
                     >
                       <Phone aria-hidden="true" size={18} />
                     </a> : null}
+                    <Link href={preview ? "#" : `/profiles/${home.slug}`} aria-disabled={preview || undefined} onClick={preview ? (event) => event.preventDefault() : undefined} className="focus-ring ml-auto shrink-0 text-sm font-semibold !text-heading hover:underline">View <span aria-hidden="true">→</span><span className="sr-only"> {home.programName}</span></Link>
                   </div>
                 </div>
               </article>

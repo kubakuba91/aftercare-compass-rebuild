@@ -1,15 +1,25 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useFormStatus } from "react-dom";
+import { createProfileReferral } from "@/app/(public)/profiles/[slug]/actions";
+import { ReferralFields, type ReferralContact } from "@/components/public/referral-fields";
 import { CheckCircle2, Mail, X } from "lucide-react";
 
-export function ContactProgramDialog({ profile, contact, triggerLabel = "Contact this program", className = "", preview = false }: {
+function ReferralSubmitButton({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus();
+  return <button disabled={disabled || pending} type="submit" className="focus-ring ac-button ac-button--primary disabled:opacity-60">{pending ? "Sending…" : "Send referral"}</button>;
+}
+
+export function ContactProgramDialog({ profile, contact, referralContact, triggerLabel = "Contact this program", className = "", preview = false }: {
   profile: { id: string; slug: string; name: string };
   contact?: { name: string; email: string; phone: string };
+  referralContact?: ReferralContact;
   preview?: boolean;
   triggerLabel?: string;
   className?: string;
 }) {
+  const isReferral = Boolean(referralContact);
   const titleId = useId();
   const descriptionId = useId();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -77,11 +87,17 @@ export function ContactProgramDialog({ profile, contact, triggerLabel = "Contact
       {hasOpened ? <>
         <div className="relative border-b border-border bg-primary/5 px-6 py-5">
           <p className="text-xs font-bold uppercase tracking-wider text-primary">Aftercare Compass</p>
-          <h2 id={titleId} className="mt-2 pr-8 text-xl font-semibold text-heading">Contact this program</h2>
-          <p id={descriptionId} className="mt-1 text-sm text-muted-foreground">{preview ? "Local preview only. No message will be sent." : `Send a contact request to ${profile.name}.`}</p>
+          <h2 id={titleId} className="mt-2 pr-8 text-xl font-semibold text-heading">{isReferral ? "Place client" : "Contact this program"}</h2>
+          <p id={descriptionId} className="mt-1 text-sm text-muted-foreground">{preview ? "Local preview only. No message will be sent." : isReferral ? `Submit a de-identified referral to ${profile.name}. Do not include patient name, DOB, address, phone, email, or MRN.` : `Send a contact request to ${profile.name}.`}</p>
           <button type="button" aria-label="Close contact form" className="focus-ring absolute right-3 top-3 flex size-11 items-center justify-center rounded-full hover:bg-primary/10" onClick={() => setOpen(false)}><X aria-hidden="true" size={20} /></button>
         </div>
-        {sent ? <div className="grid gap-4 p-6" role="status">
+        {isReferral ? <form action={createProfileReferral} onSubmit={preview ? event => event.preventDefault() : undefined} className="grid gap-3 p-6">
+          <input name="aftercareProfileId" type="hidden" value={profile.id} />
+          <input name="slug" type="hidden" value={profile.slug} />
+          <input name="companyWebsite" className="hidden" tabIndex={-1} aria-hidden="true" autoComplete="off" />
+          <ReferralFields contact={referralContact} />
+          <ReferralSubmitButton disabled={preview} />
+        </form> : sent ? <div className="grid gap-4 p-6" role="status">
           <CheckCircle2 aria-hidden="true" className="text-primary" size={32} />
           <h3 className="text-lg font-semibold">Contact request submitted</h3>
           <p className="text-sm leading-6 text-muted-foreground">Your request for {profile.name} has been recorded. The provider can follow up using the contact details you supplied.</p>

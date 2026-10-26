@@ -17,7 +17,7 @@ function detailText(value: string[] | string | null) {
 export function ProfileDetailSections({ profile }: { profile: DetailProfile }) {
   const home = profile.type === "sober_living";
   const row = (label: string, Icon: typeof Users, value: string[] | string | null, notes?: string | null) => ({
-    label, Icon, value: detailText(value), notes: notes?.trim() || ""
+    label, Icon, value: detailText(value), values: Array.isArray(value) ? value.map(item => item.trim()).filter(Boolean) : [], notes: notes?.trim() || ""
   });
   const services = [
     row("Level of care", House, home ? profile.recoveryResidenceLevel : profile.levelsOfCare || []),
@@ -54,6 +54,10 @@ export function ProfileDetailSections({ profile }: { profile: DetailProfile }) {
   if (!rows.length) return null;
   return <Card>
     <h2 className="ac-section-heading">At a glance</h2>
-    <SummaryGrid items={rows.map(({ label, Icon, value, notes }) => ({ label, icon: Icon, value, notes }))} />
+    <SummaryGrid items={rows.map(({ label, Icon, value, values, notes }) => ({
+      label, icon: Icon,
+      value: values.length ? <ul className="ac-summary-list">{values.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul> : value,
+      notes
+    }))} />
   </Card>;
 }

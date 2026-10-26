@@ -732,8 +732,8 @@ input[type="checkbox"] {
 .ac-summary-content { min-width: 0; flex: 1; }
 .ac-summary-label { margin-bottom: 5px; color: var(--muted-foreground); font-size: 12px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
 .ac-summary-value { color: var(--heading); font-size: 14px; font-weight: 400; line-height: 1.6; overflow-wrap: anywhere; }
-.ac-summary-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px 24px; margin: 0; padding-left: 16px; list-style: disc; }
-.ac-summary-list li { padding-left: 2px; }
+.ac-summary-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px 24px; margin: 0; padding: 0; list-style: none; }
+.ac-summary-list li { padding: 0; }
 @media (min-width: 1024px) {
   .ac-summary-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

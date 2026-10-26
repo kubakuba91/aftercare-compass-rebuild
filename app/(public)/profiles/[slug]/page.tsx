@@ -476,7 +476,7 @@ export default async function PublicProfilePage({
               <div className="ac-profile-title-group">
                 <h1 className="ac-page-heading">{profile.programName}</h1>
                 <TrustBadge compact={profileShowsVerifiedBadge} isVerified={profileShowsVerifiedBadge} verificationTier={profile.verificationTier} />
-                <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
+                <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} claimHref={`/profiles/${profile.slug}?claim=open#claim`} />
                 {availabilityLabel !== "Call for availability" ? <Badge tone="availability"><CheckCircle2 aria-hidden="true" size={14} />{availabilityLabel}</Badge> : null}
               </div>
 
@@ -516,11 +516,10 @@ export default async function PublicProfilePage({
               <a className="ac-phone-button focus-ring" href={telHref(admissionsPhone)}>{formatPhoneForDisplay(admissionsPhone)}</a>
             </div> : null}
             <ProfileGallery profile={profile} preview={canPreviewDraft} />
-            <div className="ac-profile-claim">
                 {profile.ownershipStatus !== ProfileOwnershipStatus.claimed || query.claim === "unavailable" ? (
                   <ClaimProfileDialog
                     label={profile.ownershipStatus === ProfileOwnershipStatus.claim_pending ? "Under Review" : "Claim this profile"}
-                    showTrigger={profile.ownershipStatus !== ProfileOwnershipStatus.claimed}
+                    showTrigger={false}
                   >
                     <ClaimProfileCard
                       canClaim={canClaimProfile}
@@ -535,7 +534,6 @@ export default async function PublicProfilePage({
                     />
                   </ClaimProfileDialog>
                 ) : null}
-            </div>
           </Card>
 
           <div className="mt-5 grid gap-4">

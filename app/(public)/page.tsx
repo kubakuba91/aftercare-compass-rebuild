@@ -8,7 +8,7 @@ import { TrendingHomes } from "@/components/public/trending-homes";
 import { Card } from "@/components/ui/card";
 import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
 import { hasDatabaseConfig } from "@/lib/database-status";
-import { canUseLiveAvailability } from "@/lib/feature-gates";
+import { popularProgramAvailability } from "@/lib/popular-program-availability";
 import { profilePlaceholderAlt, profilePlaceholderImage } from "@/lib/public-profile-placeholder";
 import { prisma } from "@/lib/prisma";
 import { redirectToDashboardDestination } from "@/lib/protected-routing";
@@ -94,9 +94,7 @@ export default async function HomePage() {
     const location = localProfiles.length && detectedLocation
       ? `${detectedLocation.city}, ${detectedLocation.state}` : null;
     const homes = profiles.map((profile) => {
-      const showLiveAvailability = canUseLiveAvailability(profile.organization, profile);
-      const isAvailable = showLiveAvailability && (profile.type === "continued_care"
-        ? profile.acceptingNewPatients === true : Boolean(profile.bedsAvailable && profile.bedsAvailable > 0));
+      const availability = popularProgramAvailability(profile);
 
       return {
         id: profile.id,
@@ -116,10 +114,7 @@ export default async function HomePage() {
           ...profile.insuranceAccepted.slice(0, 1),
           ...(profile.matAccepted.length || profile.matServicesOffered ? ["MAT accepted"] : [])
         ].filter((tag): tag is string => Boolean(tag)),
-        availabilityLabel: isAvailable
-          ? profile.type === "continued_care" ? "Accepting patients" : `${profile.bedsAvailable} bed${profile.bedsAvailable === 1 ? "" : "s"} open`
-          : "Call for availability",
-        isAvailable
+        ...availability
       };
     });
     return { homes, location };

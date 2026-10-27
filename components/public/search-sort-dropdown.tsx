@@ -11,7 +11,7 @@ export function SearchSortDropdown({ value, canSortByDistance }: { value: Search
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const options = searchSortOptions.filter((option) => option.key !== "distance" || canSortByDistance);
-  const label = options.find((option) => option.key === value)?.label ?? "Recently updated";
+  const label = options.find((option) => option.key === value)?.label ?? "Recommended";
 
   return (
     <div className="ml-auto flex items-center gap-2 text-sm" aria-busy={isPending}>
@@ -33,7 +33,7 @@ export function SearchSortDropdown({ value, canSortByDistance }: { value: Search
             onAction={(key) => {
               if (key === value) return;
               const params = new URLSearchParams(searchParams.toString());
-              if (key === "updated") params.delete("sort");
+              if (key === "recommended") params.delete("sort");
               else params.set("sort", String(key));
               params.delete("page");
               params.delete("selected");

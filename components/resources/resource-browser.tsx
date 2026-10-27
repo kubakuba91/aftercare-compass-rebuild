@@ -3,9 +3,10 @@
 import Image from "next/image";
 import { useId, useMemo, useState } from "react";
 import { ExternalLink, Play, Search } from "lucide-react";
-import { TrackedLink } from "@/components/resources/tracked-link";
+import { trackEvent } from "@/lib/track-event";
 import {
   resourceTopics,
+  youtubeEmbedUrl,
   youtubeThumbnailUrl,
   youtubeWatchUrl,
   type ResourceVideo
@@ -13,10 +14,45 @@ import {
 
 type View = "cards" | "library";
 
+function InlinePlayer({ video, onClose }: { video: ResourceVideo; onClose: () => void }) {
+  return (
+    <div className="relative aspect-video overflow-hidden rounded-2xl bg-[#10195e]">
+      <iframe
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+        className="absolute inset-0 h-full w-full"
+        referrerPolicy="strict-origin-when-cross-origin"
+        src={youtubeEmbedUrl(video.id)}
+        title={`Video: ${video.title} (YouTube player, captions on)`}
+      />
+      <div className="absolute right-2 top-2 z-10 flex gap-2">
+        <a
+          className="focus-ring rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white hover:bg-black/80"
+          href={youtubeWatchUrl(video.id)}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          YouTube
+          <ExternalLink aria-hidden="true" className="ml-1 inline" size={12} />
+        </a>
+        <button
+          aria-label={`Close video: ${video.title}`}
+          className="focus-ring rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white hover:bg-black/80"
+          onClick={onClose}
+          type="button"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // Only published videos (lib/resource-videos.ts) are passed in; pending sync items never reach this component.
 export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
   const [query, setQuery] = useState("");
   const [view, setView] = useState<View>("cards");
+  const [playingId, setPlayingId] = useState<string | null>(null);
   const searchId = useId();
   const q = query.trim().toLowerCase();
 
@@ -27,6 +63,11 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
         : videos,
     [videos, q]
   );
+
+  const play = (video: ResourceVideo, viewName: View) => {
+    trackEvent("resource_card_click", { video_id: video.id, video_title: video.title, view: viewName });
+    setPlayingId(video.id);
+  };
 
   const tabClass = (active: boolean) =>
     `focus-ring rounded-full px-4 py-2 text-sm font-semibold transition ${
@@ -40,13 +81,19 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
           <label className="sr-only" htmlFor={searchId}>
             Search resources by topic
           </label>
-          <Search aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-muted-foreground"
+            size={18}
+          />
           <input
-            className="focus-ring w-full rounded-full border border-border bg-white py-2.5 pl-10 pr-4 text-sm"
+            // type=text avoids the browser’s native search magnifier overlapping our icon
+            className="focus-ring w-full rounded-full border border-border bg-white py-2.5 pl-10 pr-4 text-sm [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
             id={searchId}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search topics, like history or case managers"
-            type="search"
+            role="searchbox"
+            type="text"
             value={query}
           />
         </div>
@@ -54,7 +101,12 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
           <button aria-pressed={view === "cards"} className={tabClass(view === "cards")} onClick={() => setView("cards")} type="button">
             Cards
           </button>
-          <button aria-pressed={view === "library"} className={tabClass(view === "library")} onClick={() => setView("library")} type="button">
+          <button
+            aria-pressed={view === "library"}
+            className={tabClass(view === "library")}
+            onClick={() => setView("library")}
+            type="button"
+          >
             Library
           </button>
         </div>
@@ -72,39 +124,37 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
         <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((video) => (
             <li key={video.id}>
-              <TrackedLink
-                aria-label={`${video.title} (opens YouTube in a new tab)`}
-                className="focus-ring group block h-full overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:shadow-lg"
-                eventName="resource_card_click"
-                eventParams={{ video_id: video.id, video_title: video.title, view: "cards" }}
-                href={youtubeWatchUrl(video.id)}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                <div className="relative aspect-video bg-[#10195e]">
-                  <Image
-                    alt=""
-                    className="object-cover"
-                    fill
-                    loading="lazy"
-                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                    src={youtubeThumbnailUrl(video.id)}
-                    unoptimized
-                  />
-                  <div className="absolute inset-0 grid place-items-center bg-black/10 transition group-hover:bg-black/25">
-                    <span className="grid size-14 place-items-center rounded-full bg-white text-[#10195e] shadow-xl">
-                      <Play aria-hidden="true" className="ml-1" fill="currentColor" size={22} />
+              <article className="h-full overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:shadow-lg">
+                {playingId === video.id ? (
+                  <InlinePlayer onClose={() => setPlayingId(null)} video={video} />
+                ) : (
+                  <button
+                    aria-label={`Play video: ${video.title}`}
+                    className="focus-ring group relative block aspect-video w-full bg-[#10195e]"
+                    onClick={() => play(video, "cards")}
+                    type="button"
+                  >
+                    <Image
+                      alt=""
+                      className="object-cover"
+                      fill
+                      loading="lazy"
+                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                      src={youtubeThumbnailUrl(video.id)}
+                      unoptimized
+                    />
+                    <span className="absolute inset-0 grid place-items-center bg-black/10 transition group-hover:bg-black/25">
+                      <span className="grid size-14 place-items-center rounded-full bg-white text-[#10195e] shadow-xl">
+                        <Play aria-hidden="true" className="ml-1" fill="currentColor" size={22} />
+                      </span>
                     </span>
-                  </div>
-                </div>
+                  </button>
+                )}
                 <div className="p-5">
-                  <h3 className="flex items-start justify-between gap-3 text-lg font-semibold text-[#17212b] group-hover:text-primary">
-                    {video.title}
-                    <ExternalLink aria-hidden="true" className="mt-1 shrink-0 text-muted-foreground" size={16} />
-                  </h3>
+                  <h3 className="text-lg font-semibold text-[#17212b]">{video.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{video.summary}</p>
                 </div>
-              </TrackedLink>
+              </article>
             </li>
           ))}
         </ul>
@@ -121,18 +171,22 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
                 <ul className="mt-3 divide-y divide-border rounded-2xl border border-border">
                   {inTopic.map((video) => (
                     <li key={video.id}>
-                      <TrackedLink
-                        aria-label={`${video.title} (opens YouTube in a new tab)`}
-                        className="focus-ring block p-4 hover:bg-[#f4f8ff]"
-                        eventName="resource_card_click"
-                        eventParams={{ video_id: video.id, video_title: video.title, view: "library" }}
-                        href={youtubeWatchUrl(video.id)}
-                        rel="noopener noreferrer"
-                        target="_blank"
-                      >
-                        <span className="font-semibold text-[#17212b]">{video.title}</span>
-                        <span className="mt-1 block text-sm text-muted-foreground">{video.summary}</span>
-                      </TrackedLink>
+                      {playingId === video.id ? (
+                        <div className="p-3">
+                          <InlinePlayer onClose={() => setPlayingId(null)} video={video} />
+                          <p className="mt-2 px-1 text-sm font-semibold text-[#17212b]">{video.title}</p>
+                        </div>
+                      ) : (
+                        <button
+                          aria-label={`Play video: ${video.title}`}
+                          className="focus-ring block w-full p-4 text-left hover:bg-[#f4f8ff]"
+                          onClick={() => play(video, "library")}
+                          type="button"
+                        >
+                          <span className="font-semibold text-[#17212b]">{video.title}</span>
+                          <span className="mt-1 block text-sm text-muted-foreground">{video.summary}</span>
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>

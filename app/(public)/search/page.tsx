@@ -6,12 +6,13 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma, ProfileOwnershipStatus, ProfileType, Role, SubscriptionStatus } from "@prisma/client";
 import { normalizePhoneNumber } from "@/lib/phone";
-import { MapPin, Phone, House, CreditCard, Pill, Wifi, Zap, Armchair, Bus, WashingMachine, BedDouble, Check, CircleCheck } from "lucide-react";
+import { MapPin, Phone, House, CreditCard, Pill, Wifi, Zap, Armchair, Bus, WashingMachine, BedDouble, Check } from "lucide-react";
 import { ApproximateLocationMap } from "@/components/public/approximate-location-map";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
 import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
 import { LoadMoreListings } from "@/components/public/load-more-listings";
 import { SearchSortDropdown } from "@/components/public/search-sort-dropdown";
+import { rankRecommendedProfiles } from "@/lib/search-ranking";
 import { normalizeSearchSort, searchSortOrder } from "@/lib/search-sort";
 import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
@@ -371,7 +372,7 @@ export default async function SearchPage({
   const profileQuery = {
     where,
     orderBy: searchSortOrder(sort),
-    ...(radiusCenter ? {} : { take: resultLimit }),
+    ...(radiusCenter || sort === "recommended" ? {} : { take: resultLimit }),
     select: {
       id: true,
       slug: true,
@@ -412,7 +413,8 @@ export default async function SearchPage({
         select: {
           type: true,
           trialEndsAt: true, subscriptionPlan: true,
-          subscriptionStatus: true
+          subscriptionStatus: true,
+          stripeSubscriptionId: true
         }
       },
       images: {
@@ -456,7 +458,10 @@ export default async function SearchPage({
         .map((item) => item.profile)
     : null;
   const totalListings = radiusMatches ? radiusMatches.length : databaseTotal ?? rawProfiles.length;
-  const profiles = radiusMatches ? radiusMatches.slice(0, resultLimit) : rawProfiles.slice(0, resultLimit);
+  const candidates = radiusMatches ?? rawProfiles;
+  const profiles = (sort === "recommended"
+    ? rankRecommendedProfiles(candidates, appliedLocation || radiusCenter || query.virtualState ? "" : q)
+    : candidates).slice(0, resultLimit);
   const hasMoreListings = profiles.length < totalListings;
 
   return (
@@ -608,7 +613,7 @@ export default async function SearchPage({
                         <div className="search-result-title-row">
                         <Link className="search-result-title" href={`/profiles/${profile.slug}`}><h2>{profile.programName}</h2></Link>
                         {showVerifiedBadge ? <TrustBadge compact isVerified verificationTier={profile.verificationTier} /> : null}
-                        {availabilityLabel !== "Call for availability" ? <Badge tone="availability"><CircleCheck aria-hidden="true" size={14} />{availabilityLabel}</Badge> : null}
+                        {availabilityLabel !== "Call for availability" ? <Badge tone="success" className="!rounded-full !border-emerald-200 !bg-emerald-50 !px-3 !py-1.5 !text-emerald-800 shadow-sm"><span aria-hidden="true" className="mr-2 inline-block size-2 shrink-0 rounded-full bg-emerald-400 ring-4 ring-emerald-100" />{availabilityLabel}</Badge> : null}
                         </div>
                       {locationLabel ? <p className="search-result-location">
                         <MapPin aria-hidden="true" size={15} />{locationLabel}

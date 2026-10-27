@@ -2,27 +2,31 @@
 
 import { useRef } from "react";
 import Link from "next/link";
-import { BedDouble, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Phone } from "lucide-react";
 import { AdaptiveProfileImage } from "@/components/public/adaptive-profile-image";
+import { ContactProgramDialog } from "@/components/public/contact-program-dialog";
 import { Badge } from "@/components/ui/badge";
 
 export type TrendingHome = {
   id: string;
+  programType: "sober_living" | "continued_care";
   slug: string;
   programName: string;
+  phone: string;
   location: string;
   photoUrl: string | null;
   photoAlt: string;
   photoFocalX: number;
   photoFocalY: number;
   photoPresentationMode: string;
-  priceLabel: string;
+  priceAmount: string | null;
+  tags: string[];
   availabilityLabel: string;
   isAvailable: boolean;
-  recoveryResidenceLevel: string | null;
 };
 
-export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
+export function TrendingHomes({ homes, location, preview = false }: { homes: TrendingHome[]; location: string | null; preview?: boolean }) {
+  const label = "programs";
   const listRef = useRef<HTMLDivElement>(null);
 
   function scroll(direction: -1 | 1) {
@@ -45,19 +49,20 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
   return (
     <section aria-labelledby="trending-homes-heading" className="w-full border-b border-border bg-white">
       <div className="shell w-full py-10 md:py-12">
+        {preview ? <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Local preview · Sample listings. Calls, profile links, and message sending are disabled.</p> : null}
         <div className="flex items-end justify-between gap-5">
           <div>
             <h2 id="trending-homes-heading" className="text-2xl font-semibold md:text-3xl">
-              Trending sober living homes in Lancaster, PA
+              Popular {label}{location ? ` near ${location}` : ""}
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground md:text-base">
-              Explore popular local homes and see current listing details.
+              Explore popular {label} and see current listing details.
             </p>
           </div>
 
           <div className="hidden shrink-0 gap-2 sm:flex">
             <button
-              aria-label="Show previous homes"
+              aria-label="Show previous programs"
               className="focus-ring inline-flex size-11 items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm hover:bg-muted"
               onClick={() => scroll(-1)}
               type="button"
@@ -65,7 +70,7 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
               <ChevronLeft aria-hidden="true" size={22} />
             </button>
             <button
-              aria-label="Show more homes"
+              aria-label="Show more programs"
               className="focus-ring inline-flex size-11 items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm hover:bg-muted"
               onClick={() => scroll(1)}
               type="button"
@@ -77,23 +82,22 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
 
         <div
           ref={listRef}
-          className="mt-6 flex w-full snap-x snap-mandatory gap-5 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="mt-6 flex w-full items-stretch snap-x snap-mandatory gap-6 overflow-x-auto pb-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {homes.map((home) => (
-            <Link
+            <div
               key={home.id}
-              className="focus-ring group w-full shrink-0 snap-start overflow-hidden rounded-xl border border-border bg-white shadow-sm transition-shadow hover:shadow-lg sm:w-[340px]"
-              href={`/profiles/${home.slug}`}
+              className="group flex w-full shrink-0 snap-start overflow-hidden rounded-[24px] border border-slate-100 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition-shadow hover:shadow-lg sm:w-[360px] lg:w-[calc((100%-48px)/3)]"
             >
-              <article>
-                <div className="relative aspect-[16/10] overflow-hidden bg-muted">
+              <article className="flex w-full flex-col">
+                <Link href={preview ? "#" : `/profiles/${home.slug}`} aria-disabled={preview || undefined} onClick={preview ? (event) => event.preventDefault() : undefined} aria-label={`View ${home.programName}`} className="focus-ring relative block aspect-[1.88/1] shrink-0 overflow-hidden bg-muted">
                   {home.photoUrl ? (
                     <AdaptiveProfileImage
                       alt={home.photoAlt}
                       focalX={home.photoFocalX}
                       focalY={home.photoFocalY}
                       mode={home.photoPresentationMode}
-                      sizes="(max-width: 640px) calc(100vw - 32px), 340px"
+                      sizes="(max-width: 640px) calc(100vw - 32px), (max-width: 1024px) 360px, 33vw"
                       src={home.photoUrl}
                     />
                   ) : (
@@ -103,45 +107,58 @@ export function TrendingHomes({ homes }: { homes: TrendingHome[] }) {
                     />
                   )}
                   <Badge
-                    className="absolute left-3 top-3 border-white/70 bg-white/95 shadow-sm"
+                    className={`absolute left-4 top-4 !rounded-full !px-3 !py-1.5 shadow-sm ${home.isAvailable ? "!border-emerald-200 !bg-emerald-50 !text-emerald-800" : "!border-amber-100 !bg-amber-50 !text-amber-800"}`}
                     tone={home.isAvailable ? "success" : "neutral"}
                   >
+                    {home.isAvailable ? <span aria-hidden="true" className="mr-2 inline-block size-2 rounded-full bg-emerald-400 ring-4 ring-emerald-100" /> : null}
                     {home.availabilityLabel}
                   </Badge>
-                </div>
+                </Link>
 
-                <div className="grid gap-3 p-5">
+                <div className="flex flex-1 flex-col gap-3 p-4">
                   <div>
-                    <h3 className="line-clamp-2 text-lg font-semibold leading-snug group-hover:text-primary">
-                      {home.programName}
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                    <Badge className="!rounded-full !border-slate-200 !bg-slate-100 !text-slate-700" tone="neutral">
+                      {home.programType === "sober_living" ? "Sober Living" : "Continued Care"}
+                    </Badge>
+                    {home.tags.map((tag) => <Badge key={tag} className="!rounded-full !border-slate-200 !bg-slate-100 !text-slate-700" tone="neutral">{tag}</Badge>)}
+                    </div>
+                    <div className="flex items-start justify-between gap-3">
+                    <h3 className="min-w-0 flex-1 line-clamp-2 text-xl font-semibold leading-snug text-heading">
+                      <Link className="focus-ring !text-heading hover:underline" href={preview ? "#" : `/profiles/${home.slug}`} aria-disabled={preview || undefined} onClick={preview ? (event) => event.preventDefault() : undefined}>{home.programName}</Link>
                     </h3>
+                      {home.priceAmount ? <p className="max-w-[42%] shrink-0 text-right leading-snug">
+                        <span className="whitespace-nowrap text-xl font-bold tracking-tight">{home.priceAmount}</span><span className="text-sm text-muted-foreground">/week</span>
+                      </p> : null}
+                    </div>
                     <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin aria-hidden="true" className="shrink-0" size={16} />
                       {home.location}
                     </p>
                   </div>
 
-                  <div className="flex min-h-6 items-center justify-between gap-3 border-t border-border pt-3">
-                    <p className="font-semibold">{home.priceLabel}</p>
-                    {home.recoveryResidenceLevel ? (
-                      <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                        <BedDouble aria-hidden="true" size={15} />
-                        {home.recoveryResidenceLevel}
-                      </span>
-                    ) : null}
+                  <div className="mt-auto flex items-center gap-2 border-t border-slate-100 pt-3">
+                    <ContactProgramDialog
+                      profile={{ id: home.id, slug: home.slug, name: home.programName }}
+                      preview={preview}
+                      triggerLabel="Contact"
+                      className="!rounded-[var(--control-radius)] !px-4 !py-0"
+                    />
+                    {preview ? <button type="button" disabled aria-label={`Call ${home.programName} (preview only)`} title="Calls disabled in local preview" className="inline-flex size-11 shrink-0 items-center justify-center !rounded-[var(--control-radius)] bg-primary text-white"><Phone aria-hidden="true" size={18} /></button> : home.phone ? <a
+                      href={`tel:${home.phone}`}
+                      aria-label={`Call ${home.programName}`}
+                      title={`Call ${home.programName}`}
+                      className="focus-ring inline-flex size-11 shrink-0 items-center justify-center !rounded-[var(--control-radius)] bg-primary text-white hover:bg-primary/90"
+                    >
+                      <Phone aria-hidden="true" size={18} />
+                    </a> : null}
+                    <Link href={preview ? "#" : `/profiles/${home.slug}`} aria-disabled={preview || undefined} onClick={preview ? (event) => event.preventDefault() : undefined} className="focus-ring ml-auto shrink-0 text-sm font-semibold !text-heading hover:underline">View <span aria-hidden="true">→</span><span className="sr-only"> {home.programName}</span></Link>
                   </div>
                 </div>
               </article>
-            </Link>
+            </div>
           ))}
         </div>
-
-        <Link
-          className="focus-ring mx-auto mt-2 flex min-h-11 w-fit items-center justify-center rounded-md border border-border bg-white px-5 text-sm font-semibold shadow-sm hover:bg-muted"
-          href="/search?type=sober_living&q=Lancaster%2C+PA"
-        >
-          View all Lancaster homes
-        </Link>
       </div>
     </section>
   );

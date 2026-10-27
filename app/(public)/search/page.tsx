@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tag } from "@/components/ui/tag";
 import { Card } from "@/components/ui/card";
 import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
-import { canDisplayVerifiedBadge, canUseLiveAvailability } from "@/lib/feature-gates";
+import { canDisplayVerifiedBadge, canUseLiveAvailability, canSubmitReferrals, canReceiveDirectReferrals } from "@/lib/feature-gates";
 import { geocodeSearchQuery } from "@/lib/geocoding";
 import { getActiveProfileOptionValues } from "@/lib/profile-options";
 import { getSearchFilterSettings } from "@/lib/search-filter-settings";
@@ -151,6 +151,7 @@ export default async function SearchPage({
           orgId: true,
           firstName: true, lastName: true, email: true, phone: true,
           role: true,
+          organization: { select: { name: true, phone: true, type: true, trialEndsAt: true, subscriptionPlan: true, subscriptionStatus: true } },
           favorites: {
             select: { profileId: true }
           }
@@ -646,7 +647,14 @@ export default async function SearchPage({
                         {phone ? <a className="search-result-call focus-ring" href={`tel:${phone}`} aria-label={`Call ${profile.programName} for availability`}>
                           <Phone aria-hidden="true" size={16} />Call for availability
                         </a> : null}
-                        <ContactProgramDialog profile={{ id: profile.id, slug: profile.slug, name: profile.programName }} contact={appUser ? { name: [appUser.firstName, appUser.lastName].filter(Boolean).join(" "), email: appUser.email, phone: appUser.phone || "" } : undefined} />
+                        <ContactProgramDialog
+                          profile={{ id: profile.id, slug: profile.slug, name: profile.programName }}
+                          contact={appUser ? { name: [appUser.firstName, appUser.lastName].filter(Boolean).join(" "), email: appUser.email, phone: appUser.phone || appUser.organization?.phone || "" } : undefined}
+                          referralContact={appUser?.role.startsWith("referent") && canSubmitReferrals(appUser.organization) && canReceiveDirectReferrals(profile.organization, profile) ? {
+                            name: [appUser.firstName, appUser.lastName].filter(Boolean).join(" "), email: appUser.email,
+                            phone: appUser.phone || appUser.organization?.phone || "", organization: appUser.organization?.name || ""
+                          } : undefined}
+                        />
                         </div>
                       </div>
                       <FavoriteListingButton large canFavorite={canFavorite} initialFavorited={favoriteProfileIds.has(profile.id)} isSignedIn={isSignedIn} profileId={profile.id} programName={profile.programName} />

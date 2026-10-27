@@ -83,12 +83,13 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
           </label>
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute left-3.5 top-1/2 z-10 -translate-y-1/2 text-muted-foreground"
             size={18}
           />
           <input
-            // type=text avoids the browser’s native search magnifier overlapping our icon
-            className="focus-ring w-full rounded-full border border-border bg-white py-2.5 pl-10 pr-4 text-sm [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
+            // type=text avoids the browser’s native search magnifier overlapping our icon.
+            // !pl/pr beat globals.css padding-inline on inputs (specificity wins over utilities).
+            className="focus-ring w-full rounded-full border border-border bg-white py-2.5 !pl-11 !pr-4 text-sm [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
             id={searchId}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search topics, like history or case managers"

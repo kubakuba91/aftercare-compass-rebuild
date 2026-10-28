@@ -39,6 +39,9 @@ export function MarketingHeader() {
             <Link className="focus-ring rounded-lg px-3 py-2 text-sm font-semibold hover:text-primary" href={publicAppUrl("/pricing")}>
               Pricing
             </Link>
+            <Link className="focus-ring rounded-lg px-3 py-2 text-sm font-semibold hover:text-primary" href={publicAppUrl("/resources")}>
+              Resources
+            </Link>
             <details className="group relative">
               <summary className="focus-ring flex cursor-pointer list-none items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold hover:text-primary [&::-webkit-details-marker]:hidden">
                 Company

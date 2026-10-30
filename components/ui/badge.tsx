@@ -62,6 +62,7 @@ export function Badge({
         className
       )}
     >
+      {tone === "availability" ? <span aria-hidden="true" className="ac-availability-dot" /> : null}
       {label}
     </span>
   );

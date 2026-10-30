@@ -300,7 +300,7 @@ export function ProfileImageUploader({
       {isOpen ? (
         <div
           aria-modal="true"
-          className="fixed inset-0 z-50 grid place-items-center bg-black/45 px-4 py-6"
+          className="ac-modal-overlay px-4 py-6"
           role="dialog"
         >
           <div className="max-h-[92vh] w-full max-w-2xl overflow-hidden rounded-lg border border-border bg-white shadow-2xl">

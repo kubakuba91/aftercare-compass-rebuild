@@ -45,7 +45,7 @@ export function ShareProfileButton({ slug, programName }: { slug: string; progra
       <dialog
         aria-labelledby="share-profile-title"
         aria-describedby="share-profile-description"
-        className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-2xl border border-border bg-white p-6 text-foreground shadow-xl backdrop:bg-black/50"
+        className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-2xl border border-border bg-white p-6 text-foreground shadow-xl"
         onClick={event => { if (event.target === event.currentTarget) close(); }}
         onClose={() => trigger.current?.focus()}
         ref={dialog}

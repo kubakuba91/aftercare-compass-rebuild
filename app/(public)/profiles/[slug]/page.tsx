@@ -9,6 +9,7 @@ import { Tag } from "@/components/ui/tag";
 import { BackLink } from "@/components/public/back-link";
 import { ExpandableRichText } from "@/components/public/expandable-rich-text";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
+import { ShareProfileButton } from "@/components/public/share-profile-button";
 import { ClaimProfileDialog } from "@/components/public/claim-profile-dialog";
 import { ClaimOutreachStartTracker } from "@/components/public/claim-outreach-start-tracker";
 import { ProfileOwnershipBadge } from "@/components/public/profile-ownership-badge";
@@ -505,7 +506,10 @@ export default async function PublicProfilePage({
                 {profile.roomTypes.length ? <p>{profile.roomTypes.join(" · ")}</p> : null}
                 {moveInCostLabel ? <p className="ac-profile-move-in"><strong>Move-in costs:</strong> {moveInCostLabel}</p> : null}
               </div> : null}
-              <FavoriteListingButton large canFavorite={isReferent} initialFavorited={Boolean(favorite)} isSignedIn={Boolean(appUser)} profileId={profile.id} programName={profile.programName} />
+              <div className="flex shrink-0 items-center gap-2">
+                <ShareProfileButton slug={profile.slug} programName={profile.programName} />
+                <FavoriteListingButton large canFavorite={isReferent} initialFavorited={Boolean(favorite)} isSignedIn={Boolean(appUser)} profileId={profile.id} programName={profile.programName} />
+              </div>
             </div>
             </div>
             {admissionsPhone ? <div className="ac-contact-panel">

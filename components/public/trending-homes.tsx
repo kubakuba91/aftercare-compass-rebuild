@@ -107,10 +107,9 @@ export function TrendingHomes({ homes, location, preview = false }: { homes: Tre
                     />
                   )}
                   <Badge
-                    className={`absolute left-4 top-4 !rounded-full !px-3 !py-1.5 shadow-sm ${home.isAvailable ? "!border-emerald-200 !bg-emerald-50 !text-emerald-800" : "!border-amber-100 !bg-amber-50 !text-amber-800"}`}
-                    tone={home.isAvailable ? "success" : "neutral"}
+                    className={`absolute left-4 top-4 ${home.isAvailable ? "" : "!border-amber-100 !bg-amber-50 !px-3 !py-1.5 !text-amber-800 shadow-sm"}`}
+                    tone={home.isAvailable ? "availability" : "neutral"}
                   >
-                    {home.isAvailable ? <span aria-hidden="true" className="mr-2 inline-block size-2 rounded-full bg-emerald-400 ring-4 ring-emerald-100" /> : null}
                     {home.availabilityLabel}
                   </Badge>
                 </Link>

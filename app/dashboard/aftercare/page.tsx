@@ -272,7 +272,7 @@ function availabilityLabel(profile: {
     return `${profile.bedsAvailable ?? 0} of ${profile.totalBeds ?? 0} beds available`;
   }
 
-  return profile.acceptingNewPatients ? "Accepting new patients" : "Not accepting patients";
+  return profile.acceptingNewPatients ? "Accepting patients" : "Not accepting patients";
 }
 
 function formatReferralValue(value: string) {
@@ -1428,10 +1428,10 @@ export default async function AftercareDashboardPage({
                                 <Badge
                                   tone={
                                     profile.type === "continued_care" && profile.acceptingNewPatients
-                                      ? "success"
+                                      ? "availability"
                                       : "neutral"
                                   }
-                                  className="min-h-8 px-3 text-sm shadow-sm"
+                                  className={profile.type === "continued_care" && profile.acceptingNewPatients ? undefined : "min-h-8 px-3 text-sm shadow-sm"}
                                 >
                                   {profile.type === "continued_care"
                                     ? availabilityLabel(profile)

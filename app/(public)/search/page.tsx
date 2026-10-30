@@ -613,7 +613,7 @@ export default async function SearchPage({
                         <div className="search-result-title-row">
                         <Link className="search-result-title" href={`/profiles/${profile.slug}`}><h2>{profile.programName}</h2></Link>
                         {showVerifiedBadge ? <TrustBadge compact isVerified verificationTier={profile.verificationTier} /> : null}
-                        {availabilityLabel !== "Call for availability" ? <Badge tone="success" className="!rounded-full !border-emerald-200 !bg-emerald-50 !px-3 !py-1.5 !text-emerald-800 shadow-sm"><span aria-hidden="true" className="mr-2 inline-block size-2 shrink-0 rounded-full bg-emerald-400 ring-4 ring-emerald-100" />{availabilityLabel}</Badge> : null}
+                        {availabilityLabel !== "Call for availability" ? <Badge tone="availability">{availabilityLabel}</Badge> : null}
                         </div>
                       {locationLabel ? <p className="search-result-location">
                         <MapPin aria-hidden="true" size={15} />{locationLabel}

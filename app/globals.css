@@ -427,15 +427,23 @@ input[type="checkbox"] {
 }
 
 .ac-chip--availability {
-  min-height: 1.5rem;
-  padding: 0.25rem 0.5rem;
-  border-color: var(--availability-border);
-  background: var(--availability-background);
-  color: var(--availability-foreground);
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: 0.375rem 0.75rem;
+  gap: 0.85rem;
+  border-color: var(--color-emerald-200);
+  background: var(--color-emerald-50);
+  color: var(--color-emerald-800);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
 }
-.ac-chip--availability svg { flex-shrink: 0; }
+
+.ac-availability-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--color-emerald-400);
+  box-shadow: 0 0 0 4px var(--color-emerald-100);
+}
 
 .ac-chip--neutral {
   border-color: var(--border);
@@ -604,9 +612,13 @@ input[type="checkbox"] {
   z-index: 50;
   display: grid;
   place-items: center;
+  padding: 1rem;
+}
+
+.ac-modal-overlay,
+dialog::backdrop {
   background: rgb(from var(--foreground) r g b / 0.38);
   backdrop-filter: blur(2px);
-  padding: 1rem;
 }
 
 .ac-modal {

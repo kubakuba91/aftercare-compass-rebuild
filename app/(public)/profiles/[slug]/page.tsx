@@ -478,7 +478,7 @@ export default async function PublicProfilePage({
                 <h1 className="ac-page-heading">{profile.programName}</h1>
                 <TrustBadge compact={profileShowsVerifiedBadge} isVerified={profileShowsVerifiedBadge} verificationTier={profile.verificationTier} />
                 <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} claimHref={`/profiles/${profile.slug}?claim=open#claim`} />
-                {availabilityLabel !== "Call for availability" ? <Badge tone="availability"><CheckCircle2 aria-hidden="true" size={14} />{availabilityLabel}</Badge> : null}
+                {availabilityLabel !== "Call for availability" ? <Badge tone="availability">{availabilityLabel}</Badge> : null}
               </div>
 
             </div>
@@ -588,7 +588,7 @@ export default async function PublicProfilePage({
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {continuedCareProfile.acceptingNewPatients ? (
-                            <Badge tone="success">Accepting patients</Badge>
+                            <Badge tone="availability">Accepting patients</Badge>
                           ) : null}
                           {continuedCareProfile.levelsOfCare.slice(0, 2).map((level) => (
                             <Badge key={level}>{level}</Badge>

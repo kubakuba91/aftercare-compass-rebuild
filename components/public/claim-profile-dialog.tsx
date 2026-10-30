@@ -61,7 +61,7 @@ export function ClaimProfileDialog({ children, label, showTrigger }: {
       ) : null}
       <dialog
         aria-labelledby="claim-dialog-title"
-        className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-2xl border border-border bg-white p-0 text-foreground shadow-xl backdrop:bg-black/50"
+        className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-2xl border border-border bg-white p-0 text-foreground shadow-xl"
         onCancel={(event) => { event.preventDefault(); close(); }}
         ref={dialog}
       >

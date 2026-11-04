@@ -9,6 +9,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicSeoOrigin()),
+  verification: { google: "G5JYY2bbpf1I0BcKd1w7Zzb-kqq0BmwQlozyui58cMw" },
   title: "Aftercare Compass",
   description: "A referral-ready aftercare placement marketplace.",
   icons: {

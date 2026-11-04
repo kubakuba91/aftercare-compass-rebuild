@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+import { getPublishedSeoProfile } from "@/lib/profile-seo-data";
+import { profileMetadata, profileStructuredData, serializeJsonLd } from "@/lib/profile-seo";
 import { isVirtualOnly, coverageLabel } from "@/lib/virtual-care";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -29,6 +32,17 @@ import { richTextHtml } from "@/lib/rich-text";
 import { createProfileClaimRequest, createProfileReferral, createPublicProfileLead } from "./actions";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params, searchParams }: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ preview?: string }>;
+}): Promise<Metadata> {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const profile = await getPublishedSeoProfile(slug);
+  if (!profile) return { title: "Profile unavailable | Aftercare Compass", robots: { index: false, follow: false } };
+  return { ...profileMetadata(profile), ...(query.preview === "1" ? { robots: { index: false, follow: false } } : {}) };
+}
+
 
 function populationsServed(values: string[], legacyValue: string | null) {
   if (values.length) {
@@ -451,6 +465,9 @@ export default async function PublicProfilePage({
 
   return (
     <>
+      {profile.status === "published" && query.preview !== "1" ? (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(profileStructuredData(profile)) }} />
+      ) : null}
       <PublicSearchHeader
         defaultLocation={publicLocation}
         defaultType={profile.type}

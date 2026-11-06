@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { hasActivePaidSubscription, rankRecommendedProfiles } from "../lib/search-ranking";
 import { normalizeSearchSort } from "../lib/search-sort";
 
-const paid = { subscriptionStatus: "active", subscriptionPlan: "professional", stripeSubscriptionId: "sub_paid" };
+const paid = { subscriptionStatus: "active", subscriptionPlan: "professional", stripeSubscriptionId: "sub_paid" } as const;
 const free = { ...paid, subscriptionPlan: "claimed_listing" };
 const profile = (id: string, programName: string, organization = free) => ({ id, programName, organization, publicCity: "Boston", publicState: "MA", description: "Recovery services" });
 assert.equal(hasActivePaidSubscription(paid), true);
@@ -26,4 +26,30 @@ assert.equal(normalizeSearchSort(undefined, false), "recommended");
 assert.equal(normalizeSearchSort("updated", false), "updated");
 assert.equal(normalizeSearchSort("distance", true), "distance");
 assert.equal(normalizeSearchSort("distance", false), "recommended");
-console.log("Search ranking tests passed");
+const verified = {
+  ...profile("verified", "Recovery House"),
+  verificationTier: 2,
+  ownershipStatus: "claimed" as const,
+  organization: { ...paid, type: "aftercare_sober_living" as const, subscriptionPlan: "verified" }
+};
+const ids = (items: { id: string }[]) => items.map(p => p.id);
+// A verified home wins within equal relevance even without a paid Stripe subscription.
+const verifiedTrial = { ...verified, organization: { ...verified.organization, subscriptionStatus: "trialing" as const, stripeSubscriptionId: null, trialEndsAt: new Date("2099-01-01") } };
+assert.deepEqual(ids(rankRecommendedProfiles([weakerPaid, verifiedTrial], "Recovery")), ["verified", "weaker"]);
+assert.deepEqual(ids(rankRecommendedProfiles([verified, exact], "Recovery")), ["exact", "verified"]);
+assert.deepEqual(ids(rankRecommendedProfiles([equalFree, verified], "")), ["verified", "free"]);
+// Tier alone, an unclaimed listing, an expired trial, or a canceled subscription must not receive a verified boost.
+for (const ineligible of [
+  { ...verifiedTrial, verificationTier: 1 },
+  { ...verifiedTrial, ownershipStatus: "unclaimed" as const },
+  { ...verifiedTrial, organization: { ...verifiedTrial.organization, trialEndsAt: new Date("2000-01-01") } },
+  { ...verified, organization: { ...verified.organization, subscriptionStatus: "canceled" as const } }
+]) {
+  assert.equal(rankRecommendedProfiles([weakerPaid, ineligible], "")[0].id, "weaker");
+}
+assert.equal(rankRecommendedProfiles([...all, verifiedTrial], "").slice(0, 50)[0].id, "verified");
+const secondVerified = { ...verifiedTrial, id: "second-verified" };
+const unchanged = [verifiedTrial, secondVerified];
+assert.deepEqual(ids(rankRecommendedProfiles(unchanged, "")), ["verified", "second-verified"]);
+assert.deepEqual(ids(unchanged), ["verified", "second-verified"]);
+console.log("Search ranking tests passed: relevance, verified priority, paid fallback, eligibility, pagination, stable ties, and explicit sort selection");

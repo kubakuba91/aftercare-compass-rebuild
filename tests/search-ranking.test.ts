@@ -45,11 +45,23 @@ for (const ineligible of [
   { ...verifiedTrial, organization: { ...verifiedTrial.organization, trialEndsAt: new Date("2000-01-01") } },
   { ...verified, organization: { ...verified.organization, subscriptionStatus: "canceled" as const } }
 ]) {
-  assert.equal(rankRecommendedProfiles([weakerPaid, ineligible], "")[0].id, "weaker");
+  assert.equal(rankRecommendedProfiles([{ ...weakerPaid, ownershipStatus: "claimed" }, ineligible], "")[0].id, "weaker");
 }
 assert.equal(rankRecommendedProfiles([...all, verifiedTrial], "").slice(0, 50)[0].id, "verified");
 const secondVerified = { ...verifiedTrial, id: "second-verified" };
 const unchanged = [verifiedTrial, secondVerified];
 assert.deepEqual(ids(rankRecommendedProfiles(unchanged, "")), ["verified", "second-verified"]);
 assert.deepEqual(ids(unchanged), ["verified", "second-verified"]);
-console.log("Search ranking tests passed: relevance, verified priority, paid fallback, eligibility, pagination, stable ties, and explicit sort selection");
+const claimedBasic = { ...equalFree, id: "claimed-basic", ownershipStatus: "claimed" as const };
+const unclaimedPaid = { ...weakerPaid, ownershipStatus: "unclaimed" as const };
+const pendingPaid = { ...weakerPaid, id: "pending", ownershipStatus: "claim_pending" as const };
+assert.deepEqual(ids(rankRecommendedProfiles([unclaimedPaid, claimedBasic], "Recovery")), ["claimed-basic", "weaker"]);
+assert.deepEqual(ids(rankRecommendedProfiles([claimedBasic, verifiedTrial, unclaimedPaid], "")), ["verified", "claimed-basic", "weaker"]);
+assert.deepEqual(ids(rankRecommendedProfiles([claimedBasic, exact], "Recovery")), ["exact", "claimed-basic"]);
+assert.deepEqual(ids(rankRecommendedProfiles([pendingPaid, claimedBasic], "")), ["claimed-basic", "pending"]);
+const claimedPaid = { ...weakerPaid, ownershipStatus: "claimed" as const };
+assert.deepEqual(ids(rankRecommendedProfiles([claimedBasic, claimedPaid], "")), ["weaker", "claimed-basic"]);
+assert.equal(rankRecommendedProfiles([...all, claimedBasic], "").slice(0, 50)[0].id, "claimed-basic");
+const claimedTie = { ...claimedBasic, id: "claimed-tie" };
+assert.deepEqual(ids(rankRecommendedProfiles([claimedBasic, claimedTie], "")), ["claimed-basic", "claimed-tie"]);
+console.log("Search ranking tests passed: relevance, verified/claimed priority, pending claims, paid fallback, eligibility, pagination, stable ties, and explicit sort selection");

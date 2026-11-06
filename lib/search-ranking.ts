@@ -36,12 +36,18 @@ function relevance(profile: SearchProfile, query: string): number {
   return 0;
 }
 
-// Within equal relevance, prioritize the same verified status shown in the UI,
-// then paid subscriptions. Stable ties retain the database's updatedAt-desc/id-asc ordering. Rank the
-// complete filtered candidate set before pagination so boosts span page boundaries.
+// Rank the complete filtered set before pagination. Equal relevance prioritizes
+// verified, then claimed, then paid profiles. Stable ties retain the database's
+// updatedAt-desc/id-asc order.
 export function rankRecommendedProfiles<T extends SearchProfile>(profiles: readonly T[], query: string): T[] {
   const normalized = query.trim().toLowerCase();
-  return profiles.map(profile => ({ profile, relevance: relevance(profile, normalized), verified: Number(canDisplayVerifiedBadge(profile.organization, profile)), paid: Number(hasActivePaidSubscription(profile.organization)) }))
-    .sort((a, b) => b.relevance - a.relevance || b.verified - a.verified || b.paid - a.paid)
+  return profiles.map(profile => ({
+    profile,
+    relevance: relevance(profile, normalized),
+    verified: Number(canDisplayVerifiedBadge(profile.organization, profile)),
+    claimed: Number(profile.ownershipStatus === "claimed"),
+    paid: Number(hasActivePaidSubscription(profile.organization))
+  }))
+    .sort((a, b) => b.relevance - a.relevance || b.verified - a.verified || b.claimed - a.claimed || b.paid - a.paid)
     .map(item => item.profile);
 }

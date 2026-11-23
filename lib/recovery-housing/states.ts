@@ -1,3 +1,4 @@
+import { ddapFundingOpportunities } from "./funding";
 import type { ResourceLink, StateResource } from "./types";
 
 // All links below were checked live on 2026-11-16. Re-check before adding or changing a state.
@@ -48,6 +49,27 @@ const unsortedStateResources: StateResource[] = [
         href: "https://www.pa.gov/services/ddap/apply-to-become-a-licensed-recovery-house",
         source: "pa.gov · DDAP",
         description: "Who needs a license, required documents, account setup, and contacts."
+      },
+      {
+        title: "New Recovery House Licensing Workshop",
+        href: "https://tms.ddap.pa.gov/about/course-catalog/",
+        source: "tms.ddap.pa.gov · DDAP Training Management System",
+        description:
+          "Free 4-hour workshop for people applying for a recovery house license. On the public catalog it is listed under Administrative. In TMS (tms.ddap.pa.gov), open Find Training, then Course Catalog, then Administrative. Questions: Bureau of Program Licensure, 717-783-8675."
+      },
+      {
+        title: "TMS cancellation and $50 no-show policy",
+        href: "https://tms.ddap.pa.gov/about/tms-faqs-and-help/",
+        source: "tms.ddap.pa.gov · DDAP",
+        description:
+          "The licensing workshop is free. If you miss a TMS training without canceling, DDAP assigns a $50 no-show fee and you cannot register for more classes until it is paid. Cancel in My Course Dashboard up to 2 hours after the posted start time."
+      },
+      {
+        title: "DDAP correspondence signup",
+        href: "https://pa-ddap.info/existing-subscriber-signup-email",
+        source: "pa-ddap.info · DDAP",
+        description:
+          "Sign up for DDAP email and text updates on licensing and policy, funding, training, webinars, and technical assistance. Choose at least one list, then confirm the email from ra-daddap-emails@pa.gov. To stop messages, use the link in an email, reply STOP to a text, call 717-783-8200, or email ra-daddap-emails@pa.gov."
       },
       {
         title: "Initial Provider Application (IPA) login",
@@ -155,11 +177,7 @@ const unsortedStateResources: StateResource[] = [
       }
     ],
     fundingLinks: [
-      {
-        title: "DDAP Funding Opportunities",
-        href: "https://www.pa.gov/agencies/ddap/for-professionals/funding-opportunities",
-        source: "pa.gov · DDAP"
-      },
+      ddapFundingOpportunities,
       {
         title: "Lancaster SCA Recovery House Scholarships",
         href: "https://www.lancastercountypa.gov/2953/Recovery-House-Scholarships",

@@ -5,6 +5,7 @@ import { ResourceLinkCard } from "@/components/resources/resource-link-card";
 import { StateResourcePicker } from "@/components/resources/state-resource-picker";
 import { ButtonLink } from "@/components/ui/button-link";
 import { dashboardAppUrl, publicAppUrl } from "@/lib/app-urls";
+import { federalOwnerFunding, ownerFundingGaps, stateOwnerFunding } from "@/lib/recovery-housing/funding";
 import { generalFaq, narrChecklist, standardsLinks, templateOutlines } from "@/lib/recovery-housing/general";
 import { findStateResource, stateResources } from "@/lib/recovery-housing/states";
 import type { ResourceLink } from "@/lib/recovery-housing/types";
@@ -69,8 +70,11 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <ButtonLink href="#state">Find your state’s rules</ButtonLink>
-                <ButtonLink href="#templates" variant="secondary">
-                  See starter templates
+                <ButtonLink href="#funding" variant="secondary">
+                  Funding and grants
+                </ButtonLink>
+                <ButtonLink href={publicAppUrl("/resources/community")} variant="secondary">
+                  Community resources
                 </ButtonLink>
               </div>
             </div>
@@ -148,6 +152,33 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
               place to ask about local recovery housing funds, such as Lancaster County’s Recovery House Scholarship program.
             </p>
           </div>
+        </section>
+
+        <section className="shell scroll-mt-24 py-16 lg:py-20" id="funding">
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Grants</p>
+          <h2 className="mt-4 flex items-center gap-3 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">
+            <PiggyBank aria-hidden="true" className="text-primary" size={30} /> Funding and grants for recovery house owners
+          </h2>
+          <p className="mt-4 max-w-3xl text-lg leading-8 text-muted-foreground">
+            Standing pages from SAMHSA and state substance-use agencies. These are where new announcements are posted. They are not
+            a list of past awards. Read the current notice before you apply, because eligibility and deadlines change.
+          </p>
+          <h3 className="mt-10 text-xl font-semibold text-[#17212b]">Federal</h3>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            {federalOwnerFunding.map((link) => (
+              <ResourceLinkCard key={link.href} link={link} />
+            ))}
+          </div>
+          <h3 className="mt-10 text-xl font-semibold text-[#17212b]">State agencies</h3>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            {stateOwnerFunding.map((link) => (
+              <ResourceLinkCard key={link.href} link={link} />
+            ))}
+          </div>
+          <p className="mt-6 max-w-3xl text-sm leading-6 text-muted-foreground">
+            No standing funding-board page was verified for {ownerFundingGaps.join(", ")}. Use that state’s licensing or
+            certification agency in the picker above, and check SAMHSA’s grants page for federal notices.
+          </p>
         </section>
 
         <section className="scroll-mt-24 border-y border-border bg-[#f4f8ff]" id="templates">

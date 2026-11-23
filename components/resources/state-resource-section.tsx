@@ -77,12 +77,16 @@ export function StateResourceSection({ state }: { state: StateResource }) {
         </section>
       ) : null}
 
-      {state.narrAffiliate ? (
+      {state.narrAffiliate || state.narrNote ? (
         <section className="mt-10">
           <SubHeading icon={ShieldCheck}>NARR state affiliate</SubHeading>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <ResourceLinkCard link={state.narrAffiliate} />
-          </div>
+          {state.narrAffiliate ? (
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <ResourceLinkCard link={state.narrAffiliate} />
+            </div>
+          ) : (
+            <p className="mt-3 max-w-3xl text-base leading-7 text-muted-foreground">{state.narrNote}</p>
+          )}
         </section>
       ) : null}
 
@@ -121,6 +125,17 @@ export function StateResourceSection({ state }: { state: StateResource }) {
               </details>
             ))}
           </div>
+        </section>
+      ) : null}
+
+      {state.gaps?.length ? (
+        <section className="mt-10">
+          <h3 className="text-lg font-semibold text-[#17212b]">Not verified</h3>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-muted-foreground">
+            {state.gaps.map((gap) => (
+              <li key={gap}>{gap}</li>
+            ))}
+          </ul>
         </section>
       ) : null}
 

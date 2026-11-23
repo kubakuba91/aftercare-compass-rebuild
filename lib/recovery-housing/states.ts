@@ -1,4 +1,4 @@
-import { ddapFundingOpportunities } from "./funding";
+import { ddapFundingOpportunities, delawareDsamhFunding, marylandGrantsOffice, newJerseyDhsProposals } from "./funding";
 import type { ResourceLink, StateResource } from "./types";
 
 // All links below were checked live on 2026-11-16. Re-check before adding or changing a state.
@@ -243,38 +243,143 @@ const unsortedStateResources: StateResource[] = [
     },
     summary: [
       {
-        text: "DCA’s Bureau of Rooming and Boarding House Standards licenses rooming and boarding houses and runs yearly physical and social evaluations before renewal.",
+        text: "DCA’s Bureau of Rooming and Boarding House Standards licenses rooming and boarding houses. It evaluates physical safety and social well-being every year before renewal. Owners and operators apply to the Bureau. Social evaluations are done by the Bureau.",
         source: "NJ DCA — Bureau of Rooming and Boarding House Standards"
       },
       {
-        text: "Under N.J.A.C. 5:27-1.6, a Class F license is valid only for cooperative sober living residences, and no one may own or operate a rooming or boarding house without a license from the Bureau.",
-        source: "N.J.A.C. 5:27-1.6"
+        text: "N.J.A.C. 5:27-1.6 says a Class F license is valid only for cooperative sober living residences, and no one may own or operate a rooming or boarding house without a license from the Bureau. A facility already operating as a cooperative sober living residence must get a Class F license to keep operating.",
+        source: "N.J.A.C. 5:27-1.4 and 5:27-1.6"
+      },
+      {
+        text: "A cooperative sober living residence is a home only for people recovering from drug or alcohol addiction. The rules cap occupancy at 10 residents besides the operators, require an alcohol- and drug-free environment, and bar the licensee from providing on-site counseling, therapy, or clinical treatment.",
+        source: "N.J.A.C. 5:27-2.1"
       }
+    ],
+    steps: [
+      "Read N.J.A.C. 5:27, including Subchapter 13 for Class F cooperative sober living residences.",
+      "Complete License Application Form I for the owner or operator and Form II for each building. Mail them, with the fee, to the Bureau of Rooming and Boarding House Standards, 101 South Broad Street, P.O. Box 804, Trenton, NJ 08625-0804.",
+      "Use the Bureau fee schedule. Class F starts at $356 for 2–5 residents and is $412 for 6–10 residents. A license issued to a corporation, partnership, or association is $666, and the total fee cannot exceed $666.",
+      "Plan the house around the Class F definition: two operators, one of whom lives in the house; one operator on site from 7 p.m. to 7 a.m. when residents are there; no more than 10 residents besides the operators; no on-site clinical treatment; and no food, laundry, or other personal services from the licensee.",
+      "The Bureau conducts the physical and social evaluations used for licensure and for yearly renewal. Questions: (609) 984-1704."
     ],
     links: [
       {
-        title: "Bureau of Rooming and Boarding House Standards (applications, fees, contact)",
+        title: "Bureau of Rooming and Boarding House Standards",
         href: "https://www.nj.gov/dca/codes/offices/roomingboarding.shtml",
-        source: "nj.gov · DCA"
+        source: "nj.gov · DCA",
+        description: "Applications, the fee schedule, and the Bureau phone and mailing address."
       },
       {
-        title: "N.J.A.C. 5:27-1.6 — Licenses (license classes and fees)",
-        href: "https://www.law.cornell.edu/regulations/new-jersey/N-J-A-C-5-27-1-6",
-        source: "law.cornell.edu · Legal Information Institute"
+        title: "N.J.A.C. 5:27 — rooming and boarding houses, including Class F",
+        href: "https://www.nj.gov/dca/codes/codreg/pdf_regs/njac_5_27.pdf",
+        source: "nj.gov · DCA",
+        description: "Official regulations through the March 3, 2025 New Jersey Register, including Subchapter 13."
+      },
+      {
+        title: "Class F rule adoption (effective January 6, 2025)",
+        href: "https://www.nj.gov/dca/codes/codreg/pdf_rule_adoptions/cslr_adopt.pdf",
+        source: "nj.gov · DCA",
+        description: "The adopted Class F amendments and Subchapter 13."
+      },
+      {
+        title: "License application Form I",
+        href: "https://www.nj.gov/dca/codes/forms/pdf_rooming/App_Form_I_fill.pdf",
+        source: "nj.gov · DCA",
+        description: "Owner and operator application. Make the check payable to Treasurer, State of New Jersey."
+      },
+      {
+        title: "License application Form II",
+        href: "https://www.nj.gov/dca/codes/forms/pdf_rooming/App_Form_II.pdf",
+        source: "nj.gov · DCA",
+        description: "Building information. Complete one for each address."
+      },
+      {
+        title: "Licensing fee schedule",
+        href: "https://www.nj.gov/dca/codes/forms/pdf_rooming/Lic_Fee_Schedule.pdf",
+        source: "nj.gov · DCA",
+        description: "Class F fees by number of residents, under N.J.A.C. 5:27-1.6."
       }
     ],
     local: {
-      label: "County Alcohol and Drug Use Directors",
-      description: "Each county has an alcohol and drug use director listed by the NJ Division of Mental Health and Addiction Services.",
+      label: "County alcohol and drug offices, and county social service agencies",
+      description:
+        "DMHAS lists a county alcohol and drug use director and a county mental health administrator for each county. The Division of Family Development lists the county social service agency that takes SNAP and cash-assistance applications.",
       links: [
         {
-          title: "County Alcohol and Drug Use Directors & County Mental Health Administrators",
+          title: "County Alcohol and Drug Use Directors and County Mental Health Administrators",
           href: "https://www.nj.gov/humanservices/dmhas/about/boards/admin/",
           source: "nj.gov · DMHAS"
+        },
+        {
+          title: "County social service agencies",
+          href: "https://www.nj.gov/humanservices/dfd/counties/",
+          source: "nj.gov · Division of Family Development",
+          description: "Directory of the county agencies that take applications for SNAP and other family benefits."
         }
       ]
     },
-    gaps: ["No NARR state affiliate listed for New Jersey on narronline.org.", "Step-by-step Class F process and funding sources not verified on an official page."]
+    narrNote:
+      "None confirmed. NARR’s affiliate page could not be reopened during this check (HTTP 403). No New Jersey organization is linked here as a NARR affiliate because one was not confirmed on narronline.org.",
+    funding: [
+      {
+        text: "The Department of Human Services posts requests for proposals on a standing notices page. That page is where DMHAS grant notices are published. Open items change, so read the current notice before you apply. Closed one-time awards are not listed here.",
+        source: "NJ DHS — Requests for Proposals"
+      }
+    ],
+    fundingLinks: [newJerseyDhsProposals],
+    faq: [
+      {
+        question: "Do I need a license to run a cooperative sober living residence?",
+        answer:
+          "Yes. N.J.A.C. 5:27-1.6 says no one may own or operate a rooming or boarding house without a Bureau license, and a Class F license is the class valid only for cooperative sober living residences. A home already operating as one must get a Class F license to continue.",
+        source: "N.J.A.C. 5:27-1.4(b) and 5:27-1.6"
+      },
+      {
+        question: "How many residents can live there?",
+        answer: "Occupancy cannot exceed 10 people, not counting the operators.",
+        source: "N.J.A.C. 5:27-2.1"
+      },
+      {
+        question: "What staffing does Class F require?",
+        answer:
+          "The residence must be managed by an entity that provides two operators. One must be on site from 7 p.m. to 7 a.m. when residents are there. At least one operator must live in the residence, set the house rules, and exercise some control over the operation.",
+        source: "N.J.A.C. 5:27-2.1"
+      },
+      {
+        question: "Can the house provide treatment?",
+        answer:
+          "No. The Class F definition bars the licensee from providing on-site counseling, therapy, clinical treatment, or alcohol or drug treatment, and from providing food, laundry, financial, or other personal services. The licensee may, at its discretion, provide non-clinical recovery and support services, and may encourage off-site services or self-help programs.",
+        source: "N.J.A.C. 5:27-2.1"
+      },
+      {
+        question: "What does the license cost?",
+        answer:
+          "The Bureau fee schedule lists Class F at $356 for 2–5 residents and $412 for 6–10 residents. A license issued to a corporation, partnership, or association is $666. The total fee cannot exceed $666. Put the facility address or control number on the check.",
+        source: "DCA licensing fee schedule; N.J.A.C. 5:27-1.6"
+      },
+      {
+        question: "Can house rules include drug testing and a curfew?",
+        answer:
+          "Yes. Subchapter 13 says Class F house rules may require weekly drug and alcohol screening. They may also set a reasonable curfew, which does not apply when a resident is at a recovery or work activity and cannot block reasonable errands or visits.",
+        source: "N.J.A.C. 5:27-13.2"
+      },
+      {
+        question: "What has to be reported after a serious incident?",
+        answer:
+          "The licensee must call the Department immediately at (609) 984-1704, then confirm in writing within 72 hours, when first responders respond to a serious incident such as a death, overdose, or assault. The notice is limited to the date, time, and nature of the incident. Class F homes must also provide lockboxes for prescription medication, and bedroom doors cannot have keyed locks or deadbolts.",
+        source: "N.J.A.C. 5:27-13.3"
+      },
+      {
+        question: "Is there a state training catalog for Class F operators?",
+        answer:
+          "No public Class F training catalog or correspondence list was found on the Bureau’s site. The Bureau’s application page and phone, (609) 984-1704, are the official contacts for licensing questions.",
+        source: "NJ DCA — Bureau of Rooming and Boarding House Standards"
+      }
+    ],
+    gaps: [
+      "No public Class F training catalog, webinar series, or operator correspondence list was found.",
+      "No New Jersey NARR affiliate was confirmed on narronline.org. The affiliate page returned HTTP 403 during this check, so it was not re-listed."
+    ]
   },
   {
     code: "NY",
@@ -308,29 +413,141 @@ const unsortedStateResources: StateResource[] = [
     summary: [
       {
         text: "Title 16, Chapter 22A directs DSAMH to contract with a certifying organization to run a voluntary certification program for recovery houses and a training program for operators.",
-        source: "Del. Code tit. 16, ch. 22A"
+        source: "Del. Code tit. 16, § 2202A"
       },
       {
         text: "Except for certified recovery houses, Oxford Houses, or houses authorized by the Division, it is unlawful for a recovery house to accept state or local funding. Advertising a house as certified when it isn’t is also unlawful.",
         source: "Del. Code tit. 16, §§ 2213A–2214A"
       },
       {
-        text: "The First State Alliance of Recovery Residences (FSARR) issued Delaware’s first certifications under the law in 2024 and was reported as the only certifying entity at that time.",
-        source: "Delaware Public Media, May 20, 2024"
+        text: "DSAMH identifies the First State Alliance of Recovery Residences (FSARR) as the certifying body for sober living houses and as Delaware’s NARR affiliate. FSARR publishes the certification stages operators follow.",
+        source: "DHSS Joint Finance Committee hearing; FSARR"
       }
+    ],
+    steps: [
+      "Read Title 16, Chapter 22A. Certification is voluntary, and a house that is not certified, an Oxford House, or authorized by DSAMH cannot take state or local funding.",
+      "On FSARR’s site, review the NARR levels of support and choose the level that matches the house.",
+      "Submit FSARR’s lead contact form. FSARR says a staff member follows up with a screening call.",
+      "FSARR invites you to create an account in its certification portal, then adds a compliance agreement and the application for you to sign and complete.",
+      "Upload policies, procedures, and supporting documents. FSARR reviews them and tells you what to correct. The FSARR certification manual says required documents must be submitted within 90 days of starting an application.",
+      "FSARR schedules an on-site inspection. Two staff members audit the home and interview residents and staff. If updates are needed, FSARR sets a timeline. The certificate FSARR sends is good for 1 year."
     ],
     links: [
       { title: "Delaware Code Title 16, Chapter 22A — Recovery Housing", href: "https://delcode.delaware.gov/title16/c022a/index.html", source: "delcode.delaware.gov" },
-      { title: "FSARR certification", href: "https://fsarr.org/certification/", source: "fsarr.org" },
       {
-        title: "First 13 recovery residences receive certification under new codified standards",
-        href: "https://www.delawarepublic.org/politics-government/2024-05-20/first-13-recovery-residences-receive-certification-under-new-codified-standards",
-        source: "delawarepublic.org · Delaware Public Media"
+        title: "DHSS Joint Finance Committee hearing — DSAMH",
+        href: "https://dhss.delaware.gov/wp-content/uploads/2025/12/dsamh2025hearing.pdf",
+        source: "dhss.delaware.gov",
+        description: "DSAMH’s hearing materials name FSARR as the certifying body for sober living houses under the recovery-house law."
+      },
+      {
+        title: "FSARR stages of certification",
+        href: "https://fsarr.org/certification/",
+        source: "fsarr.org",
+        description: "The public step-by-step certification path, from level selection through the one-year certificate."
+      },
+      {
+        title: "FSARR resources and certification manual",
+        href: "https://fsarr.org/resources/",
+        source: "fsarr.org",
+        description: "Documentation checklist and the certification manual. Contact listed on the page: info@fsarr.org."
+      },
+      {
+        title: "FSARR certification manual (PDF)",
+        href: "https://fsarr.org/wp-content/uploads/FSARR-Certification-Manual-2025.pdf",
+        source: "fsarr.org",
+        description: "The written protocol: portal account, application, document review, and on-site assessment."
+      },
+      {
+        title: "DSAMH contact and community offices",
+        href: "https://dhss.delaware.gov/dsamh/division-of-substance-abuse-and-mental-health/contact-dsamh/",
+        source: "dhss.delaware.gov · DSAMH"
       }
     ],
-    narrAffiliate: narr("first-state-alliance-of-recovery-residences", "First State Alliance of Recovery Residences (FSARR)"),
-    funding: [{ text: "Chapter 22A creates a Certified Recovery House Fund to support the program.", source: "Del. Code tit. 16, § 2216A" }],
-    gaps: ["Local or county equivalents not verified."]
+    local: {
+      label: "DSAMH community offices",
+      description:
+        "Delaware is one behavioral-health division, not a county-authority system like Pennsylvania’s SCAs. DSAMH lists community mental health centers and treatment access centers in Wilmington (New Castle County), Dover (Kent County), and Georgetown (Sussex County). The main office is the Herman M. Holloway Sr. Campus, 1901 N. DuPont Highway, New Castle, (302) 255-9399.",
+      links: [
+        {
+          title: "Contact DSAMH",
+          href: "https://dhss.delaware.gov/dsamh/division-of-substance-abuse-and-mental-health/contact-dsamh/",
+          source: "dhss.delaware.gov · DSAMH",
+          description: "Main office, community mental health centers, and treatment access centers in all three counties."
+        },
+        {
+          title: "Publicly funded addiction treatment programs",
+          href: "https://dhss.delaware.gov/dsamh/division-of-substance-abuse-and-mental-health/publicly-funded-addiction-treatment-programs/",
+          source: "dhss.delaware.gov · DSAMH",
+          description: "County treatment sites DSAMH contracts with for people who are uninsured or underinsured."
+        }
+      ]
+    },
+    narrAffiliate: {
+      title: "First State Alliance of Recovery Residences (FSARR)",
+      href: "https://fsarr.org/",
+      source: "fsarr.org",
+      description: "Delaware’s NARR affiliate. DSAMH’s hearing materials name FSARR as the certifying body. The NARR affiliate directory itself returned HTTP 403 during this check."
+    },
+    funding: [
+      {
+        text: "Chapter 22A creates a Certified Recovery House Fund. The statute assigns DSAMH to contract with the certifying organization. It does not, by itself, list an open operator grant.",
+        source: "Del. Code tit. 16, §§ 2202A and 2216A"
+      },
+      {
+        text: "DSAMH posts current funding solicitations on the Addiction Treatment Resource Center funding page. Check that page for what is open. A specific recovery-residence request for proposals was not listed here because its current status was not confirmed.",
+        source: "DSAMH ATRC — Funding Opportunities"
+      }
+    ],
+    fundingLinks: [delawareDsamhFunding],
+    faq: [
+      {
+        question: "Do I have to be certified to operate?",
+        answer:
+          "Certification is voluntary. A recovery house that is not a certified recovery house, an Oxford House, or authorized by DSAMH cannot accept state or local funding. Advertising a house as certified when it is not is unlawful.",
+        source: "Del. Code tit. 16, §§ 2213A–2214A"
+      },
+      {
+        question: "Who certifies houses?",
+        answer:
+          "The statute tells DSAMH to contract with a certifying organization. DSAMH’s budget materials name the First State Alliance of Recovery Residences (FSARR) as that body, and DSAMH procurement materials call FSARR Delaware’s NARR affiliate.",
+        source: "Del. Code tit. 16, § 2202A; DHSS hearing materials; DSAMH procurement materials"
+      },
+      {
+        question: "How do I apply?",
+        answer:
+          "FSARR’s public stages are: pick a NARR level, submit the lead contact form, create the portal account FSARR invites you to, sign the compliance agreement, complete the application, upload policies and documents, pass the on-site inspection, and make any required updates.",
+        source: "FSARR — Stages of Certification"
+      },
+      {
+        question: "How long does a certificate last?",
+        answer:
+          "FSARR’s certification page says the certificate it sends is good for 1 year. The statute separately requires the certifying organization to set certification and required 2-year renewal applications. Read both before you rely on a renewal date.",
+        source: "FSARR certification page; Del. Code tit. 16, § 2202A(b)(1)"
+      },
+      {
+        question: "Is training required?",
+        answer:
+          "The statute requires the certifying organization to develop and provide training and technical assistance for recovery houses. FSARR’s certification path and manual are the published training and documentation materials. A separate public webinar calendar was not found.",
+        source: "Del. Code tit. 16, § 2202A(b)(12); FSARR"
+      },
+      {
+        question: "Where do I ask about treatment funding in my county?",
+        answer:
+          "DSAMH’s contact page lists community mental health centers and treatment access centers in Wilmington, Dover, and Georgetown. The main line is (302) 255-9399. The publicly funded treatment page lists contracted sites for people without enough insurance.",
+        source: "DSAMH contact page; DSAMH publicly funded treatment page"
+      },
+      {
+        question: "Where are current grants posted?",
+        answer:
+          "On the DSAMH Addiction Treatment Resource Center funding page. Chapter 22A also creates a Certified Recovery House Fund. This page does not list a one-time award whose deadline could not be confirmed.",
+        source: "DSAMH ATRC — Funding Opportunities; Del. Code tit. 16, § 2216A"
+      }
+    ],
+    gaps: [
+      "No separate public DSAMH or FSARR webinar signup, outside the FSARR certification materials, was found.",
+      "A recovery-residence request for proposals was found, but whether it is still open was not confirmed, so it is not listed as a current grant."
+    ]
   },
   {
     code: "MD",
@@ -343,34 +560,117 @@ const unsortedStateResources: StateResource[] = [
     },
     summary: [
       {
-        text: "Under COMAR 10.63.08.03, a recovery residence must be certified by the Department’s designated credentialing entity to operate in Maryland if it receives state funds or operates, advertises, or represents itself as a certified recovery residence. Chartered Oxford Houses are exempt. Each residence needs its own certificate.",
-        source: "COMAR 10.63.08"
+        text: "Under COMAR 10.63.08.03, a recovery residence must be certified by the Department’s designated credentialing entity if it receives state funds or is operated, advertised, or represented as a certified recovery residence. A chartered Oxford House is exempt. Each residence needs its own certificate.",
+        source: "COMAR 10.63.08.03"
       },
       {
-        text: "The Behavioral Health Administration is the designated credentialing entity through MCORR, and a certificate of compliance is valid for one year.",
-        source: "MDH letter on SB 876 (2026); Md. Health-Gen. § 19-2502"
+        text: "The Maryland Certification of Recovery Residences office at the Behavioral Health Administration provides statewide certification. Applications go to that credentialing entity. An initial or renewal certificate of compliance lasts 1 year. A provisional certificate lasts no longer than 6 months.",
+        source: "MCORR page; COMAR 10.63.08.07"
       }
+    ],
+    steps: [
+      "Read COMAR 10.63.08 and the MCORR page. Certification is required to receive state funds or to hold the house out as certified. A chartered Oxford House is exempt.",
+      "Submit one complete application for each residence to the Department’s designated credentialing entity, MCORR at the Behavioral Health Administration.",
+      "Include the materials in COMAR 10.63.08.04: ownership or lease and owner permission if you are not the owner, fire and liability and hazard insurance, the legal entity, attestations of compliance with health, safety, building, fire, and zoning laws, a policy manual, mission and vision statements, a resident handbook, a sample resident agreement, a safety checklist, and an emergency plan.",
+      "The credentialing entity reviews the application for completeness and accuracy. If it is complete, the entity arranges an inspection. It may also inspect without notice.",
+      "If approved, the certificate of compliance is issued for that residence. Initial and renewal certificates last 1 year. Apply for renewal at least 90 days before the current certificate expires. Renewal applications must show that the owner or operator, staff, volunteers, and peers completed the trainings the Department mandates.",
+      "MCORR’s published contact is the Division of Policy and Planning, 55 Wade Avenue, Catonsville, MD 21228, 410-402-8300, Monday through Friday, 9 a.m. to 5 p.m."
     ],
     links: [
-      { title: "Maryland Certification of Recovery Residences (MCORR)", href: "https://health.maryland.gov/bha/Pages/Maryland-Certification-of-Recovery-Residence-License-.aspx", source: "health.maryland.gov · BHA" },
-      { title: "COMAR 10.63.08 — Recovery Residence Certification", href: "https://health.maryland.gov/regs/Pages/10-63-08-Recovery-Residence-Certification-(---.aspx", source: "health.maryland.gov" },
-      { title: "Health-General § 19-2502", href: "https://mgaleg.maryland.gov/2026RS/Statute_Web/ghg/19-2502.pdf", source: "mgaleg.maryland.gov" }
-    ],
-    local: {
-      label: "Local Behavioral Health Authorities",
-      description: "Maryland’s Behavioral Health Administration lists each jurisdiction’s local behavioral health authority.",
-      links: [{ title: "BHA Local Jurisdictions", href: "https://health.maryland.gov/bha/Pages/local-jurisdiction.aspx", source: "health.maryland.gov · BHA" }]
-    },
-    funding: [
       {
-        text: "BHA oversees Maryland RecoveryNet (MDRN), which partners with service providers to fund access to recovery support services for people seeking substance use disorder treatment.",
-        source: "MDH letter on SB 876 (2026)"
+        title: "Maryland Certification of Recovery Residences (MCORR)",
+        href: "https://health.maryland.gov/bha/Pages/Maryland-Certification-of-Recovery-Residence-License-.aspx",
+        source: "health.maryland.gov · BHA",
+        description: "Who certifies recovery residences, and the Catonsville office contact."
+      },
+      {
+        title: "COMAR 10.63.08 — Recovery Residence Certification",
+        href: "https://health.maryland.gov/regs/Pages/10-63-08-Recovery-Residence-Certification-(---.aspx",
+        source: "health.maryland.gov",
+        description: "Who must be certified, the application contents, inspection, and how long a certificate lasts."
+      },
+      {
+        title: "Health-General § 19-2502",
+        href: "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=ghg&section=19-2502&enactments=false",
+        source: "mgaleg.maryland.gov",
+        description: "The statute on recovery residence certification."
+      },
+      {
+        title: "MDH report on recovery residence oversight",
+        href: "https://dlslibrary.state.md.us/publications/Exec/MDH/HB722Ch697(2025)_2025.pdf",
+        source: "dlslibrary.state.md.us · Maryland Department of Legislative Services",
+        description: "The Department’s description of the MCORR application review and on-site inspection."
       }
     ],
-    fundingLinks: [
-      { title: "MDH letter of information on SB 876 (2026)", href: "https://mgaleg.maryland.gov/cmte_testimony/2026/hlt/1qQuHKqqLPY2lF6ncSOsihPk4zSyIyX_4.pdf", source: "mgaleg.maryland.gov" }
+    local: {
+      label: "Local behavioral health authorities",
+      description:
+        "Maryland’s public behavioral health system is local. The Behavioral Health Administration’s local jurisdictions page is the directory of each jurisdiction’s behavioral health authority, the closest equivalent to Pennsylvania’s Single County Authorities.",
+      links: [
+        {
+          title: "BHA local jurisdictions",
+          href: "https://health.maryland.gov/bha/Pages/local-jurisdiction.aspx",
+          source: "health.maryland.gov · BHA"
+        }
+      ]
+    },
+    narrNote:
+      "None confirmed. Maryland certifies recovery residences through MCORR, using NARR standards in COMAR 10.63.08. NARR’s affiliate page could not be reopened during this check (HTTP 403), and no Maryland NARR affiliate is linked here.",
+    funding: [
+      {
+        text: "COMAR 10.63.08.03 requires certification before a recovery residence receives state funds or holds itself out as certified. Maryland’s Governor’s Grants Office is the standing page where state agencies post grant opportunities. Open notices change. Closed one-time awards are not listed here.",
+        source: "COMAR 10.63.08.03; Maryland Governor’s Grants Office"
+      }
     ],
-    gaps: ["No NARR state affiliate listed for Maryland on narronline.org (MCORR certifies in accordance with NARR)."]
+    fundingLinks: [marylandGrantsOffice],
+    faq: [
+      {
+        question: "Do I need MCORR certification to open?",
+        answer:
+          "You need it if the house receives state funds, or if anyone operates, advertises, or represents it as a certified recovery residence. A chartered Oxford House that follows its charter is exempt.",
+        source: "COMAR 10.63.08.03"
+      },
+      {
+        question: "Is one certificate enough for several houses?",
+        answer: "No. COMAR requires a separate certificate for each residence that must be certified.",
+        source: "COMAR 10.63.08.03"
+      },
+      {
+        question: "What do I submit?",
+        answer:
+          "A complete application for that address, including ownership or lease documents, insurance, the legal entity, local health, safety, building, fire, and zoning attestations, a policy manual aligned with the NARR 2015 quality standards or their successor, mission and vision statements, a resident handbook, a sample resident agreement, a safety checklist, and an emergency plan.",
+        source: "COMAR 10.63.08.04"
+      },
+      {
+        question: "Will someone inspect the house?",
+        answer:
+          "Yes. If the application is complete and accurate, the credentialing entity arranges an inspection. It may also inspect, and copy financial and resident records, at any time without notice. The Department’s oversight report describes a document review followed by an on-site inspection before a certificate is issued.",
+        source: "COMAR 10.63.08.05; MDH oversight report"
+      },
+      {
+        question: "How long does a certificate last?",
+        answer:
+          "An initial certificate lasts 1 year from the date of issue. A renewal lasts 1 year from the date the current certificate expires. A provisional certificate lasts no longer than 6 months. Apply for renewal at least 90 days before the current certificate expires.",
+        source: "COMAR 10.63.08.04 and 10.63.08.07"
+      },
+      {
+        question: "Is there required training?",
+        answer:
+          "For a renewal, the application must show that the owner or operator, staff, volunteers, and peers completed the trainings mandated by the Department. A public catalog or webinar signup for those trainings was not found. MCORR’s published phone is 410-402-8300.",
+        source: "COMAR 10.63.08.04; MCORR page"
+      },
+      {
+        question: "Where do I ask about local behavioral health funding?",
+        answer:
+          "Start with the Behavioral Health Administration’s local jurisdictions directory. Statewide grant notices are posted by the Governor’s Grants Office.",
+        source: "BHA local jurisdictions page; Maryland Governor’s Grants Office"
+      }
+    ],
+    gaps: [
+      "No public MCORR training catalog, webinar series, or correspondence list was found. COMAR requires Department-mandated training at renewal, but does not publish the course list.",
+      "No Maryland NARR affiliate was confirmed. The NARR affiliate page returned HTTP 403 during this check.",
+      "A stable public page for Maryland RecoveryNet operator funding was not confirmed, so that program is not described here."
+    ]
   },
   {
     code: "VA",

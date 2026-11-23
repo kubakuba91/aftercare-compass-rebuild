@@ -49,6 +49,8 @@ export type StateResource = {
   /** County or regional offices that fund or coordinate substance use services (PA SCAs and equivalents). */
   local?: { label: string; description: string; links: ResourceLink[] };
   narrAffiliate?: ResourceLink;
+  /** Shown when there is no confirmed NARR affiliate. */
+  narrNote?: string;
   funding?: SourcedText[];
   fundingLinks?: ResourceLink[];
   faq?: FaqItem[];

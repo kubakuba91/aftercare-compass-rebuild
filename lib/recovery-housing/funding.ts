@@ -26,26 +26,32 @@ export const federalOwnerFunding: ResourceLink[] = [
   }
 ];
 
+export const delawareDsamhFunding: ResourceLink = {
+  title: "Delaware DSAMH funding opportunities",
+  href: "https://atrc.dhss.delaware.gov/funding-opportunities",
+  source: "atrc.dhss.delaware.gov · DSAMH",
+  description: "Addiction Treatment Resource Center page where Delaware DSAMH posts current funding solicitations."
+};
+
+export const marylandGrantsOffice: ResourceLink = {
+  title: "Maryland Governor’s Grants Office",
+  href: "https://grants.maryland.gov/Pages/Grants-Office.aspx",
+  source: "grants.maryland.gov",
+  description: "Maryland’s official grants office, where state agencies post grant opportunities."
+};
+
+export const newJerseyDhsProposals: ResourceLink = {
+  title: "New Jersey DHS requests for proposals",
+  href: "https://www.nj.gov/humanservices/notices/grants/proposals/",
+  source: "nj.gov · Department of Human Services",
+  description: "Standing page for Department of Human Services grant notices, including the Division of Mental Health and Addiction Services."
+};
+
 export const stateOwnerFunding: ResourceLink[] = [
   ddapFundingOpportunities,
-  {
-    title: "Delaware DSAMH funding opportunities",
-    href: "https://atrc.dhss.delaware.gov/funding-opportunities",
-    source: "atrc.dhss.delaware.gov · DSAMH",
-    description: "Addiction Treatment Resource Center page where Delaware DSAMH posts current funding solicitations."
-  },
-  {
-    title: "Maryland Governor’s Grants Office",
-    href: "https://grants.maryland.gov/Pages/Grants-Office.aspx",
-    source: "grants.maryland.gov",
-    description: "Maryland’s official grants office, where state agencies post grant opportunities."
-  },
-  {
-    title: "New Jersey DHS requests for proposals",
-    href: "https://www.nj.gov/humanservices/notices/grants/proposals/",
-    source: "nj.gov · Department of Human Services",
-    description: "Standing page for Department of Human Services grant notices, including the Division of Mental Health and Addiction Services."
-  },
+  delawareDsamhFunding,
+  marylandGrantsOffice,
+  newJerseyDhsProposals,
   {
     title: "New York OASAS funding",
     href: "https://oasas.ny.gov/funding",

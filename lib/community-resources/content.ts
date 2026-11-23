@@ -19,6 +19,7 @@ export type CommunityState = {
   name: string;
   summary: string;
   groups: CommunityGroup[];
+  places?: CommunityPlace[];
 };
 
 export const crisisLinks: ResourceLink[] = [
@@ -150,7 +151,7 @@ export const pennsylvaniaGroups: CommunityGroup[] = [
 export const centralPennsylvania: CommunityPlace[] = [
   {
     name: "Harrisburg",
-    summary: "Dauphin County and the Capital Region bus system.",
+    summary: "Dauphin County and the Capital Region bus system. A separate PA CareerLink Capital Region page was not confirmed; use the statewide PA CareerLink page above.",
     links: [
       {
         title: "rabbittransit Capital Region routes",
@@ -193,6 +194,12 @@ export const centralPennsylvania: CommunityPlace[] = [
         href: "https://www.lancastercountypa.gov/",
         source: "lancastercountypa.gov",
         description: "County government site. The Lancaster County Assistance Office is listed on the statewide CAO directory."
+      },
+      {
+        title: "PA CareerLink Lancaster County",
+        href: "https://www.jobs4lancaster.com/contact-us/",
+        source: "jobs4lancaster.com · PA CareerLink",
+        description: "Lancaster County PA CareerLink office, 1046 Manheim Pike, Lancaster. Phone 717-509-5613."
       }
     ]
   },
@@ -211,6 +218,12 @@ export const centralPennsylvania: CommunityPlace[] = [
         href: "https://yorkcountypa.gov/",
         source: "yorkcountypa.gov",
         description: "County government site. The York County Assistance Office is listed on the statewide CAO directory."
+      },
+      {
+        title: "Housing Authority of the City of York",
+        href: "https://yorkhousingauthority.com/",
+        source: "yorkhousingauthority.com",
+        description: "Public housing authority for York. Office: 31 South Broad Street. Phone (717) 845-2601."
       }
     ]
   },
@@ -229,6 +242,18 @@ export const centralPennsylvania: CommunityPlace[] = [
         href: "https://www.berkspa.gov/",
         source: "berkspa.gov",
         description: "County government site. The Berks County Assistance Office in Reading is listed on the statewide CAO directory."
+      },
+      {
+        title: "Reading Housing Authority",
+        href: "https://www.readingha.org/",
+        source: "readingha.org",
+        description: "Public housing authority for the City of Reading."
+      },
+      {
+        title: "PA CareerLink Berks County",
+        href: "https://www.careerlinkberks.com/",
+        source: "careerlinkberks.com · PA CareerLink",
+        description: "Berks County PA CareerLink office in Reading, 1920 Kutztown Road, Suite F. Job-seeker phone (610) 988-1300."
       }
     ]
   }
@@ -300,7 +325,7 @@ export const otherStates: CommunityState[] = [
   {
     code: "DE",
     name: "Delaware",
-    summary: "Statewide benefits, jobs, housing, and DART buses.",
+    summary: "Statewide 211, housing, jobs, food, and DART, plus a service center in each county.",
     groups: [
       {
         title: "Help finding services",
@@ -332,6 +357,12 @@ export const otherStates: CommunityState[] = [
             href: "https://labor.delaware.gov/",
             source: "labor.delaware.gov",
             description: "State labor department for job seekers."
+          },
+          {
+            title: "Delaware JobLink",
+            href: "https://joblink.delaware.gov/",
+            source: "joblink.delaware.gov",
+            description: "The state’s online job-search system."
           }
         ]
       },
@@ -343,6 +374,12 @@ export const otherStates: CommunityState[] = [
             href: "https://assist.dhss.delaware.gov/",
             source: "assist.dhss.delaware.gov · DHSS",
             description: "Apply for SNAP and other Delaware public benefits."
+          },
+          {
+            title: "Division of Social Services locations",
+            href: "https://dhss.delaware.gov/dss/locations/",
+            source: "dhss.delaware.gov · DSS",
+            description: "State service centers in New Castle, Kent, and Sussex counties where you can apply for benefits in person."
           }
         ]
       },
@@ -353,7 +390,51 @@ export const otherStates: CommunityState[] = [
             title: "DART First State",
             href: "https://www.dartfirststate.com/",
             source: "dartfirststate.com",
-            description: "Delaware’s statewide bus system."
+            description: "Delaware’s statewide bus system, serving New Castle, Kent, and Sussex counties."
+          }
+        ]
+      }
+    ],
+    places: [
+      {
+        name: "New Castle County",
+        summary: "Wilmington and the northern state service center.",
+        links: [
+          {
+            title: "DeLaWarr State Service Center",
+            href: "https://dhss.delaware.gov/dss/locations/delawarr-state-service-center/",
+            source: "dhss.delaware.gov · DSS",
+            description: "500 Rogers Road, New Castle. SNAP, other benefits, and emergency food. Phone 302-622-4500. For immediate shelter, the page says to contact Delaware 211."
+          },
+          {
+            title: "DSAMH offices, including Wilmington",
+            href: "https://dhss.delaware.gov/dsamh/division-of-substance-abuse-and-mental-health/contact-dsamh/",
+            source: "dhss.delaware.gov · DSAMH",
+            description: "Lists the Wilmington community mental health center and treatment access center, plus the main DSAMH line, (302) 255-9399."
+          }
+        ]
+      },
+      {
+        name: "Kent County",
+        summary: "Dover state service center.",
+        links: [
+          {
+            title: "Williams State Service Center",
+            href: "https://dhss.delaware.gov/dss/locations/williams-state-service-center/",
+            source: "dhss.delaware.gov · DSS",
+            description: "James W. Williams State Service Center, 805 River Road, Dover. Apply for social services and Medicaid in person."
+          }
+        ]
+      },
+      {
+        name: "Sussex County",
+        summary: "Georgetown state service center.",
+        links: [
+          {
+            title: "Adams State Service Center",
+            href: "https://dhss.delaware.gov/dss/locations/adams-state-service-center/",
+            source: "dhss.delaware.gov · DSS",
+            description: "Thurman Adams State Service Center in Georgetown. Apply for social services in person."
           }
         ]
       }
@@ -470,7 +551,7 @@ export const otherStates: CommunityState[] = [
   {
     code: "MD",
     name: "Maryland",
-    summary: "Statewide food, jobs, transportation, and housing.",
+    summary: "Statewide housing, jobs, SNAP, and transit, plus the local social-services directory. The 211 Maryland website returned HTTP 403, so it is not linked.",
     groups: [
       {
         title: "Housing",
@@ -501,7 +582,19 @@ export const otherStates: CommunityState[] = [
             title: "SNAP",
             href: "https://dhs.maryland.gov/supplemental-nutrition-assistance-program/",
             source: "dhs.maryland.gov",
-            description: "Maryland Supplemental Nutrition Assistance Program."
+            description: "Maryland Supplemental Nutrition Assistance Program. Customer service: 1-800-332-6347."
+          },
+          {
+            title: "Apply for SNAP",
+            href: "https://dhs.maryland.gov/supplemental-nutrition-assistance-program/applying-for-the-food-supplement-program/",
+            source: "dhs.maryland.gov",
+            description: "How to apply online, by mail, or at a local department of social services."
+          },
+          {
+            title: "Local departments of social services",
+            href: "https://dhs.maryland.gov/local-offices/",
+            source: "dhs.maryland.gov",
+            description: "County and Baltimore City offices for SNAP, cash assistance, and other local services."
           }
         ]
       },
@@ -513,6 +606,50 @@ export const otherStates: CommunityState[] = [
             href: "https://www.mdot.maryland.gov/",
             source: "mdot.maryland.gov",
             description: "State department of transportation."
+          },
+          {
+            title: "Maryland Transit Administration",
+            href: "https://www.mta.maryland.gov/",
+            source: "mta.maryland.gov",
+            description: "Local bus, commuter bus, MARC train, Light RailLink, and Metro Subway in the Baltimore region."
+          },
+          {
+            title: "WMATA",
+            href: "https://www.wmata.com/",
+            source: "wmata.com",
+            description: "Metrobus and Metrorail serving the Washington suburbs in Maryland."
+          }
+        ]
+      }
+    ],
+    places: [
+      {
+        name: "Baltimore",
+        summary: "City and county social services are on the statewide local-offices page. Transit is the Maryland Transit Administration.",
+        links: [
+          {
+            title: "MTA schedules and trip planner",
+            href: "https://www.mta.maryland.gov/",
+            source: "mta.maryland.gov",
+            description: "Buses, Light RailLink, Metro Subway, and MARC for Baltimore and the surrounding region."
+          },
+          {
+            title: "Local offices, including Baltimore City and Baltimore County",
+            href: "https://dhs.maryland.gov/local-offices/",
+            source: "dhs.maryland.gov",
+            description: "Directory of local departments of social services, including Baltimore City and Baltimore County."
+          }
+        ]
+      },
+      {
+        name: "Montgomery County",
+        summary: "County bus service, plus Metro through WMATA.",
+        links: [
+          {
+            title: "Ride On",
+            href: "https://www.montgomerycountymd.gov/department-transportation/ride-montgomery-county",
+            source: "montgomerycountymd.gov",
+            description: "Montgomery County Department of Transportation bus service."
           }
         ]
       }
@@ -539,7 +676,7 @@ export const otherStates: CommunityState[] = [
   {
     code: "NJ",
     name: "New Jersey",
-    summary: "Statewide 211, SNAP, jobs, NJ Transit, and housing.",
+    summary: "Statewide 211, SNAP, jobs, NJ Transit, and housing, plus the directory of all 21 county social service agencies.",
     groups: [
       {
         title: "Help finding services",
@@ -582,6 +719,18 @@ export const otherStates: CommunityState[] = [
             href: "https://www.nj.gov/humanservices/njsnap/",
             source: "nj.gov · Department of Human Services",
             description: "New Jersey Supplemental Nutrition Assistance Program."
+          },
+          {
+            title: "Ways to apply for NJ SNAP",
+            href: "https://www.nj.gov/humanservices/njsnap/apply/ways/",
+            source: "nj.gov · Department of Human Services",
+            description: "Apply online, or take a paper application to your county social service agency. Help filling out the application is free; the page says you should never be asked to pay."
+          },
+          {
+            title: "County social service agencies",
+            href: "https://www.nj.gov/humanservices/dfd/counties/",
+            source: "nj.gov · Division of Family Development",
+            description: "The county agencies that take SNAP and cash-assistance applications, for all 21 counties."
           }
         ]
       },
@@ -593,6 +742,20 @@ export const otherStates: CommunityState[] = [
             href: "https://www.njtransit.com/",
             source: "njtransit.com",
             description: "Statewide bus, rail, and light rail."
+          }
+        ]
+      }
+    ],
+    places: [
+      {
+        name: "Essex County",
+        summary: "Example county social-services office from the state directory. The other counties are on that same directory.",
+        links: [
+          {
+            title: "Essex County Department of Citizen Services",
+            href: "https://essexcountynj.org/dfab/",
+            source: "essexcountynj.org",
+            description: "County page linked from New Jersey’s county social service agency directory."
           }
         ]
       }

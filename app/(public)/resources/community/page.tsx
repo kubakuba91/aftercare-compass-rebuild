@@ -148,6 +148,17 @@ export default function CommunityResourcesPage() {
                 </summary>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">{state.summary}</p>
                 <Groups groups={state.groups} />
+                {state.places?.length ? (
+                  <div className="mt-8 space-y-8">
+                    {state.places.map((place) => (
+                      <article key={place.name}>
+                        <h3 className="text-xl font-semibold text-[#17212b]">{place.name}</h3>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{place.summary}</p>
+                        <LinkGrid links={place.links} />
+                      </article>
+                    ))}
+                  </div>
+                ) : null}
               </details>
             ))}
           </div>

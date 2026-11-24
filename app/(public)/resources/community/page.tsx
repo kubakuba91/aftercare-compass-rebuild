@@ -141,7 +141,7 @@ export default function CommunityResourcesPage() {
           </p>
           <div className="mt-8 max-w-5xl divide-y divide-border rounded-2xl border border-border bg-white">
             {otherStates.map((state) => (
-              <details className="p-5" key={state.code}>
+              <details className="scroll-mt-24 p-5" id={state.code.toLowerCase()} key={state.code}>
                 <summary className="focus-ring cursor-pointer list-none rounded-md text-lg font-semibold text-[#17212b]">
                   {state.name}
                   <span className="ml-2 text-sm font-medium text-muted-foreground">{state.code}</span>

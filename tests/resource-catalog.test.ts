@@ -51,6 +51,10 @@ const paLicensing = filterResources(resourceCatalog, { state: "PA", category: "l
 assert.ok(paLicensing.some((entry) => entry.url.includes("licensed-recovery-house")));
 
 const shelterInPa = filterResources(resourceCatalog, { state: "PA", category: "shelter", query: "" });
-assert.equal(shelterInPa.length, 0);
-const shelterAll = filterResources(resourceCatalog, { state: "all", category: "shelter", query: "" });
-assert.ok(shelterAll.some((entry) => entry.title === "HUD Find Shelter"));
+assert.ok(shelterInPa.some((entry) => entry.title === "HUD Find Shelter" && entry.state === null));
+assert.ok(shelterInPa.every((entry) => entry.state === "PA" || entry.state === null));
+const firstNational = shelterInPa.findIndex((entry) => entry.state === null);
+assert.ok(shelterInPa.slice(0, firstNational).every((entry) => entry.state === "PA"));
+
+const maEmployment = filterResources(resourceCatalog, { state: "MA", category: "employment", query: "" });
+assert.equal(maEmployment.length, 0);

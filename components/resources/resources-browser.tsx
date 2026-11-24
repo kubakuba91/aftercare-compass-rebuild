@@ -208,7 +208,7 @@ export function ResourcesBrowser() {
               Clear filters
             </Link>
           </div>
-        ) : (
+        ) : state === ALL ? (
           <ul className="mt-4 grid gap-4 md:grid-cols-2">
             {results.map((entry) => (
               <li key={entry.id}>
@@ -216,6 +216,26 @@ export function ResourcesBrowser() {
               </li>
             ))}
           </ul>
+        ) : (
+          <div className="mt-4 space-y-8">
+            {[
+              { label: stateName, items: results.filter((entry) => entry.state) },
+              { label: "National", items: results.filter((entry) => !entry.state) }
+            ]
+              .filter((group) => group.items.length > 0)
+              .map((group) => (
+                <section key={group.label}>
+                  <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-primary">{group.label}</h2>
+                  <ul className="mt-4 grid gap-4 md:grid-cols-2">
+                    {group.items.map((entry) => (
+                      <li key={entry.id}>
+                        <ResultCard entry={entry} />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+          </div>
         )}
       </div>
     </div>

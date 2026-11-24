@@ -216,8 +216,8 @@ export function filterResources(
   { state, category, query }: { state: string; category: ResourceCategory; query: string }
 ) {
   const q = query.trim().toLowerCase();
-  return source.filter((entry) => {
-    if (state !== "all" && entry.state !== state) return false;
+  const filtered = source.filter((entry) => {
+    if (state !== "all" && entry.state !== null && entry.state !== state) return false;
     if (category !== "all" && entry.category !== category) return false;
     if (!q) return true;
     const hay = [entry.title, entry.description, entry.source, entry.stateName, entry.area, entry.context]
@@ -225,5 +225,11 @@ export function filterResources(
       .join(" ")
       .toLowerCase();
     return hay.includes(q);
+  });
+  if (state === "all") return filtered;
+  return filtered.sort((a, b) => {
+    if (!a.state && b.state) return 1;
+    if (a.state && !b.state) return -1;
+    return a.title.localeCompare(b.title);
   });
 }

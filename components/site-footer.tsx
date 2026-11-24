@@ -19,6 +19,9 @@ export function SiteFooter() {
           <Link className="font-semibold hover:text-foreground" href={publicAppUrl("/resources")}>
             Resources
           </Link>
+          <Link className="font-semibold hover:text-foreground" href={publicAppUrl("/library")}>
+            Library
+          </Link>
           <Link className="font-semibold hover:text-foreground" href={publicAppUrl("/about")}>
             About
           </Link>

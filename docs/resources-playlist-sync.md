@@ -1,8 +1,8 @@
 # Resources playlist sync
 
-The Series A playlist (`PLb9ZWqN6f9YU`) is the source of truth for the Resources page. Channel-only videos (IOP, PHP, "What is Aftercare Compass?") are never pulled in.
+The Series A playlist (`PLb9ZWqN6f9YU`) is the source of truth for the Library page. Channel-only videos (IOP, PHP, "What is Aftercare Compass?") are never pulled in.
 
-- **Published (live):** `lib/resource-videos.ts`. Only these appear on `/resources`.
+- **Published (live):** `lib/resource-videos.ts`. Only these appear on `/library`.
 - **Pending (review only):** `content/resources/pending-videos.json`. Written by the sync, never read by the site.
 
 ## Run locally

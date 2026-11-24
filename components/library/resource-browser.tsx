@@ -79,7 +79,7 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-sm">
           <label className="sr-only" htmlFor={searchId}>
-            Search resources by topic
+            Search the library by topic
           </label>
           <Search
             aria-hidden="true"
@@ -97,7 +97,7 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
             value={query}
           />
         </div>
-        <div aria-label="Resource view" className="inline-flex rounded-full border border-border p-1" role="group">
+        <div aria-label="Library view" className="inline-flex rounded-full border border-border p-1" role="group">
           <button aria-pressed={view === "cards"} className={tabClass(view === "cards")} onClick={() => setView("cards")} type="button">
             Cards
           </button>

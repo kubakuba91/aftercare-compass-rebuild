@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     select: { slug: true, updatedAt: true },
     orderBy: { slug: "asc" }
   }) : [];
-  const publicPages = ["/", "/search", "/about", "/for-case-managers", "/for-providers", "/resources", "/pricing", "/contact"];
+  const publicPages = ["/", "/search", "/about", "/for-case-managers", "/for-providers", "/resources", "/resources/recovery-house-owners", "/resources/community", "/library", "/pricing", "/contact"];
   return [
     ...publicPages.map(path => ({ url: publicSeoUrl(path) })),
     ...profiles.map(profile => ({

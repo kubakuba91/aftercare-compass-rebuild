@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Sync the Series A YouTube playlist into a REVIEW-ONLY pending file.
-// Nothing here changes the live Resources page: published videos live in
+// Nothing here changes the live Library page: published videos live in
 // lib/resource-videos.ts and are only changed by a human (Michael/Kuba review
 // every blurb). See docs/resources-playlist-sync.md.
 //

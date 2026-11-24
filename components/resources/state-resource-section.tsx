@@ -17,7 +17,11 @@ function Source({ children }: { children: React.ReactNode }) {
 
 export function StateResourceSection({ state }: { state: StateResource }) {
   return (
-    <article aria-labelledby={`state-${state.code}-heading`} className="mt-10 rounded-[1.5rem] border border-border bg-white p-6 sm:p-8">
+    <article
+      aria-labelledby={`state-${state.code}-heading`}
+      className="mt-10 scroll-mt-24 rounded-[1.5rem] border border-border bg-white p-6 sm:p-8"
+      id={state.code.toLowerCase()}
+    >
       <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">{state.oversightLabel}</p>
       <h3 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-[#17212b]" id={`state-${state.code}-heading`}>
         {state.name}

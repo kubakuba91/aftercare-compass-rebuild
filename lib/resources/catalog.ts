@@ -11,6 +11,7 @@ import { federalOwnerFunding, stateOwnerFunding } from "@/lib/recovery-housing/f
 import { standardsLinks } from "@/lib/recovery-housing/general";
 import { stateResources } from "@/lib/recovery-housing/states";
 import type { ResourceLink } from "@/lib/recovery-housing/types";
+import { supportResources } from "@/lib/resources/support-topics";
 
 export const resourceCategories = [
   { id: "all", label: "All" },
@@ -20,7 +21,10 @@ export const resourceCategories = [
   { id: "employment", label: "Employment" },
   { id: "transit", label: "Transit" },
   { id: "licensing", label: "Licensing & Funding" },
-  { id: "help", label: "Help finding services" }
+  { id: "help", label: "Help finding services" },
+  { id: "recovery", label: "Recovery Meetings" },
+  { id: "family", label: "Family & Children" },
+  { id: "veterans", label: "Veterans" }
 ] as const;
 
 export type ResourceCategory = (typeof resourceCategories)[number]["id"];
@@ -194,6 +198,8 @@ for (const state of stateResources) {
 for (const link of federalOwnerFunding) addLink(link, null, "licensing");
 for (const link of standardsLinks) addLink(link, null, "licensing");
 for (const link of stateOwnerFunding) addLink(link, fundingState(link), "licensing");
+
+for (const entry of supportResources) add(entry);
 
 entries.sort((a, b) => {
   if (!a.state && b.state) return -1;

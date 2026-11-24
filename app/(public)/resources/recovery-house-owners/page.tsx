@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { CheckCircle2, ClipboardList, FileText, Home, Info, PiggyBank, ShieldCheck } from "lucide-react";
 import { MarketingHeader } from "@/components/marketing-header";
+import { OwnerGuideNav } from "@/components/resources/owner-guide-nav";
 import { ResourceLinkCard } from "@/components/resources/resource-link-card";
-import { StateResourcePicker } from "@/components/resources/state-resource-picker";
+import { StateResourceSection } from "@/components/resources/state-resource-section";
 import { ButtonLink } from "@/components/ui/button-link";
 import { dashboardAppUrl, publicAppUrl } from "@/lib/app-urls";
 import { federalOwnerFunding, ownerFundingGaps, stateOwnerFunding } from "@/lib/recovery-housing/funding";
 import { generalFaq, narrChecklist, standardsLinks, templateOutlines } from "@/lib/recovery-housing/general";
+import { includesQuery, isOwnerGuideTab, linkSearchText, stateSearchText, type OwnerGuideTab } from "@/lib/recovery-housing/owner-guide";
 import { findStateResource, stateResources } from "@/lib/recovery-housing/states";
 import type { ResourceLink } from "@/lib/recovery-housing/types";
 
@@ -37,6 +40,9 @@ const zoningLinks: ResourceLink[] = [
   }
 ];
 
+const zoningIntro =
+  "Zoning, occupancy limits, and building and fire codes are set locally and vary from one municipality to the next. Check them before you commit to a property.";
+
 const zoningChecks = [
   "Ask the municipal zoning officer how a recovery or sober house is classified in that zoning district, and whether it’s allowed by right or needs a special approval.",
   "Ask about occupancy limits, including any limit on unrelated people living together, parking, and permits you’ll need.",
@@ -45,12 +51,84 @@ const zoningChecks = [
   "Get answers in writing when you can, and confirm everything with your municipality before you sign a lease or buy."
 ];
 
-type PageProps = { searchParams: Promise<{ state?: string | string[] }> };
+type PageProps = { searchParams: Promise<{ state?: string | string[]; tab?: string | string[]; q?: string | string[] }> };
+
+function firstParam(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function fundingStateCode(link: ResourceLink) {
+  const hay = `${link.title} ${link.source} ${link.href}`.toLowerCase();
+  if (hay.includes("ddap") || hay.includes("pennsylvania")) return "PA";
+  if (hay.includes("delaware") || hay.includes("dsamh")) return "DE";
+  if (hay.includes("maryland")) return "MD";
+  if (hay.includes("new jersey") || hay.includes("nj.gov")) return "NJ";
+  if (hay.includes("oasas") || hay.includes("new york")) return "NY";
+  if (hay.includes("north carolina") || hay.includes("ncdhhs")) return "NC";
+  if (hay.includes("ohio")) return "OH";
+  if (hay.includes("tennessee") || hay.includes("tdmhsas")) return "TN";
+  if (hay.includes("virginia") || hay.includes("dbhds")) return "VA";
+  return null;
+}
 
 export default async function RecoveryHouseOwnersPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const requested = Array.isArray(params.state) ? params.state[0] : params.state;
-  const initialState = findStateResource(requested);
+  const selectedState = findStateResource(firstParam(params.state));
+  const stateCode = selectedState?.code ?? "all";
+  const requestedTab = firstParam(params.tab);
+  const tab: OwnerGuideTab = isOwnerGuideTab(requestedTab) ? requestedTab : "all";
+  const query = firstParam(params.q) ?? "";
+  const active = (id: OwnerGuideTab) => tab === "all" || tab === id;
+  const querySet = query.trim().length > 0;
+
+  const licensingIntro =
+    "Every state handles recovery housing differently. Some require a license, some certify homes voluntarily, and some tie referrals or public funding to certification.";
+  const licensingStates = stateResources.filter((state) => {
+    if (stateCode !== "all" && state.code !== stateCode) return false;
+    if (!querySet) return stateCode !== "all";
+    if (stateCode !== "all" && includesQuery(licensingIntro, query)) return true;
+    return includesQuery(stateSearchText(state), query);
+  });
+  const showLicensing = active("licensing") && (!querySet || includesQuery(licensingIntro, query) || licensingStates.length > 0);
+
+  const showZoningLinks = stateCode === "all" || stateCode === "PA";
+  const zoningText = [zoningIntro, ...zoningChecks, ...(showZoningLinks ? zoningLinks.map(linkSearchText) : [])].join(" ");
+  const showZoning = active("zoning") && includesQuery(zoningText, query);
+
+  const fundingIntro =
+    "In many states, public money and state-agency referrals depend on licensing or certification. For example, Pennsylvania only lets licensed houses receive state or federal recovery housing funds; Delaware bars uncertified houses from accepting state or local funding; and West Virginia, Massachusetts, Florida, and Ohio limit certain referrals to certified or registered homes. Pick your state above for the details and sources. Your county or regional behavioral health office (in Pennsylvania, the Single County Authority) is usually the best place to ask about local recovery housing funds, such as Lancaster County’s Recovery House Scholarship program. Standing pages from SAMHSA and state substance-use agencies. These are where new announcements are posted. They are not a list of past awards. Read the current notice before you apply, because eligibility and deadlines change.";
+  const fundingForState = stateOwnerFunding.filter((link) => {
+    const code = fundingStateCode(link);
+    return stateCode === "all" || !code || code === stateCode;
+  });
+  const gapNames = stateCode === "all" ? ownerFundingGaps : ownerFundingGaps.filter((name) => name === selectedState?.name);
+  const fundingText = [fundingIntro, ...federalOwnerFunding.map(linkSearchText), ...fundingForState.map(linkSearchText), gapNames.join(", ")].join(" ");
+  const showFunding = active("funding") && includesQuery(fundingText, query);
+
+  const templateText = templateOutlines
+    .flatMap((outline) => [outline.title, outline.intro, ...outline.items.map((item) => item.text)])
+    .join(" ");
+  const showTemplates = active("templates") && includesQuery(`Starter templates Outlines to build your policies from ${templateText}`, query);
+
+  const narrAffiliateText = selectedState
+    ? [selectedState.narrNote, selectedState.narrAffiliate?.title, selectedState.narrAffiliate?.description, selectedState.narrAffiliate?.source].filter(Boolean).join(" ")
+    : "";
+  const standardsText = [
+    "NARR standards checklist",
+    ...narrChecklist.flatMap((group) => [group.domain, ...group.principles]),
+    ...standardsLinks.map(linkSearchText),
+    tab === "standards" ? narrAffiliateText : ""
+  ].join(" ");
+  const showStandards = active("standards") && includesQuery(standardsText, query);
+
+  const faqText = [
+    ...generalFaq.flatMap((item) => [item.question, item.answer]),
+    "State-specific questions are in each state’s section above.",
+    ...(tab === "faq" && selectedState?.faq ? selectedState.faq.flatMap((item) => [item.question, item.answer]) : [])
+  ].join(" ");
+  const showFaq = active("faq") && includesQuery(faqText, query);
+  const showStateFaq = showFaq && tab === "faq" && Boolean(selectedState?.faq?.length);
+  const anySection = showLicensing || showZoning || showFunding || showTemplates || showStandards || showFaq;
 
   return (
     <>
@@ -69,8 +147,8 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
                 licensing or certification rules in your state.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <ButtonLink href="#state">Find your state’s rules</ButtonLink>
-                <ButtonLink href="#funding" variant="secondary">
+                <ButtonLink href="/resources/recovery-house-owners?tab=licensing#state">Find your state’s rules</ButtonLink>
+                <ButtonLink href="/resources/recovery-house-owners?tab=funding#funding" variant="secondary">
                   Funding and grants
                 </ButtonLink>
                 <ButtonLink href={publicAppUrl("/resources/community")} variant="secondary">
@@ -91,6 +169,14 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
           </div>
         </section>
 
+        <section className="shell pb-4 pt-10">
+          <Suspense fallback={<p className="text-sm text-muted-foreground">Loading guide…</p>}>
+            <OwnerGuideNav states={stateResources.map((state) => ({ code: state.code, name: state.name }))} />
+          </Suspense>
+        </section>
+
+        <div aria-labelledby={`owner-tab-${tab}`} id="owner-guide-results" role="tabpanel">
+        {showLicensing ? (
         <section className="shell scroll-mt-24 py-10 lg:py-14" id="state">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">By state</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">Licensing and certification in your state</h2>
@@ -98,12 +184,18 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
             Every state handles recovery housing differently. Some require a license, some certify homes voluntarily, and some tie
             referrals or public funding to certification.
           </p>
-          <div className="mt-8">
-            <StateResourcePicker initialCode={initialState?.code} states={stateResources} />
-          </div>
+          {licensingStates.length === 0 ? (
+            <p className="mt-8 rounded-2xl border border-dashed border-border bg-[#f4f8ff] p-6 text-base text-muted-foreground">
+              Pick a state to see its licensing or certification body, official links, local offices, NARR affiliate, and funding notes.
+            </p>
+          ) : (
+            licensingStates.map((state) => <StateResourceSection key={state.code} state={state} />)
+          )}
         </section>
+        ) : null}
 
-        <section className="border-y border-border bg-[#f4f8ff]">
+        {showZoning ? (
+        <section className="scroll-mt-24 border-y border-border bg-[#f4f8ff]" id="zoning">
           <div className="shell grid gap-10 py-16 lg:grid-cols-[0.7fr_1.3fr] lg:py-20">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Before you sign a lease</p>
@@ -124,15 +216,20 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
                   </li>
                 ))}
               </ul>
+              {showZoningLinks ? (
               <div className="mt-8 grid gap-4 md:grid-cols-2">
                 {zoningLinks.map((link) => (
                   <ResourceLinkCard key={link.href} link={link} />
                 ))}
               </div>
+              ) : null}
             </div>
           </div>
         </section>
+        ) : null}
 
+        {showFunding ? (
+        <>
         <section className="shell grid gap-10 py-16 lg:grid-cols-[0.7fr_1.3fr] lg:py-20">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Funding</p>
@@ -171,16 +268,21 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
           </div>
           <h3 className="mt-10 text-xl font-semibold text-[#17212b]">State agencies</h3>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {stateOwnerFunding.map((link) => (
+            {fundingForState.map((link) => (
               <ResourceLinkCard key={link.href} link={link} />
             ))}
           </div>
+          {gapNames.length > 0 ? (
           <p className="mt-6 max-w-3xl text-sm leading-6 text-muted-foreground">
-            No standing funding-board page was verified for {ownerFundingGaps.join(", ")}. Use that state’s licensing or
+            No standing funding-board page was verified for {gapNames.join(", ")}. Use that state’s licensing or
             certification agency in the picker above, and check SAMHSA’s grants page for federal notices.
           </p>
+          ) : null}
         </section>
+        </>
+        ) : null}
 
+        {showTemplates ? (
         <section className="scroll-mt-24 border-y border-border bg-[#f4f8ff]" id="templates">
           <div className="shell py-16 lg:py-20">
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Starter templates</p>
@@ -217,7 +319,10 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
           </div>
         </section>
 
-        <section className="shell py-16 lg:py-20">
+        ) : null}
+
+        {showStandards ? (
+        <section className="shell scroll-mt-24 py-16 lg:py-20" id="standards">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Quality standards</p>
           <h2 className="mt-4 flex items-center gap-3 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">
             <ShieldCheck aria-hidden="true" className="text-primary" size={30} /> NARR standards checklist
@@ -246,9 +351,23 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
               <ResourceLinkCard key={link.href} link={link} />
             ))}
           </div>
+          {tab === "standards" && selectedState && (selectedState.narrAffiliate || selectedState.narrNote) ? (
+            <div className="mt-10">
+              <h3 className="text-lg font-semibold text-[#17212b]">NARR state affiliate</h3>
+              {selectedState.narrAffiliate ? (
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <ResourceLinkCard link={selectedState.narrAffiliate} />
+                </div>
+              ) : (
+                <p className="mt-3 max-w-3xl text-base leading-7 text-muted-foreground">{selectedState.narrNote}</p>
+              )}
+            </div>
+          ) : null}
         </section>
+        ) : null}
 
-        <section className="border-t border-border bg-[#f4f8ff]">
+        {showFaq ? (
+        <section className="scroll-mt-24 border-t border-border bg-[#f4f8ff]" id="faq">
           <div className="shell py-16 lg:py-20">
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">FAQ</p>
             <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">Common questions</h2>
@@ -262,8 +381,33 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
               ))}
             </div>
             <p className="mt-4 text-sm text-muted-foreground">State-specific questions are in each state’s section above.</p>
+            {showStateFaq && selectedState?.faq ? (
+              <div className="mt-8 max-w-3xl">
+                <h3 className="text-lg font-semibold text-[#17212b]">{selectedState.name} FAQ</h3>
+                <div className="mt-4 divide-y divide-border rounded-2xl border border-border bg-white">
+                  {selectedState.faq.map((item) => (
+                    <details key={item.question} className="p-5">
+                      <summary className="focus-ring cursor-pointer list-none rounded-md text-base font-semibold text-[#17212b]">{item.question}</summary>
+                      <p className="mt-3 text-sm leading-6 text-muted-foreground">{item.answer}</p>
+                      <span className="mt-1 block text-xs font-medium text-muted-foreground">Source: {item.source}</span>
+                    </details>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </section>
+        ) : null}
+
+        {anySection ? null : (
+          <div className="shell py-10">
+            <div className="rounded-2xl border border-dashed border-border bg-white p-8 text-center">
+              <p className="text-lg font-semibold text-[#17212b]">No sections match that search.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Try another word, or clear the search.</p>
+            </div>
+          </div>
+        )}
+        </div>
 
         <section className="border-t border-border">
           <div className="shell py-16 text-center sm:py-20">

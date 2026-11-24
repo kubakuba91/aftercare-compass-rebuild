@@ -29,6 +29,14 @@ function categoryLabel(category: ResourceCategory) {
   return resourceCategories.find((item) => item.id === category)?.label ?? "Resources";
 }
 
+function directoryHref(kind: "housing" | "continued", state: string) {
+  const params = new URLSearchParams();
+  if (kind === "continued") params.set("type", "continued_care");
+  if (state !== ALL) params.set("q", state);
+  const search = params.toString();
+  return search ? `/search?${search}` : "/search";
+}
+
 function ResultCard({ entry }: { entry: CatalogEntry }) {
   const external = entry.url.startsWith("http");
   const category = categoryLabel(entry.category);
@@ -197,6 +205,21 @@ export function ResourcesBrowser() {
       </div>
 
       <div aria-labelledby={`resource-tab-${category}`} className="mt-6" id="resource-results" role="tabpanel">
+        {category === "recovery" || category === "family" || category === "veterans" ? (
+          <div className="mb-5 rounded-2xl border border-border bg-[#f4f8ff] p-5">
+            <p className="text-sm leading-6 text-[#17212b]">
+              For a recovery house or a continued care program, search the Aftercare Compass directory.
+            </p>
+            <p className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
+              <Link className="focus-ring rounded-md text-primary underline-offset-4 hover:underline" href={directoryHref("housing", state)}>
+                Recovery housing
+              </Link>
+              <Link className="focus-ring rounded-md text-primary underline-offset-4 hover:underline" href={directoryHref("continued", state)}>
+                Continued care
+              </Link>
+            </p>
+          </div>
+        ) : null}
         <p aria-live="polite" className="text-sm text-muted-foreground">
           {results.length} {results.length === 1 ? "resource" : "resources"}
         </p>

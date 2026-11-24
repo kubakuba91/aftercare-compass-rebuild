@@ -58,3 +58,20 @@ assert.ok(shelterInPa.slice(0, firstNational).every((entry) => entry.state === "
 
 const maEmployment = filterResources(resourceCatalog, { state: "MA", category: "employment", query: "" });
 assert.equal(maEmployment.length, 0);
+
+const paRecovery = filterResources(resourceCatalog, { state: "PA", category: "recovery", query: "" });
+assert.ok(paRecovery.some((entry) => entry.title === "Eastern Pennsylvania A.A. Area 59" && entry.state === "PA"));
+assert.ok(paRecovery.some((entry) => entry.title === "Find A.A. near you" && entry.state === null));
+const recoveryNational = paRecovery.findIndex((entry) => entry.state === null);
+assert.ok(paRecovery.slice(0, recoveryNational).every((entry) => entry.state === "PA"));
+
+const paFamily = filterResources(resourceCatalog, { state: "PA", category: "family", query: "" });
+assert.ok(paFamily.some((entry) => entry.title === "Child Care Works"));
+assert.ok(paFamily.some((entry) => entry.title === "988 Suicide & Crisis Lifeline" && entry.state === null));
+
+const paVeterans = filterResources(resourceCatalog, { state: "PA", category: "veterans", query: "" });
+assert.ok(paVeterans.some((entry) => entry.title === "County directors of veterans affairs"));
+assert.ok(paVeterans.some((entry) => entry.title === "Veterans Crisis Line" && entry.state === null));
+assert.equal(paVeterans.some((entry) => /treatment locator|findtreatment/i.test(entry.url + entry.title)), false);
+
+assert.equal(resourceCatalog.some((entry) => /findtreatment|locator\.crgroups|sud/i.test(entry.url)), false);

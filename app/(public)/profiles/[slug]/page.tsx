@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+import { getPublishedSeoProfile } from "@/lib/profile-seo-data";
+import { profileMetadata, profileStructuredData, serializeJsonLd } from "@/lib/profile-seo";
 import { isVirtualOnly, coverageLabel } from "@/lib/virtual-care";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,6 +12,7 @@ import { Tag } from "@/components/ui/tag";
 import { BackLink } from "@/components/public/back-link";
 import { ExpandableRichText } from "@/components/public/expandable-rich-text";
 import { FavoriteListingButton } from "@/components/public/favorite-listing-button";
+import { ShareProfileButton } from "@/components/public/share-profile-button";
 import { ClaimProfileDialog } from "@/components/public/claim-profile-dialog";
 import { ClaimOutreachStartTracker } from "@/components/public/claim-outreach-start-tracker";
 import { ProfileOwnershipBadge } from "@/components/public/profile-ownership-badge";
@@ -16,6 +20,7 @@ import { PublicSearchHeader } from "@/components/public/public-search-header";
 import { TrustBadge } from "@/components/public/trust-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { ReferralFields } from "@/components/public/referral-fields";
 import { ProfileDetailSections } from "@/components/public/profile-detail-sections";
 import { getClerkSessionUserId, getCurrentAppUser, getRequiredClerkIdentity } from "@/lib/current-user";
 import { canDisplayVerifiedBadge, canReceiveDirectReferrals, canSubmitReferrals, canUseLiveAvailability } from "@/lib/feature-gates";
@@ -27,6 +32,17 @@ import { richTextHtml } from "@/lib/rich-text";
 import { createProfileClaimRequest, createProfileReferral, createPublicProfileLead } from "./actions";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params, searchParams }: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ preview?: string }>;
+}): Promise<Metadata> {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const profile = await getPublishedSeoProfile(slug);
+  if (!profile) return { title: "Profile unavailable | Aftercare Compass", robots: { index: false, follow: false } };
+  return { ...profileMetadata(profile), ...(query.preview === "1" ? { robots: { index: false, follow: false } } : {}) };
+}
+
 
 function populationsServed(values: string[], legacyValue: string | null) {
   if (values.length) {
@@ -168,6 +184,7 @@ function PlaceClientForm({
   referralStatus,
   userName,
   userEmail,
+  userPhone,
   organizationName,
   claimOutreachToken,
   invitedEmail
@@ -176,12 +193,13 @@ function PlaceClientForm({
   referralStatus?: string;
   userName: string;
   userEmail: string;
+  userPhone: string;
   organizationName: string;
   claimOutreachToken?: string;
   invitedEmail?: string;
 }) {
   return (
-    <Card className="h-fit">
+    <Card className="h-fit scroll-mt-24" id="contact">
       <div className="flex items-center gap-2">
         <Send size={18} />
         <h2 className="font-semibold">Place client</h2>
@@ -203,76 +221,7 @@ function PlaceClientForm({
         <input name="aftercareProfileId" type="hidden" value={profile.id} />
         <input name="slug" type="hidden" value={profile.slug} />
         <input aria-hidden="true" autoComplete="off" className="hidden" name="companyWebsite" tabIndex={-1} />
-        <label className="grid gap-2 text-sm font-medium">
-          Case manager name
-          <input className="min-h-10 rounded-md border border-border px-3" defaultValue={userName} name="caseManagerName" required />
-        </label>
-        <label className="grid gap-2 text-sm font-medium">
-          Case manager email
-          <input className="min-h-10 rounded-md border border-border px-3" defaultValue={userEmail} name="caseManagerEmail" required type="email" />
-        </label>
-        <label className="grid gap-2 text-sm font-medium">
-          Case manager phone
-          <input className="min-h-10 rounded-md border border-border px-3" name="caseManagerPhone" required />
-        </label>
-        <label className="grid gap-2 text-sm font-medium">
-          Organization name
-          <input className="min-h-10 rounded-md border border-border px-3" defaultValue={organizationName} name="caseManagerOrganization" required />
-        </label>
-        <label className="grid gap-2 text-sm font-medium">
-          Client age range
-          <select className="min-h-10 rounded-md border border-border px-3" name="clientAgeRange" required>
-            <option value="">Select one</option>
-            <option value="18_25">18-25</option>
-            <option value="26_35">26-35</option>
-            <option value="36_45">36-45</option>
-            <option value="46_55">46-55</option>
-            <option value="55_plus">55+</option>
-          </select>
-        </label>
-        <label className="grid gap-2 text-sm font-medium">
-          Support category
-          <select className="min-h-10 rounded-md border border-border px-3" name="supportCategory" required>
-            <option value="">Select one</option>
-            <option value="substance_use">Substance use recovery</option>
-            <option value="mental_health">Mental health support</option>
-            <option value="co_occurring">Co-occurring support</option>
-            <option value="other">Other</option>
-          </select>
-        </label>
-        <label className="grid gap-2 text-sm font-medium">
-          Insurance category
-          <select className="min-h-10 rounded-md border border-border px-3" name="insuranceCategory" required>
-            <option value="">Select one</option>
-            <option value="medicaid">Medicaid</option>
-            <option value="medicare">Medicare</option>
-            <option value="commercial">Commercial</option>
-            <option value="self_pay">Self-pay</option>
-          </select>
-        </label>
-        <label className="grid gap-2 text-sm font-medium">
-          Preferred start window
-          <select className="min-h-10 rounded-md border border-border px-3" name="preferredStartWindow" required>
-            <option value="">Select one</option>
-            <option value="within_1_week">Within 1 week</option>
-            <option value="1_2_weeks">1-2 weeks</option>
-            <option value="2_4_weeks">2-4 weeks</option>
-            <option value="flexible">Flexible</option>
-          </select>
-        </label>
-        <fieldset className="grid gap-2">
-          <legend className="text-sm font-medium">Special needs/preferences</legend>
-          {["MAT-friendly", "Gender-specific housing", "12-Step oriented", "Pet friendly"].map((item) => (
-            <label key={item} className="flex items-center gap-2 text-sm">
-              <input name="specialNeeds" type="checkbox" value={item} />
-              {item}
-            </label>
-          ))}
-        </fieldset>
-        <label className="grid gap-2 text-sm font-medium">
-          Reason for referral
-          <textarea className="min-h-28 rounded-md border border-border p-3" name="reasonForReferral" required />
-        </label>
+        <ReferralFields contact={{ name: userName, email: userEmail, phone: userPhone, organization: organizationName }} />
         <button className="focus-ring ac-button ac-button--primary">
           Send referral
         </button>
@@ -516,6 +465,9 @@ export default async function PublicProfilePage({
 
   return (
     <>
+      {profile.status === "published" && query.preview !== "1" ? (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(profileStructuredData(profile)) }} />
+      ) : null}
       <PublicSearchHeader
         defaultLocation={publicLocation}
         defaultType={profile.type}
@@ -542,8 +494,8 @@ export default async function PublicProfilePage({
               <div className="ac-profile-title-group">
                 <h1 className="ac-page-heading">{profile.programName}</h1>
                 <TrustBadge compact={profileShowsVerifiedBadge} isVerified={profileShowsVerifiedBadge} verificationTier={profile.verificationTier} />
-                <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} />
-                {availabilityLabel !== "Call for availability" ? <Badge tone="availability"><CheckCircle2 aria-hidden="true" size={14} />{availabilityLabel}</Badge> : null}
+                <ProfileOwnershipBadge ownershipStatus={profile.ownershipStatus} claimHref={`/profiles/${profile.slug}?claim=open#claim`} />
+                {availabilityLabel !== "Call for availability" ? <Badge tone="availability">{availabilityLabel}</Badge> : null}
               </div>
 
             </div>
@@ -571,7 +523,10 @@ export default async function PublicProfilePage({
                 {profile.roomTypes.length ? <p>{profile.roomTypes.join(" · ")}</p> : null}
                 {moveInCostLabel ? <p className="ac-profile-move-in"><strong>Move-in costs:</strong> {moveInCostLabel}</p> : null}
               </div> : null}
-              <FavoriteListingButton large canFavorite={isReferent} initialFavorited={Boolean(favorite)} isSignedIn={Boolean(appUser)} profileId={profile.id} programName={profile.programName} />
+              <div className="flex shrink-0 items-center gap-2">
+                <ShareProfileButton slug={profile.slug} programName={profile.programName} />
+                <FavoriteListingButton large canFavorite={isReferent} initialFavorited={Boolean(favorite)} isSignedIn={Boolean(appUser)} profileId={profile.id} programName={profile.programName} />
+              </div>
             </div>
             </div>
             {admissionsPhone ? <div className="ac-contact-panel">
@@ -582,11 +537,10 @@ export default async function PublicProfilePage({
               <a className="ac-phone-button focus-ring" href={telHref(admissionsPhone)}>{formatPhoneForDisplay(admissionsPhone)}</a>
             </div> : null}
             <ProfileGallery profile={profile} preview={canPreviewDraft} />
-            <div className="ac-profile-claim">
                 {profile.ownershipStatus !== ProfileOwnershipStatus.claimed || query.claim === "unavailable" ? (
                   <ClaimProfileDialog
                     label={profile.ownershipStatus === ProfileOwnershipStatus.claim_pending ? "Under Review" : "Claim this profile"}
-                    showTrigger={profile.ownershipStatus !== ProfileOwnershipStatus.claimed}
+                    showTrigger={false}
                   >
                     <ClaimProfileCard
                       canClaim={canClaimProfile}
@@ -601,7 +555,6 @@ export default async function PublicProfilePage({
                     />
                   </ClaimProfileDialog>
                 ) : null}
-            </div>
           </Card>
 
           <div className="mt-5 grid gap-4">
@@ -652,7 +605,7 @@ export default async function PublicProfilePage({
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {continuedCareProfile.acceptingNewPatients ? (
-                            <Badge tone="success">Accepting patients</Badge>
+                            <Badge tone="availability">Accepting patients</Badge>
                           ) : null}
                           {continuedCareProfile.levelsOfCare.slice(0, 2).map((level) => (
                             <Badge key={level}>{level}</Badge>
@@ -741,6 +694,7 @@ export default async function PublicProfilePage({
             organizationName={appUser?.organization?.name || ""}
             profile={profile}
             referralStatus={query.referral}
+            userPhone={appUser?.phone?.trim() || appUser?.organization?.phone?.trim() || ""}
             userEmail={appUser?.email || ""}
             userName={userName}
           />

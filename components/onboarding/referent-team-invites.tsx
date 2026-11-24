@@ -69,7 +69,7 @@ export function ReferentTeamInvites({ initialEmails }: { initialEmails: string[]
       <button type="submit" name="skipTeamInvites" value="yes" className="focus-ring ac-button ac-button--secondary">Skip for now</button>
     </div>
     <dialog ref={dialog} aria-labelledby={`${id}-title`} aria-describedby={`${id}-help`}
-      className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-2xl border border-border bg-white p-6 text-foreground shadow-xl backdrop:bg-black/50"
+      className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-2xl border border-border bg-white p-6 text-foreground shadow-xl"
       onCancel={event => { event.preventDefault(); if (!pending) close(); }}>
       <div className="flex items-start justify-between gap-4">
         <h2 id={`${id}-title`} className="text-xl font-semibold">Invite team members</h2>

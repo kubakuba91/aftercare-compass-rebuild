@@ -82,7 +82,7 @@ function formatAvailability(profile: {
     return `${profile.bedsAvailable ?? 0} beds available`;
   }
 
-  return profile.acceptingNewPatients ? "Accepting new patients" : "Not accepting patients";
+  return profile.acceptingNewPatients ? "Accepting patients" : "Not accepting patients";
 }
 
 function formatPricePerWeek(value: number | null) {
@@ -689,7 +689,7 @@ export default async function ReferentDashboardPage({
                     </Badge>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge tone={favorite.profile.bedsAvailable || favorite.profile.acceptingNewPatients ? "success" : "warning"}>
+                    <Badge tone={favorite.profile.bedsAvailable || favorite.profile.acceptingNewPatients ? "availability" : "warning"}>
                       {formatAvailability(favorite.profile)}
                     </Badge>
                     <Badge>{formatPricePerWeek(favorite.profile.pricePerWeek)}</Badge>

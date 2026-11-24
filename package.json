@@ -12,7 +12,8 @@
     "prisma:validate": "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/aftercare DIRECT_URL=postgresql://postgres:postgres@localhost:5432/aftercare prisma validate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "sync:resources-playlist": "node scripts/sync-resource-playlist.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "latest",

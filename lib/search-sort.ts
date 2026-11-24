@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
 export const searchSortOptions = [
+  { key: "recommended", label: "Recommended" },
   { key: "updated", label: "Recently updated" },
   { key: "name-asc", label: "Name: A–Z" },
   { key: "name-desc", label: "Name: Z–A" },
@@ -12,7 +13,7 @@ export type SearchSort = typeof searchSortOptions[number]["key"];
 export function normalizeSearchSort(value: string | undefined, canSortByDistance: boolean): SearchSort {
   return searchSortOptions.some((option) => option.key === value) && (value !== "distance" || canSortByDistance)
     ? value as SearchSort
-    : "updated";
+    : "recommended";
 }
 
 export function searchSortOrder(sort: SearchSort): Prisma.AftercareProfileOrderByWithRelationInput[] {

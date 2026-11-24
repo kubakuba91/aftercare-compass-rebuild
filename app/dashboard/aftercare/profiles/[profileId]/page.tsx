@@ -722,7 +722,7 @@ export default async function AftercareProfileDetailPage({
                           <div className="mt-2 flex flex-wrap gap-2">
                             <Badge>{association.continuedCareProfile.status}</Badge>
                             {association.continuedCareProfile.acceptingNewPatients ? (
-                              <Badge tone="success">Accepting patients</Badge>
+                              <Badge tone="availability">Accepting patients</Badge>
                             ) : null}
                           </div>
                         </div>

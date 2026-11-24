@@ -22,6 +22,8 @@ export function MobileNavigation({ isSignedIn = false, className = "lg:hidden" }
                 </div>
               </details>
               <Link className="rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#f4f8ff]" href={publicAppUrl("/pricing")}>Pricing</Link>
+              <Link className="rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#f4f8ff]" href={publicAppUrl("/resources")}>Resources</Link>
+              <Link className="rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#f4f8ff]" href={publicAppUrl("/library")}>Library</Link>
               <details>
                 <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#f4f8ff] [&::-webkit-details-marker]:hidden">
                   Company

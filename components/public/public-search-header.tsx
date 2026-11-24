@@ -194,7 +194,7 @@ export function PublicSearchHeader({
         <MobileNavigation isSignedIn={isSignedIn} className="xl:hidden" />
         </div>
         <form action="/search" className="ac-search-bar">
-          {sort && sort !== "updated" ? <input type="hidden" name="sort" value={sort} /> : null}
+          {sort && sort !== "recommended" ? <input type="hidden" name="sort" value={sort} /> : null}
           {(!showFilters || !isContinuedCare) && delivery ? <input type="hidden" name="delivery" value={delivery} /> : null}
           {(!showFilters || !isContinuedCare) && virtualState ? <input type="hidden" name="virtualState" value={virtualState} /> : null}
           <SearchTypeSelector defaultType={defaultType} showFilters={showFilters} />

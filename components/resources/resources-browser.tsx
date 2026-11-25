@@ -6,13 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useMemo, useState, type KeyboardEvent } from "react";
 import {
   filterResources,
-  isResourceCategory,
+  normalizeResourceTab,
   resourceCatalog,
   resourceCategories,
   resourceStates,
   type CatalogEntry,
   type ResourceCategory
 } from "@/lib/resources/catalog";
+import { interpretSearch, suggestSearch } from "@/lib/resources/smart-search";
 
 const ALL = "all";
 
@@ -27,6 +28,14 @@ function resourcesHref(state: string, category: ResourceCategory, query: string)
 
 function categoryLabel(category: ResourceCategory) {
   return resourceCategories.find((item) => item.id === category)?.label ?? "Resources";
+}
+
+function directoryHref(kind: "housing" | "continued", place: string) {
+  const params = new URLSearchParams();
+  if (kind === "continued") params.set("type", "continued_care");
+  if (place && place !== ALL) params.set("q", place);
+  const search = params.toString();
+  return search ? `/search?${search}` : "/search";
 }
 
 function ResultCard({ entry }: { entry: CatalogEntry }) {
@@ -71,9 +80,14 @@ export function ResourcesBrowser() {
   const requestedState = searchParams.get("state")?.toUpperCase() ?? ALL;
   const state = resourceStates.some((item) => item.code === requestedState) ? requestedState : ALL;
   const requestedTab = searchParams.get("tab");
-  const category: ResourceCategory = isResourceCategory(requestedTab) ? requestedTab : ALL;
+  const category = normalizeResourceTab(requestedTab);
   const query = searchParams.get("q") ?? "";
   const [draft, setDraft] = useState(query);
+
+  useEffect(() => {
+    if (requestedTab !== "licensing-funding") return;
+    router.replace(resourcesHref(state, "licensing", query), { scroll: false });
+  }, [query, requestedTab, router, state]);
 
   useEffect(() => {
     setDraft(query);
@@ -91,6 +105,9 @@ export function ResourcesBrowser() {
     () => filterResources(resourceCatalog, { state, category, query }),
     [state, category, query]
   );
+  const search = useMemo(() => interpretSearch(query), [query]);
+  const suggestion = results.length === 0 ? suggestSearch(query, state) : null;
+  const groupCode = state !== ALL ? state : search.place && (state === ALL || state === search.place.state) ? search.place.state : ALL;
 
   const go = (nextState: string, nextCategory: ResourceCategory) => {
     router.push(resourcesHref(nextState, nextCategory, draft), { scroll: false });
@@ -112,6 +129,7 @@ export function ResourcesBrowser() {
   };
 
   const stateName = resourceStates.find((item) => item.code === state)?.name ?? state;
+  const groupName = resourceStates.find((item) => item.code === groupCode)?.name ?? groupCode;
   const topic = categoryLabel(category);
   const q = query.trim();
   const empty = q
@@ -197,18 +215,63 @@ export function ResourcesBrowser() {
       </div>
 
       <div aria-labelledby={`resource-tab-${category}`} className="mt-6" id="resource-results" role="tabpanel">
+        {category === "recovery" || category === "family" || category === "veterans" ? (
+          <div className="mb-5 rounded-2xl border border-border bg-[#f4f8ff] p-5">
+            <p className="text-sm leading-6 text-[#17212b]">
+              For a recovery house or a continued care program, search the Aftercare Compass directory.
+            </p>
+            <p className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
+              <Link className="focus-ring rounded-md text-primary underline-offset-4 hover:underline" href={directoryHref("housing", state)}>
+                Recovery housing
+              </Link>
+              <Link className="focus-ring rounded-md text-primary underline-offset-4 hover:underline" href={directoryHref("continued", state)}>
+                Continued care
+              </Link>
+            </p>
+          </div>
+        ) : null}
         <p aria-live="polite" className="text-sm text-muted-foreground">
           {results.length} {results.length === 1 ? "resource" : "resources"}
         </p>
+        {search.place && results.length > 0 && (state === ALL || state === search.place.state) ? (
+          <p className="mt-2 text-sm text-muted-foreground">
+            {search.place.label} is in {search.place.stateName}. Matches for that place are listed first, then other {search.place.stateName} resources and national resources.
+          </p>
+        ) : null}
         {results.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-dashed border-border bg-white p-8 text-center">
             <p className="text-lg font-semibold text-[#17212b]">{empty}</p>
-            <p className="mt-2 text-sm text-muted-foreground">Try another state or topic, or clear the filters.</p>
-            <Link className="focus-ring mt-4 inline-flex rounded-md text-sm font-semibold text-primary underline-offset-4 hover:underline" href="/resources">
-              Clear filters
-            </Link>
+            {suggestion?.stateName ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                {suggestion.placeLabel ? `${suggestion.placeLabel} is in ${suggestion.stateName}.` : `Try ${suggestion.stateName}.`}
+                {suggestion.topicLabel ? ` Or look under ${suggestion.topicLabel}.` : ""}
+              </p>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">Try another state or topic, or clear the filters.</p>
+            )}
+            <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2">
+              {suggestion?.stateCode ? (
+                <Link className="focus-ring rounded-md text-sm font-semibold text-primary underline-offset-4 hover:underline" href={resourcesHref(suggestion.stateCode, category, query)}>
+                  Show {suggestion.stateName}
+                </Link>
+              ) : null}
+              {suggestion?.topicId ? (
+                <Link className="focus-ring rounded-md text-sm font-semibold text-primary underline-offset-4 hover:underline" href={resourcesHref(state, suggestion.topicId as ResourceCategory, "")}>
+                  Try {suggestion.topicLabel}
+                </Link>
+              ) : null}
+              <Link className="focus-ring rounded-md text-sm font-semibold text-primary underline-offset-4 hover:underline" href={directoryHref("housing", suggestion?.directoryQuery || state)}>
+                Recovery housing{suggestion?.placeLabel ? ` near ${suggestion.placeLabel}` : ""}
+              </Link>
+              <Link className="focus-ring rounded-md text-sm font-semibold text-primary underline-offset-4 hover:underline" href={directoryHref("continued", suggestion?.directoryQuery || state)}>
+                Continued care
+              </Link>
+              <Link className="focus-ring rounded-md text-sm font-semibold text-primary underline-offset-4 hover:underline" href="/resources">
+                Clear filters
+              </Link>
+            </div>
           </div>
-        ) : state === ALL ? (
+        ) : groupCode === ALL ? (
           <ul className="mt-4 grid gap-4 md:grid-cols-2">
             {results.map((entry) => (
               <li key={entry.id}>
@@ -219,7 +282,7 @@ export function ResourcesBrowser() {
         ) : (
           <div className="mt-4 space-y-8">
             {[
-              { label: stateName, items: results.filter((entry) => entry.state) },
+              { label: groupName, items: results.filter((entry) => entry.state) },
               { label: "National", items: results.filter((entry) => !entry.state) }
             ]
               .filter((group) => group.items.length > 0)

@@ -46,6 +46,7 @@ export const housingFundingResources = [
   {
     state: "PA",
     category: "funding" as const,
+    tags: ["Pennsylvania"],
     title: "Pennsylvania Opioid Misuse and Addiction Abatement Trust",
     description: "Distributes Pennsylvania’s opioid settlement funds to the state and counties, which decide local uses such as recovery housing.",
     url: "https://www.paopioidtrust.org/",

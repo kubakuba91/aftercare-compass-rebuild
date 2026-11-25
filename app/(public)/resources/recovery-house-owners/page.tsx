@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import Link from "next/link";
 import { CheckCircle2, ClipboardList, FileText, Home, Info, PiggyBank, ShieldCheck } from "lucide-react";
 import { MarketingHeader } from "@/components/marketing-header";
 import { OwnerGuideNav } from "@/components/resources/owner-guide-nav";
@@ -9,10 +10,11 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { dashboardAppUrl, publicAppUrl } from "@/lib/app-urls";
 import { ownerFundingGaps } from "@/lib/recovery-housing/funding";
 import { generalFaq, narrChecklist, standardsLinks, templateOutlines } from "@/lib/recovery-housing/general";
-import { includesQuery, linkSearchText, normalizeOwnerGuideTab, stateSearchText, type OwnerGuideTab } from "@/lib/recovery-housing/owner-guide";
+import { linkSearchText, normalizeOwnerGuideTab, stateSearchText, type OwnerGuideTab } from "@/lib/recovery-housing/owner-guide";
 import { findStateResource, stateResources } from "@/lib/recovery-housing/states";
 import type { ResourceLink } from "@/lib/recovery-housing/types";
 import { filterResources, resourceCatalog } from "@/lib/resources/catalog";
+import { contentMatches, interpretSearch, suggestSearch } from "@/lib/resources/smart-search";
 
 export const metadata: Metadata = {
   title: "Recovery House Owner Resources | Aftercare Compass",
@@ -70,17 +72,17 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
 
   const licensingIntro =
     "Every state handles recovery housing differently. Some require a license, some certify homes voluntarily, and some tie referrals or public funding to certification.";
+  const search = interpretSearch(query);
   const licensingStates = stateResources.filter((state) => {
     if (stateCode !== "all" && state.code !== stateCode) return false;
     if (!querySet) return stateCode !== "all";
-    if (stateCode !== "all" && includesQuery(licensingIntro, query)) return true;
-    return includesQuery(stateSearchText(state), query);
+    return contentMatches(stateSearchText(state), query, { state: state.code });
   });
-  const showLicensing = active("licensing") && (!querySet || includesQuery(licensingIntro, query) || licensingStates.length > 0);
+  const showLicensing = active("licensing") && (licensingStates.length > 0 || (!querySet || (!search.place && contentMatches(licensingIntro, query, { national: true }))));
 
   const showZoningLinks = stateCode === "all" || stateCode === "PA";
   const zoningText = [zoningIntro, ...zoningChecks, ...(showZoningLinks ? zoningLinks.map(linkSearchText) : [])].join(" ");
-  const showZoning = active("zoning") && includesQuery(zoningText, query);
+  const showZoning = active("zoning") && contentMatches(zoningText, query, { national: true });
 
   const fundingIntro =
     "In many states, public money and state-agency referrals depend on licensing or certification. For example, Pennsylvania only lets licensed houses receive state or federal recovery housing funds; Delaware bars uncertified houses from accepting state or local funding; and West Virginia, Massachusetts, Florida, and Ohio limit certain referrals to certified or registered homes. Pick your state above for the details and sources. Your county or regional behavioral health office (in Pennsylvania, the Single County Authority) is usually the best place to ask about local recovery housing funds, such as Lancaster County’s Recovery House Scholarship program. Standing pages from SAMHSA and state substance-use agencies. These are where new announcements are posted. They are not a list of past awards. Read the current notice before you apply, because eligibility and deadlines change.";
@@ -90,11 +92,9 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
     .map((entry) => `${entry.title} ${entry.description} ${entry.source}`)
     .join(" ");
   const fundingText = [fundingIntro, fundingCatalogText, gapNames.join(", ")].join(" ");
-  const showFunding = active("funding") && includesQuery(fundingText, query);
   const matchedFunding = filterResources(resourceCatalog, { state: stateCode, category: "funding", query });
-  const fundingEntries = !querySet || matchedFunding.length > 0
-    ? matchedFunding
-    : filterResources(resourceCatalog, { state: stateCode, category: "funding", query: "" });
+  const fundingEntries = matchedFunding;
+  const showFunding = active("funding") && (!querySet || fundingEntries.length > 0 || (!search.place && contentMatches(fundingText, query, { national: true })));
   const fundingGroups = stateCode === "all"
     ? [
         { label: "National", items: fundingEntries.filter((entry) => !entry.state) },
@@ -116,7 +116,7 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
   const templateText = templateOutlines
     .flatMap((outline) => [outline.title, outline.intro, ...outline.items.map((item) => item.text)])
     .join(" ");
-  const showTemplates = active("templates") && includesQuery(`Starter templates Outlines to build your policies from ${templateText}`, query);
+  const showTemplates = active("templates") && contentMatches(`Starter templates Outlines to build your policies from ${templateText}`, query, { national: true });
 
   const narrAffiliateText = selectedState
     ? [selectedState.narrNote, selectedState.narrAffiliate?.title, selectedState.narrAffiliate?.description, selectedState.narrAffiliate?.source].filter(Boolean).join(" ")
@@ -127,16 +127,17 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
     ...standardsLinks.map(linkSearchText),
     tab === "standards" ? narrAffiliateText : ""
   ].join(" ");
-  const showStandards = active("standards") && includesQuery(standardsText, query);
+  const showStandards = active("standards") && contentMatches(standardsText, query, { national: true });
 
   const faqText = [
     ...generalFaq.flatMap((item) => [item.question, item.answer]),
     "State-specific questions are in each state’s section above.",
     ...(tab === "faq" && selectedState?.faq ? selectedState.faq.flatMap((item) => [item.question, item.answer]) : [])
   ].join(" ");
-  const showFaq = active("faq") && includesQuery(faqText, query);
+  const showFaq = active("faq") && contentMatches(faqText, query, { national: true });
   const showStateFaq = showFaq && tab === "faq" && Boolean(selectedState?.faq?.length);
   const anySection = showLicensing || showZoning || showFunding || showTemplates || showStandards || showFaq;
+  const suggestion = anySection ? null : suggestSearch(query, stateCode);
 
   return (
     <>
@@ -412,7 +413,31 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
           <div className="shell py-10">
             <div className="rounded-2xl border border-dashed border-border bg-white p-8 text-center">
               <p className="text-lg font-semibold text-[#17212b]">No sections match that search.</p>
-              <p className="mt-2 text-sm text-muted-foreground">Try another word, or clear the search.</p>
+              {suggestion?.stateName ? (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {suggestion.placeLabel ?? suggestion.stateName} is in {suggestion.stateName}.
+                </p>
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">Try another word, or clear the search.</p>
+              )}
+              <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm font-semibold">
+                {suggestion?.stateCode ? (
+                  <Link className="focus-ring rounded-md text-primary underline-offset-4 hover:underline" href={`/resources/recovery-house-owners?state=${suggestion.stateCode}${query ? `&q=${encodeURIComponent(query)}` : ""}`}>
+                    Show {suggestion.stateName}
+                  </Link>
+                ) : null}
+                {suggestion?.topicId ? (
+                  <Link className="focus-ring rounded-md text-primary underline-offset-4 hover:underline" href={`/resources/recovery-house-owners?tab=${suggestion.topicId}`}>
+                    Try {suggestion.topicLabel}
+                  </Link>
+                ) : null}
+                <Link className="focus-ring rounded-md text-primary underline-offset-4 hover:underline" href={`/search?q=${encodeURIComponent(suggestion?.directoryQuery || query || "")}`}>
+                  Recovery housing{suggestion?.placeLabel ? ` near ${suggestion.placeLabel}` : ""}
+                </Link>
+                <Link className="focus-ring rounded-md text-primary underline-offset-4 hover:underline" href={`/search?type=continued_care&q=${encodeURIComponent(suggestion?.directoryQuery || query || "")}`}>
+                  Continued care
+                </Link>
+              </div>
             </div>
           </div>
         )}

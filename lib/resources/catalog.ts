@@ -12,6 +12,7 @@ import { standardsLinks } from "@/lib/recovery-housing/general";
 import { stateResources } from "@/lib/recovery-housing/states";
 import type { ResourceLink } from "@/lib/recovery-housing/types";
 import { housingFundingResources } from "@/lib/resources/housing-funding";
+import { entryMatches, entrySearchText, interpretSearch, scoreEntry } from "@/lib/resources/smart-search";
 import { supportResources } from "@/lib/resources/support-topics";
 
 export const resourceCategories = [
@@ -44,6 +45,8 @@ export type CatalogEntry = {
   source: string;
   /** Extra words used only by search, such as a place introduction. */
   context?: string;
+  /** City, county, or region names used to rank a local search. */
+  tags?: string[];
 };
 
 const groupCategory: Record<string, CatalogEntry["category"]> = {
@@ -230,21 +233,34 @@ export function filterResources(
   source: CatalogEntry[],
   { state, category, query }: { state: string; category: ResourceCategory; query: string }
 ) {
-  const q = query.trim().toLowerCase();
-  const filtered = source.filter((entry) => {
-    if (state !== "all" && entry.state !== null && entry.state !== state) return false;
-    if (category !== "all" && entry.category !== category) return false;
-    if (!q) return true;
-    const hay = [entry.title, entry.description, entry.source, entry.stateName, entry.area, entry.context]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-    return hay.includes(q);
+  const search = interpretSearch(query);
+  if (!search.query) {
+    const filtered = source.filter((entry) => {
+      if (state !== "all" && entry.state !== null && entry.state !== state) return false;
+      if (category !== "all" && entry.category !== category) return false;
+      return true;
+    });
+    if (state === "all") return filtered;
+    return filtered.sort((a, b) => {
+      if (!a.state && b.state) return 1;
+      if (a.state && !b.state) return -1;
+      return a.title.localeCompare(b.title);
+    });
+  }
+
+  const matched = source.flatMap((entry) => {
+    if (category !== "all" && entry.category !== category) return [];
+    if (!entryMatches(entry, search, state)) return [];
+    return [{ entry, score: scoreEntry(entry, entrySearchText(entry), search) }];
   });
-  if (state === "all") return filtered;
-  return filtered.sort((a, b) => {
-    if (!a.state && b.state) return 1;
-    if (a.state && !b.state) return -1;
-    return a.title.localeCompare(b.title);
+  const placeState = state !== "all" ? state : search.place?.state;
+  matched.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    if (placeState) {
+      if (!a.entry.state && b.entry.state) return 1;
+      if (a.entry.state && !b.entry.state) return -1;
+    }
+    return a.entry.title.localeCompare(b.entry.title);
   });
+  return matched.map((item) => item.entry);
 }

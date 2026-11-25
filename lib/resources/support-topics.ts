@@ -11,6 +11,8 @@ export type SupportResource = {
   url: string;
   source: string;
   area?: string;
+  /** City, county, or region names. A search for one of these ranks this resource first. */
+  tags?: string[];
 };
 
 export const supportResources: SupportResource[] = [
@@ -76,6 +78,7 @@ export const supportResources: SupportResource[] = [
     state: "PA",
     category: "recovery",
     area: "Philadelphia",
+    tags: ["Philadelphia", "Philadelphia County", "Philly", "Bucks County", "Chester County", "Delaware County", "Montgomery County"],
     title: "Southeastern Pennsylvania Intergroup (SEPIA)",
     description: "A.A. meetings and the intergroup office for Philadelphia, Bucks, Chester, Delaware, and Montgomery counties.",
     url: "https://aasepia.org/meetings/",
@@ -85,6 +88,7 @@ export const supportResources: SupportResource[] = [
     state: "PA",
     category: "recovery",
     area: "Lancaster",
+    tags: ["Lancaster", "Lancaster County"],
     title: "Lancaster A.A. Intergroup",
     description: "A.A. meetings and the central office for Lancaster County. Helpline 717-394-3238.",
     url: "https://lancasteraa.org/",
@@ -94,6 +98,7 @@ export const supportResources: SupportResource[] = [
     state: "PA",
     category: "recovery",
     area: "Harrisburg",
+    tags: ["Harrisburg", "Dauphin County", "Hbg"],
     title: "Harrisburg Area A.A. Intergroup",
     description: "A.A. meeting list and intergroup office for the Harrisburg area. Helpline 717-234-5390.",
     url: "https://www.aaharrisburg.org/meetings/",
@@ -103,6 +108,7 @@ export const supportResources: SupportResource[] = [
     state: "PA",
     category: "recovery",
     area: "Pittsburgh",
+    tags: ["Pittsburgh", "Allegheny County", "Pgh"],
     title: "Pittsburgh Area A.A. Central Office",
     description: "A.A. meeting list and central office for the Pittsburgh area. Helpline 412-471-7472.",
     url: "https://pghaa.org/meetings.htm",
@@ -112,6 +118,7 @@ export const supportResources: SupportResource[] = [
     state: "PA",
     category: "recovery",
     area: "Greater Philadelphia",
+    tags: ["Philadelphia", "Philadelphia County", "Philly"],
     title: "Greater Philadelphia Region of NA",
     description: "Current NA meeting lists for Philadelphia and the surrounding Pennsylvania counties.",
     url: "https://meetinglists.gprna.org/",
@@ -156,6 +163,7 @@ export const supportResources: SupportResource[] = [
     state: "MD",
     category: "recovery",
     area: "Baltimore",
+    tags: ["Baltimore", "Baltimore City", "Baltimore County"],
     title: "Baltimore Intergroup of A.A.",
     description: "A.A. meeting schedule and intergroup office for the Baltimore area. Helpline 410-663-1922.",
     url: "https://baltimoreaa.org/",
@@ -189,6 +197,7 @@ export const supportResources: SupportResource[] = [
     state: "DE",
     category: "recovery",
     area: "Northern Delaware",
+    tags: ["Wilmington", "New Castle County"],
     title: "Northern Delaware A.A. Intergroup",
     description: "A.A. meetings and the Wilmington-area intergroup office. Helpline 302-655-5113.",
     url: "https://ndiaa.org/",
@@ -224,6 +233,7 @@ export const supportResources: SupportResource[] = [
     state: "NJ",
     category: "recovery",
     area: "Northern New Jersey",
+    tags: ["Newark", "Jersey City", "Essex County", "Hudson County"],
     title: "Northern New Jersey A.A. Intergroup (Area 44)",
     description: "A.A. meeting finder and intergroup for northern New Jersey. Helpline 908-687-8566.",
     url: "https://www.nnjaa.org/",
@@ -242,6 +252,7 @@ export const supportResources: SupportResource[] = [
     state: "NJ",
     category: "recovery",
     area: "South Jersey",
+    tags: ["Camden", "Camden County"],
     title: "South Jersey A.A. Intergroup",
     description: "A.A. meetings for Burlington, Camden, Gloucester, Salem, Cumberland, and nearby counties. Helpline 856-486-4444.",
     url: "https://aasj.org/",

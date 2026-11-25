@@ -1,8 +1,10 @@
 /**
  * Support resources for the public locator.
- * Meeting finders, family supports, benefits, and veterans offices only.
+ * Meeting finders, family supports, benefits, veterans offices, and named first-responder programs.
  * No treatment locators, prescriber finders, or directories of programs or homes.
  */
+export type SupportSection = "veterans" | "first-responders";
+
 export type SupportResource = {
   state: string | null;
   category: "recovery" | "family" | "veterans";
@@ -13,6 +15,8 @@ export type SupportResource = {
   area?: string;
   /** City, county, or region names. A search for one of these ranks this resource first. */
   tags?: string[];
+  /** Veterans tab subsection. Omitted entries stay in the Veterans group. */
+  section?: SupportSection;
 };
 
 export const supportResources: SupportResource[] = [
@@ -453,6 +457,14 @@ export const supportResources: SupportResource[] = [
   {
     state: null,
     category: "veterans",
+    title: "VA health care",
+    description: "How to apply for VA health care. Call 1-877-222-8387.",
+    url: "https://www.va.gov/health-care/how-to-apply/",
+    source: "U.S. Department of Veterans Affairs"
+  },
+  {
+    state: null,
+    category: "veterans",
     title: "Vet Center locator",
     description: "Find a VA Vet Center for readjustment counseling for veterans, service members, and their families.",
     url: "https://www.va.gov/find-locations/?facilityType=vet_center",
@@ -480,6 +492,15 @@ export const supportResources: SupportResource[] = [
     title: "HUD-VASH",
     description: "Housing vouchers and case management for veterans who are experiencing homelessness.",
     url: "https://department.va.gov/homeless/hud-vash/",
+    source: "U.S. Department of Veterans Affairs"
+  },
+  {
+    state: null,
+    category: "veterans",
+    tags: ["HUD-VASH", "homeless"],
+    title: "VA homeless help",
+    description: "National call center for veterans who are homeless or at risk of homelessness, including HUD-VASH. Call 877-424-3838.",
+    url: "https://www.va.gov/resources/homeless-help/",
     source: "U.S. Department of Veterans Affairs"
   },
   {
@@ -561,5 +582,67 @@ export const supportResources: SupportResource[] = [
     description: "Accredited veterans service offices in every New Jersey county, for help filing benefits claims.",
     url: "https://www.nj.gov/dva/veterans/services/vso/",
     source: "New Jersey Department of Veterans Affairs"
+  },
+  {
+    state: null,
+    category: "veterans",
+    section: "first-responders",
+    tags: ["9/11", "911", "September 11", "first responder", "firefighter", "FDNY", "PTSD", "WTC"],
+    title: "World Trade Center Health Program",
+    description:
+      "Free monitoring and treatment, including PTSD and substance use disorder, for certified 9/11 responders and survivors. It does not pay rent or pay for residential treatment. Call 1-888-982-4748. For a recovery house, search Aftercare Compass.",
+    url: "https://www.cdc.gov/wtc/application.html",
+    source: "CDC"
+  },
+  {
+    state: null,
+    category: "veterans",
+    section: "first-responders",
+    tags: ["FDNY", "firefighter", "first responder", "PTSD"],
+    title: "FDNY Counseling Service Unit",
+    description: "Free confidential counseling for FDNY members and retirees, 24 hours a day. Call 212-570-1693.",
+    url: "https://ufanyc.org/health-safety/support-services/",
+    source: "FDNY Counseling Service Unit"
+  },
+  {
+    state: null,
+    category: "veterans",
+    section: "first-responders",
+    tags: ["firefighter", "first responder", "PTSD", "IAFF"],
+    title: "IAFF Center of Excellence for Behavioral Health",
+    description:
+      "Firefighter-specific PTSD and substance use treatment for IAFF members. The center bills insurance. Call 855-900-8437. It is not a recovery house. For housing, search Aftercare Compass.",
+    url: "https://www.iaff.org/center-of-excellence/",
+    source: "International Association of Fire Fighters"
+  },
+  {
+    state: null,
+    category: "veterans",
+    section: "first-responders",
+    tags: ["firefighter", "first responder", "PTSD", "NVFC", "volunteer"],
+    title: "NVFC Share the Load",
+    description: "Confidential counseling and referrals for National Volunteer Fire Council members. A free membership is available on request.",
+    url: "https://www.nvfc.org/programs/share-the-load-program/",
+    source: "National Volunteer Fire Council"
+  },
+  {
+    state: null,
+    category: "veterans",
+    section: "first-responders",
+    tags: ["first responder", "firefighter", "PTSD"],
+    title: "Code Green Campaign",
+    description: "Mental health education for first responders, and some financial assistance for care.",
+    url: "https://www.codegreencampaign.org/",
+    source: "Code Green Campaign"
+  },
+  {
+    state: null,
+    category: "veterans",
+    section: "first-responders",
+    tags: ["first responder", "firefighter", "PTSD", "crisis"],
+    title: "SafeCall Now",
+    description: "24/7 confidential crisis line for first responders and their families. Call 206-459-3020.",
+    url: "https://safecallnow.us/",
+    source: "Safe Call Now"
   }
 ];

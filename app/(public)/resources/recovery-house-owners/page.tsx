@@ -13,7 +13,7 @@ import { generalFaq, narrChecklist, standardsLinks, templateOutlines } from "@/l
 import { linkSearchText, normalizeOwnerGuideTab, stateSearchText, type OwnerGuideTab } from "@/lib/recovery-housing/owner-guide";
 import { findStateResource, stateResources } from "@/lib/recovery-housing/states";
 import type { ResourceLink } from "@/lib/recovery-housing/types";
-import { filterResources, resourceCatalog } from "@/lib/resources/catalog";
+import { filterResources, resourceCatalog, showInOwnerGuide } from "@/lib/resources/catalog";
 import { contentMatches, interpretSearch, suggestSearch } from "@/lib/resources/smart-search";
 
 export const metadata: Metadata = {
@@ -88,11 +88,11 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
     "In many states, public money and state-agency referrals depend on licensing or certification. For example, Pennsylvania only lets licensed houses receive state or federal recovery housing funds; Delaware bars uncertified houses from accepting state or local funding; and West Virginia, Massachusetts, Florida, and Ohio limit certain referrals to certified or registered homes. Pick your state above for the details and sources. Your county or regional behavioral health office (in Pennsylvania, the Single County Authority) is usually the best place to ask about local recovery housing funds, such as Lancaster County’s Recovery House Scholarship program. Standing pages from SAMHSA and state substance-use agencies. These are where new announcements are posted. They are not a list of past awards. Read the current notice before you apply, because eligibility and deadlines change.";
   const gapNames = stateCode === "all" ? ownerFundingGaps : ownerFundingGaps.filter((name) => name === selectedState?.name);
   const fundingCatalogText = resourceCatalog
-    .filter((entry) => entry.category === "funding")
+    .filter(showInOwnerGuide)
     .map((entry) => `${entry.title} ${entry.description} ${entry.source}`)
     .join(" ");
   const fundingText = [fundingIntro, fundingCatalogText, gapNames.join(", ")].join(" ");
-  const matchedFunding = filterResources(resourceCatalog, { state: stateCode, category: "funding", query });
+  const matchedFunding = filterResources(resourceCatalog, { state: stateCode, category: "funding", query }).filter(showInOwnerGuide);
   const fundingEntries = matchedFunding;
   const showFunding = active("funding") && (!querySet || fundingEntries.length > 0 || (!search.place && contentMatches(fundingText, query, { national: true })));
   const fundingGroups = stateCode === "all"
@@ -274,10 +274,11 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
               <h3 className="mt-10 text-xl font-semibold text-[#17212b]">{group.label}</h3>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 {group.items.map((entry) => (
-                  <ResourceLinkCard
-                    key={entry.id}
-                    link={{ title: entry.title, href: entry.url, source: entry.source, description: entry.description }}
-                  />
+                  <div className="h-full scroll-mt-24" id={entry.slug} key={entry.id}>
+                    <ResourceLinkCard
+                      link={{ title: entry.title, href: entry.url, source: entry.source, description: entry.description }}
+                    />
+                  </div>
                 ))}
               </div>
             </div>

@@ -1,8 +1,23 @@
 /**
- * Recovery-housing funders: grant programs, loan funds, and settlement trusts.
- * Not treatment locators or directories of houses.
+ * Recovery-housing funders: grant programs, loan funds, settlement trusts,
+ * and resident rent or income help. Not treatment locators or directories of houses.
+ * `ownerGuide: false` keeps individual benefits off the owner funding list.
  */
-export const housingFundingResources = [
+export type HousingFundingResource = {
+  state: string | null;
+  category: "funding";
+  title: string;
+  description: string;
+  url: string;
+  source: string;
+  tags?: string[];
+  /** Included on the owner guide when omitted. Set false for individual benefits. */
+  ownerGuide?: boolean;
+  /** Also list the resource under First Responders & 9/11 on the veterans tab. */
+  crossList?: "first-responders";
+};
+
+export const housingFundingResources: HousingFundingResource[] = [
   {
     state: null,
     category: "funding" as const,
@@ -83,5 +98,60 @@ export const housingFundingResources = [
     description: "Ohio’s record of state general-revenue and capital funds used to develop and expand recovery housing.",
     url: "https://dbh.ohio.gov/supporting-providers/housing-providers/recovery-housing-residences/funding-awards",
     source: "Ohio Department of Behavioral Health"
+  },
+  {
+    state: "PA",
+    category: "funding",
+    tags: ["Pennsylvania", "rent help", "scholarship", "DDAP", "move-in", "recovery house"],
+    title: "PA Bridge to Recovery Housing",
+    description:
+      "Bridge Foundation scholarship for one month of rent plus entry and move-in fees at a Pennsylvania DDAP-licensed recovery house, while funds last. Apply within 14 days of move-in. It does not cover back rent. Call (855) 284-3274. Scholarship application: https://bridge-foundation.org/bridgetorecoveryhousing/scholarship-application/. Find a licensed house in the Aftercare Compass search.",
+    url: "https://bridge-foundation.org/bridgetorecoveryhousing/",
+    source: "Bridge Foundation"
+  },
+  {
+    state: "MD",
+    category: "funding",
+    tags: ["Maryland", "rent help", "scholarship", "recovery housing", "MDRN"],
+    title: "Maryland RecoveryNet (MDRN) recovery housing",
+    description:
+      "Time-limited Maryland funding, commonly 60 days a year, for a certified recovery residence and care coordination. You must live in Maryland, be in substance use treatment, and have income at or under 250% of the federal poverty level. A State Care Coordinator submits the request. Call 443-835-8692. Find a certified residence in the Aftercare Compass search.",
+    url: "https://health.maryland.gov/bha/Pages/Maryland-RecoveryNet-(MDRN)-License-.aspx",
+    source: "Maryland Behavioral Health Administration"
+  },
+  {
+    state: null,
+    category: "funding",
+    ownerGuide: false,
+    crossList: "first-responders",
+    tags: ["9/11", "911", "September 11", "first responder", "firefighter", "FDNY", "PTSD", "compensation"],
+    title: "September 11th Victim Compensation Fund",
+    description:
+      "Cash compensation for a certified 9/11-related physical condition. PTSD alone does not qualify, but registering preserves the right to file. Call 1-855-885-1555.",
+    url: "https://www.vcf.gov/",
+    source: "September 11th Victim Compensation Fund"
+  },
+  {
+    state: null,
+    category: "funding",
+    ownerGuide: false,
+    crossList: "first-responders",
+    tags: ["9/11", "911", "September 11", "first responder", "firefighter", "FDNY", "PTSD", "financial assistance"],
+    title: "FealGood Foundation",
+    description:
+      "Financial assistance for 9/11 responders and emergency personnel who were injured in the line of duty. Call 631-724-3320.",
+    url: "https://fealgoodfoundation.com/",
+    source: "FealGood Foundation"
+  },
+  {
+    state: null,
+    category: "funding",
+    ownerGuide: false,
+    tags: ["PTSD", "disability", "Social Security", "SSDI", "income"],
+    title: "Social Security Disability Insurance (SSDI)",
+    description:
+      "Monthly income if a condition, including documented PTSD, keeps you from working for 12 months or longer. Call 1-800-772-1213.",
+    url: "https://www.ssa.gov/applyfordisability/",
+    source: "Social Security Administration"
   }
 ];

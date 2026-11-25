@@ -38,3 +38,12 @@ assert.equal(contentMatches("Pennsylvania recovery house license", "Philadelphia
 
 const none = filterResources(resourceCatalog, { state: "all", category: "all", query: "zzzzqqqq" });
 assert.equal(none.length, 0);
+
+const nineEleven = interpretSearch("9/11");
+assert.deepEqual(nineEleven.tokens, ["911"]);
+assert.equal(nineEleven.place, null);
+assert.ok(filterResources(resourceCatalog, { state: "all", category: "funding", query: "9/11" }).some((entry) => entry.slug === "september-11th-victim-compensation-fund"));
+assert.ok(filterResources(resourceCatalog, { state: "all", category: "funding", query: "firefighter" }).some((entry) => entry.slug === "fealgood-foundation"));
+assert.ok(filterResources(resourceCatalog, { state: "PA", category: "funding", query: "Pennsylvania" }).some((entry) => entry.slug === "pa-bridge-to-recovery-housing"));
+assert.ok(filterResources(resourceCatalog, { state: "all", category: "funding", query: "rent help" }).some((entry) => entry.slug === "pa-bridge-to-recovery-housing"));
+assert.ok(filterResources(resourceCatalog, { state: "all", category: "funding", query: "scholarship" }).some((entry) => entry.title === "PA Bridge to Recovery Housing"));

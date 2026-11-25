@@ -29,8 +29,13 @@ const topicLabels = [
   { id: "help", label: "Help finding services" },
   { id: "recovery", label: "Recovery Meetings" },
   { id: "family", label: "Family & Children" },
-  { id: "veterans", label: "Veterans" }
+  { id: "veterans", label: "Veterans & First Responders" }
 ];
+
+/** "9/11" survives tokenization as one word so a search for it can match. */
+export function aliasSearchText(normalized: string) {
+  return normalized.replace(/\b9\s+11\b/g, "911");
+}
 
 type IndexedPlace = SearchPlace & { phrase: string };
 
@@ -114,7 +119,7 @@ function toResolved(place: SearchPlace, phrase: string): ResolvedPlace {
 }
 
 export function interpretSearch(query: string): SearchInterpretation {
-  const normalized = normalizeSearchText(query);
+  const normalized = aliasSearchText(normalizeSearchText(query));
   const tokens = normalized.split(" ").filter(Boolean);
   if (!tokens.length) return { query: "", tokens: [], place: null, contentTokens: [] };
 
@@ -145,7 +150,7 @@ function wordsOf(text: string) {
 
 export function tokenMatches(token: string, text: string) {
   if (!token) return true;
-  const normalized = normalizeSearchText(text);
+  const normalized = aliasSearchText(normalizeSearchText(text));
   if (!normalized) return false;
   if (token.length >= 4 && normalized.includes(token)) return true;
   const limit = fuzzyLimit(token);

@@ -13,7 +13,7 @@ import { stateResources } from "@/lib/recovery-housing/states";
 import type { ResourceLink } from "@/lib/recovery-housing/types";
 import { housingFundingResources } from "@/lib/resources/housing-funding";
 import { entryMatches, entrySearchText, interpretSearch, scoreEntry } from "@/lib/resources/smart-search";
-import { supportResources } from "@/lib/resources/support-topics";
+import { supportResources, type SupportSection } from "@/lib/resources/support-topics";
 
 export const resourceCategories = [
   { id: "all", label: "All" },
@@ -27,8 +27,13 @@ export const resourceCategories = [
   { id: "help", label: "Help finding services" },
   { id: "recovery", label: "Recovery Meetings" },
   { id: "family", label: "Family & Children" },
-  { id: "veterans", label: "Veterans" }
+  { id: "veterans", label: "Veterans & First Responders" }
 ] as const;
+
+export const veteranSections = [
+  { id: "veterans", label: "Veterans" },
+  { id: "first-responders", label: "First Responders & 9/11" }
+] as const satisfies ReadonlyArray<{ id: SupportSection; label: string }>;
 
 export type ResourceCategory = (typeof resourceCategories)[number]["id"];
 
@@ -47,6 +52,12 @@ export type CatalogEntry = {
   context?: string;
   /** City, county, or region names used to rank a local search. */
   tags?: string[];
+  /** Stable hash id, shared by the same title on every tab. */
+  slug: string;
+  /** Subsection on the Veterans & First Responders tab. */
+  section?: SupportSection;
+  /** Owner-guide funding list. False for individual benefits that are not operator grants. */
+  ownerGuide?: boolean;
 };
 
 const groupCategory: Record<string, CatalogEntry["category"]> = {
@@ -85,14 +96,29 @@ function fundingState(link: ResourceLink): string | null {
 
 const entries: CatalogEntry[] = [];
 const seen = new Set<string>();
+const slugCounts = new Map<string, number>();
 let nextId = 0;
 
-function add(entry: Omit<CatalogEntry, "id" | "stateName"> & { state: string | null }) {
+function resourceSlug(category: string, title: string) {
+  const base =
+    title
+      .toLowerCase()
+      .replace(/&/g, " and ")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80) || "resource";
+  const key = `${category}|${base}`;
+  const count = slugCounts.get(key) ?? 0;
+  slugCounts.set(key, count + 1);
+  return count === 0 ? base : `${base}-${count + 1}`;
+}
+
+function add(entry: Omit<CatalogEntry, "id" | "stateName" | "slug"> & { state: string | null }) {
   const key = `${entry.state ?? "*"}|${entry.category}|${entry.url}`;
   if (seen.has(key)) return;
   seen.add(key);
   const stateName = entry.state ? stateNameByCode.get(entry.state) ?? entry.state : null;
-  entries.push({ ...entry, id: `resource-${nextId++}`, stateName });
+  entries.push({ ...entry, id: `resource-${nextId++}`, stateName, slug: resourceSlug(entry.category, entry.title) });
 }
 
 function addLink(
@@ -203,9 +229,19 @@ for (const state of stateResources) {
 for (const link of federalOwnerFunding) addLink(link, null, "funding");
 for (const link of standardsLinks) addLink(link, null, "licensing");
 for (const link of stateOwnerFunding) addLink(link, fundingState(link), "funding");
-for (const entry of housingFundingResources) add(entry);
+for (const entry of housingFundingResources) {
+  const { crossList, ...resource } = entry;
+  add(resource);
+  if (crossList === "first-responders") {
+    add({ ...resource, category: "veterans", section: "first-responders" });
+  }
+}
 
 for (const entry of supportResources) add(entry);
+
+export function showInOwnerGuide(entry: { category: string; ownerGuide?: boolean }) {
+  return entry.category === "funding" && entry.ownerGuide !== false;
+}
 
 entries.sort((a, b) => {
   if (!a.state && b.state) return -1;

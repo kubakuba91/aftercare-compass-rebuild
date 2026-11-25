@@ -10,6 +10,7 @@ import {
   resourceCatalog,
   resourceCategories,
   resourceStates,
+  veteranSections,
   type CatalogEntry,
   type ResourceCategory
 } from "@/lib/resources/catalog";
@@ -72,6 +73,32 @@ function ResultCard({ entry }: { entry: CatalogEntry }) {
   );
 }
 
+function anchorIds(entries: CatalogEntry[]) {
+  const totals = new Map<string, number>();
+  for (const entry of entries) totals.set(entry.slug, (totals.get(entry.slug) ?? 0) + 1);
+  const used = new Set<string>();
+  const ids = new Map<string, string>();
+  for (const entry of entries) {
+    let id = (totals.get(entry.slug) ?? 0) > 1 ? `${entry.slug}-${entry.category}` : entry.slug;
+    if (used.has(id)) id = `${entry.slug}-${entry.id}`;
+    used.add(id);
+    ids.set(entry.id, id);
+  }
+  return ids;
+}
+
+function ResultGrid({ entries, ids }: { entries: CatalogEntry[]; ids: Map<string, string> }) {
+  return (
+    <ul className="mt-4 grid gap-4 md:grid-cols-2">
+      {entries.map((entry) => (
+        <li className="scroll-mt-24" id={ids.get(entry.id)} key={entry.id}>
+          <ResultCard entry={entry} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function ResourcesBrowser() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -105,7 +132,20 @@ export function ResourcesBrowser() {
     () => filterResources(resourceCatalog, { state, category, query }),
     [state, category, query]
   );
+  const ids = useMemo(() => anchorIds(results), [results]);
   const search = useMemo(() => interpretSearch(query), [query]);
+
+  useEffect(() => {
+    const raw = window.location.hash.slice(1);
+    if (!raw) return;
+    let id = raw;
+    try {
+      id = decodeURIComponent(raw);
+    } catch {
+      id = raw;
+    }
+    document.getElementById(id)?.scrollIntoView({ block: "start" });
+  }, [results]);
   const suggestion = results.length === 0 ? suggestSearch(query, state) : null;
   const groupCode = state !== ALL ? state : search.place && (state === ALL || state === search.place.state) ? search.place.state : ALL;
 
@@ -215,7 +255,7 @@ export function ResourcesBrowser() {
       </div>
 
       <div aria-labelledby={`resource-tab-${category}`} className="mt-6" id="resource-results" role="tabpanel">
-        {category === "recovery" || category === "family" || category === "veterans" ? (
+        {category === "recovery" || category === "family" || category === "veterans" || category === "funding" ? (
           <div className="mb-5 rounded-2xl border border-border bg-[#f4f8ff] p-5">
             <p className="text-sm leading-6 text-[#17212b]">
               For a recovery house or a continued care program, search the Aftercare Compass directory.
@@ -271,14 +311,39 @@ export function ResourcesBrowser() {
               </Link>
             </div>
           </div>
+        ) : category === "veterans" ? (
+          <div className="mt-4 space-y-10">
+            {veteranSections
+              .map((section) => ({
+                ...section,
+                items: results.filter((entry) => (entry.section ?? "veterans") === section.id)
+              }))
+              .filter((section) => section.items.length > 0)
+              .map((section) => {
+                const groups =
+                  groupCode === ALL
+                    ? [{ label: null as string | null, items: section.items }]
+                    : [
+                        { label: groupName, items: section.items.filter((entry) => entry.state) },
+                        { label: "National", items: section.items.filter((entry) => !entry.state) }
+                      ].filter((group) => group.items.length > 0);
+                return (
+                  <section key={section.id}>
+                    <h2 className="text-lg font-semibold text-[#17212b]">{section.label}</h2>
+                    <div className="mt-4 space-y-8">
+                      {groups.map((group) => (
+                        <div key={group.label ?? section.id}>
+                          {group.label ? <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-primary">{group.label}</h3> : null}
+                          <ResultGrid entries={group.items} ids={ids} />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+          </div>
         ) : groupCode === ALL ? (
-          <ul className="mt-4 grid gap-4 md:grid-cols-2">
-            {results.map((entry) => (
-              <li key={entry.id}>
-                <ResultCard entry={entry} />
-              </li>
-            ))}
-          </ul>
+          <ResultGrid entries={results} ids={ids} />
         ) : (
           <div className="mt-4 space-y-8">
             {[
@@ -289,13 +354,7 @@ export function ResourcesBrowser() {
               .map((group) => (
                 <section key={group.label}>
                   <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-primary">{group.label}</h2>
-                  <ul className="mt-4 grid gap-4 md:grid-cols-2">
-                    {group.items.map((entry) => (
-                      <li key={entry.id}>
-                        <ResultCard entry={entry} />
-                      </li>
-                    ))}
-                  </ul>
+                  <ResultGrid entries={group.items} ids={ids} />
                 </section>
               ))}
           </div>

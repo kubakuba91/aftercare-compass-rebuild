@@ -7,7 +7,7 @@ import { ResourcesBrowser } from "@/components/resources/resources-browser";
 export const metadata: Metadata = {
   title: "Resources | Aftercare Compass",
   description:
-    "Find official housing, food, shelter, employment, transit, recovery meetings, family support, veterans services, and recovery-house licensing pages by state."
+    "Find official housing, food, shelter, employment, transit, recovery meetings, family support, veterans services, recovery-house licensing, and funding pages by state."
 };
 
 export default function ResourcesPage() {
@@ -24,7 +24,7 @@ export default function ResourcesPage() {
                 Find official help
               </h1>
               <p className="mt-4 max-w-2xl text-lg leading-8 text-muted-foreground">
-                Housing, food, shelter, work, transit, recovery meetings, family support, veterans services, and recovery-house licensing. Choose a state and a topic, or search by keyword.
+                Housing, food, shelter, work, transit, recovery meetings, family support, veterans services, recovery-house licensing, and funding. Choose a state and a topic, or search by keyword.
               </p>
               <p className="mt-3 text-sm font-semibold text-[#17212b]">
                 <Link className="focus-ring rounded-md text-primary underline-offset-4 hover:underline" href="/resources/recovery-house-owners">

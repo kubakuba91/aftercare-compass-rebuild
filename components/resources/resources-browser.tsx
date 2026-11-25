@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useMemo, useState, type KeyboardEvent } from "react";
 import {
   filterResources,
-  isResourceCategory,
+  normalizeResourceTab,
   resourceCatalog,
   resourceCategories,
   resourceStates,
@@ -79,9 +79,14 @@ export function ResourcesBrowser() {
   const requestedState = searchParams.get("state")?.toUpperCase() ?? ALL;
   const state = resourceStates.some((item) => item.code === requestedState) ? requestedState : ALL;
   const requestedTab = searchParams.get("tab");
-  const category: ResourceCategory = isResourceCategory(requestedTab) ? requestedTab : ALL;
+  const category = normalizeResourceTab(requestedTab);
   const query = searchParams.get("q") ?? "";
   const [draft, setDraft] = useState(query);
+
+  useEffect(() => {
+    if (requestedTab !== "licensing-funding") return;
+    router.replace(resourcesHref(state, "licensing", query), { scroll: false });
+  }, [query, requestedTab, router, state]);
 
   useEffect(() => {
     setDraft(query);

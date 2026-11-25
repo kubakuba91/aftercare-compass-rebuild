@@ -7,11 +7,12 @@ import { ResourceLinkCard } from "@/components/resources/resource-link-card";
 import { StateResourceSection } from "@/components/resources/state-resource-section";
 import { ButtonLink } from "@/components/ui/button-link";
 import { dashboardAppUrl, publicAppUrl } from "@/lib/app-urls";
-import { federalOwnerFunding, ownerFundingGaps, stateOwnerFunding } from "@/lib/recovery-housing/funding";
+import { ownerFundingGaps } from "@/lib/recovery-housing/funding";
 import { generalFaq, narrChecklist, standardsLinks, templateOutlines } from "@/lib/recovery-housing/general";
-import { includesQuery, isOwnerGuideTab, linkSearchText, stateSearchText, type OwnerGuideTab } from "@/lib/recovery-housing/owner-guide";
+import { includesQuery, linkSearchText, normalizeOwnerGuideTab, stateSearchText, type OwnerGuideTab } from "@/lib/recovery-housing/owner-guide";
 import { findStateResource, stateResources } from "@/lib/recovery-housing/states";
 import type { ResourceLink } from "@/lib/recovery-housing/types";
+import { filterResources, resourceCatalog } from "@/lib/resources/catalog";
 
 export const metadata: Metadata = {
   title: "Recovery House Owner Resources | Aftercare Compass",
@@ -57,26 +58,12 @@ function firstParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function fundingStateCode(link: ResourceLink) {
-  const hay = `${link.title} ${link.source} ${link.href}`.toLowerCase();
-  if (hay.includes("ddap") || hay.includes("pennsylvania")) return "PA";
-  if (hay.includes("delaware") || hay.includes("dsamh")) return "DE";
-  if (hay.includes("maryland")) return "MD";
-  if (hay.includes("new jersey") || hay.includes("nj.gov")) return "NJ";
-  if (hay.includes("oasas") || hay.includes("new york")) return "NY";
-  if (hay.includes("north carolina") || hay.includes("ncdhhs")) return "NC";
-  if (hay.includes("ohio")) return "OH";
-  if (hay.includes("tennessee") || hay.includes("tdmhsas")) return "TN";
-  if (hay.includes("virginia") || hay.includes("dbhds")) return "VA";
-  return null;
-}
-
 export default async function RecoveryHouseOwnersPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const selectedState = findStateResource(firstParam(params.state));
   const stateCode = selectedState?.code ?? "all";
   const requestedTab = firstParam(params.tab);
-  const tab: OwnerGuideTab = isOwnerGuideTab(requestedTab) ? requestedTab : "all";
+  const tab: OwnerGuideTab = normalizeOwnerGuideTab(requestedTab);
   const query = firstParam(params.q) ?? "";
   const active = (id: OwnerGuideTab) => tab === "all" || tab === id;
   const querySet = query.trim().length > 0;
@@ -97,13 +84,34 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
 
   const fundingIntro =
     "In many states, public money and state-agency referrals depend on licensing or certification. For example, Pennsylvania only lets licensed houses receive state or federal recovery housing funds; Delaware bars uncertified houses from accepting state or local funding; and West Virginia, Massachusetts, Florida, and Ohio limit certain referrals to certified or registered homes. Pick your state above for the details and sources. Your county or regional behavioral health office (in Pennsylvania, the Single County Authority) is usually the best place to ask about local recovery housing funds, such as Lancaster County’s Recovery House Scholarship program. Standing pages from SAMHSA and state substance-use agencies. These are where new announcements are posted. They are not a list of past awards. Read the current notice before you apply, because eligibility and deadlines change.";
-  const fundingForState = stateOwnerFunding.filter((link) => {
-    const code = fundingStateCode(link);
-    return stateCode === "all" || !code || code === stateCode;
-  });
   const gapNames = stateCode === "all" ? ownerFundingGaps : ownerFundingGaps.filter((name) => name === selectedState?.name);
-  const fundingText = [fundingIntro, ...federalOwnerFunding.map(linkSearchText), ...fundingForState.map(linkSearchText), gapNames.join(", ")].join(" ");
+  const fundingCatalogText = resourceCatalog
+    .filter((entry) => entry.category === "funding")
+    .map((entry) => `${entry.title} ${entry.description} ${entry.source}`)
+    .join(" ");
+  const fundingText = [fundingIntro, fundingCatalogText, gapNames.join(", ")].join(" ");
   const showFunding = active("funding") && includesQuery(fundingText, query);
+  const matchedFunding = filterResources(resourceCatalog, { state: stateCode, category: "funding", query });
+  const fundingEntries = !querySet || matchedFunding.length > 0
+    ? matchedFunding
+    : filterResources(resourceCatalog, { state: stateCode, category: "funding", query: "" });
+  const fundingGroups = stateCode === "all"
+    ? [
+        { label: "National", items: fundingEntries.filter((entry) => !entry.state) },
+        ...Array.from(
+          fundingEntries
+            .filter((entry) => entry.state)
+            .reduce((groups, entry) => {
+              const label = entry.stateName ?? entry.state ?? "State";
+              groups.set(label, [...(groups.get(label) ?? []), entry]);
+              return groups;
+            }, new Map<string, typeof fundingEntries>())
+        ).map(([label, items]) => ({ label, items }))
+      ].filter((group) => group.items.length > 0)
+    : [
+        { label: selectedState?.name ?? stateCode, items: fundingEntries.filter((entry) => entry.state) },
+        { label: "National", items: fundingEntries.filter((entry) => !entry.state) }
+      ].filter((group) => group.items.length > 0);
 
   const templateText = templateOutlines
     .flatMap((outline) => [outline.title, outline.intro, ...outline.items.map((item) => item.text)])
@@ -260,18 +268,19 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
             Standing pages from SAMHSA and state substance-use agencies. These are where new announcements are posted. They are not
             a list of past awards. Read the current notice before you apply, because eligibility and deadlines change.
           </p>
-          <h3 className="mt-10 text-xl font-semibold text-[#17212b]">Federal</h3>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {federalOwnerFunding.map((link) => (
-              <ResourceLinkCard key={link.href} link={link} />
-            ))}
-          </div>
-          <h3 className="mt-10 text-xl font-semibold text-[#17212b]">State agencies</h3>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {fundingForState.map((link) => (
-              <ResourceLinkCard key={link.href} link={link} />
-            ))}
-          </div>
+          {fundingGroups.map((group) => (
+            <div key={group.label}>
+              <h3 className="mt-10 text-xl font-semibold text-[#17212b]">{group.label}</h3>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                {group.items.map((entry) => (
+                  <ResourceLinkCard
+                    key={entry.id}
+                    link={{ title: entry.title, href: entry.url, source: entry.source, description: entry.description }}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
           {gapNames.length > 0 ? (
           <p className="mt-6 max-w-3xl text-sm leading-6 text-muted-foreground">
             No standing funding-board page was verified for {gapNames.join(", ")}. Use that state’s licensing or

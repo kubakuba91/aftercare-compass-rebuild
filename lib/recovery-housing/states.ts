@@ -181,7 +181,8 @@ const unsortedStateResources: StateResource[] = [
       {
         title: "Lancaster SCA Recovery House Scholarships",
         href: "https://www.lancastercountypa.gov/2953/Recovery-House-Scholarships",
-        source: "lancastercountypa.gov"
+        source: "lancastercountypa.gov",
+        description: "Lancaster County scholarships that pay for a recovery house stay, with application forms for houses and referring agencies."
       }
     ],
     faq: [

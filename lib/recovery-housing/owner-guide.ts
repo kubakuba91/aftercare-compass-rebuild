@@ -16,6 +16,12 @@ export function isOwnerGuideTab(value: string | null | undefined): value is Owne
   return ownerGuideTabs.some((tab) => tab.id === value);
 }
 
+/** `licensing-funding` was the combined resources tab. It opens Licensing here too. */
+export function normalizeOwnerGuideTab(value: string | null | undefined): OwnerGuideTab {
+  if (value === "licensing-funding") return "licensing";
+  return isOwnerGuideTab(value) ? value : "all";
+}
+
 export function ownerGuideHref(state: string, tab: OwnerGuideTab, query: string) {
   const params = new URLSearchParams();
   if (state && state !== "all") params.set("state", state);

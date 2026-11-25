@@ -3,7 +3,7 @@
 import { Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useState, type KeyboardEvent } from "react";
-import { isOwnerGuideTab, ownerGuideHref, ownerGuideTabs, type OwnerGuideTab } from "@/lib/recovery-housing/owner-guide";
+import { normalizeOwnerGuideTab, ownerGuideHref, ownerGuideTabs, type OwnerGuideTab } from "@/lib/recovery-housing/owner-guide";
 
 const ALL = "all";
 
@@ -15,10 +15,15 @@ export function OwnerGuideNav({ states }: { states: { code: string; name: string
   const requestedState = searchParams.get("state")?.toUpperCase() ?? ALL;
   const state = states.some((item) => item.code === requestedState) ? requestedState : ALL;
   const requestedTab = searchParams.get("tab");
-  const tab: OwnerGuideTab = isOwnerGuideTab(requestedTab) ? requestedTab : ALL;
+  const tab = normalizeOwnerGuideTab(requestedTab);
   const query = searchParams.get("q") ?? "";
   const [draft, setDraft] = useState(query);
   const ordered = [...states].sort((a, b) => a.name.localeCompare(b.name));
+
+  useEffect(() => {
+    if (requestedTab !== "licensing-funding") return;
+    router.replace(ownerGuideHref(state, "licensing", query), { scroll: false });
+  }, [query, requestedTab, router, state]);
 
   useEffect(() => {
     setDraft(query);

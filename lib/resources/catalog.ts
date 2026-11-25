@@ -11,6 +11,7 @@ import { federalOwnerFunding, stateOwnerFunding } from "@/lib/recovery-housing/f
 import { standardsLinks } from "@/lib/recovery-housing/general";
 import { stateResources } from "@/lib/recovery-housing/states";
 import type { ResourceLink } from "@/lib/recovery-housing/types";
+import { housingFundingResources } from "@/lib/resources/housing-funding";
 import { supportResources } from "@/lib/resources/support-topics";
 
 export const resourceCategories = [
@@ -20,7 +21,8 @@ export const resourceCategories = [
   { id: "shelter", label: "Shelter" },
   { id: "employment", label: "Employment" },
   { id: "transit", label: "Transit" },
-  { id: "licensing", label: "Licensing & Funding" },
+  { id: "licensing", label: "Licensing" },
+  { id: "funding", label: "Funding" },
   { id: "help", label: "Help finding services" },
   { id: "recovery", label: "Recovery Meetings" },
   { id: "family", label: "Family & Children" },
@@ -184,7 +186,7 @@ for (const state of stateResources) {
       source: "Aftercare Compass guide"
     });
   }
-  for (const link of state.fundingLinks ?? []) addLink(link, state.code, "licensing");
+  for (const link of state.fundingLinks ?? []) addLink(link, state.code, "funding");
   add({
     state: state.code,
     category: "licensing",
@@ -195,9 +197,10 @@ for (const state of stateResources) {
   });
 }
 
-for (const link of federalOwnerFunding) addLink(link, null, "licensing");
+for (const link of federalOwnerFunding) addLink(link, null, "funding");
 for (const link of standardsLinks) addLink(link, null, "licensing");
-for (const link of stateOwnerFunding) addLink(link, fundingState(link), "licensing");
+for (const link of stateOwnerFunding) addLink(link, fundingState(link), "funding");
+for (const entry of housingFundingResources) add(entry);
 
 for (const entry of supportResources) add(entry);
 
@@ -215,6 +218,12 @@ export const resourceStates = stateResources
 
 export function isResourceCategory(value: string | null | undefined): value is ResourceCategory {
   return resourceCategories.some((category) => category.id === value);
+}
+
+/** `licensing-funding` was the combined tab. It now opens Licensing. */
+export function normalizeResourceTab(value: string | null | undefined): ResourceCategory {
+  if (value === "licensing-funding") return "licensing";
+  return isResourceCategory(value) ? value : "all";
 }
 
 export function filterResources(

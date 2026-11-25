@@ -15,7 +15,7 @@ export const federalOwnerFunding: ResourceLink[] = [
     title: "SAMHSA grants",
     href: "https://www.samhsa.gov/grants",
     source: "samhsa.gov",
-    description: "Federal grant announcements for mental health and substance use programs. Open notices change, so read the current announcement before you apply."
+    description: "Federal grant announcements, including State Opioid Response and other substance-use notices. Open notices change, so read the current announcement before you apply."
   },
   {
     title: "SAMHSA substance use and mental health block grants",

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { isOwnerGuideTab, ownerGuideHref, ownerGuideTabs } from "../lib/recovery-housing/owner-guide";
+import { isOwnerGuideTab, normalizeOwnerGuideTab, ownerGuideHref, ownerGuideTabs } from "../lib/recovery-housing/owner-guide";
 
 assert.deepEqual(
   ownerGuideTabs.map((tab) => tab.id),
@@ -10,3 +10,5 @@ assert.equal(isOwnerGuideTab("housing"), false);
 assert.equal(ownerGuideHref("PA", "licensing", ""), "/resources/recovery-house-owners?state=PA&tab=licensing");
 assert.equal(ownerGuideHref("all", "all", "zoning"), "/resources/recovery-house-owners?q=zoning");
 assert.equal(ownerGuideHref("all", "faq", ""), "/resources/recovery-house-owners?tab=faq");
+assert.equal(normalizeOwnerGuideTab("licensing-funding"), "licensing");
+assert.equal(normalizeOwnerGuideTab("funding"), "funding");

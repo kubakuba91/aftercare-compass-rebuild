@@ -10,7 +10,7 @@ import { federalOwnerFunding, stateOwnerFunding } from "../lib/recovery-housing/
 import { standardsLinks } from "../lib/recovery-housing/general";
 import { stateResources } from "../lib/recovery-housing/states";
 import type { ResourceLink } from "../lib/recovery-housing/types";
-import { filterResources, resourceCatalog } from "../lib/resources/catalog";
+import { filterResources, normalizeResourceTab, resourceCatalog, resourceCategories } from "../lib/resources/catalog";
 
 const urls = new Set(resourceCatalog.map((entry) => entry.url));
 
@@ -75,3 +75,18 @@ assert.ok(paVeterans.some((entry) => entry.title === "Veterans Crisis Line" && e
 assert.equal(paVeterans.some((entry) => /treatment locator|findtreatment/i.test(entry.url + entry.title)), false);
 
 assert.equal(resourceCatalog.some((entry) => /findtreatment|locator\.crgroups|sud/i.test(entry.url)), false);
+
+assert.equal(resourceCategories.find((category) => category.id === "licensing")?.label, "Licensing");
+assert.equal(resourceCategories.some((category) => category.id === "funding" && category.label === "Funding"), true);
+assert.equal(normalizeResourceTab("licensing-funding"), "licensing");
+assert.equal(normalizeResourceTab("funding"), "funding");
+
+const paFunding = filterResources(resourceCatalog, { state: "PA", category: "funding", query: "" });
+assert.ok(paFunding.some((entry) => entry.url.includes("hudexchange.info/programs/rhp") && entry.state === null));
+assert.ok(paFunding.some((entry) => entry.title === "DDAP Funding Opportunities" && entry.state === "PA"));
+assert.ok(paFunding.some((entry) => entry.title === "Lancaster SCA Recovery House Scholarships"));
+assert.equal(paFunding.some((entry) => entry.category !== "funding"), false);
+assert.equal(
+  filterResources(resourceCatalog, { state: "PA", category: "licensing", query: "" }).some((entry) => entry.url.includes("funding-opportunities")),
+  false
+);

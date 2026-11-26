@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useId, useMemo, useState } from "react";
 import { ExternalLink, Play, Search } from "lucide-react";
+import { quietTabClass } from "@/components/public/quiet-tab";
 import { trackEvent } from "@/lib/track-event";
 import {
   resourceTopics,
@@ -69,11 +70,6 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
     setPlayingId(video.id);
   };
 
-  const tabClass = (active: boolean) =>
-    `focus-ring rounded-full px-4 py-2 text-sm font-semibold transition ${
-      active ? "bg-[#10195e] text-white" : "text-[#17212b] hover:bg-[#eef3fc]"
-    }`;
-
   return (
     <div className="mt-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -97,13 +93,13 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
             value={query}
           />
         </div>
-        <div aria-label="Library view" className="inline-flex rounded-full border border-border p-1" role="group">
-          <button aria-pressed={view === "cards"} className={tabClass(view === "cards")} onClick={() => setView("cards")} type="button">
+        <div aria-label="Library view" className="inline-flex gap-6 border-b border-border" role="group">
+          <button aria-pressed={view === "cards"} className={quietTabClass(view === "cards")} onClick={() => setView("cards")} type="button">
             Cards
           </button>
           <button
             aria-pressed={view === "library"}
-            className={tabClass(view === "library")}
+            className={quietTabClass(view === "library")}
             onClick={() => setView("library")}
             type="button"
           >

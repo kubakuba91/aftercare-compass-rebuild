@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
+import { quietTabClass } from "@/components/public/quiet-tab";
 import { ButtonLink } from "@/components/ui/button-link";
 import { cn } from "@/lib/utils";
 
@@ -110,20 +111,13 @@ export function PricingPlansToggle({
       <span className="absolute top-0 scroll-mt-24" id="case-managers" />
       <div className="shell">
         <div className="flex justify-center">
-          <div className="inline-grid grid-cols-2 rounded-2xl border border-border bg-white p-1.5 shadow-sm" role="tablist" aria-label="Pricing audience">
+          <div className="inline-flex gap-8 border-b border-border" role="tablist" aria-label="Pricing audience">
             <button
               aria-controls="pricing-table"
               aria-selected={showingProviders}
-              className={cn(
-                "focus-ring rounded-xl px-5 py-3 text-sm font-semibold transition-colors sm:px-8",
-                showingProviders ? "shadow-sm" : "hover:bg-[#f4f8ff]"
-              )}
+              className={quietTabClass(showingProviders)}
               onClick={() => selectAudience("providers")}
               role="tab"
-              style={{
-                backgroundColor: showingProviders ? "#10195e" : "#ffffff",
-                color: showingProviders ? "#ffffff" : "#17212b"
-              }}
               type="button"
             >
               Provider plans
@@ -131,16 +125,9 @@ export function PricingPlansToggle({
             <button
               aria-controls="pricing-table"
               aria-selected={!showingProviders}
-              className={cn(
-                "focus-ring rounded-xl px-5 py-3 text-sm font-semibold transition-colors sm:px-8",
-                !showingProviders ? "shadow-sm" : "hover:bg-[#f4f8ff]"
-              )}
+              className={quietTabClass(!showingProviders)}
               onClick={() => selectAudience("case-managers")}
               role="tab"
-              style={{
-                backgroundColor: !showingProviders ? "#10195e" : "#ffffff",
-                color: !showingProviders ? "#ffffff" : "#17212b"
-              }}
               type="button"
             >
               Case manager plans

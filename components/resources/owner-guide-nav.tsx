@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { quietTabClass } from "@/components/public/quiet-tab";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useState, type KeyboardEvent } from "react";
 import { normalizeOwnerGuideTab, ownerGuideHref, ownerGuideTabs, type OwnerGuideTab } from "@/lib/recovery-housing/owner-guide";
@@ -97,7 +98,7 @@ export function OwnerGuideNav({ states }: { states: { code: string; name: string
       </div>
       <div
         aria-label="Owner guide sections"
-        className="mt-5 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible"
+        className="mt-6 flex gap-6 overflow-x-auto border-b border-border"
         onKeyDown={onTabKeyDown}
         role="tablist"
       >
@@ -107,9 +108,7 @@ export function OwnerGuideNav({ states }: { states: { code: string; name: string
             <button
               aria-controls="owner-guide-results"
               aria-selected={selected}
-              className={`focus-ring shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${
-                selected ? "bg-[#12185f] text-white" : "border border-border bg-white text-[#17212b] hover:border-[#12185f]/40"
-              }`}
+              className={quietTabClass(selected)}
               id={`owner-tab-${item.id}`}
               key={item.id}
               onClick={() => go(state, item.id)}

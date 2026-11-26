@@ -84,7 +84,7 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
           />
           <input
             // type=text avoids the browser’s native search magnifier overlapping our icon
-            className="focus-ring w-full rounded-full border border-border bg-white py-2.5 pl-10 pr-4 text-sm [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
+            className="focus-ring w-full rounded-md border border-black/10 bg-white py-2.5 pl-10 pr-4 text-sm [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
             id={searchId}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search topics, like history or case managers"
@@ -120,7 +120,7 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
         <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((video) => (
             <li key={video.id}>
-              <article className="h-full overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:shadow-lg">
+              <article className="h-full overflow-hidden rounded-xl border border-black/10 bg-white">
                 {playingId === video.id ? (
                   <InlinePlayer onClose={() => setPlayingId(null)} video={video} />
                 ) : (
@@ -164,7 +164,7 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
                 <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-primary" id={`topic-${topic}`}>
                   {topic}
                 </h3>
-                <ul className="mt-3 divide-y divide-border rounded-2xl border border-border">
+                <ul className="mt-3 divide-y divide-black/5 rounded-xl border border-black/10">
                   {inTopic.map((video) => (
                     <li key={video.id}>
                       {playingId === video.id ? (
@@ -175,7 +175,7 @@ export function ResourceBrowser({ videos }: { videos: ResourceVideo[] }) {
                       ) : (
                         <button
                           aria-label={`Play video: ${video.title}`}
-                          className="focus-ring block w-full p-4 text-left hover:bg-[#f4f8ff]"
+                          className="focus-ring block w-full p-4 text-left hover:bg-[#f7f6f3]"
                           onClick={() => play(video, "library")}
                           type="button"
                         >

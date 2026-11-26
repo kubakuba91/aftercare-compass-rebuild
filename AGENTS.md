@@ -1,5 +1,6 @@
 # Release workflow
 
+- Do not touch the database. No migrations, no Prisma, Drizzle, or Supabase schema changes, no seeds, and no writes, updates, or deletes, whether direct SQL or through scripts. Do not run anything against a production or preview database. UI and code changes may only read existing data the way the app already does. If a task needs a database change, stop and report it instead of making the change.
 - Start release branches from the latest `origin/main`. Preserve unrelated local work before changing branches.
 - Commit every source file required by a feature, including new files, before releasing it. Never deploy production from a dirty working tree.
 - Use the GitHub `main` deployment as the production release path. Do not deploy a local folder directly to production or promote an older build unless the user explicitly requests a recovery or rollback.

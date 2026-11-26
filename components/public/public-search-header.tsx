@@ -179,7 +179,7 @@ export function PublicSearchHeader({
   }
 
   return (
-    <header className="relative z-30 border-b border-border bg-white">
+    <header className="relative z-30 border-b border-black/5 bg-[#f4f3ef]">
       <div className="shell relative flex flex-col gap-2 py-3 xl:flex-row xl:items-center">
         <div className="flex items-center justify-between xl:block">
         <Link className="focus-ring inline-flex shrink-0 items-center rounded-md" href="/" aria-label="Aftercare Compass home">

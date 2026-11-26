@@ -41,11 +41,10 @@ export default function AboutPage() {
     <>
       <MarketingHeader />
       <main className="overflow-hidden bg-white">
-        <section className="relative border-b border-border bg-[#f4f8ff]">
-        <div className="pointer-events-none absolute -right-32 -top-44 size-[34rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
+        <section className="ac-public-hero">
         <div className="shell relative grid items-center gap-12 py-16 lg:grid-cols-[1.02fr_0.98fr] lg:py-24">
           <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">About Aftercare Compass</p>
+            <p className="ac-public-kicker">About Aftercare Compass</p>
             <h1 className="mt-5 text-4xl font-semibold leading-[1.08] tracking-[-0.03em] text-[#17212b] sm:text-5xl lg:text-6xl">
               Every recovery has a next chapter. We help people get there.
             </h1>
@@ -56,7 +55,7 @@ export default function AboutPage() {
           </div>
 
           <figure>
-            <div className="relative aspect-video overflow-hidden rounded-[1.5rem] border border-[#cddcf4] bg-[#10195e] shadow-[0_24px_70px_rgba(23,33,43,0.18)]">
+            <div className="relative aspect-video overflow-hidden rounded-xl border border-black/10 bg-[#10195e]">
               {videoUrl ? (
                 <iframe
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -89,7 +88,7 @@ export default function AboutPage() {
 
         <section className="shell grid gap-10 py-20 lg:grid-cols-[0.7fr_1.3fr] lg:py-28">
         <div>
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Why we built it</p>
+          <p className="ac-public-kicker">Why we built it</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">Our Story</h2>
         </div>
         <div className="max-w-3xl space-y-6 text-lg leading-8 text-muted-foreground">
@@ -144,7 +143,7 @@ export default function AboutPage() {
             </div>
           </div>
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Meet the Founder</p>
+            <p className="ac-public-kicker">Meet the Founder</p>
             <h2 className="mt-4 text-4xl font-semibold tracking-[-0.02em] text-[#17212b]">Michael Bradley</h2>
             <p className="mt-2 font-semibold text-primary">Founder &amp; CEO, Aftercare Compass</p>
             <div className="mt-7 space-y-5 text-lg leading-8 text-muted-foreground">
@@ -162,7 +161,7 @@ export default function AboutPage() {
         </div>
         </section>
 
-        <section className="border-t border-border bg-[#f4f8ff]">
+        <section className="border-t border-border bg-[#f7f6f3]">
         <div className="shell py-16 text-center sm:py-20">
           <h2 className="text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">Ready to close the gap?</h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-muted-foreground">

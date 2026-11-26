@@ -34,11 +34,10 @@ export default async function ResourcesPage({ searchParams }: PageProps) {
     <>
       <MarketingHeader />
       <main className="overflow-hidden bg-white">
-        <section className="relative border-b border-border bg-[#f4f8ff]">
-          <div className="pointer-events-none absolute -right-32 -top-44 size-[34rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
+        <section className="ac-public-hero">
           <div className="shell relative py-10 lg:py-14">
             <div className="max-w-3xl">
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Resources</p>
+              <p className="ac-public-kicker">Resources</p>
               <h1 className="mt-4 text-4xl font-semibold leading-[1.08] tracking-[-0.03em] text-[#17212b] sm:text-5xl">
                 Find official help
               </h1>

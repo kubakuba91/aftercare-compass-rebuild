@@ -19,10 +19,10 @@ export function StateResourceSection({ state }: { state: StateResource }) {
   return (
     <article
       aria-labelledby={`state-${state.code}-heading`}
-      className="mt-10 scroll-mt-24 rounded-[1.5rem] border border-border bg-white p-6 sm:p-8"
+      className="mt-10 scroll-mt-24 rounded-xl border border-black/10 bg-white p-6 sm:p-8"
       id={state.code.toLowerCase()}
     >
-      <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">{state.oversightLabel}</p>
+      <p className="ac-public-kicker">{state.oversightLabel}</p>
       <h3 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-[#17212b]" id={`state-${state.code}-heading`}>
         {state.name}
       </h3>
@@ -51,7 +51,7 @@ export function StateResourceSection({ state }: { state: StateResource }) {
           <SubHeading icon={Landmark}>Basic steps</SubHeading>
           <ol className="mt-4 grid gap-3 md:grid-cols-2">
             {state.steps.map((step, index) => (
-              <li key={step} className="flex gap-3 rounded-2xl border border-border bg-[#f4f8ff] p-4 text-sm leading-6 text-[#17212b]">
+              <li key={step} className="flex gap-3 rounded-xl border border-black/10 bg-[#f7f6f3] p-4 text-sm leading-6 text-[#17212b]">
                 <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#10195e] text-xs font-semibold text-white">{index + 1}</span>
                 <span>{step}</span>
               </li>

@@ -692,7 +692,24 @@ dialog::backdrop {
 }
 
 /* Compact search result layout; colors come from the shared theme above. */
-.search-result-card.ac-card { padding: 0; border-radius: 18px; }
+.search-result-card.ac-card {
+  padding: 0;
+  border-radius: 12px;
+  border-color: rgb(0 0 0 / 0.08);
+  box-shadow: none;
+}
+.ac-public-hero {
+  position: relative;
+  border-bottom: 1px solid rgb(0 0 0 / 0.05);
+  background: #f4f3ef;
+}
+.ac-public-kicker {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #10195e;
+}
 .search-result-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 3fr); }
 .search-result-photo { position: relative; display: block; min-height: 0; background: var(--muted); }
 .search-result-body { display: flex; flex-direction: column; min-width: 0; padding: 20px 22px; gap: 12px; }

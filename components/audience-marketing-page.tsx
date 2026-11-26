@@ -48,11 +48,10 @@ export function AudienceMarketingPage({
     <>
       <MarketingHeader />
       <main className="overflow-hidden bg-white">
-        <section className="relative border-b border-border bg-[#f4f8ff]">
-          <div className="pointer-events-none absolute -right-32 -top-44 size-[34rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
+        <section className="ac-public-hero">
           <div className="shell relative grid items-center gap-12 py-16 lg:grid-cols-[1.02fr_0.98fr] lg:py-24">
             <div className="max-w-3xl">
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">{audienceLabel}</p>
+              <p className="ac-public-kicker">{audienceLabel}</p>
               <h1 className="mt-5 text-4xl font-semibold leading-[1.08] tracking-[-0.03em] text-[#17212b] sm:text-5xl lg:text-6xl">
                 {headline}
               </h1>
@@ -67,7 +66,7 @@ export function AudienceMarketingPage({
 
         <section className="shell grid gap-10 py-20 lg:grid-cols-[0.7fr_1.3fr] lg:py-28">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">The challenge</p>
+            <p className="ac-public-kicker">The challenge</p>
             <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">{problem.title}</h2>
           </div>
           <div className="max-w-3xl space-y-6 text-lg leading-8 text-muted-foreground">
@@ -97,7 +96,7 @@ export function AudienceMarketingPage({
         <section className="shell py-20 lg:py-28">
           <div className="grid items-start gap-12 lg:grid-cols-[1.2fr_0.8fr]">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Three simple steps</p>
+              <p className="ac-public-kicker">Three simple steps</p>
               <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">How It Works</h2>
               <ol className="mt-8 space-y-4">
                 {steps.map((step, index) => (
@@ -113,9 +112,9 @@ export function AudienceMarketingPage({
             </div>
 
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Plans for every team</p>
+              <p className="ac-public-kicker">Plans for every team</p>
               <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">Simple, flexible pricing</h2>
-              <aside id="pricing" className="mt-8 h-fit scroll-mt-24 rounded-[1.5rem] border border-[#cddcf4] bg-[#f4f8ff] p-7 sm:p-9">
+              <aside id="pricing" className="mt-8 h-fit scroll-mt-24 rounded-xl border border-black/10 bg-[#f7f6f3] p-7 sm:p-9">
                 <p className="leading-7 text-muted-foreground">{pricing.description}</p>
                 <div className="mt-7">
                   <ButtonLink href={pricing.ctaHref}>{pricing.ctaLabel}</ButtonLink>
@@ -135,7 +134,7 @@ export function AudienceMarketingPage({
           </section>
         ) : null}
 
-        <section className="bg-[#f4f8ff]">
+        <section className="bg-[#f7f6f3]">
           <div className="shell py-16 text-center sm:py-20">
             <h2 className="text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">{closing.title}</h2>
             <p className="mx-auto mt-4 max-w-3xl text-lg leading-8 text-muted-foreground">{closing.description}</p>

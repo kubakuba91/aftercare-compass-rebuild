@@ -40,11 +40,10 @@ export default function CommunityResourcesPage() {
     <>
       <MarketingHeader />
       <main className="overflow-hidden bg-white">
-        <section className="relative border-b border-border bg-[#f4f8ff]">
-          <div className="pointer-events-none absolute -right-32 -top-44 size-[34rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
+        <section className="ac-public-hero">
           <div className="shell relative py-16 lg:py-24">
             <div className="max-w-3xl">
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Resources · Leaving treatment</p>
+              <p className="ac-public-kicker">Resources · Leaving treatment</p>
               <h1 className="mt-5 text-4xl font-semibold leading-[1.08] tracking-[-0.03em] text-[#17212b] sm:text-5xl lg:text-6xl">Housing, work, food, and a way to get there</h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
                 Official pages and established helplines for people leaving treatment. Pennsylvania and Central PA (Harrisburg, Lancaster, York, and Reading) are listed first. Other states are statewide.
@@ -72,7 +71,7 @@ export default function CommunityResourcesPage() {
         </section>
 
         <section className="shell scroll-mt-24 pb-10" id="help-now">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Help now</p>
+          <p className="ac-public-kicker">Help now</p>
           <h2 className="mt-4 flex items-center gap-3 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">
             <Phone aria-hidden="true" className="text-primary" size={30} /> Get Help Now and 988
           </h2>
@@ -88,9 +87,9 @@ export default function CommunityResourcesPage() {
           </div>
         </section>
 
-        <section className="border-y border-border bg-[#f4f8ff]">
+        <section className="border-y border-border bg-[#f7f6f3]">
           <div className="shell py-16 lg:py-20">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Anywhere</p>
+            <p className="ac-public-kicker">Anywhere</p>
             <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">If your state section is missing a topic</h2>
             <p className="mt-4 max-w-3xl text-lg leading-8 text-muted-foreground">
               Start with 211, HUD’s shelter search, or the federal SNAP page. State sections below add the local agency when that page could be confirmed.
@@ -104,7 +103,7 @@ export default function CommunityResourcesPage() {
         </section>
 
         <section className="shell scroll-mt-24 py-16 lg:py-20" id="pennsylvania">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Pennsylvania</p>
+          <p className="ac-public-kicker">Pennsylvania</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">Statewide</h2>
           <p className="mt-4 max-w-3xl text-lg leading-8 text-muted-foreground">
             County assistance offices handle SNAP and other benefits in person. PA CareerLink is the statewide job system. Bus service depends on the county.
@@ -112,9 +111,9 @@ export default function CommunityResourcesPage() {
           <Groups groups={pennsylvaniaGroups} />
         </section>
 
-        <section className="border-y border-border bg-[#f4f8ff]">
+        <section className="border-y border-border bg-[#f7f6f3]">
           <div className="shell py-16 lg:py-20">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Central Pennsylvania</p>
+            <p className="ac-public-kicker">Central Pennsylvania</p>
             <h2 className="mt-4 flex items-center gap-3 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">
               <Bus aria-hidden="true" className="text-primary" size={30} /> Harrisburg, Lancaster, York, and Reading
             </h2>
@@ -134,7 +133,7 @@ export default function CommunityResourcesPage() {
         </section>
 
         <section className="shell py-16 lg:py-20" id="other-states">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Other states</p>
+          <p className="ac-public-kicker">Other states</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">Statewide resources</h2>
           <p className="mt-4 max-w-3xl text-lg leading-8 text-muted-foreground">
             The same states as the recovery house owner picker, at a statewide level. Open a state for housing, jobs, food, and transit pages that could be confirmed.

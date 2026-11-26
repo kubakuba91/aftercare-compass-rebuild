@@ -14,16 +14,15 @@ export default function ContactPage() {
     <>
       <MarketingHeader />
       <main className="overflow-hidden bg-white">
-        <section className="relative min-h-[calc(100vh-5rem)] border-b border-border bg-[#f4f8ff]">
-          <div className="pointer-events-none absolute -right-32 -top-44 size-[34rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
+        <section className="ac-public-hero min-h-[calc(100vh-5rem)]">
           <div className="shell relative grid items-start gap-10 py-10 sm:py-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-12 lg:py-14">
             <div className="max-w-2xl lg:pt-3">
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Contact Aftercare Compass</p>
+              <p className="ac-public-kicker">Contact Aftercare Compass</p>
               <h1 className="mt-5 text-4xl font-semibold leading-[1.08] tracking-[-0.03em] text-[#17212b] sm:text-5xl lg:text-6xl">Let’s talk.</h1>
               <p className="mt-5 text-lg leading-8 text-muted-foreground">
                 Whether you’re a provider, a referent, a partner, or just curious—we’d love to hear from you.
               </p>
-            <div className="mt-8 flex items-start gap-4 rounded-2xl bg-[#f4f8ff] p-5">
+            <div className="mt-8 flex items-start gap-4 rounded-xl bg-white p-5">
               <div className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                 <Mail aria-hidden="true" size={21} />
               </div>

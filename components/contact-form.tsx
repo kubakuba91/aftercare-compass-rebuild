@@ -38,7 +38,7 @@ export function ContactForm() {
   }
 
   return (
-    <form className="rounded-[1.5rem] border border-border bg-white p-6 shadow-[0_20px_60px_rgba(23,33,43,0.1)] sm:p-8" onSubmit={handleSubmit}>
+    <form className="rounded-xl border border-black/10 bg-white p-6 sm:p-8" onSubmit={handleSubmit}>
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-semibold text-[#17212b]">
           Full Name

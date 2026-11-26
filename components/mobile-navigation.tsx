@@ -3,39 +3,41 @@ import { ChevronDown, Menu } from "lucide-react";
 import { dashboardAppUrl, publicAppUrl } from "@/lib/app-urls";
 import { cn } from "@/lib/utils";
 
+const itemClass = "rounded-lg px-3 py-2.5 text-sm font-medium text-[#17212b] hover:bg-[#f4f3ef]";
+
 export function MobileNavigation({ isSignedIn = false, className = "lg:hidden" }: { isSignedIn?: boolean; className?: string }) {
   return (
-<details className={cn("group relative", className)}>
-            <summary className="focus-ring flex size-11 cursor-pointer list-none items-center justify-center rounded-xl border border-border bg-white shadow-sm [&::-webkit-details-marker]:hidden">
-              <span className="sr-only">Open navigation</span>
-              <Menu aria-hidden="true" size={22} />
-            </summary>
-            <nav className="absolute right-0 z-30 mt-3 grid w-64 gap-1 rounded-2xl border border-border bg-white p-2 shadow-xl" aria-label="Mobile navigation">
-              <details>
-                <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#f4f8ff] [&::-webkit-details-marker]:hidden">
-                  Solutions
-                  <ChevronDown aria-hidden="true" size={16} />
-                </summary>
-                <div className="ml-4 grid border-l border-border pl-2">
-                  <Link className="rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#f4f8ff]" href={publicAppUrl("/for-providers")}>For Providers</Link>
-                  <Link className="rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#f4f8ff]" href={publicAppUrl("/for-case-managers")}>For Case Managers</Link>
-                </div>
-              </details>
-              <Link className="rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#f4f8ff]" href={publicAppUrl("/pricing")}>Pricing</Link>
-              <Link className="rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#f4f8ff]" href={publicAppUrl("/resources")}>Resources</Link>
-              <Link className="rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#f4f8ff]" href={publicAppUrl("/library")}>Library</Link>
-              <details>
-                <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#f4f8ff] [&::-webkit-details-marker]:hidden">
-                  Company
-                  <ChevronDown aria-hidden="true" size={16} />
-                </summary>
-                <div className="ml-4 grid border-l border-border pl-2">
-                  <Link className="rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#f4f8ff]" href={publicAppUrl("/about")}>About</Link>
-                  <Link className="rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#f4f8ff]" href={publicAppUrl("/contact")}>Contact</Link>
-                </div>
-              </details>
-              <Link className="rounded-xl bg-[#f4f8ff] px-4 py-3 text-sm font-semibold text-primary" href={dashboardAppUrl(isSignedIn ? "/auth/complete" : "/sign-in")}>{isSignedIn ? "Account" : "Join or Login"}</Link>
-            </nav>
-          </details>
+    <details className={cn("group relative", className)}>
+      <summary className="focus-ring flex size-10 cursor-pointer list-none items-center justify-center rounded-md text-[#17212b] [&::-webkit-details-marker]:hidden">
+        <span className="sr-only">Open navigation</span>
+        <Menu aria-hidden="true" size={22} />
+      </summary>
+      <nav className="absolute right-0 z-30 mt-2 grid w-60 gap-0.5 rounded-xl border border-black/10 bg-[#f7f6f3] p-1.5 shadow-[0_12px_32px_rgb(16_25_94_/_0.06)]" aria-label="Mobile navigation">
+        <details>
+          <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-[#17212b] hover:bg-[#f4f3ef] [&::-webkit-details-marker]:hidden">
+            Solutions
+            <ChevronDown aria-hidden="true" size={14} />
+          </summary>
+          <div className="grid pb-1 pl-3">
+            <Link className={itemClass} href={publicAppUrl("/for-providers")}>For providers</Link>
+            <Link className={itemClass} href={publicAppUrl("/for-case-managers")}>For case managers</Link>
+          </div>
+        </details>
+        <Link className={itemClass} href={publicAppUrl("/pricing")}>Pricing</Link>
+        <Link className={itemClass} href={publicAppUrl("/resources")}>Resources</Link>
+        <Link className={itemClass} href={publicAppUrl("/library")}>Library</Link>
+        <details>
+          <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-[#17212b] hover:bg-[#f4f3ef] [&::-webkit-details-marker]:hidden">
+            Company
+            <ChevronDown aria-hidden="true" size={14} />
+          </summary>
+          <div className="grid pb-1 pl-3">
+            <Link className={itemClass} href={publicAppUrl("/about")}>About</Link>
+            <Link className={itemClass} href={publicAppUrl("/contact")}>Contact</Link>
+          </div>
+        </details>
+        <Link className={`${itemClass} text-[#10195e]`} href={dashboardAppUrl(isSignedIn ? "/auth/complete" : "/sign-in")}>{isSignedIn ? "Account" : "Join or log in"}</Link>
+      </nav>
+    </details>
   );
 }

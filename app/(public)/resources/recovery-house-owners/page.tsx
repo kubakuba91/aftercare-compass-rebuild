@@ -13,14 +13,36 @@ import { generalFaq, narrChecklist, standardsLinks, templateOutlines } from "@/l
 import { linkSearchText, normalizeOwnerGuideTab, stateSearchText, type OwnerGuideTab } from "@/lib/recovery-housing/owner-guide";
 import { findStateResource, stateResources } from "@/lib/recovery-housing/states";
 import type { ResourceLink } from "@/lib/recovery-housing/types";
+import { publicSeoUrl } from "@/lib/profile-seo";
 import { filterResources, resourceCatalog, showInOwnerGuide } from "@/lib/resources/catalog";
+import { requestResourceState } from "@/lib/resources/request-state";
+import { resourceCanonicalPath } from "@/lib/resources/state-choice";
 import { contentMatches, interpretSearch, suggestSearch } from "@/lib/resources/smart-search";
 
-export const metadata: Metadata = {
-  title: "Recovery House Owner Resources | Aftercare Compass",
-  description:
-    "Plain-language resources for people opening or running a recovery or sober house: zoning basics, starter templates, NARR standards, funding, and state-by-state licensing and certification links."
-};
+export const dynamic = "force-dynamic";
+
+const description =
+  "Plain-language resources for people opening or running a recovery or sober house: zoning basics, starter templates, NARR standards, funding, and state-by-state licensing and certification links.";
+
+type PageProps = { searchParams: Promise<{ state?: string | string[]; tab?: string | string[]; q?: string | string[] }> };
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const params = await searchParams;
+  return {
+    title: "Recovery House Owner Resources | Aftercare Compass",
+    description,
+    alternates: {
+      canonical: publicSeoUrl(
+        resourceCanonicalPath(
+          "/resources/recovery-house-owners",
+          params,
+          stateResources.map((state) => state.code),
+          normalizeOwnerGuideTab
+        )
+      )
+    }
+  };
+}
 
 const zoningLinks: ResourceLink[] = [
   {
@@ -54,15 +76,14 @@ const zoningChecks = [
   "Get answers in writing when you can, and confirm everything with your municipality before you sign a lease or buy."
 ];
 
-type PageProps = { searchParams: Promise<{ state?: string | string[]; tab?: string | string[]; q?: string | string[] }> };
-
 function firstParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
 
 export default async function RecoveryHouseOwnersPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const selectedState = findStateResource(firstParam(params.state));
+  const stateChoice = await requestResourceState(stateResources.map((state) => state.code), firstParam(params.state));
+  const selectedState = stateChoice.state === "all" ? undefined : findStateResource(stateChoice.state);
   const stateCode = selectedState?.code ?? "all";
   const requestedTab = firstParam(params.tab);
   const tab: OwnerGuideTab = normalizeOwnerGuideTab(requestedTab);
@@ -180,7 +201,7 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
 
         <section className="shell pb-4 pt-10">
           <Suspense fallback={<p className="text-sm text-muted-foreground">Loading guide…</p>}>
-            <OwnerGuideNav states={stateResources.map((state) => ({ code: state.code, name: state.name }))} />
+            <OwnerGuideNav stateChoice={stateChoice} states={stateResources.map((state) => ({ code: state.code, name: state.name }))} />
           </Suspense>
         </section>
 

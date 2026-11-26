@@ -22,9 +22,10 @@ export function normalizeOwnerGuideTab(value: string | null | undefined): OwnerG
   return isOwnerGuideTab(value) ? value : "all";
 }
 
-export function ownerGuideHref(state: string, tab: OwnerGuideTab, query: string) {
+export function ownerGuideHref(state: string, tab: OwnerGuideTab, query: string, options?: { explicitAll?: boolean }) {
   const params = new URLSearchParams();
   if (state && state !== "all") params.set("state", state);
+  else if (options?.explicitAll) params.set("state", "all");
   if (tab !== "all") params.set("tab", tab);
   if (query) params.set("q", query);
   const search = params.toString();

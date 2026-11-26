@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { normalizePhoneNumber } from "@/lib/phone";
+import { HomeAnswerSection } from "@/components/public/home-answer-section";
 import { HeroSearchForm } from "@/components/public/hero-search-form";
 import Image from "next/image";
 import { MarketingHeader } from "@/components/marketing-header";
@@ -8,12 +9,15 @@ import { TrendingHomes } from "@/components/public/trending-homes";
 import { Card } from "@/components/ui/card";
 import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
 import { hasDatabaseConfig } from "@/lib/database-status";
+import { homeJsonLd, homeMetadata } from "@/lib/home-seo";
 import { popularProgramAvailability } from "@/lib/popular-program-availability";
 import { profilePlaceholderAlt, profilePlaceholderImage } from "@/lib/public-profile-placeholder";
 import { prisma } from "@/lib/prisma";
 import { redirectToDashboardDestination } from "@/lib/protected-routing";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = homeMetadata();
 
 export default async function HomePage() {
   const userId = hasValidClerkRuntimeConfig() ? (await auth()).userId : null;
@@ -171,9 +175,9 @@ export default async function HomePage() {
             />
           </div>
           <div>
-            <h2 className="text-xl font-semibold">Public discovery</h2>
+            <h2 className="text-xl font-semibold">Search sober living and continued care</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Search profiles by location, availability, and fit.
+              Look up published programs by city, state, program name, and the availability they have posted.
             </p>
           </div>
         </Card>
@@ -188,9 +192,9 @@ export default async function HomePage() {
             />
           </div>
           <div>
-            <h2 className="text-xl font-semibold">Provider supply</h2>
+            <h2 className="text-xl font-semibold">Programs publish their own availability</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Aftercare teams can publish profiles, manage documents, and update availability.
+              Sober living and continued care teams update their profile, documents, and whether they have space.
             </p>
           </div>
         </Card>
@@ -205,13 +209,16 @@ export default async function HomePage() {
             />
           </div>
           <div>
-            <h2 className="text-xl font-semibold">Referral-ready</h2>
+            <h2 className="text-xl font-semibold">De-identified referrals</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Referents submit de-identified referrals, and aftercare teams manage the status lifecycle.
+              A signed-in referrer can send a de-identified referral, and the program tracks it from its dashboard.
             </p>
           </div>
         </Card>
       </section>
+
+      <HomeAnswerSection />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: homeJsonLd() }} />
       </main>
     </>
   );

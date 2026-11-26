@@ -4,6 +4,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import { SiteFooter } from "@/components/site-footer";
 import { dashboardAppUrl } from "@/lib/app-urls";
 import { hasValidClerkPublishableKey } from "@/lib/clerk-config";
+import { homeDescription } from "@/lib/home-seo";
 import { publicSeoOrigin } from "@/lib/profile-seo";
 import "./globals.css";
 
@@ -11,7 +12,10 @@ export const metadata: Metadata = {
   metadataBase: new URL(publicSeoOrigin()),
   verification: { google: "G5JYY2bbpf1I0BcKd1w7Zzb-kqq0BmwQlozyui58cMw" },
   title: "Aftercare Compass",
-  description: "A referral-ready aftercare placement marketplace.",
+  description: homeDescription,
+  applicationName: "Aftercare Compass",
+  openGraph: { type: "website", siteName: "Aftercare Compass", locale: "en_US" },
+  twitter: { card: "summary_large_image" },
   icons: {
     icon: [
       {

@@ -3,14 +3,33 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { MarketingHeader } from "@/components/marketing-header";
 import { ResourcesBrowser } from "@/components/resources/resources-browser";
+import { publicSeoUrl } from "@/lib/profile-seo";
+import { normalizeResourceTab, resourceStates } from "@/lib/resources/catalog";
+import { requestResourceState } from "@/lib/resources/request-state";
+import { firstParam, resourceCanonicalPath } from "@/lib/resources/state-choice";
 
-export const metadata: Metadata = {
-  title: "Resources | Aftercare Compass",
-  description:
-    "Find official housing, food, shelter, employment, transit, recovery meetings, family support, veterans and first responder services, recovery-house licensing, and funding pages by state."
-};
+export const dynamic = "force-dynamic";
 
-export default function ResourcesPage() {
+const description =
+  "Find official housing, food, shelter, employment, transit, recovery meetings, family support, veterans and first responder services, recovery-house licensing, and funding pages by state.";
+
+type PageProps = { searchParams: Promise<{ state?: string | string[]; tab?: string | string[]; q?: string | string[] }> };
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const params = await searchParams;
+  return {
+    title: "Resources | Aftercare Compass",
+    description,
+    alternates: {
+      canonical: publicSeoUrl(resourceCanonicalPath("/resources", params, resourceStates.map((state) => state.code), normalizeResourceTab))
+    }
+  };
+}
+
+export default async function ResourcesPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const stateChoice = await requestResourceState(resourceStates.map((state) => state.code), firstParam(params.state));
+
   return (
     <>
       <MarketingHeader />
@@ -40,7 +59,7 @@ export default function ResourcesPage() {
         </section>
         <section className="shell py-8 lg:py-10">
           <Suspense fallback={<p className="text-sm text-muted-foreground">Loading resources…</p>}>
-            <ResourcesBrowser />
+            <ResourcesBrowser stateChoice={stateChoice} />
           </Suspense>
         </section>
       </main>

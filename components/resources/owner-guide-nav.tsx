@@ -1,30 +1,35 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { LocationStateNote } from "@/components/resources/location-state-note";
 import { quietTabClass } from "@/components/public/quiet-tab";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useId, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { normalizeOwnerGuideTab, ownerGuideHref, ownerGuideTabs, type OwnerGuideTab } from "@/lib/recovery-housing/owner-guide";
+import { rememberResourceState, type ResourceStateChoice } from "@/lib/resources/state-choice";
 
 const ALL = "all";
 
-export function OwnerGuideNav({ states }: { states: { code: string; name: string }[] }) {
+export function OwnerGuideNav({ states, stateChoice }: { states: { code: string; name: string }[]; stateChoice: ResourceStateChoice }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const stateId = useId();
   const searchId = useId();
-  const requestedState = searchParams.get("state")?.toUpperCase() ?? ALL;
-  const state = states.some((item) => item.code === requestedState) ? requestedState : ALL;
+  const stateSelectRef = useRef<HTMLSelectElement>(null);
+  const state = states.some((item) => item.code === stateChoice.state) ? stateChoice.state : ALL;
+  const keepExplicitAll = (searchParams.get("state") ?? "").toLowerCase() === ALL;
   const requestedTab = searchParams.get("tab");
   const tab = normalizeOwnerGuideTab(requestedTab);
   const query = searchParams.get("q") ?? "";
   const [draft, setDraft] = useState(query);
   const ordered = [...states].sort((a, b) => a.name.localeCompare(b.name));
+  const stateName = states.find((item) => item.code === state)?.name ?? state;
+  const explicitAll = (nextState: string, forceAll = false) => forceAll || (nextState === ALL && keepExplicitAll);
 
   useEffect(() => {
     if (requestedTab !== "licensing-funding") return;
-    router.replace(ownerGuideHref(state, "licensing", query), { scroll: false });
-  }, [query, requestedTab, router, state]);
+    router.replace(ownerGuideHref(state, "licensing", query, { explicitAll: state === ALL && keepExplicitAll }), { scroll: false });
+  }, [keepExplicitAll, query, requestedTab, router, state]);
 
   useEffect(() => {
     setDraft(query);
@@ -33,13 +38,14 @@ export function OwnerGuideNav({ states }: { states: { code: string; name: string
   useEffect(() => {
     const handle = window.setTimeout(() => {
       if (draft === query) return;
-      router.push(ownerGuideHref(state, tab, draft), { scroll: false });
+      router.push(ownerGuideHref(state, tab, draft, { explicitAll: state === ALL && keepExplicitAll }), { scroll: false });
     }, 300);
     return () => window.clearTimeout(handle);
-  }, [draft, query, router, state, tab]);
+  }, [draft, keepExplicitAll, query, router, state, tab]);
 
-  const go = (nextState: string, nextTab: OwnerGuideTab) => {
-    router.push(ownerGuideHref(nextState, nextTab, draft), { scroll: false });
+  const go = (nextState: string, nextTab: OwnerGuideTab, remember = false) => {
+    if (remember) rememberResourceState(nextState);
+    router.push(ownerGuideHref(nextState, nextTab, draft, { explicitAll: explicitAll(nextState, remember && nextState === ALL) }), { scroll: false });
   };
 
   const onTabKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -67,7 +73,8 @@ export function OwnerGuideNav({ states }: { states: { code: string; name: string
           <select
             className="focus-ring mt-2 w-full min-h-12 rounded-xl border border-border bg-white px-3 text-base font-medium text-[#17212b] shadow-sm"
             id={stateId}
-            onChange={(event) => go(event.target.value, tab)}
+            onChange={(event) => go(event.target.value, tab, true)}
+            ref={stateSelectRef}
             value={state}
           >
             <option value={ALL}>All states</option>
@@ -96,6 +103,9 @@ export function OwnerGuideNav({ states }: { states: { code: string; name: string
           </div>
         </div>
       </div>
+      {stateChoice.source === "geo" && state !== ALL ? (
+        <LocationStateNote onChangeState={() => stateSelectRef.current?.focus()} stateName={stateName} />
+      ) : null}
       <div
         aria-label="Owner guide sections"
         className="mt-6 flex gap-6 overflow-x-auto border-b border-border"

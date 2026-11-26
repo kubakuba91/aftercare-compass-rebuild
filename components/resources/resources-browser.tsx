@@ -2,9 +2,11 @@
 
 import { Search } from "lucide-react";
 import Link from "next/link";
+import { LocationStateNote } from "@/components/resources/location-state-note";
 import { quietTabClass } from "@/components/public/quiet-tab";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useId, useMemo, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { rememberResourceState, type ResourceStateChoice } from "@/lib/resources/state-choice";
 import {
   filterResources,
   normalizeResourceTab,
@@ -19,9 +21,10 @@ import { interpretSearch, suggestSearch } from "@/lib/resources/smart-search";
 
 const ALL = "all";
 
-function resourcesHref(state: string, category: ResourceCategory, query: string) {
+function resourcesHref(state: string, category: ResourceCategory, query: string, explicitAll = false) {
   const params = new URLSearchParams();
   if (state !== ALL) params.set("state", state);
+  else if (explicitAll) params.set("state", ALL);
   if (category !== ALL) params.set("tab", category);
   if (query) params.set("q", query);
   const search = params.toString();
@@ -100,22 +103,26 @@ function ResultGrid({ entries, ids }: { entries: CatalogEntry[]; ids: Map<string
   );
 }
 
-export function ResourcesBrowser() {
+export function ResourcesBrowser({ stateChoice }: { stateChoice: ResourceStateChoice }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const stateId = useId();
   const searchId = useId();
-  const requestedState = searchParams.get("state")?.toUpperCase() ?? ALL;
-  const state = resourceStates.some((item) => item.code === requestedState) ? requestedState : ALL;
+  const stateSelectRef = useRef<HTMLSelectElement>(null);
+  const state = resourceStates.some((item) => item.code === stateChoice.state) ? stateChoice.state : ALL;
+  const keepExplicitAll = (searchParams.get("state") ?? "").toLowerCase() === ALL;
   const requestedTab = searchParams.get("tab");
   const category = normalizeResourceTab(requestedTab);
   const query = searchParams.get("q") ?? "";
   const [draft, setDraft] = useState(query);
 
+  const href = (nextState: string, nextCategory: ResourceCategory, nextQuery: string, forceAll = false) =>
+    resourcesHref(nextState, nextCategory, nextQuery, forceAll || (nextState === ALL && keepExplicitAll));
+
   useEffect(() => {
     if (requestedTab !== "licensing-funding") return;
-    router.replace(resourcesHref(state, "licensing", query), { scroll: false });
-  }, [query, requestedTab, router, state]);
+    router.replace(resourcesHref(state, "licensing", query, state === ALL && keepExplicitAll), { scroll: false });
+  }, [keepExplicitAll, query, requestedTab, router, state]);
 
   useEffect(() => {
     setDraft(query);
@@ -124,10 +131,10 @@ export function ResourcesBrowser() {
   useEffect(() => {
     const handle = window.setTimeout(() => {
       if (draft === query) return;
-      router.push(resourcesHref(state, category, draft), { scroll: false });
+      router.push(resourcesHref(state, category, draft, state === ALL && keepExplicitAll), { scroll: false });
     }, 300);
     return () => window.clearTimeout(handle);
-  }, [category, draft, query, router, state]);
+  }, [category, draft, keepExplicitAll, query, router, state]);
 
   const results = useMemo(
     () => filterResources(resourceCatalog, { state, category, query }),
@@ -150,8 +157,9 @@ export function ResourcesBrowser() {
   const suggestion = results.length === 0 ? suggestSearch(query, state) : null;
   const groupCode = state !== ALL ? state : search.place && (state === ALL || state === search.place.state) ? search.place.state : ALL;
 
-  const go = (nextState: string, nextCategory: ResourceCategory) => {
-    router.push(resourcesHref(nextState, nextCategory, draft), { scroll: false });
+  const go = (nextState: string, nextCategory: ResourceCategory, remember = false) => {
+    if (remember) rememberResourceState(nextState);
+    router.push(href(nextState, nextCategory, draft, remember && nextState === ALL), { scroll: false });
   };
 
   const onTabKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -197,7 +205,8 @@ export function ResourcesBrowser() {
           <select
             className="focus-ring mt-2 w-full min-h-12 rounded-xl border border-border bg-white px-3 text-base font-medium text-[#17212b] shadow-sm"
             id={stateId}
-            onChange={(event) => go(event.target.value, category)}
+            onChange={(event) => go(event.target.value, category, true)}
+            ref={stateSelectRef}
             value={state}
           >
             <option value={ALL}>All states</option>
@@ -226,6 +235,10 @@ export function ResourcesBrowser() {
           </div>
         </div>
       </div>
+
+      {stateChoice.source === "geo" && state !== ALL ? (
+        <LocationStateNote onChangeState={() => stateSelectRef.current?.focus()} stateName={stateName} />
+      ) : null}
 
       <div
         aria-label="Resource categories"
@@ -305,7 +318,11 @@ export function ResourcesBrowser() {
               <Link className="focus-ring rounded-md text-sm font-semibold text-primary underline-offset-4 hover:underline" href={directoryHref("continued", suggestion?.directoryQuery || state)}>
                 Continued care
               </Link>
-              <Link className="focus-ring rounded-md text-sm font-semibold text-primary underline-offset-4 hover:underline" href="/resources">
+              <Link
+                className="focus-ring rounded-md text-sm font-semibold text-primary underline-offset-4 hover:underline"
+                href="/resources?state=all"
+                onClick={() => rememberResourceState(ALL)}
+              >
                 Clear filters
               </Link>
             </div>

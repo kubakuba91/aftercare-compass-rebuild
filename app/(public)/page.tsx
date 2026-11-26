@@ -1,19 +1,23 @@
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { normalizePhoneNumber } from "@/lib/phone";
+import { HomeAnswerSection } from "@/components/public/home-answer-section";
 import { HeroSearchForm } from "@/components/public/hero-search-form";
 import Image from "next/image";
 import { MarketingHeader } from "@/components/marketing-header";
 import { TrendingHomes } from "@/components/public/trending-homes";
-import { Card } from "@/components/ui/card";
+import { ButtonLink } from "@/components/ui/button-link";
 import { hasValidClerkRuntimeConfig } from "@/lib/clerk-config";
 import { hasDatabaseConfig } from "@/lib/database-status";
+import { homeJsonLd, homeMetadata } from "@/lib/home-seo";
 import { popularProgramAvailability } from "@/lib/popular-program-availability";
 import { profilePlaceholderAlt, profilePlaceholderImage } from "@/lib/public-profile-placeholder";
 import { prisma } from "@/lib/prisma";
 import { redirectToDashboardDestination } from "@/lib/protected-routing";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = homeMetadata();
 
 export default async function HomePage() {
   const userId = hasValidClerkRuntimeConfig() ? (await auth()).userId : null;
@@ -128,90 +132,82 @@ export default async function HomePage() {
     <>
       <MarketingHeader />
       <main>
-      <section className="border-b border-border bg-white">
-        <div className="shell py-5">
-          <div className="relative min-h-[500px] overflow-hidden rounded-lg border border-border">
-            <Image
-              alt=""
-              aria-hidden="true"
-              className="object-cover object-[65%_center]"
-              fill
-              priority
-              src="/images/aftercare-community-hero.webp"
-              sizes="100vw"
-            />
-            <div className="ac-hero-overlay absolute inset-0" aria-hidden="true" />
-
-            <div className="relative max-w-5xl px-6 py-14 md:px-20 md:py-16">
-              <h1 className="text-4xl font-semibold leading-tight tracking-normal text-white md:text-6xl">
-                <span className="block">Close the gap.</span>
-                <span className="block">Change the outcome.</span>
-              </h1>
-              <p className="mt-4 max-w-4xl text-lg leading-8 text-white">
-                Find real-time availability for sober living and continued care programs—in minutes, not hours.
-              </p>
-
-              <HeroSearchForm />
-            </div>
+      <section className="relative overflow-hidden border-b border-border bg-[#f4f3ef]">
+        <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] lg:block" aria-hidden="true">
+          <Image
+            alt=""
+            className="object-cover object-[70%_center]"
+            fill
+            priority
+            sizes="48vw"
+            src="/images/aftercare-community-hero.webp"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#f4f3ef] via-[#f4f3ef]/88 to-[#f4f3ef]/20" />
+        </div>
+        <div className="shell relative py-16 sm:py-20 lg:py-28">
+          <div className="max-w-xl lg:max-w-2xl">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.22em] text-[#10195e]">Aftercare Compass</p>
+            <h1 className="mt-5 text-[2.75rem] font-semibold leading-[1.02] tracking-[-0.035em] text-[#17212b] sm:text-6xl lg:text-[4.5rem]">
+              <span className="block">Close the gap.</span>
+              <span className="block">Change the outcome.</span>
+            </h1>
+            <p className="mt-6 max-w-lg text-lg leading-8 text-[#3d4a57]">
+              Find real-time availability for sober living and continued care programs—in minutes, not hours.
+            </p>
+            <HeroSearchForm />
+            <p className="mt-5 max-w-lg text-sm leading-6 text-[#5c6b7a]">
+              A placement assistant is coming to search. Until that update is ready, this search works the same way it does today.
+            </p>
           </div>
         </div>
       </section>
 
       <TrendingHomes homes={popularPrograms.homes} location={popularPrograms.location} preview={isLocalPreview} />
 
-      <section className="shell grid gap-4 py-10 md:grid-cols-3">
-        <Card className="grid gap-4">
-          <div className="relative mx-auto aspect-square w-full max-w-56">
-            <Image
-              alt="Illustration of searching aftercare listings"
-              className="object-contain"
-              fill
-              src="/images/home-search-listings.jpg"
-              sizes="224px"
-            />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold">Public discovery</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Search profiles by location, availability, and fit.
+      <section className="bg-white">
+        <div className="shell grid gap-12 py-16 md:grid-cols-2 md:gap-16 md:py-24">
+          <article>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#10195e]">Placing someone</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[#17212b] sm:text-4xl">Find the next step.</h2>
+            <p className="mt-4 max-w-md text-base leading-7 text-[#3d4a57]">
+              Search published sober living and continued care. See the availability the program posted. When you are signed in, send a referral that leaves out client identifiers.
             </p>
-          </div>
-        </Card>
-        <Card className="grid gap-4">
-          <div className="relative mx-auto aspect-square w-full max-w-56">
-            <Image
-              alt="Illustration of managing aftercare documents"
-              className="object-contain"
-              fill
-              src="/images/home-manage-documents.jpg"
-              sizes="224px"
-            />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold">Provider supply</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Aftercare teams can publish profiles, manage documents, and update availability.
+            <div className="mt-6">
+              <ButtonLink href="/for-case-managers">For case managers</ButtonLink>
+            </div>
+          </article>
+          <article className="md:border-l md:border-border md:pl-16">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#10195e]">Running a program</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[#17212b] sm:text-4xl">Show what you have open.</h2>
+            <p className="mt-4 max-w-md text-base leading-7 text-[#3d4a57]">
+              Publish your sober living or continued care listing and update availability so the people placing clients can find you.
             </p>
-          </div>
-        </Card>
-        <Card className="grid gap-4">
-          <div className="relative mx-auto aspect-square w-full max-w-56">
-            <Image
-              alt="Illustration of referral-ready aftercare coordination"
-              className="object-contain"
-              fill
-              src="/images/home-refer-ready.jpg"
-              sizes="224px"
-            />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold">Referral-ready</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Referents submit de-identified referrals, and aftercare teams manage the status lifecycle.
-            </p>
-          </div>
-        </Card>
+            <div className="mt-6">
+              <ButtonLink href="/for-providers" variant="secondary">For providers</ButtonLink>
+            </div>
+          </article>
+        </div>
       </section>
+
+      <section className="border-y border-border bg-[#f4f3ef]" aria-label="How listings work">
+        <ul className="shell grid gap-8 py-12 md:grid-cols-3 md:py-14">
+          <li>
+            <p className="text-base font-semibold text-[#17212b]">Availability is what the program posted.</p>
+            <p className="mt-2 text-sm leading-6 text-[#5c6b7a]">Confirm space with the program. Aftercare Compass does not hold beds.</p>
+          </li>
+          <li>
+            <p className="text-base font-semibold text-[#17212b]">Referrals leave out client identifiers.</p>
+            <p className="mt-2 text-sm leading-6 text-[#5c6b7a]">A signed-in referrer sends a de-identified referral. The program tracks it from its dashboard.</p>
+          </li>
+          <li>
+            <p className="text-base font-semibold text-[#17212b]">Listings are not ordered by ad spend.</p>
+            <p className="mt-2 text-sm leading-6 text-[#5c6b7a]">A program is not placed above another because it bought a larger promotion.</p>
+          </li>
+        </ul>
+      </section>
+
+      <HomeAnswerSection />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: homeJsonLd() }} />
       </main>
     </>
   );

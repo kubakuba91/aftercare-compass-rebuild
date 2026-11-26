@@ -10,7 +10,7 @@ export function FeaturedVideo({ video }: { video: ResourceVideo }) {
   const [active, setActive] = useState(false);
 
   return (
-    <div className="relative aspect-video overflow-hidden rounded-[1.5rem] border border-[#cddcf4] bg-[#10195e] shadow-[0_24px_70px_rgba(23,33,43,0.18)]">
+    <div className="relative aspect-video overflow-hidden rounded-xl border border-black/10 bg-[#10195e]">
       {active ? (
         <iframe
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

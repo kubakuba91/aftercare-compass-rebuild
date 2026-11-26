@@ -4,7 +4,7 @@ import type { ResourceLink } from "@/lib/recovery-housing/types";
 export function ResourceLinkCard({ link }: { link: ResourceLink }) {
   return (
     <a
-      className="focus-ring group flex h-full flex-col rounded-2xl border border-border bg-white p-5 transition hover:border-primary/40 hover:shadow-[0_12px_32px_rgba(23,33,43,0.08)]"
+      className="focus-ring group flex h-full flex-col rounded-xl border border-black/10 bg-white p-5"
       href={link.href}
       rel="noopener noreferrer"
       target="_blank"

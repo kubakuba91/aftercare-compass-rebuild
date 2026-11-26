@@ -48,7 +48,7 @@ function ResultCard({ entry }: { entry: CatalogEntry }) {
   const category = categoryLabel(entry.category);
   const place = entry.stateName ?? "National";
   const className =
-    "focus-ring group flex h-full flex-col rounded-2xl border border-border bg-white p-5 text-left transition hover:border-primary/40 hover:shadow-[0_12px_32px_rgba(23,33,43,0.08)]";
+    "focus-ring group flex h-full flex-col rounded-xl border border-black/10 bg-white p-5 text-left";
   const body = (
     <>
       <span className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{entry.source}</span>
@@ -268,7 +268,7 @@ export function ResourcesBrowser({ stateChoice }: { stateChoice: ResourceStateCh
 
       <div aria-labelledby={`resource-tab-${category}`} className="mt-6" id="resource-results" role="tabpanel">
         {category === "recovery" || category === "family" || category === "veterans" || category === "funding" ? (
-          <div className="mb-5 rounded-2xl border border-border bg-[#f4f8ff] p-5">
+          <div className="mb-5 rounded-xl border border-black/10 bg-[#f7f6f3] p-5">
             <p className="text-sm leading-6 text-[#17212b]">
               For a recovery house or a continued care program, search the Aftercare Compass directory.
             </p>

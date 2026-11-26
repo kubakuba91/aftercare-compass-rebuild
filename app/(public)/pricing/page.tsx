@@ -147,10 +147,9 @@ export default async function PricingPage({
     <>
       <MarketingHeader />
       <main className="overflow-hidden bg-white">
-        <section className="relative border-b border-border bg-[#f4f8ff]">
-          <div className="pointer-events-none absolute -right-24 -top-40 size-[30rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
+        <section className="ac-public-hero">
           <div className="shell relative py-16 text-center sm:py-20">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Simple, transparent pricing</p>
+            <p className="ac-public-kicker">Simple, transparent pricing</p>
             <h1 className="mx-auto mt-5 max-w-4xl text-4xl font-semibold leading-[1.08] tracking-[-0.03em] text-[#17212b] sm:text-5xl lg:text-6xl">
               A plan for every handoff.
             </h1>
@@ -172,7 +171,7 @@ export default async function PricingPage({
           <div className="mt-6 grid gap-5 md:grid-cols-3">
             {(["virtual_basic", "virtual_growth", "virtual_network"] as const).map((key) => {
               const plan = aftercarePlans[key];
-              return <div className="rounded-xl border border-border p-6" key={key}><h3 className="text-xl font-semibold">{plan.label}</h3><p className="mt-3 text-2xl">${plan.monthlyPrice}/month</p><p>${plan.monthlyPrice * 10}/year — two months free</p><p className="mt-4">{key === "virtual_basic" ? "1 state" : key === "virtual_growth" ? "Multiple states, short of nationwide" : "Nationwide (50 states + DC)"}</p><p>{formatLimit(plan.profiles, "profile")} · {formatLimit(plan.managers, "manager")}</p><p className="mt-4">Direct referrals, messaging, referral tracking, analytics, 12 photos per profile, and verification eligibility after review.</p><div className="mt-4"><ButtonLink href={dashboardAppUrl("/sign-up")}>Get started</ButtonLink></div></div>;
+              return <div className="rounded-xl border border-black/10 bg-white p-6" key={key}><h3 className="text-xl font-semibold">{plan.label}</h3><p className="mt-3 text-2xl">${plan.monthlyPrice}/month</p><p>${plan.monthlyPrice * 10}/year — two months free</p><p className="mt-4">{key === "virtual_basic" ? "1 state" : key === "virtual_growth" ? "Multiple states, short of nationwide" : "Nationwide (50 states + DC)"}</p><p>{formatLimit(plan.profiles, "profile")} · {formatLimit(plan.managers, "manager")}</p><p className="mt-4">Direct referrals, messaging, referral tracking, analytics, 12 photos per profile, and verification eligibility after review.</p><div className="mt-4"><ButtonLink href={dashboardAppUrl("/sign-up")}>Get started</ButtonLink></div></div>;
             })}
           </div>
         </section>

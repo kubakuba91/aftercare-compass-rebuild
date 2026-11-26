@@ -22,11 +22,10 @@ export default function LibraryPage() {
     <>
       <MarketingHeader />
       <main className="overflow-hidden bg-white">
-        <section className="relative border-b border-border bg-[#f4f8ff]">
-          <div className="pointer-events-none absolute -right-32 -top-44 size-[34rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
+        <section className="ac-public-hero">
           <div className="shell relative grid items-center gap-12 py-16 lg:grid-cols-[1.02fr_0.98fr] lg:py-24">
             <div className="max-w-3xl">
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Library</p>
+              <p className="ac-public-kicker">Library</p>
               <h1 className="mt-5 text-4xl font-semibold leading-[1.08] tracking-[-0.03em] text-[#17212b] sm:text-5xl lg:text-6xl">
                 Library
               </h1>
@@ -50,7 +49,7 @@ export default function LibraryPage() {
         </section>
 
         <section className="shell py-20 lg:py-24">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Videos</p>
+          <p className="ac-public-kicker">Videos</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">More to watch</h2>
           <ResourceBrowser videos={rest} />
         </section>

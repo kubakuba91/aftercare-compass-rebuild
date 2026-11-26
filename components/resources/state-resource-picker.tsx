@@ -60,7 +60,7 @@ export function StateResourcePicker({ states, initialCode }: { states: StateReso
       {selected ? (
         <StateResourceSection state={selected} />
       ) : (
-        <p className="mt-8 rounded-2xl border border-dashed border-border bg-[#f4f8ff] p-6 text-base text-muted-foreground">
+        <p className="mt-8 rounded-2xl border border-dashed border-border bg-[#f7f6f3] p-6 text-base text-muted-foreground">
           Pick a state to see its licensing or certification body, official links, local offices, NARR affiliate, and funding notes.
         </p>
       )}

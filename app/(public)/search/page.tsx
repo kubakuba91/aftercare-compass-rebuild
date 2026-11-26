@@ -497,16 +497,17 @@ export default async function SearchPage({
         specialtyOptions={profileOptions.specialtyPopulations}
         verified={verified}
       />
-      <main className="shell py-8">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-border pb-4">
-          <h1 className="text-lg font-semibold leading-snug text-heading">
+      <main className="bg-[#f4f3ef]">
+        <div className="shell py-8">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-black/5 pb-4">
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[#17212b]">
             {totalListings.toLocaleString("en-US")} {type === "sober_living" ? (totalListings === 1 ? "home" : "homes") : (totalListings === 1 ? "program" : "programs")}
             {query.virtualState ? ` serving ${query.virtualState}` : radiusCenter ? ` near ${q}` : appliedLocation ? ` in ${appliedLocation.city ? `${appliedLocation.city}, ` : ""}${appliedLocation.state.name}` : " in your search"}
           </h1>
           <div className="min-w-0 flex-1 basis-64">
           {filterChips.length ? (
             <nav aria-label="Active search filters" className="flex flex-wrap items-center gap-2">
-              {filterChips.map(chip => <Link key={chip.label} className="focus-ring inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-sm hover:bg-muted" href={chip.href} aria-label={`Remove filter: ${chip.label}`}>
+              {filterChips.map(chip => <Link key={chip.label} className="focus-ring inline-flex max-w-full items-center gap-2 rounded-md border border-black/10 bg-white px-2.5 py-1 text-sm text-[#17212b]" href={chip.href} aria-label={`Remove filter: ${chip.label}`}>
                 {chip.label}<span aria-hidden="true" className="shrink-0">×</span>
               </Link>)}
               <Link className="focus-ring rounded px-2 py-1 text-sm font-medium text-primary underline" href={`/search?type=${type}`}>Clear all</Link>
@@ -578,7 +579,7 @@ export default async function SearchPage({
                 <div key={profile.id} className="scroll-mt-24" id={`listing-${profile.id}`}>
                 <Card
                   className={cn(
-                    "search-result-card relative overflow-hidden p-0 transition-shadow",
+                    "search-result-card relative overflow-hidden p-0",
                     selectedListingId === profile.id ? "ring-2 ring-primary ring-offset-2" : null
                   )}
                 >
@@ -707,6 +708,7 @@ export default async function SearchPage({
           selectedListingId={selectedListingId}
         />}
       </div>
+        </div>
       </main>
     </>
   );

@@ -24,14 +24,14 @@ function PricingCards({ plans, columns }: { plans: PricingPlan[]; columns: "thre
       {plans.map((plan) => (
         <article
           className={cn(
-            "relative flex h-full flex-col rounded-[1.5rem] border bg-white p-6 shadow-[0_18px_50px_rgba(23,33,43,0.07)] sm:p-7",
-            plan.featured ? "border-primary ring-2 ring-primary/15" : "border-border"
+            "relative flex h-full flex-col rounded-xl border bg-white p-6 sm:p-7",
+            plan.featured ? "border-[#10195e]" : "border-black/10"
           )}
           key={plan.name}
         >
           {plan.featured ? (
             <span
-              className="absolute right-5 top-0 z-10 -translate-y-1/2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] shadow-sm"
+              className="absolute right-5 top-0 z-10 -translate-y-1/2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]"
               style={{ backgroundColor: "#10195e", color: "#ffffff" }}
             >
               Most popular
@@ -137,7 +137,7 @@ export function PricingPlansToggle({
 
         <div className="mt-12" id="pricing-table" role="tabpanel">
           <div className="mb-10 max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
+            <p className="ac-public-kicker">
               {showingProviders ? "For recovery programs" : "For care coordination teams"}
             </p>
             <h2 className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-[#17212b] sm:text-4xl">

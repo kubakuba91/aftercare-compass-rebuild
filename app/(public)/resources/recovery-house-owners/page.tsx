@@ -164,11 +164,10 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
     <>
       <MarketingHeader />
       <main className="overflow-hidden bg-white">
-        <section className="relative border-b border-border bg-[#f4f8ff]">
-          <div className="pointer-events-none absolute -right-32 -top-44 size-[34rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
+        <section className="ac-public-hero">
           <div className="shell relative py-16 lg:py-24">
             <div className="max-w-3xl">
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Resources · For recovery house owners</p>
+              <p className="ac-public-kicker">Resources · For recovery house owners</p>
               <h1 className="mt-5 text-4xl font-semibold leading-[1.08] tracking-[-0.03em] text-[#17212b] sm:text-5xl lg:text-6xl">
                 Opening or running a recovery house?
               </h1>
@@ -208,14 +207,14 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
         <div aria-labelledby={`owner-tab-${tab}`} id="owner-guide-results" role="tabpanel">
         {showLicensing ? (
         <section className="shell scroll-mt-24 py-10 lg:py-14" id="state">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">By state</p>
+          <p className="ac-public-kicker">By state</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">Licensing and certification in your state</h2>
           <p className="mt-4 max-w-3xl text-lg leading-8 text-muted-foreground">
             Every state handles recovery housing differently. Some require a license, some certify homes voluntarily, and some tie
             referrals or public funding to certification.
           </p>
           {licensingStates.length === 0 ? (
-            <p className="mt-8 rounded-2xl border border-dashed border-border bg-[#f4f8ff] p-6 text-base text-muted-foreground">
+            <p className="mt-8 rounded-2xl border border-dashed border-border bg-[#f7f6f3] p-6 text-base text-muted-foreground">
               Pick a state to see its licensing or certification body, official links, local offices, NARR affiliate, and funding notes.
             </p>
           ) : (
@@ -225,10 +224,10 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
         ) : null}
 
         {showZoning ? (
-        <section className="scroll-mt-24 border-y border-border bg-[#f4f8ff]" id="zoning">
+        <section className="scroll-mt-24 border-y border-border bg-[#f7f6f3]" id="zoning">
           <div className="shell grid gap-10 py-16 lg:grid-cols-[0.7fr_1.3fr] lg:py-20">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Before you sign a lease</p>
+              <p className="ac-public-kicker">Before you sign a lease</p>
               <h2 className="mt-4 flex items-center gap-3 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">
                 <Home aria-hidden="true" className="text-primary" size={30} /> Local zoning and occupancy
               </h2>
@@ -262,7 +261,7 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
         <>
         <section className="shell grid gap-10 py-16 lg:grid-cols-[0.7fr_1.3fr] lg:py-20">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Funding</p>
+            <p className="ac-public-kicker">Funding</p>
             <h2 className="mt-4 flex items-center gap-3 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">
               <PiggyBank aria-hidden="true" className="text-primary" size={30} /> How funding usually works
             </h2>
@@ -282,7 +281,7 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
         </section>
 
         <section className="shell scroll-mt-24 py-16 lg:py-20" id="funding">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Grants</p>
+          <p className="ac-public-kicker">Grants</p>
           <h2 className="mt-4 flex items-center gap-3 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">
             <PiggyBank aria-hidden="true" className="text-primary" size={30} /> Funding and grants for recovery house owners
           </h2>
@@ -315,9 +314,9 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
         ) : null}
 
         {showTemplates ? (
-        <section className="scroll-mt-24 border-y border-border bg-[#f4f8ff]" id="templates">
+        <section className="scroll-mt-24 border-y border-border bg-[#f7f6f3]" id="templates">
           <div className="shell py-16 lg:py-20">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Starter templates</p>
+            <p className="ac-public-kicker">Starter templates</p>
             <h2 className="mt-4 flex items-center gap-3 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">
               <FileText aria-hidden="true" className="text-primary" size={30} /> Outlines to build your policies from
             </h2>
@@ -355,7 +354,7 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
 
         {showStandards ? (
         <section className="shell scroll-mt-24 py-16 lg:py-20" id="standards">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">Quality standards</p>
+          <p className="ac-public-kicker">Quality standards</p>
           <h2 className="mt-4 flex items-center gap-3 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">
             <ShieldCheck aria-hidden="true" className="text-primary" size={30} /> NARR standards checklist
           </h2>
@@ -399,9 +398,9 @@ export default async function RecoveryHouseOwnersPage({ searchParams }: PageProp
         ) : null}
 
         {showFaq ? (
-        <section className="scroll-mt-24 border-t border-border bg-[#f4f8ff]" id="faq">
+        <section className="scroll-mt-24 border-t border-border bg-[#f7f6f3]" id="faq">
           <div className="shell py-16 lg:py-20">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">FAQ</p>
+            <p className="ac-public-kicker">FAQ</p>
             <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em] text-[#17212b] sm:text-4xl">Common questions</h2>
             <div className="mt-8 max-w-3xl divide-y divide-border rounded-2xl border border-border bg-white">
               {generalFaq.map((item) => (

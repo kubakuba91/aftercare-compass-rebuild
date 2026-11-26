@@ -804,7 +804,7 @@ dialog::backdrop {
 .ac-search-tab:has(:checked) { border-bottom-color: var(--primary); color: var(--heading); }
 .ac-search-tab:has(:focus-visible) { outline: 2px solid var(--focus); outline-offset: -5px; }
 .ac-hero-overlay { background: linear-gradient(90deg, rgb(10 24 48 / 94%) 0%, rgb(10 24 48 / 82%) 48%, rgb(10 24 48 / 32%) 100%); }
-.ac-hero-search { max-width: 750px; margin-top: 28px; overflow: hidden; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); color: var(--foreground); box-shadow: var(--control-shadow-strong); }
+.ac-hero-search { max-width: 640px; margin-top: 32px; overflow: hidden; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); color: var(--foreground); box-shadow: 0 10px 30px rgb(16 25 94 / 0.06); }
 .ac-hero-search-row { display: flex; align-items: center; gap: 12px; padding: 16px; }
 .ac-hero-search-field { display: flex; flex: 1; min-width: 0; align-items: center; gap: 12px; padding: 8px; border-radius: 8px; color: var(--muted-foreground); }
 .ac-hero-search-field svg { flex-shrink: 0; }

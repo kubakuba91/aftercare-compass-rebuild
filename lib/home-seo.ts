@@ -37,6 +37,11 @@ export const homeFaqs = [
     question: "How do I search for a program?",
     answer:
       "On the Aftercare Compass home page, choose Sober Living or Continued Care, then search by city, state, or program name. Results open at aftercarecompass.com/search."
+  },
+  {
+    question: "Is a placement assistant part of search yet?",
+    answer:
+      "Not yet. A placement assistant is coming to search. Until that update is ready, search works the same way it does today: published sober living and continued care programs, by city, state, or program name."
   }
 ] as const;
 

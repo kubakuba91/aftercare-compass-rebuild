@@ -10,7 +10,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicSeoOrigin()),
-  verification: { google: "G5JYY2bbpf1I0BcKd1w7Zzb-kqq0BmwQlozyui58cMw" },
+  verification: {
+    google: "G5JYY2bbpf1I0BcKd1w7Zzb-kqq0BmwQlozyui58cMw",
+    other: { "msvalidate.01": "9016194C0D3DE7410C649C4AFA56FB47" }
+  },
   title: "Aftercare Compass",
   description: homeDescription,
   applicationName: "Aftercare Compass",

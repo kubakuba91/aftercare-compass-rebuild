@@ -15,7 +15,10 @@ const answerEngineCrawlers = [
   "Perplexity-User",
   "Google-Extended",
   "Applebot-Extended",
-  "Bingbot"
+  "Bingbot",
+  "GrokBot",
+  "xAI-Grok",
+  "Grok-DeepSearch"
 ];
 
 export default function robots(): MetadataRoute.Robots {
